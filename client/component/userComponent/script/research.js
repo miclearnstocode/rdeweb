@@ -2,7 +2,7 @@ import { $, ConfirmationAlert, Waiting, DeleteConfirmModal, FileViewerModal, Cus
 import { handleResubmit } from './resubmit.js'
 import { Print } from "../../otherComponent/comment.js"
 import { SymposiumModal } from './userUploadComponent/symposiumModal.js'
-
+import { ResearchChairSubmissionModal } from './userUploadComponent/researchChairSubmission.js'
 
 // View Researches Modal
 const openViewResearchesModal = () => {
@@ -236,7 +236,6 @@ const openViewResearchesModal = () => {
         return container
     }
 
-    // show a placeholder message in the table body
     const setTableMessage = (iconClass, mainText, subText = '') => {
         if (!tableBody) return
         tableBody.innerHTML = ''
@@ -270,7 +269,6 @@ const openViewResearchesModal = () => {
         tableBody.appendChild(row)
     }
 
-    // Function to create file tag with modern styling
     const createFileTag = (fileInfo, docId, fileType, fileUrl, presenter) => {
         const fileName = fileInfo.title || fileInfo.name || 'Untitled'
         const isDriveFile = fileUrl && (fileUrl.includes('drive.google.com') || fileUrl.includes('drive.google.com/file/d/'));
@@ -301,7 +299,9 @@ const openViewResearchesModal = () => {
                     let loading = Waiting()
                     document.body.appendChild(loading)
                     const remove = () => {
-                        if (loading && loading.remove) loading.remove()
+                        if (loading && loading.remove) {
+                            loading.remove()
+                        }
                     }
 
                     const form = new FormData()
@@ -402,7 +402,6 @@ const openViewResearchesModal = () => {
         return tag
     }
 
-    // Load event list into the dropdown
     const loadEventList = async () => {
         if (!eventSelect) return
 
@@ -552,13 +551,11 @@ const openViewResearchesModal = () => {
         tableBody.appendChild(row)
     }
 
-    // Load research data
     const loadResearchData = async (eventId, searchTerm = '') => {
         if (!tableBody) return
 
         currentFilter = 'all'
 
-        // Also reset stat card highlights
         const statCards = document.querySelectorAll('.stat-card')
         statCards.forEach((card) => {
             card.style.borderColor = '#e8ecf0'
@@ -718,7 +715,6 @@ const openViewResearchesModal = () => {
         }
     }
 
-    // Create the modal
     const content = buildContent()
     wireEvents()
 
@@ -868,7 +864,7 @@ export const Research = () => {
         "Fisheries Research & Development Center (FRDC)": ["Natural / Biological"],
         "Food and Industrial Technology Research & Development Center (FITRDC)": ["Food"],
         "Social Science Research & Development Center (SSRDC)": ["Social Science"],
-        "Machinery and Agricultural Technology Engineering Center (MATEC)": ["Industrial", "Engineering", "Information Technology", "Development", "Agricultural Machinery"],
+        "Machinery and Agricultural Technology Engineering Center (MATEC)": ["Development"],
         "Coconut Research and Development Center (Coco RDC)": ["Natural / Biological"],
         "Extension (Extension)": ["Extension"]
     }
@@ -885,7 +881,7 @@ export const Research = () => {
     // Categories list
     const categories = [
         "Social Science", "Natural / Biological", "Food", "Development",
-        "Extension", "Agricultural Machinery", "Industrial", "Engineering", "Information Technology"
+        "Extension"
     ]
 
     const getStatusBadge = (status) => {
@@ -1192,8 +1188,6 @@ export const Research = () => {
 
         return container;
     }
-
-
     // View Comments Modal with Print functionality
     const viewComments = (doc) => {
         let commentsBody
@@ -2430,7 +2424,7 @@ export const Research = () => {
             program: 'Program File',
             endorsement: 'Endorsement Letter',
             certificate: 'Certificate File',
-            title_certificate: 'Title Change Certificate'  // <-- ADD THIS
+            title_certificate: 'Title Change Certificate'
         }
         const displayName = typeNames[fileType] || 'Document'
 
@@ -2440,7 +2434,7 @@ export const Research = () => {
             program: '#4caf50',
             endorsement: '#ff9800',
             certificate: '#9C27B0',
-            title_certificate: '#E91E63'  // <-- ADD THIS
+            title_certificate: '#E91E63'
         }
         const accentColor = accentColors[fileType] || '#2196F3'
 
@@ -2450,10 +2444,23 @@ export const Research = () => {
     const editDocument = (doc) => {
         // Extract just the filename from Google Drive URL
         const getFileNameFromUrl = (url) => {
-            if (!url || url === '—') return null;
+            if (!url || url === '—' || url === null) return null;
             if (url.includes('drive.google.com')) {
+                // Try to extract a meaningful name from the URL
+                try {
+                    const urlObj = new URL(url);
+                    const pathParts = urlObj.pathname.split('/');
+                    // Check for file ID in path
+                    const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                    if (fileIdMatch && fileIdMatch[1]) {
+                        return 'Google Drive File (ID: ' + fileIdMatch[1].substring(0, 8) + '...)';
+                    }
+                } catch (e) {
+                    // Fallback
+                }
                 return 'Google Drive File (kept as is)';
             }
+            // For local files, get the filename from the URL
             return url.split('/').pop();
         }
 
@@ -2470,10 +2477,14 @@ export const Research = () => {
             programFile: null,
             endorsementFile: null,
             certificateFile: null,
-            // Store existing file info for display
-            existingResearchFile: getFileNameFromUrl(doc.researchFile),
-            existingProgramFile: getFileNameFromUrl(doc.programFile),
-            existingEndorsementFile: getFileNameFromUrl(doc.endorsementFile),
+            existingResearchFile: doc.researchFile || null,
+            existingResearchFileName: getFileNameFromUrl(doc.researchFile) || 'Research File',
+            existingEndorsementFile: doc.endorsementFile || null,
+            existingEndorsementFileName: getFileNameFromUrl(doc.endorsementFile) || 'Endorsement Letter',
+            existingProgramFile: doc.program_drive_view_url || null,
+            existingProgramFileName: getFileNameFromUrl(doc.program_drive_view_url) || 'Program File',
+            existingCertificateFile: doc.certificate_drive_view_url || null,
+            existingCertificateFileName: getFileNameFromUrl(doc.certificate_drive_view_url) || 'Certificate File',
             date_started: doc.date_started || '',
             date_completed: doc.date_completed || ''
         }
@@ -2547,7 +2558,7 @@ export const Research = () => {
     }
 
     // Local Files Upload Component
-    const LocalFilesUploadField = ({ label, fieldName }) => {
+    const LocalFilesUploadField = ({ label, fieldName, isEditMode = false, editData = null }) => {
         let fileInput, fileNameDisplay
 
         const container = $({
@@ -2558,7 +2569,7 @@ export const Research = () => {
         const labelEl = $({
             tag: 'label',
             text: label,
-            style: { display: 'block', color: '#bbb', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }
+            style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
         })
 
         const uploadArea = $({
@@ -2578,10 +2589,83 @@ export const Research = () => {
             }
         })
 
+        uploadArea.appendChild($({ tag: 'i', att: { className: 'fas fa-file-upload' }, style: { fontSize: '40px', color: '#4caf50', marginBottom: '12px', display: 'block' } }))
+        uploadArea.appendChild($({ tag: 'div', text: 'Select multiple PDF files', style: { color: '#1a2a3a', fontSize: '15px', fontWeight: '500' } }))
+        uploadArea.appendChild($({ tag: 'div', text: 'Only PDF files are allowed', style: { color: '#666', fontSize: '12px', marginTop: '6px' } }))
+
         fileNameDisplay = $({
             tag: 'div',
             style: { marginTop: '12px', fontSize: '13px', color: '#888', textAlign: 'left' }
         })
+
+        // ===== Display existing file if in edit mode =====
+        if (isEditMode && editData) {
+            let existingUrl = null;
+            let existingName = null;
+
+            if (fieldName === 'programFile') {
+                existingUrl = formData.existingProgramFile;
+                existingName = formData.existingProgramFileName || 'Program File';
+            } else if (fieldName === 'certificateFile') {
+                existingUrl = formData.existingCertificateFile;
+                existingName = formData.existingCertificateFileName || 'Certificate File';
+            }
+
+            if (existingUrl && existingUrl !== '—' && existingUrl !== null && existingUrl !== '' && existingUrl !== 'null') {
+                const existingFileContainer = $({
+                    tag: 'div',
+                    style: {
+                        marginTop: '8px',
+                        padding: '10px 14px',
+                        backgroundColor: '#e3f2fd',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        border: '1px solid #bbdefb',
+                        flexWrap: 'wrap'
+                    },
+                    child: [
+                        $({
+                            tag: 'i',
+                            att: { className: 'fas fa-file-pdf' },
+                            style: { color: '#1976D2', fontSize: '16px' }
+                        }),
+                        $({
+                            tag: 'span',
+                            text: `Existing: ${existingName}`,
+                            style: { color: '#1a2a3a', fontSize: '12px', flex: 1 }
+                        }),
+                        $({
+                            tag: 'a',
+                            att: { href: existingUrl, target: '_blank', title: 'View existing file' },
+                            style: {
+                                color: '#1976D2',
+                                textDecoration: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                backgroundColor: '#bbdefb'
+                            },
+                            child: [
+                                $({ tag: 'i', att: { className: 'fas fa-eye' }, style: { fontSize: '12px' } }),
+                                $({ tag: 'span', text: 'View' })
+                            ]
+                        }),
+                        $({
+                            tag: 'span',
+                            text: '(Upload new to replace)',
+                            style: { color: '#64748b', fontSize: '11px', fontStyle: 'italic' }
+                        })
+                    ]
+                })
+                fileNameDisplay.appendChild(existingFileContainer)
+            }
+        }
 
         fileInput = $({
             tag: 'input',
@@ -2600,7 +2684,12 @@ export const Research = () => {
                             return
                         }
                         formData[fieldName] = files
-                        fileNameDisplay.innerHTML = files.map(f => `<div style="margin-bottom: 4px color: #4caf50"><i class="fas fa-file-pdf"></i> ${f.name} (${(f.size / 1024).toFixed(1)} KB)</div>`).join('')
+                        // Clear existing display and show new files
+                        fileNameDisplay.innerHTML = ''
+                        const fileListHtml = files.map(f =>
+                            `<div style="margin-bottom: 4px; color: #4caf50;"><i class="fas fa-file-pdf"></i> ${f.name} (${(f.size / 1024).toFixed(1)} KB)</div>`
+                        ).join('')
+                        fileNameDisplay.innerHTML = fileListHtml
                     } else {
                         fileNameDisplay.innerHTML = ''
                         formData[fieldName] = []
@@ -2608,10 +2697,6 @@ export const Research = () => {
                 }
             }
         })
-
-        uploadArea.appendChild($({ tag: 'i', att: { className: 'fas fa-file-upload' }, style: { fontSize: '40px', color: '#4caf50', marginBottom: '12px', display: 'block' } }))
-        uploadArea.appendChild($({ tag: 'div', text: 'Select multiple PDF files', style: { color: '#fff', fontSize: '15px', fontWeight: '500' } }))
-        uploadArea.appendChild($({ tag: 'div', text: 'Only PDF files are allowed', style: { color: '#666', fontSize: '12px', marginTop: '6px' } }))
 
         container.appendChild(labelEl)
         container.appendChild(uploadArea)
@@ -2646,7 +2731,12 @@ export const Research = () => {
             endorsementFile: null,
             certificateFile: null
         }
-
+        const existingFiles = {
+            researchFile: isEdit ? editData?.researchFile || null : null,
+            endorsementFile: isEdit ? editData?.endorsementFile || null : null,
+            programFile: isEdit ? editData?.program_drive_view_url || null : null,
+            certificateFile: isEdit ? editData?.certificate_drive_view_url || null : null,
+        }
         const modal = $({
             tag: 'div',
             style: {
@@ -2891,9 +2981,10 @@ export const Research = () => {
                 }
             }
 
-            // Show loading
-            const loading = Waiting();
-            document.body.appendChild(loading);
+            const loading = Waiting()
+            if (loading && typeof loading === 'object' && loading.nodeType) {
+                document.body.appendChild(loading)
+            }
 
             try {
                 const response = await fetch('/uploadFacultyDocs', {
@@ -2904,24 +2995,55 @@ export const Research = () => {
                 const result = await response.json();
 
                 // Remove loading
-                if (loading && loading.remove) loading.remove();
+                if (loading && loading.remove) {
+                    loading.remove()
+                }
 
                 if (result.status) {
-                    // Close modal
+                    // Close modal immediately
                     modal.remove();
-                    // Show success message
-                    document.body.appendChild(ConfirmationAlert(result.message, () => {
-                        if (window.refreshDocumentsTable) {
+
+                    // Show success message with ConfirmationAlert
+                    const successModal = ConfirmationAlert(result.message, () => {
+                        // This callback fires when user clicks OK
+                        if (window.refreshDocumentsTable && typeof window.refreshDocumentsTable === 'function') {
                             window.refreshDocumentsTable();
+                        } else {
+                            // Fallback: reload the page
+                            window.location.reload();
                         }
-                    }));
+                    });
+                    document.body.appendChild(successModal);
+
+                    // Auto-refresh after 3 seconds even if user doesn't click
+                    setTimeout(() => {
+                        // Remove the modal if it's still there
+                        if (successModal && successModal.remove) {
+                            try {
+                                successModal.remove();
+                            } catch (e) {
+                                // Ignore errors
+                            }
+                        }
+
+                        // Try to refresh the table
+                        if (window.refreshDocumentsTable && typeof window.refreshDocumentsTable === 'function') {
+                            window.refreshDocumentsTable();
+                        } else {
+                            // Fallback: reload the page
+                            window.location.reload();
+                        }
+                    }, 3000);
                 } else {
-                    document.body.appendChild(ConfirmationAlert('Submission failed: ' + result.message));
+                    // Show error without auto-refresh
+                    const errorModal = ConfirmationAlert('Submission failed: ' + result.message);
+                    document.body.appendChild(errorModal);
                 }
             } catch (error) {
                 if (loading && loading.remove) loading.remove();
                 console.error('Submission error:', error);
-                document.body.appendChild(ConfirmationAlert('Error submitting form: ' + error.message));
+                const errorModal = ConfirmationAlert('Error submitting form: ' + error.message);
+                document.body.appendChild(errorModal);
             }
         });
 
@@ -2983,8 +3105,74 @@ export const Research = () => {
                             const isInHouse = selectedEventName && selectedEventName.toLowerCase().includes('in-house')
                             const isSymposium = selectedEventName && selectedEventName.toLowerCase().includes('symposium')
 
-                            // Handle Symposium - open separate modal
+                            // Check if this is specifically an Undergraduate or Graduate symposium
+                            const isUndergraduate = selectedEventName && selectedEventName.toLowerCase().includes('undergraduate')
+                            const isGraduate = selectedEventName && selectedEventName.toLowerCase().includes('graduate')
+
+                            // Handle Symposium events
                             if (isSymposium && !isEdit && !symposiumModalActive) {
+                                // If it's explicitly Undergraduate or Graduate, open ResearchChairSubmission directly
+                                if (isUndergraduate) {
+                                    // Close current modal first
+                                    if (uploadModal) {
+                                        uploadModal.remove()
+                                    }
+                                    // Open Undergraduate Symposium submission
+                                    openSymposiumSubmission(selectedEventName, selectedEventId, 'undergraduate')
+                                    return
+                                } else if (isGraduate) {
+                                    // Close current modal first
+                                    if (uploadModal) {
+                                        uploadModal.remove()
+                                    }
+                                    // Open Graduate Symposium submission
+                                    openSymposiumSubmission(selectedEventName, selectedEventId, 'graduate')
+                                    return
+                                }
+
+                                // For general symposium events (without specific type in name), 
+                                // check if there are both undergraduate and graduate versions
+                                try {
+                                    const checkForm = new FormData()
+                                    checkForm.append('getSymposiumTypes', 'true')
+                                    checkForm.append('eventId', selectedEventId)
+
+                                    const checkResponse = await fetch('/eventRequest', {
+                                        method: 'POST',
+                                        body: checkForm
+                                    })
+
+                                    if (checkResponse.ok) {
+                                        const typesData = await checkResponse.json()
+                                        const hasUndergraduate = typesData.hasUndergraduate || false
+                                        const hasGraduate = typesData.hasGraduate || false
+
+                                        if (hasUndergraduate && hasGraduate) {
+                                            // Close current modal
+                                            if (uploadModal) {
+                                                uploadModal.remove()
+                                            }
+                                            showSymposiumTypeSelection(selectedEventName, selectedEventId)
+                                            return
+                                        } else if (hasUndergraduate) {
+                                            if (uploadModal) {
+                                                uploadModal.remove()
+                                            }
+                                            openSymposiumSubmission(selectedEventName, selectedEventId, 'undergraduate')
+                                            return
+                                        } else if (hasGraduate) {
+                                            if (uploadModal) {
+                                                uploadModal.remove()
+                                            }
+                                            openSymposiumSubmission(selectedEventName, selectedEventId, 'graduate')
+                                            return
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.error('Error checking symposium types:', error)
+                                }
+
+                                // Fallback: Show the original SymposiumModal
                                 normalFormContent.style.opacity = '0'
                                 normalFormContent.style.transform = 'translateX(-20px)'
 
@@ -3001,7 +3189,7 @@ export const Research = () => {
                                     }, 50)
 
                                     const modalTitle = document.querySelector('#modalTitle')
-                                    if (modalTitle) modalTitle.innerText = 'Symposium Submission (In-House Review Required)'
+                                    if (modalTitle) modalTitle.innerText = 'Symposium Submission'
                                     submitBtn.style.display = 'none'
                                     isSymposiumMode = true
                                     symposiumModalActive = true
@@ -3015,17 +3203,14 @@ export const Research = () => {
 
                             // Show the rest of the form when an event is selected
                             if (selectedEventName && selectedEventName !== '-- Select Event Name --') {
-                                // Show the two column layout
                                 twoColumnLayout.style.display = 'grid'
                                 twoColumnLayout.style.opacity = '0'
                                 twoColumnLayout.style.transform = 'translateY(10px)'
 
-                                // Show the file section
                                 fileSection.style.display = 'block'
                                 fileSection.style.opacity = '0'
                                 fileSection.style.transform = 'translateY(10px)'
 
-                                // Trigger a smooth reveal
                                 setTimeout(() => {
                                     twoColumnLayout.style.opacity = '1'
                                     twoColumnLayout.style.transform = 'translateY(0)'
@@ -3618,8 +3803,9 @@ export const Research = () => {
                 }
             })
 
-            fileGrid.appendChild(FileUploadField({ label: 'Research Entry File', fieldName: 'researchFile' }))
-            fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile' }))
+            // Pass isEdit and editData to FileUploadField
+            fileGrid.appendChild(FileUploadField({ label: 'Research Entry File', fieldName: 'researchFile', isEditMode: isEdit, editData: editData }))
+            fileGrid.appendChild(FileUploadField({ label: 'Endorsement Letter', fieldName: 'endorsementFile', isEditMode: isEdit, editData: editData }))
 
             fileSection.appendChild(fileGrid)
 
@@ -3651,8 +3837,8 @@ export const Research = () => {
                 }
             })
 
-            localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Program File *', fieldName: 'programFile' }))
-            localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Certificate', fieldName: 'certificateFile' }))
+            localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Program File *', fieldName: 'programFile', isEditMode: isEdit, editData: editData }))
+            localFieldsGrid.appendChild(LocalFilesUploadField({ label: 'Certificate', fieldName: 'certificateFile', isEditMode: isEdit, editData: editData }))
 
             localFilesSection.appendChild(localFieldsGrid)
 
@@ -3661,7 +3847,6 @@ export const Research = () => {
 
             container.appendChild(formBody)
 
-            // If in edit mode, show all fields immediately
             if (isEdit && editData?.eventName) {
                 twoColumnLayout.style.display = 'grid'
                 twoColumnLayout.style.opacity = '1'
@@ -3695,7 +3880,7 @@ export const Research = () => {
         }
 
         // FileUploadField
-        function FileUploadField({ label, fieldName }) {
+        function FileUploadField({ label, fieldName, isEditMode = false, editData = null }) {
             const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({
                 tag: 'label',
@@ -3744,8 +3929,107 @@ export const Research = () => {
             }))
 
             const fileNameDisplay = $({
-                tag: 'div', style: { marginTop: '12px', fontSize: '13px', color: '#2e7d32', textAlign: 'center', fontWeight: '500' }
+                tag: 'div', style: { marginTop: '12px', fontSize: '13px', textAlign: 'center', fontWeight: '500' }
             })
+
+            if (isEditMode && editData) {
+                let existingUrl = null;
+                let existingName = null;
+                let fileType = 'research';
+
+                if (fieldName === 'researchFile') {
+                    existingUrl = existingFiles.researchFile;
+                    existingName = 'Research File';
+                    fileType = 'research';
+                } else if (fieldName === 'endorsementFile') {
+                    existingUrl = existingFiles.endorsementFile;
+                    existingName = 'Endorsement Letter';
+                    fileType = 'endorsement';
+                } else if (fieldName === 'programFile') {
+                    existingUrl = existingFiles.programFile;
+                    existingName = 'Program File';
+                    fileType = 'program';
+                } else if (fieldName === 'certificateFile') {
+                    existingUrl = existingFiles.certificateFile;
+                    existingName = 'Certificate File';
+                    fileType = 'certificate';
+                }
+
+                if (existingUrl && existingUrl !== '—' && existingUrl !== null && existingUrl !== '' && existingUrl !== 'null') {
+                    const existingFileContainer = $({
+                        tag: 'div',
+                        style: {
+                            marginTop: '8px',
+                            padding: '10px 14px',
+                            backgroundColor: '#e3f2fd',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            border: '1px solid #bbdefb',
+                            flexWrap: 'wrap',
+                            justifyContent: 'center'
+                        },
+                        child: [
+                            $({
+                                tag: 'i',
+                                att: { className: 'fas fa-file-pdf' },
+                                style: { color: '#1976D2', fontSize: '16px' }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: `Existing: ${existingName}`,
+                                style: { color: '#1a2a3a', fontSize: '12px', flex: 1 }
+                            }),
+                            // ===== REPLACE <a> WITH CLICKABLE ELEMENT THAT CALLS viewFileInModal =====
+                            $({
+                                tag: 'span',
+                                style: {
+                                    color: '#1976D2',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    fontSize: '12px',
+                                    cursor: 'pointer',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    backgroundColor: '#bbdefb',
+                                    transition: 'all 0.2s ease'
+                                },
+                                child: [
+                                    $({ tag: 'i', att: { className: 'fas fa-eye' }, style: { fontSize: '12px' } }),
+                                    $({ tag: 'span', text: 'View' })
+                                ],
+                                event: {
+                                    type: 'click',
+                                    method: (e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        // Use the viewFileInModal function to open in a modal
+                                        viewFileInModal(existingUrl, fileType);
+                                    },
+                                    type2: 'mouseenter',
+                                    method2: (e) => {
+                                        e.currentTarget.style.backgroundColor = '#90caf9';
+                                        e.currentTarget.style.transform = 'scale(1.02)';
+                                    },
+                                    type3: 'mouseleave',
+                                    method3: (e) => {
+                                        e.currentTarget.style.backgroundColor = '#bbdefb';
+                                        e.currentTarget.style.transform = 'scale(1)';
+                                    }
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: '(Upload new to replace)',
+                                style: { color: '#64748b', fontSize: '11px', fontStyle: 'italic' }
+                            })
+                        ]
+                    })
+                    fileNameDisplay.appendChild(existingFileContainer)
+                }
+            }
 
             const fileInput = $({
                 tag: 'input',
@@ -3766,7 +4050,14 @@ export const Research = () => {
                                 return
                             }
                             formData[fieldName] = file
-                            fileNameDisplay.innerText = `✓ ${file.name}`
+                            // Clear existing file display and show new file
+                            fileNameDisplay.innerHTML = ''
+                            const newFileSpan = $({
+                                tag: 'span',
+                                text: `✓ New file selected: ${file.name}`,
+                                style: { color: '#2e7d32', fontSize: '13px' }
+                            })
+                            fileNameDisplay.appendChild(newFileSpan)
                         }
                     }
                 }
@@ -3778,6 +4069,273 @@ export const Research = () => {
 
             return container
         }
+    }
+
+    const showSymposiumTypeSelection = (eventName, eventId) => {
+        const modal = $({
+            tag: 'div',
+            style: {
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 200,
+                backdropFilter: 'blur(4px)'
+            }
+        })
+
+        const modalContent = $({
+            tag: 'div',
+            style: {
+                backgroundColor: '#ffffff',
+                borderRadius: '24px',
+                padding: '32px',
+                maxWidth: '500px',
+                width: '90%',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)'
+            }
+        })
+
+        const header = $({
+            tag: 'div',
+            style: {
+                textAlign: 'center',
+                marginBottom: '24px'
+            },
+            child: [
+                $({
+                    tag: 'h2',
+                    text: 'Select Symposium Type',
+                    style: { color: '#1a2a3a', fontSize: '22px', fontWeight: '700', margin: '0 0 8px 0' }
+                }),
+                $({
+                    tag: 'p',
+                    text: `This event has both Undergraduate and Graduate symposium options. Please select one:`,
+                    style: { color: '#64748b', fontSize: '14px', margin: 0 }
+                })
+            ]
+        })
+
+        const optionsContainer = $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                marginBottom: '24px'
+            }
+        })
+
+        // Undergraduate option
+        const undergradOption = $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                alignItems: 'center',
+                padding: '16px 20px',
+                backgroundColor: '#f8fafc',
+                borderRadius: '12px',
+                border: '2px solid #e8ecf0',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+            },
+            event: {
+                type: 'click',
+                method: () => {
+                    modal.remove()
+                    openSymposiumSubmission(eventName, eventId, 'undergraduate')
+                },
+                type2: 'mouseenter',
+                method2: (e) => {
+                    e.currentTarget.style.borderColor = '#1976D2';
+                    e.currentTarget.style.backgroundColor = '#e3f2fd';
+                },
+                type3: 'mouseleave',
+                method3: (e) => {
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                }
+            },
+            child: [
+                $({
+                    tag: 'div',
+                    style: {
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        backgroundColor: '#E3F2FD',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: '16px'
+                    },
+                    child: [
+                        $({
+                            tag: 'i',
+                            att: { className: 'fas fa-user-graduate' },
+                            style: { color: '#1976D2', fontSize: '18px' }
+                        })
+                    ]
+                }),
+                $({
+                    tag: 'div',
+                    style: { flex: 1 },
+                    child: [
+                        $({
+                            tag: 'div',
+                            text: 'Undergraduate Symposium',
+                            style: { color: '#1a2a3a', fontSize: '16px', fontWeight: '600' }
+                        }),
+                        $({
+                            tag: 'div',
+                            text: 'For undergraduate student research papers',
+                            style: { color: '#64748b', fontSize: '13px' }
+                        })
+                    ]
+                }),
+                $({
+                    tag: 'i',
+                    att: { className: 'fas fa-chevron-right' },
+                    style: { color: '#94a3b8', fontSize: '14px' }
+                })
+            ]
+        })
+
+        // Graduate option
+        const gradOption = $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                alignItems: 'center',
+                padding: '16px 20px',
+                backgroundColor: '#f8fafc',
+                borderRadius: '12px',
+                border: '2px solid #e8ecf0',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+            },
+            event: {
+                type: 'click',
+                method: () => {
+                    modal.remove()
+                    openSymposiumSubmission(eventName, eventId, 'graduate')
+                },
+                type2: 'mouseenter',
+                method2: (e) => {
+                    e.currentTarget.style.borderColor = '#7B1FA2';
+                    e.currentTarget.style.backgroundColor = '#F3E5F5';
+                },
+                type3: 'mouseleave',
+                method3: (e) => {
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                }
+            },
+            child: [
+                $({
+                    tag: 'div',
+                    style: {
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        backgroundColor: '#F3E5F5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: '16px'
+                    },
+                    child: [
+                        $({
+                            tag: 'i',
+                            att: { className: 'fas fa-graduation-cap' },
+                            style: { color: '#7B1FA2', fontSize: '18px' }
+                        })
+                    ]
+                }),
+                $({
+                    tag: 'div',
+                    style: { flex: 1 },
+                    child: [
+                        $({
+                            tag: 'div',
+                            text: 'Graduate Symposium',
+                            style: { color: '#1a2a3a', fontSize: '16px', fontWeight: '600' }
+                        }),
+                        $({
+                            tag: 'div',
+                            text: 'For graduate student research papers',
+                            style: { color: '#64748b', fontSize: '13px' }
+                        })
+                    ]
+                }),
+                $({
+                    tag: 'i',
+                    att: { className: 'fas fa-chevron-right' },
+                    style: { color: '#94a3b8', fontSize: '14px' }
+                })
+            ]
+        })
+
+        optionsContainer.appendChild(undergradOption)
+        optionsContainer.appendChild(gradOption)
+
+        const cancelBtn = $({
+            tag: 'button',
+            text: 'Cancel',
+            style: {
+                width: '100%',
+                padding: '12px',
+                backgroundColor: '#f1f5f9',
+                border: 'none',
+                borderRadius: '10px',
+                color: '#475569',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+            },
+            event: {
+                type: 'click',
+                method: () => modal.remove(),
+                type2: 'mouseenter',
+                method2: (e) => {
+                    e.currentTarget.style.backgroundColor = '#e8ecf0';
+                },
+                type3: 'mouseleave',
+                method3: (e) => {
+                    e.currentTarget.style.backgroundColor = '#f1f5f9';
+                }
+            }
+        })
+
+        modalContent.appendChild(header)
+        modalContent.appendChild(optionsContainer)
+        modalContent.appendChild(cancelBtn)
+        modal.appendChild(modalContent)
+        document.body.appendChild(modal)
+    }
+
+    const openSymposiumSubmission = (eventName, eventId, paperType) => {
+        ResearchChairSubmissionModal({
+            eventName: eventName,
+            eventId: eventId,
+            paperType: paperType,
+            onClose: () => {
+                if (window.refreshDocumentsTable) {
+                    window.refreshDocumentsTable()
+                }
+            },
+            onSuccess: () => {
+                if (window.refreshDocumentsTable) {
+                    window.refreshDocumentsTable()
+                }
+            }
+        })
     }
 
     function capitalizeFirstLetter(str) {
