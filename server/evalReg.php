@@ -57,36 +57,133 @@ if (isset($_POST['evaluatorRegister'])) {
         $fullname = trim($_POST['fullname']);
         $center = isset($_POST['center']) && !empty($_POST['center']) ? trim($_POST['center']) : null;
         $eventType = trim($_POST['eventTYpe']);
+        $registrationType = isset($_POST['registrationType']) ? $_POST['registrationType'] : 'center';
+        
+        // Handle categories - ensure they're integers
+        $categories = [];
+        if (isset($_POST['categories']) && !empty($_POST['categories'])) {
+            // If categories is a JSON string
+            if (is_string($_POST['categories'])) {
+                $categories = json_decode($_POST['categories'], true);
+            } 
+            // If categories is an array
+            else if (is_array($_POST['categories'])) {
+                $categories = $_POST['categories'];
+            }
+            // If categories is a comma-separated string
+            else if (is_string($_POST['categories']) && strpos($_POST['categories'], ',') !== false) {
+                $categories = explode(',', $_POST['categories']);
+            }
+            
+            // Ensure all categories are integers
+            $categories = array_map('intval', $categories);
+            // Remove any empty or zero values
+            $categories = array_filter($categories, function($id) {
+                return $id > 0;
+            });
+            // Re-index the array
+            $categories = array_values($categories);
+        }
+
+        // Debug log
+        error_log("Registration Type: " . $registrationType);
+        error_log("Categories: " . print_r($categories, true));
+        error_log("Categories count: " . count($categories));
 
         $id = round(microtime(true) * 1000) . '';
 
-        // Query without category field
-        if ($center) {
-            $newQuery = "INSERT INTO `evaluator` 
-            (evaluator.fullname, evaluator.username, evaluator.password, evaluator.eventid, evaluator.center_id) 
-            VALUES (?, ?, ?, ?, ?)";
-            
-            $stmt = $con->prepare($newQuery);
-            $stmt->bind_param("sssss", $fullname, $user, $pass, $eventType, $center);
-        } else {
-            $newQuery = "INSERT INTO `evaluator` 
-            (evaluator.fullname, evaluator.username, evaluator.password, evaluator.eventid) 
-            VALUES (?, ?, ?, ?)";
-            
-            $stmt = $con->prepare($newQuery);
-            $stmt->bind_param("ssss", $fullname, $user, $pass, $eventType);
+        // Start transaction
+        $con->begin_transaction();
+
+        try {
+            // Query without category field
+            if ($center) {
+                $newQuery = "INSERT INTO `evaluator` 
+                (evaluator.fullname, evaluator.username, evaluator.password, evaluator.eventid, evaluator.center_id) 
+                VALUES (?, ?, ?, ?, ?)";
+                
+                $stmt = $con->prepare($newQuery);
+                $stmt->bind_param("sssss", $fullname, $user, $pass, $eventType, $center);
+            } else {
+                $newQuery = "INSERT INTO `evaluator` 
+                (evaluator.fullname, evaluator.username, evaluator.password, evaluator.eventid) 
+                VALUES (?, ?, ?, ?)";
+                
+                $stmt = $con->prepare($newQuery);
+                $stmt->bind_param("ssss", $fullname, $user, $pass, $eventType);
+            }
+
+            logMemoryUsage('evaluatorRegister - Before Query Execution');
+
+            if ($stmt->execute()) {
+                $evaluatorId = $stmt->insert_id;
+                
+                // If category-based registration, insert into evaluator_categories
+                if ($registrationType === 'category' && !empty($categories)) {
+                    // First, validate that all category IDs exist
+                    $placeholders = implode(',', array_fill(0, count($categories), '?'));
+                    $checkQuery = "SELECT id FROM category WHERE id IN ($placeholders)";
+                    $checkStmt = $con->prepare($checkQuery);
+                    
+                    if ($checkStmt) {
+                        // Prepare types for bind_param
+                        $types = str_repeat('i', count($categories));
+                        $checkStmt->bind_param($types, ...$categories);
+                        $checkStmt->execute();
+                        $result = $checkStmt->get_result();
+                        
+                        $validCategories = [];
+                        while ($row = $result->fetch_assoc()) {
+                            $validCategories[] = (int)$row['id'];
+                        }
+                        $checkStmt->close();
+                        
+                        // Check if all categories are valid
+                        if (count($validCategories) !== count($categories)) {
+                            $invalidCategories = array_diff($categories, $validCategories);
+                            throw new Exception("Invalid category IDs: " . implode(', ', $invalidCategories) . ". Valid IDs are: 1,2,3,4,5");
+                        }
+                        
+                        // Now insert the valid categories
+                        $categoryInsertQuery = "INSERT INTO `evaluator_categories` (evaluator_id, category_id) VALUES (?, ?)";
+                        $categoryStmt = $con->prepare($categoryInsertQuery);
+                        
+                        if ($categoryStmt) {
+                            foreach ($categories as $categoryId) {
+                                $cleanCategoryId = (int)$categoryId;
+                                $cleanEvaluatorId = (int)$evaluatorId;
+                                $categoryStmt->bind_param("ii", $cleanEvaluatorId, $cleanCategoryId);
+                                if (!$categoryStmt->execute()) {
+                                    throw new Exception("Failed to insert category ID $categoryId: " . $categoryStmt->error);
+                                }
+                                error_log("Inserted category: evaluator_id=$cleanEvaluatorId, category_id=$cleanCategoryId");
+                            }
+                            $categoryStmt->close();
+                        } else {
+                            throw new Exception("Failed to prepare category insert statement");
+                        }
+                    } else {
+                        throw new Exception("Failed to prepare category validation statement");
+                    }
+                }
+                
+                $con->commit();
+                $response->status = true;
+                $response->message = 'Save successfully..!';
+                $response->evaluatorId = $evaluatorId;
+                $response->categoriesAdded = count($categories);
+            } else {
+                throw new Exception($stmt->error);
+            }
+
+            $stmt->close();
+        } catch (Exception $e) {
+            $con->rollback();
+            $response->message = $e->getMessage();
+            error_log("Error in evaluatorRegister: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
         }
 
-        logMemoryUsage('evaluatorRegister - Before Query Execution');
-
-        if ($stmt->execute()) {
-            $response->status = true;
-            $response->message = 'Save successfully..!';
-        } else {
-            $response->message = $stmt->error;
-        }
-
-        $stmt->close();
         logMemoryUsage('evaluatorRegister - After Query Execution');
         $con->close();
     }
@@ -117,9 +214,9 @@ if (isset($_POST['auth'])) {
             evaluator.fullname,
             evaluator.password,
             evaluator.center_id,
-            center.name,
+            center.name as center_name,
             evaluator.eventid,
-            event_list.name
+            event_list.name as event_name
             FROM
             evaluator
             LEFT JOIN
@@ -148,7 +245,6 @@ if (isset($_POST['auth'])) {
                 if (password_verify($password, $pass)) {
                     $response->message = '/evaluator';
                     
-                    // Fix: Removed duplicate parameters in serialize
                     $_SESSION['isLog'] = serialize(new Auth(true, $_POST['userType'], $username, $centerName, $id, $acnem,'',$acnem,''));
                     
                     $_SESSION['eventTYpe'] = $evName;
@@ -164,6 +260,23 @@ if (isset($_POST['auth'])) {
                     $_SESSION['centerId'] = $centerId;
                     $_SESSION['userEmail'] = '';
                     $_SESSION['userType'] = 'EVALUATOR';
+
+                    // Get categories for this evaluator (if any)
+                    $categoryQuery = "SELECT c.id, c.name 
+                                     FROM evaluator_categories ec 
+                                     JOIN category c ON ec.category_id = c.id 
+                                     WHERE ec.evaluator_id = ?";
+                    $catStmt = $con->prepare($categoryQuery);
+                    $catStmt->bind_param("i", $id);
+                    $catStmt->execute();
+                    $catResult = $catStmt->get_result();
+                    
+                    $categories = [];
+                    while ($catRow = $catResult->fetch_assoc()) {
+                        $categories[] = $catRow;
+                    }
+                    $_SESSION['userCategories'] = $categories;
+                    $catStmt->close();
 
                     $response->status = true;
                     logMemoryUsage('auth - Login Successful');
@@ -199,7 +312,15 @@ if (isset($_POST['evaluatorsList'])) {
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         logMemoryUsage('evaluatorsList - After DB Connection');
 
-        $query = "SELECT * FROM `evaluator`";
+        $query = "SELECT 
+                    e.*,
+                    c.name as center_name,
+                    GROUP_CONCAT(cat.name SEPARATOR ', ') as category_names
+                  FROM `evaluator` e
+                  LEFT JOIN `center` c ON e.center_id = c.id
+                  LEFT JOIN `evaluator_categories` ec ON e.id = ec.evaluator_id
+                  LEFT JOIN `category` cat ON ec.category_id = cat.id
+                  GROUP BY e.id";
         $result = $con->query($query);
         
         logMemoryUsage('evaluatorsList - Before Fetch');
@@ -234,14 +355,35 @@ if (isset($_POST['deleteEval'])) {
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         logMemoryUsage('deleteEval - After DB Connection');
 
-        $query = "DELETE FROM `evaluator` WHERE `id` = '$userId'";
-        
-        if ($con->query($query)) {
-            $res->status = true;
-            $res->message = "Deleted...!";
-            logMemoryUsage('deleteEval - Delete Successful');
-        } else {
-            $res->message = $con->error;
+        // Start transaction
+        $con->begin_transaction();
+
+        try {
+            // Delete from evaluator_categories first (foreign key constraint)
+            $deleteCategories = "DELETE FROM `evaluator_categories` WHERE `evaluator_id` = ?";
+            $stmt = $con->prepare($deleteCategories);
+            $stmt->bind_param("s", $userId);
+            if (!$stmt->execute()) {
+                throw new Exception($stmt->error);
+            }
+            $stmt->close();
+
+            // Then delete the evaluator
+            $query = "DELETE FROM `evaluator` WHERE `id` = ?";
+            $stmt = $con->prepare($query);
+            $stmt->bind_param("s", $userId);
+            if ($stmt->execute()) {
+                $con->commit();
+                $res->status = true;
+                $res->message = "Deleted...!";
+                logMemoryUsage('deleteEval - Delete Successful');
+            } else {
+                throw new Exception($stmt->error);
+            }
+            $stmt->close();
+        } catch (Exception $e) {
+            $con->rollback();
+            $res->message = $e->getMessage();
             logMemoryUsage('deleteEval - Delete Failed');
         }
 
@@ -291,19 +433,19 @@ if (isset($_POST['getCenters'])) {
 }
 
 // Endpoint to fetch categories
-if (isset($_POST['getCategoriesByCenter'])) {
-    logMemoryUsage('getCategoriesByCenter - Start');
-    logExecutionTime('getCategoriesByCenter');
+if (isset($_POST['getCategories'])) {
+    logMemoryUsage('getCategories - Start');
+    logExecutionTime('getCategories');
 
     $res = [];
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        logMemoryUsage('getCategoriesByCenter - After DB Connection');
+        logMemoryUsage('getCategories - After DB Connection');
 
         $query = "SELECT id, name FROM category ORDER BY name";
         $result = $con->query($query);
         
-        logMemoryUsage('getCategoriesByCenter - Before Fetch');
+        logMemoryUsage('getCategories - Before Fetch');
 
         if ($result) {
             while ($row = $result->fetch_assoc()) {
@@ -312,11 +454,11 @@ if (isset($_POST['getCategoriesByCenter'])) {
             $result->free();
         }
 
-        logMemoryUsage('getCategoriesByCenter - After Fetch');
+        logMemoryUsage('getCategories - After Fetch');
         $con->close();
     }
 
-    logMemoryUsage('getCategoriesByCenter - End');
+    logMemoryUsage('getCategories - End');
     ob_clean();
     echo json_encode($res);
     ob_end_flush();
@@ -376,6 +518,29 @@ if (isset($_POST['evalLeb'])) {
         $res->centerId = $centerId;
         $res->filterCenter = $_SESSION['center'] ?? '';
         logMemoryUsage('evalLeb - Using Session Data Only');
+    }
+
+    // Also fetch categories for this evaluator if they have any
+    if (isset($_SESSION['userId'])) {
+        $userId = $_SESSION['userId'];
+        if ($con = new mysqli($host, $username, $pass, $dbName)) {
+            $categoryQuery = "SELECT c.id, c.name 
+                             FROM evaluator_categories ec 
+                             JOIN category c ON ec.category_id = c.id 
+                             WHERE ec.evaluator_id = ?";
+            $stmt = $con->prepare($categoryQuery);
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $categories = [];
+            while ($row = $result->fetch_assoc()) {
+                $categories[] = $row;
+            }
+            $res->categories = $categories;
+            $stmt->close();
+            $con->close();
+        }
     }
 
     logMemoryUsage('evalLeb - End');

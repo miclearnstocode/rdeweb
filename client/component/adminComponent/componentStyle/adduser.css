@@ -1,445 +1,442 @@
-/* Main container */
-.addUserPanel {
+/* adduser.css - Modern White Background */
+* {
+    box-sizing: border-box;
+}
+
+.add-user-modern {
     height: 100%;
     width: 100%;
-    display: flex;
-    flex-wrap: wrap; /* Allow wrapping on smaller screens */
-    gap: 20px;
-    padding: 20px;
-    box-sizing: border-box;
+    padding: 30px;
+    background: #ffffff;
     overflow-y: auto;
+    font-family: 'Segoe UI', 'Quattrocento Sans', sans-serif;
+}
+
+/* Header */
+.header-modern {
+    text-align: center;
+    margin-bottom: 35px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e8e8e8;
+}
+
+.main-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 8px 0;
+    letter-spacing: 0.5px;
+}
+
+.subtitle {
+    font-size: 16px;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* Tabs */
+.tab-container {
+    display: flex;
+    gap: 4px;
+    background: #f1f3f5;
+    padding: 6px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    flex-wrap: wrap;
     justify-content: center;
 }
 
-/* Left and Right panels */
-.addCapUserPan,
-.addEvalPan {
-    flex: 1 1 45%; /* Flexible basis, will shrink/grow */
-    min-width: 400px; /* Minimum width before wrapping */
-    max-width: 600px; /* Maximum width */
-    height: auto;
-    margin: 0 auto;
-    background-color: rgba(0,0,0,0.1);
-    border-radius: 15px;
-    padding: 25px 20px;
-    box-sizing: border-box;
-    border: solid thin rgba(100,100,100,.5);
-}
-
-/* Headers */
-.adminLabel,
-.evalAdminLabel {
-    font-family: 'Quattrocento Sans', sans-serif;
-    font-weight: 800;
-    color: rgb(211, 211, 211);
-    font-size: 1.6vw;
-    margin: 0 0 25px 0;
+.tab-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 12px 24px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
     text-align: center;
-    width: 100%;
-    padding: 10px 0;
-    border-bottom: 2px solid rgba(0, 191, 255, 0.3);
-    letter-spacing: 1px;
 }
 
-/* Account registration containers */
-.encodeP.rightP {
-    border-radius: 12px;
-    background-color: rgba(205, 205, 205, 0.1);
-    border: solid thin rgba(100,100,100,.3);
-    padding: 25px 20px;
-    box-sizing: border-box;
-    margin: 15px 0;
-    width: 100%;
+.tab-btn:hover {
+    color: #1a1a2e;
+    background: rgba(0, 0, 0, 0.05);
 }
 
-/* Table layout for evaluator form */
-.addUserTable {
-    width: 100%;
+.tab-btn.active {
+    background: #ffffff;
+    color: #1976d2;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Tab Content */
+.tab-content {
+    max-width: 650px;
     margin: 0 auto;
-    border-collapse: collapse;
 }
 
-.addUserTable tr td {
-    padding: 8px 0;
+/* Form Container */
+.form-container {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 32px 36px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e8e8e8;
+    margin-bottom: 20px;
 }
 
-/* Labels */
-.labelAdmin.ev {
-    font-family: 'Quattrocento Sans', sans-serif;
-    color: rgb(211, 211, 211);
-    font-size: 1.1vw;
-    padding: 5px 0;
-    text-align: left;
+.form-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 24px 0;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label-modern {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+/* Modern Inputs */
+.modern-input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-family: inherit;
+    color: #1a1a2e;
+    background: #f8f9fa;
+    border: 2px solid #e8e8e8;
+    border-radius: 10px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.modern-input::placeholder {
+    color: #9ca3af;
+}
+
+.modern-input:hover {
+    border-color: #d1d5db;
+    background: #ffffff;
+}
+
+.modern-input:focus {
+    border-color: #1976d2;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.1);
+}
+
+/* Modern Select */
+.modern-select {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    font-family: inherit;
+    color: #1a1a2e;
+    background: #f8f9fa url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") no-repeat right 16px center;
+    background-size: 16px;
+    border: 2px solid #e8e8e8;
+    border-radius: 10px;
+    outline: none;
+    transition: all 0.3s ease;
+    appearance: none;
+    cursor: pointer;
+}
+
+.modern-select:hover {
+    border-color: #d1d5db;
+    background-color: #ffffff;
+}
+
+.modern-select:focus {
+    border-color: #1976d2;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(25, 118, 210, 0.1);
+}
+
+.modern-select option {
+    background: #ffffff;
+    color: #1a1a2e;
+    padding: 8px;
+}
+
+.modern-select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.modern-select[multiple] {
+    appearance: none;
+    background-image: none;
+    padding: 8px 12px;
+}
+
+/* User Type Display */
+.user-type-display-modern {
+    background: #f0f7ff;
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin: 16px 0 20px 0;
+    border-left: 4px solid #1976d2;
+    text-align: center;
+}
+
+.user-type-label-modern {
+    font-size: 14px;
+    color: #374151;
     font-weight: 500;
 }
 
-/* Input and Select containers */
-.addUserTable tr td:has(.inputAddUser),
-.addUserTable tr td:has(.selectAddUser) {
-    width: 100%;
-}
-
-/* Input fields */
-.inputAddUser,
-.selectAddUser {
-    outline: none;
-    border: solid thin rgba(255,255,255,0.2);
-    background-color: rgba(50,50,50,0.6);
-    width: 100%;
-    height: 45px;
-    border-radius: 8px;
-    padding: 0 15px;
+.user-type-value-modern {
     font-size: 15px;
-    color: #fff;
-    font-family: 'Quattrocento Sans', sans-serif;
-    transition: all 0.3s ease;
-    box-sizing: border-box;
+    font-weight: 600;
+    margin-left: 4px;
+    color: #1976d2;
 }
 
-.selectAddUser {
+/* Radio Group */
+.radio-group {
+    display: flex;
+    gap: 24px;
+    padding: 8px 0;
+    flex-wrap: wrap;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #374151;
     cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-    background-size: 15px;
 }
 
-.selectAddUser option {
-    background-color: #333;
-    color: #fff;
-    padding: 10px;
+.radio-label input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #1976d2;
+    cursor: pointer;
+    margin: 0;
 }
 
-.inputAddUser:hover,
-.selectAddUser:hover {
-    border-color: deepskyblue;
-    background-color: rgba(70,70,70,0.8);
-}
-
-.inputAddUser:focus,
-.selectAddUser:focus {
-    border-color: #4CAF50;
-    background-color: rgba(60,60,60,0.9);
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
-}
-
-/* RDE Staff form inputs */
-.inputRDE {
-    border: solid thin rgba(255,255,255,0.2);
-    background-color: rgba(50,50,50,0.6);
+/* Submit Button */
+.btn-submit {
     width: 100%;
-    height: 45px;
-    border-radius: 8px;
-    padding: 0 15px;
-    font-size: 15px;
-    color: #fff;
-    font-family: 'Quattrocento Sans', sans-serif;
-    transition: all 0.3s ease;
-    box-sizing: border-box;
-    margin: 5px 0;
-}
-
-.inputRDE::placeholder {
-    color: #999;
-    opacity: 0.7;
-}
-
-.inputRDE:hover {
-    border-color: deepskyblue;
-}
-
-.inputRDE:focus {
-    border-color: #4CAF50;
-    background-color: rgba(60,60,60,0.9);
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
-}
-
-/* Submit buttons */
-.submitAddUser,
-.submitEval,
-.subStaff {
-    width: 100%;
-    height: 50px;
-    border-radius: 8px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    color: #ffffff;
+    background: #cccccc;
     border: none;
-    font-family: 'Quattrocento Sans', sans-serif;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin: 20px 0 10px 0;
-    background-color: #4CAF50;
-    color: white;
-    opacity: 1;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.submitAddUser:disabled,
-.submitEval:disabled,
-.subStaff:disabled {
-    opacity: 0.5;
+    border-radius: 10px;
     cursor: not-allowed;
-    background-color: #cccccc;
-    color: #666;
-    box-shadow: none;
+    opacity: 0.5;
+    transition: all 0.3s ease;
+    margin-top: 8px;
 }
 
-.submitAddUser:hover:not(:disabled),
-.submitEval:hover:not(:disabled),
-.subStaff:hover:not(:disabled) {
-    background-color: #45a049;
+.btn-submit:not(:disabled) {
+    opacity: 1;
+    cursor: pointer;
+    background: #1976d2;
+}
+
+.btn-submit:not(:disabled):hover {
+    background: #1565c0;
     transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
 }
 
-.submitAddUser:active:not(:disabled),
-.submitEval:active:not(:disabled),
-.subStaff:active:not(:disabled) {
+.btn-submit:not(:disabled):active {
     transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Center Director form specific */
-#centerSelection {
-    margin: 10px 0;
+/* Category Radio Buttons - Modern Style */
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    padding: 10px 0;
 }
 
-/* Responsive breakpoints */
-@media screen and (max-width: 1200px) {
-    .adminLabel,
-    .evalAdminLabel {
-        font-size: 1.8vw;
-    }
-    
-    .labelAdmin.ev {
-        font-size: 1.3vw;
-    }
-}
-
-@media screen and (max-width: 900px) {
-    .addUserPanel {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .addCapUserPan,
-    .addEvalPan {
-        width: 90%;
-        min-width: auto;
-    }
-    
-    .adminLabel,
-    .evalAdminLabel {
-        font-size: 2.2vw;
-    }
-    
-    .labelAdmin.ev {
-        font-size: 1.6vw;
-    }
-}
-
-@media screen and (max-width: 600px) {
-    .addCapUserPan,
-    .addEvalPan {
-        width: 95%;
-        padding: 15px 10px;
-    }
-    
-    .adminLabel,
-    .evalAdminLabel {
-        font-size: 4vw;
-    }
-    
-    .labelAdmin.ev {
-        font-size: 3.5vw;
-    }
-    
-    .inputAddUser,
-    .selectAddUser,
-    .inputRDE {
-        font-size: 14px;
-        height: 40px;
-    }
-    
-    .submitAddUser,
-    .submitEval,
-    .subStaff {
-        height: 45px;
-        font-size: 16px;
-    }
-}
-
-/* Fix for the select dropdown arrow in different browsers */
-.selectAddUser::-ms-expand {
-    display: none;
-}
-
-/* Container for RDE form */
-.rdeForm {
-    width: 100%;
+.category-radio-label {
     display: flex;
-    flex-direction: column;
     align-items: center;
-}
-
-/* Add spacing between form elements */
-.encodeP.rightP > div,
-.encodeP.rightP > table {
-    margin-bottom: 15px;
-}
-
-/* Ensure buttons are centered */
-#centerDirectorSubmitBtn,
-#rdeSubmitBtn,
-#submitEvalBtn {
-    width: 100%;
-    max-width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-/* Add these new classes */
-.encodeUser-container,
-.rdeUser-container {
-    height: auto;
-    width: 100%;
-    max-width: 600px;
-    margin: 2vh auto;
-    background-color: rgba(205, 205, 205, 0.2);
-    border: solid thin rgba(100,100,100,.5);
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f8f9fa;
+    border: 2px solid #e8e8e8;
     border-radius: 10px;
-    padding: 20px 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.form-label {
-    font-family: 'Quattrocento sans', sans-serif;
-    color: rgb(211, 211, 211);
-    font-size: 1.2vw;
-    margin: 0.5vw;
-    width: fit-content;
-    padding: 5px;
-}
-
-.input-container {
-    width: 100%;
-    max-width: 500px;
-    margin: 12px auto;
-    display: flex;
-    justify-content: center;
-}
-
-/* Update existing input styles */
-.inputAddUser,
-.selectAddUser,
-.inputRDE {
-    width: 100%;
-    height: 50px;
-    padding: 12px 16px;
-    font-size: 16px;
-    border-radius: 10px;
-    font-family: 'Quattrocento sans', sans-serif;
-    color: #fffbfb;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
-    outline: none;
-    transition: all 0.3s ease;
-    background-color: #3a3a3a;
-}
-
-/* Select specific styles */
-.selectAddUser {
     cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-    background-size: 15px;
-}
-
-.selectAddUser option {
-    background-color: #333;
-    color: #fff;
-}
-
-/* Hover and focus states */
-.inputAddUser:hover,
-.selectAddUser:hover,
-.inputRDE:hover {
-    border-color: deepskyblue;
-}
-
-.inputAddUser:focus,
-.selectAddUser:focus,
-.inputRDE:focus {
-    border-color: #4CAF50;
-    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
-    background-color: rgba(60,60,60,0.9);
-}
-
-/* Submit buttons */
-.submitAddUser,
-.submitEval,
-.subStaff {
-    width: 100%;
-    max-width: 500px;
-    height: 50px;
-    padding: 12px 16px;
-    font-family: 'Quattrocento sans', sans-serif;
-    margin: 20px auto;
-    font-size: 18px;
-    text-align: center;
-    border-radius: 10px;
-    border: none;
-    font-weight: bold;
     transition: all 0.3s ease;
-    display: block;
-    cursor: not-allowed;
-    opacity: 0.5;
-    background-color: #cccccc;
-    color: #7e7e7e;
+    font-size: 14px;
+    color: #374151;
+    font-weight: 500;
+    user-select: none;
 }
 
-.submitAddUser:not(:disabled),
-.submitEval:not(:disabled),
-.subStaff:not(:disabled) {
-    opacity: 1;
+.category-radio-label:hover {
+    border-color: #1976d2;
+    background: #f0f7ff;
+    transform: translateY(-1px);
+}
+
+.category-radio-label:has(input:checked) {
+    border-color: #1976d2;
+    background: #e3f2fd;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.15);
+}
+
+.category-radio-input {
+    width: 18px;
+    height: 18px;
+    accent-color: #1976d2;
     cursor: pointer;
-    background-color: #4CAF50;
-    color: white;
+    flex-shrink: 0;
+    margin: 0;
 }
 
-.submitAddUser:not(:disabled):hover,
-.submitEval:not(:disabled):hover,
-.subStaff:not(:disabled):hover {
-    background-color: #45a049;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+.category-radio-input:checked {
+    accent-color: #1976d2;
 }
 
-.user-type-display {
-    width: 100%;
-    max-width: 500px;
-    margin: 10px auto;
-    padding: 12px 16px;
-    background: rgba(76, 175, 80, 0.1);
+.category-radio-text {
+    font-size: 14px;
+    color: #1a1a2e;
+}
+
+/* Selected Categories Display */
+.selected-categories-display {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #f0f7ff;
     border-radius: 8px;
-    border-left: 4px solid #4CAF50;
-    font-family: 'Quattrocento Sans', sans-serif;
-    text-align: center;
+    border-left: 4px solid #1976d2;
+    font-size: 14px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 
-.user-type-label {
-    color: rgb(211, 211, 211);
-    font-size: 15px;
+.selected-label {
+    color: #374151;
+    font-weight: 600;
 }
 
-.user-type-value {
-    color: #4CAF50;
-    font-weight: bold;
-    font-size: 16px;
-    margin-left: 5px;
+.selected-values {
+    color: #1976d2;
+    font-weight: 500;
+}
+
+.selected-values:empty::before {
+    content: 'None';
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+/* Responsive category grid */
+@media screen and (max-width: 600px) {
+    .category-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .category-radio-label {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+}
+
+@media screen and (max-width: 400px) {
+    .category-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Evaluator form adjustments */
+.evaluator-form .form-group {
+    margin-bottom: 18px;
+}
+
+/* Evaluator form special styles */
+.evaluator-form .form-group {
+    margin-bottom: 18px;
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+    .add-user-modern {
+        padding: 16px;
+    }
+
+    .main-title {
+        font-size: 22px;
+    }
+
+    .form-container {
+        padding: 20px 18px;
+    }
+
+    .tab-container {
+        max-width: 100%;
+        gap: 4px;
+        padding: 4px;
+    }
+
+    .tab-btn {
+        min-width: 80px;
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+
+    .radio-group {
+        gap: 12px;
+    }
+
+    .form-title {
+        font-size: 18px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .tab-btn {
+        min-width: 60px;
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .form-container {
+        padding: 16px 14px;
+    }
+
+    .modern-input,
+    .modern-select {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .btn-submit {
+        padding: 12px;
+        font-size: 15px;
+    }
 }
