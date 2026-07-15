@@ -1,4 +1,4 @@
-import {$, Request, SpecialChar, Waiting, ConfirmationAlert} from '../../../lib/lib.js'
+import { $, Request, SpecialChar, Waiting, ConfirmationAlert } from '../../../lib/lib.js'
 
 export const ExternalAccount = () => {
     let passA, passB
@@ -9,17 +9,16 @@ export const ExternalAccount = () => {
         style: {
             width: '100%',
             textAlign: 'center',
-            fontFamily: 'arial black, san-serif',
-            color: 'rgba(200,200,200,0.5)',
+            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+            color: '#1e293b',
             marginBottom: '2vh',
-            fontSize: '1.5vw',
-            letterSpacing: '0.1vw',
-            textTransform: 'uppercase',
-            textShadow: '0 0 10px rgba(0,191,255,0.3)',
+            fontSize: '20px',
+            letterSpacing: '-0.3px',
+            fontWeight: '600',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'left',
-            gap: '1vw'
+            gap: '12px'
         },
         child: [
             $({
@@ -28,8 +27,8 @@ export const ExternalAccount = () => {
                     className: 'fa-solid fa-globe'
                 },
                 style: {
-                    fontSize: '1.8vw',
-                    color: '#00bcd4'
+                    fontSize: '22px',
+                    color: '#3b82f6'
                 }
             }),
             $({
@@ -43,17 +42,28 @@ export const ExternalAccount = () => {
         return ($({
             tag: 'div',
             style: {
-                height: '5vh',
-                border: '1px solid rgba(255,255,255,0.1)',
-                width: '25vw',
-                marginBottom: '2vh',
-                borderRadius: '2vw',
+                height: '38px',
+                border: '1px solid #e2e8f0',
+                width: '250px',
+                borderRadius: '8px',
                 display: 'flex',
-                padding: '0 1vw',
-                backgroundColor: 'rgba(0,0,0,0.4)',
-                color: '#bbb',
+                padding: '0 12px',
+                backgroundColor: '#f8fafc',
+                color: '#1e293b',
                 alignItems: 'center',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.2s ease'
+            },
+            event: {
+                focusin: (e) => {
+                    e.currentTarget.style.borderColor = '#3b82f6'
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                    e.currentTarget.style.backgroundColor = '#ffffff'
+                },
+                focusout: (e) => {
+                    e.currentTarget.style.borderColor = '#e2e8f0'
+                    e.currentTarget.style.boxShadow = 'none'
+                    e.currentTarget.style.backgroundColor = '#f8fafc'
+                }
             },
             child: [
                 $({
@@ -62,9 +72,9 @@ export const ExternalAccount = () => {
                         className: 'fa-solid fa-search'
                     },
                     style: {
-                        fontSize: '1vw',
-                        color: '#666',
-                        marginRight: '0.5vw'
+                        fontSize: '14px',
+                        color: '#94a3b8',
+                        marginRight: '8px'
                     }
                 }),
                 $({
@@ -79,9 +89,9 @@ export const ExternalAccount = () => {
                         outline: 'none',
                         height: '100%',
                         width: '100%',
-                        color: '#e0e0e0',
-                        fontSize: '0.95vw',
-                        fontFamily: 'Segoe UI, sans-serif'
+                        color: '#1e293b',
+                        fontSize: '14px',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                     },
                     event: {
                         type: 'input',
@@ -110,12 +120,13 @@ export const ExternalAccount = () => {
                 style: {
                     width: width,
                     textAlign: align,
-                    fontFamily: 'Segoe UI, sans-serif',
-                    fontSize: '0.9vw',
-                    color: '#888',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                    fontSize: '11px',
+                    color: '#94a3b8',
                     fontWeight: '600',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.05vw'
+                    letterSpacing: '0.5px',
+                    padding: '0 8px'
                 },
                 text: label
             }))
@@ -126,16 +137,18 @@ export const ExternalAccount = () => {
             style: {
                 display: 'flex',
                 width: '100%',
-                padding: '1vh 0',
-                marginBottom: '0.5vh',
-                borderBottom: '2px solid rgba(255,255,255,0.1)',
-                minWidth: 'fit-content'
+                padding: '10px 0',
+                marginBottom: '4px',
+                borderBottom: '1px solid #e2e8f0',
+                minWidth: 'fit-content',
+                backgroundColor: '#f8fafc',
+                borderRadius: '8px 8px 0 0'
             },
             child: [
                 Leb({ label: 'ID', width: '10%' }),
-                Leb({ label: 'ACCOUNT NAME', width: '25%' }),
-                Leb({ label: 'EMAIL', width: '35%' }),
-                Leb({ label: 'ACTIONS', width: '30%', align: 'center' })
+                Leb({ label: 'Account Name', width: '25%' }),
+                Leb({ label: 'Email', width: '35%' }),
+                Leb({ label: 'Actions', width: '30%', align: 'center' })
             ]
         }))
     }
@@ -149,39 +162,42 @@ export const ExternalAccount = () => {
                 left: '0',
                 width: '100%',
                 height: '100%',
-                backgroundColor: 'rgba(0,0,0,0.9)',
+                backgroundColor: 'rgba(15,23,42,0.6)',
                 display: 'flex',
                 zIndex: '9999',
-                backdropFilter: 'blur(5px)'
+                backdropFilter: 'blur(4px)'
             },
             child: [
                 $({
                     tag: 'div',
                     style: {
-                        width: '32%',
+                        width: '420px',
+                        maxWidth: '90%',
                         height: 'fit-content',
-                        background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
+                        backgroundColor: '#ffffff',
                         margin: 'auto',
-                        padding: '2.5rem',
-                        borderRadius: '1vw',
+                        padding: '32px',
+                        borderRadius: '12px',
                         position: 'relative',
-                        border: '1px solid #333',
-                        boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
                     },
                     child: [
                         $({
                             tag: 'div',
                             style: {
                                 position: 'absolute',
-                                top: '1.5vh',
-                                right: '1.5vw',
+                                top: '16px',
+                                right: '16px',
                                 cursor: 'pointer',
-                                color: '#666',
-                                fontSize: '1.5vw',
-                                transition: 'all 0.3s ease'
+                                color: '#94a3b8',
+                                fontSize: '20px',
+                                transition: 'all 0.2s ease',
+                                padding: '8px',
+                                borderRadius: '8px'
                             },
                             att: {
-                                className: 'fa-solid fa-circle-xmark'
+                                className: 'fa-solid fa-times'
                             },
                             event: {
                                 type: 'click',
@@ -189,62 +205,67 @@ export const ExternalAccount = () => {
                                     modal.remove()
                                 },
                                 mouseover: (e) => {
-                                    e.target.style.color = '#00bcd4'
+                                    e.target.style.color = '#1e293b'
+                                    e.target.style.backgroundColor = '#f1f5f9'
                                 },
                                 mouseout: (e) => {
-                                    e.target.style.color = '#666'
+                                    e.target.style.color = '#94a3b8'
+                                    e.target.style.backgroundColor = 'transparent'
                                 }
                             }
                         }),
                         $({
                             tag: 'div',
                             style: {
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '1.8vw',
-                                color: '#f44336',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '20px',
+                                color: '#ef4444',
                                 textAlign: 'center',
-                                marginBottom: '1vh',
+                                marginBottom: '8px',
                                 fontWeight: '600',
-                                letterSpacing: '0.1vw'
+                                letterSpacing: '-0.3px'
                             },
                             child: [
                                 $({
                                     tag: 'span',
                                     att: {
                                         className: 'fa-solid fa-triangle-exclamation me-2'
+                                    },
+                                    style: {
+                                        marginRight: '8px'
                                     }
                                 }),
                                 $({
                                     tag: 'span',
-                                    text: 'Warning !'
+                                    text: 'Delete Account'
                                 })
                             ]
                         }),
                         $({
                             tag: 'div',
                             style: {
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '1vw',
-                                color: '#888',
-                                marginBottom: '3vh',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '14px',
+                                color: '#64748b',
+                                marginBottom: '20px',
                                 textAlign: 'center',
-                                padding: '0.5vh 0',
-                                borderBottom: '1px solid #333'
+                                padding: '8px 0'
                             },
-                            text: 'Are you sure you want to delete this account?'
+                            text: 'Are you sure you want to delete this account? This action cannot be undone.'
                         }),
                         $({
                             tag: 'div',
                             style: {
-                                backgroundColor: '#333',
-                                padding: '1rem',
-                                borderRadius: '0.5vw',
-                                marginBottom: '2vh',
+                                backgroundColor: '#f8fafc',
+                                padding: '12px 16px',
+                                borderRadius: '8px',
+                                marginBottom: '24px',
                                 textAlign: 'center',
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '1.1vw',
-                                color: '#e0e0e0',
-                                border: '1px solid #444'
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '15px',
+                                color: '#1e293b',
+                                border: '1px solid #e2e8f0',
+                                fontWeight: '500'
                             },
                             text: accountName
                         }),
@@ -253,22 +274,22 @@ export const ExternalAccount = () => {
                             style: {
                                 display: 'flex',
                                 justifyContent: 'center',
-                                gap: '1vw',
-                                marginTop: '2vh'
+                                gap: '12px'
                             },
                             child: [
                                 $({
                                     tag: 'button',
                                     style: {
-                                        padding: '0.8rem 2rem',
+                                        padding: '8px 24px',
                                         backgroundColor: 'transparent',
-                                        border: '1px solid #444',
-                                        borderRadius: '2vw',
-                                        color: '#999',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '8px',
+                                        color: '#64748b',
                                         cursor: 'pointer',
-                                        fontSize: '1vw',
-                                        fontFamily: 'Segoe UI, sans-serif',
-                                        transition: 'all 0.3s ease',
+                                        fontSize: '13px',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                        fontWeight: '500',
+                                        transition: 'all 0.2s ease',
                                         flex: '1'
                                     },
                                     text: 'Cancel',
@@ -278,28 +299,26 @@ export const ExternalAccount = () => {
                                             modal.remove()
                                         },
                                         mouseover: (e) => {
-                                            e.target.style.backgroundColor = '#333'
-                                            e.target.style.color = '#fff'
+                                            e.target.style.backgroundColor = '#f1f5f9'
                                         },
                                         mouseout: (e) => {
                                             e.target.style.backgroundColor = 'transparent'
-                                            e.target.style.color = '#999'
                                         }
                                     }
                                 }),
                                 $({
                                     tag: 'button',
                                     style: {
-                                        padding: '0.8rem 2rem',
-                                        background: 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)',
+                                        padding: '8px 24px',
+                                        backgroundColor: '#ef4444',
                                         border: 'none',
-                                        borderRadius: '2vw',
+                                        borderRadius: '8px',
                                         color: '#fff',
                                         cursor: 'pointer',
-                                        fontSize: '1vw',
-                                        fontFamily: 'Segoe UI, sans-serif',
+                                        fontSize: '13px',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                         fontWeight: '600',
-                                        transition: 'all 0.3s ease',
+                                        transition: 'all 0.2s ease',
                                         flex: '1'
                                     },
                                     text: 'Delete',
@@ -334,6 +353,12 @@ export const ExternalAccount = () => {
                                                 loading.remove()
                                                 alert('An error occurred')
                                             }
+                                        },
+                                        mouseover: (e) => {
+                                            e.target.style.backgroundColor = '#dc2626'
+                                        },
+                                        mouseout: (e) => {
+                                            e.target.style.backgroundColor = '#ef4444'
                                         }
                                     }
                                 })
@@ -356,39 +381,44 @@ export const ExternalAccount = () => {
                 left: '0',
                 width: '100%',
                 height: '100%',
-                backgroundColor: 'rgba(0,0,0,0.9)',
+                backgroundColor: 'rgba(15,23,42,0.6)',
                 display: 'flex',
                 zIndex: '9999',
-                backdropFilter: 'blur(5px)'
+                backdropFilter: 'blur(4px)'
             },
             child: [
                 $({
                     tag: 'div',
                     style: {
-                        width: '40%',
+                        width: '480px',
+                        maxWidth: '92%',
                         height: 'fit-content',
-                        background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
+                        backgroundColor: '#ffffff',
                         margin: 'auto',
-                        padding: '2.5rem',
-                        borderRadius: '1vw',
+                        padding: '32px',
+                        borderRadius: '12px',
                         position: 'relative',
-                        border: '1px solid #333',
-                        boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+                        maxHeight: '90vh',
+                        overflowY: 'auto'
                     },
                     child: [
                         $({
                             tag: 'div',
                             style: {
                                 position: 'absolute',
-                                top: '1.5vh',
-                                right: '1.5vw',
+                                top: '16px',
+                                right: '16px',
                                 cursor: 'pointer',
-                                color: '#666',
-                                fontSize: '1.5vw',
-                                transition: 'all 0.3s ease'
+                                color: '#94a3b8',
+                                fontSize: '20px',
+                                transition: 'all 0.2s ease',
+                                padding: '8px',
+                                borderRadius: '8px'
                             },
                             att: {
-                                className: 'fa-solid fa-circle-xmark'
+                                className: 'fa-solid fa-times'
                             },
                             event: {
                                 type: 'click',
@@ -396,29 +426,35 @@ export const ExternalAccount = () => {
                                     modal.remove()
                                 },
                                 mouseover: (e) => {
-                                    e.target.style.color = '#00bcd4'
+                                    e.target.style.color = '#1e293b'
+                                    e.target.style.backgroundColor = '#f1f5f9'
                                 },
                                 mouseout: (e) => {
-                                    e.target.style.color = '#666'
+                                    e.target.style.color = '#94a3b8'
+                                    e.target.style.backgroundColor = 'transparent'
                                 }
                             }
                         }),
                         $({
                             tag: 'div',
                             style: {
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '1.8vw',
-                                color: '#00bcd4',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '20px',
+                                color: '#1e293b',
                                 textAlign: 'center',
-                                marginBottom: '3vh',
+                                marginBottom: '24px',
                                 fontWeight: '600',
-                                letterSpacing: '0.1vw'
+                                letterSpacing: '-0.3px'
                             },
                             child: [
                                 $({
                                     tag: 'span',
                                     att: {
-                                        className: 'fa-solid fa-plus-circle me-2'
+                                        className: 'fa-solid fa-user-plus me-2'
+                                    },
+                                    style: {
+                                        color: '#3b82f6',
+                                        marginRight: '8px'
                                     }
                                 }),
                                 $({
@@ -434,7 +470,7 @@ export const ExternalAccount = () => {
                                 $({
                                     tag: 'div',
                                     style: {
-                                        marginBottom: '2.5vh',
+                                        marginBottom: '20px',
                                         position: 'relative'
                                     },
                                     child: [
@@ -442,11 +478,11 @@ export const ExternalAccount = () => {
                                             tag: 'div',
                                             style: {
                                                 position: 'absolute',
-                                                left: '1vw',
+                                                left: '12px',
                                                 top: '50%',
                                                 transform: 'translateY(-50%)',
-                                                color: '#666',
-                                                fontSize: '1vw',
+                                                color: '#94a3b8',
+                                                fontSize: '14px',
                                                 zIndex: '1'
                                             },
                                             att: {
@@ -464,24 +500,27 @@ export const ExternalAccount = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '0.8rem 2.5rem',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '0.5vw',
-                                                color: '#fff',
-                                                fontSize: '1vw',
+                                                padding: '10px 12px 10px 40px',
+                                                backgroundColor: '#f8fafc',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: '8px',
+                                                color: '#1e293b',
+                                                fontSize: '14px',
                                                 outline: 'none',
-                                                transition: 'all 0.3s ease',
-                                                boxSizing: 'border-box'
+                                                transition: 'all 0.2s ease',
+                                                boxSizing: 'border-box',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                                             },
                                             event: {
                                                 focus: (e) => {
-                                                    e.target.style.borderColor = '#00bcd4'
-                                                    e.target.style.backgroundColor = '#3a3a3a'
+                                                    e.target.style.borderColor = '#3b82f6'
+                                                    e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                                                    e.target.style.backgroundColor = '#ffffff'
                                                 },
                                                 blur: (e) => {
-                                                    e.target.style.borderColor = '#444'
-                                                    e.target.style.backgroundColor = '#333'
+                                                    e.target.style.borderColor = '#e2e8f0'
+                                                    e.target.style.boxShadow = 'none'
+                                                    e.target.style.backgroundColor = '#f8fafc'
                                                 }
                                             }
                                         })
@@ -492,7 +531,7 @@ export const ExternalAccount = () => {
                                 $({
                                     tag: 'div',
                                     style: {
-                                        marginBottom: '2.5vh',
+                                        marginBottom: '20px',
                                         position: 'relative'
                                     },
                                     child: [
@@ -500,11 +539,11 @@ export const ExternalAccount = () => {
                                             tag: 'div',
                                             style: {
                                                 position: 'absolute',
-                                                left: '1vw',
+                                                left: '12px',
                                                 top: '50%',
                                                 transform: 'translateY(-50%)',
-                                                color: '#666',
-                                                fontSize: '1vw',
+                                                color: '#94a3b8',
+                                                fontSize: '14px',
                                                 zIndex: '1'
                                             },
                                             att: {
@@ -522,24 +561,27 @@ export const ExternalAccount = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '0.8rem 2.5rem',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '0.5vw',
-                                                color: '#fff',
-                                                fontSize: '1vw',
+                                                padding: '10px 12px 10px 40px',
+                                                backgroundColor: '#f8fafc',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: '8px',
+                                                color: '#1e293b',
+                                                fontSize: '14px',
                                                 outline: 'none',
-                                                transition: 'all 0.3s ease',
-                                                boxSizing: 'border-box'
+                                                transition: 'all 0.2s ease',
+                                                boxSizing: 'border-box',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                                             },
                                             event: {
                                                 focus: (e) => {
-                                                    e.target.style.borderColor = '#00bcd4'
-                                                    e.target.style.backgroundColor = '#3a3a3a'
+                                                    e.target.style.borderColor = '#3b82f6'
+                                                    e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                                                    e.target.style.backgroundColor = '#ffffff'
                                                 },
                                                 blur: (e) => {
-                                                    e.target.style.borderColor = '#444'
-                                                    e.target.style.backgroundColor = '#333'
+                                                    e.target.style.borderColor = '#e2e8f0'
+                                                    e.target.style.boxShadow = 'none'
+                                                    e.target.style.backgroundColor = '#f8fafc'
                                                 }
                                             }
                                         })
@@ -550,7 +592,7 @@ export const ExternalAccount = () => {
                                 $({
                                     tag: 'div',
                                     style: {
-                                        marginBottom: '2.5vh',
+                                        marginBottom: '16px',
                                         position: 'relative'
                                     },
                                     child: [
@@ -558,11 +600,11 @@ export const ExternalAccount = () => {
                                             tag: 'div',
                                             style: {
                                                 position: 'absolute',
-                                                left: '1vw',
+                                                left: '12px',
                                                 top: '50%',
                                                 transform: 'translateY(-50%)',
-                                                color: '#666',
-                                                fontSize: '1vw',
+                                                color: '#94a3b8',
+                                                fontSize: '14px',
                                                 zIndex: '1'
                                             },
                                             att: {
@@ -582,15 +624,16 @@ export const ExternalAccount = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '0.8rem 2.5rem',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '0.5vw',
-                                                color: '#fff',
-                                                fontSize: '1vw',
+                                                padding: '10px 12px 10px 40px',
+                                                backgroundColor: '#f8fafc',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: '8px',
+                                                color: '#1e293b',
+                                                fontSize: '14px',
                                                 outline: 'none',
-                                                transition: 'all 0.3s ease',
-                                                boxSizing: 'border-box'
+                                                transition: 'all 0.2s ease',
+                                                boxSizing: 'border-box',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                                             },
                                             elementHandler: (el) => {
                                                 passA = el
@@ -598,12 +641,14 @@ export const ExternalAccount = () => {
                                             },
                                             event: {
                                                 focus: (e) => {
-                                                    e.target.style.borderColor = '#00bcd4'
-                                                    e.target.style.backgroundColor = '#3a3a3a'
+                                                    e.target.style.borderColor = '#3b82f6'
+                                                    e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                                                    e.target.style.backgroundColor = '#ffffff'
                                                 },
                                                 blur: (e) => {
-                                                    e.target.style.borderColor = '#444'
-                                                    e.target.style.backgroundColor = '#333'
+                                                    e.target.style.borderColor = '#e2e8f0'
+                                                    e.target.style.boxShadow = 'none'
+                                                    e.target.style.backgroundColor = '#f8fafc'
                                                 }
                                             }
                                         }),
@@ -611,14 +656,14 @@ export const ExternalAccount = () => {
                                             tag: 'div',
                                             style: {
                                                 position: 'absolute',
-                                                right: '1vw',
+                                                right: '12px',
                                                 top: '50%',
                                                 transform: 'translateY(-50%)',
-                                                color: '#666',
-                                                fontSize: '1vw',
+                                                color: '#94a3b8',
+                                                fontSize: '14px',
                                                 cursor: 'pointer',
                                                 zIndex: '1',
-                                                transition: 'color 0.3s ease'
+                                                transition: 'color 0.2s ease'
                                             },
                                             att: {
                                                 className: 'fa-solid fa-eye-slash toggle-password',
@@ -636,6 +681,12 @@ export const ExternalAccount = () => {
                                                         target.type = 'password'
                                                         icon.className = 'fa-solid fa-eye-slash'
                                                     }
+                                                },
+                                                mouseover: (e) => {
+                                                    e.target.style.color = '#3b82f6'
+                                                },
+                                                mouseout: (e) => {
+                                                    e.target.style.color = '#94a3b8'
                                                 }
                                             }
                                         })
@@ -646,7 +697,7 @@ export const ExternalAccount = () => {
                                 $({
                                     tag: 'div',
                                     style: {
-                                        marginBottom: '3vh',
+                                        marginBottom: '12px',
                                         position: 'relative'
                                     },
                                     child: [
@@ -654,11 +705,11 @@ export const ExternalAccount = () => {
                                             tag: 'div',
                                             style: {
                                                 position: 'absolute',
-                                                left: '1vw',
+                                                left: '12px',
                                                 top: '50%',
                                                 transform: 'translateY(-50%)',
-                                                color: '#666',
-                                                fontSize: '1vw',
+                                                color: '#94a3b8',
+                                                fontSize: '14px',
                                                 zIndex: '1'
                                             },
                                             att: {
@@ -678,36 +729,39 @@ export const ExternalAccount = () => {
                                             },
                                             style: {
                                                 width: '100%',
-                                                padding: '0.8rem 2.5rem',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
-                                                borderRadius: '0.5vw',
-                                                color: '#fff',
-                                                fontSize: '1vw',
+                                                padding: '10px 12px 10px 40px',
+                                                backgroundColor: '#f8fafc',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: '8px',
+                                                color: '#1e293b',
+                                                fontSize: '14px',
                                                 outline: 'none',
-                                                transition: 'all 0.3s ease',
-                                                boxSizing: 'border-box'
+                                                transition: 'all 0.2s ease',
+                                                boxSizing: 'border-box',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                                             },
                                             elementHandler: (el) => {
                                                 passB = el
                                             },
                                             event: {
                                                 focus: (e) => {
-                                                    e.target.style.borderColor = '#00bcd4'
-                                                    e.target.style.backgroundColor = '#3a3a3a'
+                                                    e.target.style.borderColor = '#3b82f6'
+                                                    e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                                                    e.target.style.backgroundColor = '#ffffff'
                                                 },
                                                 blur: (e) => {
-                                                    e.target.style.borderColor = '#444'
-                                                    e.target.style.backgroundColor = '#333'
+                                                    e.target.style.borderColor = '#e2e8f0'
+                                                    e.target.style.boxShadow = 'none'
+                                                    e.target.style.backgroundColor = '#f8fafc'
                                                 },
                                                 input: (ev) => {
                                                     let me = ev.target
                                                     if (passB.value.length >= 8) {
                                                         if (passA.value === me.value) {
-                                                            me.style.borderColor = '#4caf50'
-                                                            passA.style.borderColor = '#4caf50'
+                                                            me.style.borderColor = '#22c55e'
+                                                            passA.style.borderColor = '#22c55e'
                                                         } else {
-                                                            me.style.borderColor = '#f44336'
+                                                            me.style.borderColor = '#ef4444'
                                                         }
                                                     }
                                                 }
@@ -717,14 +771,14 @@ export const ExternalAccount = () => {
                                             tag: 'div',
                                             style: {
                                                 position: 'absolute',
-                                                right: '1vw',
+                                                right: '12px',
                                                 top: '50%',
                                                 transform: 'translateY(-50%)',
-                                                color: '#666',
-                                                fontSize: '1vw',
+                                                color: '#94a3b8',
+                                                fontSize: '14px',
                                                 cursor: 'pointer',
                                                 zIndex: '1',
-                                                transition: 'color 0.3s ease'
+                                                transition: 'color 0.2s ease'
                                             },
                                             att: {
                                                 className: 'fa-solid fa-eye-slash toggle-password',
@@ -742,6 +796,12 @@ export const ExternalAccount = () => {
                                                         target.type = 'password'
                                                         icon.className = 'fa-solid fa-eye-slash'
                                                     }
+                                                },
+                                                mouseover: (e) => {
+                                                    e.target.style.color = '#3b82f6'
+                                                },
+                                                mouseout: (e) => {
+                                                    e.target.style.color = '#94a3b8'
                                                 }
                                             }
                                         })
@@ -752,21 +812,22 @@ export const ExternalAccount = () => {
                                 $({
                                     tag: 'div',
                                     style: {
-                                        fontSize: '0.9vw',
-                                        marginTop: '-1vh',
-                                        marginBottom: '2vh',
-                                        color: '#888',
-                                        textAlign: 'center'
+                                        fontSize: '12px',
+                                        marginTop: '4px',
+                                        marginBottom: '20px',
+                                        color: '#94a3b8',
+                                        textAlign: 'center',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                                     },
                                     child: [
                                         $({
                                             tag: 'span',
                                             att: {
-                                                className: 'fa-solid fa-circle-info me-1'
+                                                className: 'fa-solid fa-info-circle me-1'
                                             },
                                             style: {
-                                                color: '#00bcd4',
-                                                fontSize: '0.9vw'
+                                                color: '#3b82f6',
+                                                fontSize: '12px'
                                             }
                                         }),
                                         $({
@@ -781,8 +842,8 @@ export const ExternalAccount = () => {
                                     style: {
                                         display: 'flex',
                                         justifyContent: 'center',
-                                        gap: '1vw',
-                                        marginTop: '2vh'
+                                        gap: '12px',
+                                        marginTop: '8px'
                                     },
                                     child: [
                                         $({
@@ -791,15 +852,16 @@ export const ExternalAccount = () => {
                                                 type: 'button'
                                             },
                                             style: {
-                                                padding: '0.8rem 2rem',
+                                                padding: '8px 24px',
                                                 backgroundColor: 'transparent',
-                                                border: '1px solid #444',
-                                                borderRadius: '2vw',
-                                                color: '#999',
+                                                border: '1px solid #e2e8f0',
+                                                borderRadius: '8px',
+                                                color: '#64748b',
                                                 cursor: 'pointer',
-                                                fontSize: '1vw',
-                                                fontFamily: 'Segoe UI, sans-serif',
-                                                transition: 'all 0.3s ease',
+                                                fontSize: '13px',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                                fontWeight: '500',
+                                                transition: 'all 0.2s ease',
                                                 flex: '1'
                                             },
                                             text: 'Cancel',
@@ -809,12 +871,10 @@ export const ExternalAccount = () => {
                                                     modal.remove()
                                                 },
                                                 mouseover: (e) => {
-                                                    e.target.style.backgroundColor = '#333'
-                                                    e.target.style.color = '#fff'
+                                                    e.target.style.backgroundColor = '#f1f5f9'
                                                 },
                                                 mouseout: (e) => {
                                                     e.target.style.backgroundColor = 'transparent'
-                                                    e.target.style.color = '#999'
                                                 }
                                             }
                                         }),
@@ -824,25 +884,25 @@ export const ExternalAccount = () => {
                                                 type: 'submit'
                                             },
                                             style: {
-                                                padding: '0.8rem 2rem',
-                                                background: 'linear-gradient(135deg, #00bcd4 0%, #00acc1 100%)',
+                                                padding: '8px 24px',
+                                                backgroundColor: '#3b82f6',
                                                 border: 'none',
-                                                borderRadius: '2vw',
+                                                borderRadius: '8px',
                                                 color: '#fff',
                                                 cursor: 'pointer',
-                                                fontSize: '1vw',
-                                                fontFamily: 'Segoe UI, sans-serif',
+                                                fontSize: '13px',
+                                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                                 fontWeight: '600',
-                                                transition: 'all 0.3s ease',
+                                                transition: 'all 0.2s ease',
                                                 flex: '1'
                                             },
                                             text: 'Save Account',
                                             event: {
                                                 mouseover: (e) => {
-                                                    e.target.style.opacity = '0.9'
+                                                    e.target.style.backgroundColor = '#2563eb'
                                                 },
                                                 mouseout: (e) => {
-                                                    e.target.style.opacity = '1'
+                                                    e.target.style.backgroundColor = '#3b82f6'
                                                 }
                                             }
                                         })
@@ -883,8 +943,8 @@ export const ExternalAccount = () => {
                                             alert('An error occurred')
                                         }
                                     } else {
-                                        passA.style.borderColor = '#f44336'
-                                        passB.style.borderColor = '#f44336'
+                                        passA.style.borderColor = '#ef4444'
+                                        passB.style.borderColor = '#ef4444'
                                         alert('Passwords do not match!')
                                     }
                                 }
@@ -905,9 +965,9 @@ export const ExternalAccount = () => {
                 width: '100%',
                 display: 'flex',
                 alignItems: 'center',
-                padding: '0.8vh 0',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                transition: 'all 0.3s ease',
+                padding: '10px 0',
+                borderBottom: '1px solid #f1f5f9',
+                transition: 'all 0.2s ease',
                 backgroundColor: 'transparent'
             },
             att: {
@@ -915,7 +975,7 @@ export const ExternalAccount = () => {
             },
             event: {
                 mouseover: (e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'
+                    e.currentTarget.style.backgroundColor = '#f8fafc'
                 },
                 mouseout: (e) => {
                     e.currentTarget.style.backgroundColor = 'transparent'
@@ -927,10 +987,10 @@ export const ExternalAccount = () => {
                     text: id,
                     style: {
                         width: '10%',
-                        fontFamily: 'Segoe UI, sans-serif',
-                        fontSize: '0.95vw',
-                        color: '#888',
-                        paddingLeft: '1vw',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                        fontSize: '13px',
+                        color: '#94a3b8',
+                        paddingLeft: '12px',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis'
@@ -940,16 +1000,17 @@ export const ExternalAccount = () => {
                     tag: 'div',
                     style: {
                         width: '25%',
-                        fontFamily: 'Segoe UI, sans-serif',
-                        fontSize: '0.95vw',
-                        color: '#e0e0e0',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                        fontSize: '13px',
+                        color: '#1e293b',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        paddingRight: '1vw',
+                        paddingRight: '12px',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5vw'
+                        gap: '8px',
+                        fontWeight: '500'
                     },
                     child: [
                         $({
@@ -958,8 +1019,8 @@ export const ExternalAccount = () => {
                                 className: 'fa-solid fa-building'
                             },
                             style: {
-                                color: 'rgba(0,188,212,0.6)',
-                                fontSize: '1.2vw',
+                                color: '#3b82f6',
+                                fontSize: '14px',
                                 flexShrink: 0
                             }
                         }),
@@ -978,15 +1039,15 @@ export const ExternalAccount = () => {
                     tag: 'div',
                     style: {
                         width: '35%',
-                        fontFamily: 'Segoe UI, sans-serif',
-                        fontSize: '0.95vw',
-                        color: '#aaa',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                        fontSize: '13px',
+                        color: '#64748b',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.5vw'
+                        gap: '8px'
                     },
                     child: [
                         $({
@@ -995,8 +1056,8 @@ export const ExternalAccount = () => {
                                 className: 'fa-solid fa-envelope'
                             },
                             style: {
-                                color: 'rgba(255,255,255,0.3)',
-                                fontSize: '1vw',
+                                color: '#94a3b8',
+                                fontSize: '13px',
                                 flexShrink: 0
                             }
                         }),
@@ -1012,22 +1073,22 @@ export const ExternalAccount = () => {
                         width: '30%',
                         display: 'flex',
                         justifyContent: 'center',
-                        gap: '0.8vw',
-                        paddingRight: '1vw'
+                        gap: '8px',
+                        paddingRight: '12px'
                     },
                     child: [
                         $({
                             tag: 'div',
                             style: {
-                                padding: '0.3vw 1vw',
-                                borderRadius: '1vw',
-                                backgroundColor: 'rgba(244,67,54,0.1)',
-                                border: '1px solid rgba(244,67,54,0.2)',
+                                padding: '4px 14px',
+                                borderRadius: '20px',
+                                backgroundColor: 'rgba(239,68,68,0.06)',
+                                border: '1px solid rgba(239,68,68,0.12)',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '0.3vw',
+                                gap: '6px',
                                 cursor: 'pointer',
-                                transition: 'all 0.3s ease'
+                                transition: 'all 0.2s ease'
                             },
                             child: [
                                 $({
@@ -1036,17 +1097,18 @@ export const ExternalAccount = () => {
                                         className: 'fa-solid fa-trash-can'
                                     },
                                     style: {
-                                        color: '#f44336',
-                                        fontSize: '0.9vw'
+                                        color: '#ef4444',
+                                        fontSize: '12px'
                                     }
                                 }),
                                 $({
                                     tag: 'span',
                                     text: 'Delete',
                                     style: {
-                                        color: '#f44336',
-                                        fontSize: '0.85vw',
-                                        fontFamily: 'Segoe UI, sans-serif'
+                                        color: '#ef4444',
+                                        fontSize: '12px',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                        fontWeight: '500'
                                     }
                                 })
                             ],
@@ -1056,10 +1118,10 @@ export const ExternalAccount = () => {
                                     showDeleteConfirmation(id, account_name)
                                 },
                                 mouseover: (e) => {
-                                    e.currentTarget.style.backgroundColor = 'rgba(244,67,54,0.2)'
+                                    e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.12)'
                                 },
                                 mouseout: (e) => {
-                                    e.currentTarget.style.backgroundColor = 'rgba(244,67,54,0.1)'
+                                    e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.06)'
                                 }
                             }
                         })
@@ -1075,12 +1137,13 @@ export const ExternalAccount = () => {
             style: {
                 width: '100%',
                 height: 'calc(100% - 20vh)',
-                backgroundColor: 'rgba(0,0,0,0.3)',
+                backgroundColor: '#ffffff',
                 overflowY: 'auto',
                 overflowX: 'auto',
-                borderRadius: '0.5vw',
-                border: '1px solid rgba(255,255,255,0.05)',
-                minHeight: '200px'
+                borderRadius: '0 0 8px 8px',
+                border: '1px solid #f1f5f9',
+                minHeight: '200px',
+                padding: '0 4px'
             },
             elementHandler: (el) => {
                 tableBody = el
@@ -1106,11 +1169,11 @@ export const ExternalAccount = () => {
                             tag: 'div',
                             style: {
                                 width: '100%',
-                                padding: '2rem',
+                                padding: '40px',
                                 textAlign: 'center',
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '1vw',
-                                color: '#888'
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '14px',
+                                color: '#94a3b8'
                             },
                             child: [
                                 $({
@@ -1119,14 +1182,28 @@ export const ExternalAccount = () => {
                                         className: 'fa-solid fa-database mb-2'
                                     },
                                     style: {
-                                        fontSize: '2vw',
-                                        color: '#333',
-                                        marginBottom: '1vh'
+                                        fontSize: '48px',
+                                        color: '#e2e8f0',
+                                        marginBottom: '12px'
                                     }
                                 }),
                                 $({
                                     tag: 'div',
-                                    text: 'No external accounts found'
+                                    text: 'No external accounts found',
+                                    style: {
+                                        fontSize: '16px',
+                                        fontWeight: '500',
+                                        color: '#64748b'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: 'Click "Add New Account" to create one',
+                                    style: {
+                                        fontSize: '13px',
+                                        marginTop: '4px',
+                                        color: '#94a3b8'
+                                    }
                                 })
                             ]
                         }))
@@ -1140,21 +1217,21 @@ export const ExternalAccount = () => {
         return ($({
             tag: 'button',
             style: {
-                padding: '0.2rem 2rem',
-                background: 'linear-gradient(135deg, #00bcd4 0%, #00acc1 100%)',
+                padding: '8px 20px',
+                background: '#3b82f6',
                 border: 'none',
-                borderRadius: '2vw',
+                borderRadius: '8px',
                 color: '#fff',
                 cursor: 'pointer',
-                fontSize: '12px',
-                fontFamily: 'Segoe UI, sans-serif',
+                fontSize: '13px',
+                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                 fontWeight: '600',
-                transition: 'all 0.3s ease',
+                transition: 'all 0.2s ease',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5vw',
-                width: 'auto',
-                height: 'auto'
+                gap: '8px',
+                height: '38px',
+                whiteSpace: 'nowrap'
             },
             child: [
                 $({
@@ -1163,7 +1240,7 @@ export const ExternalAccount = () => {
                         className: 'fa-solid fa-plus-circle'
                     },
                     style: {
-                        fontSize: '1.2vw'
+                        fontSize: '16px'
                     }
                 }),
                 $({
@@ -1175,12 +1252,10 @@ export const ExternalAccount = () => {
                 type: 'click',
                 method: showAddModal,
                 mouseover: (e) => {
-                    e.target.style.opacity = '0.9'
-                    e.target.style.transform = 'translateY(-1px)'
+                    e.target.style.backgroundColor = '#2563eb'
                 },
                 mouseout: (e) => {
-                    e.target.style.opacity = '1'
-                    e.target.style.transform = 'translateY(0)'
+                    e.target.style.backgroundColor = '#3b82f6'
                 }
             }
         }))
@@ -1191,10 +1266,11 @@ export const ExternalAccount = () => {
             tag: 'div',
             style: {
                 width: '95%',
-                margin: '2% auto',
-                height: '96%',
+                margin: '1% auto',
+                height: '98%',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                maxWidth: '1400px'
             },
             child: [
                 $({
@@ -1203,7 +1279,9 @@ export const ExternalAccount = () => {
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        marginBottom: '1vh'
+                        marginBottom: '8px',
+                        flexWrap: 'wrap',
+                        gap: '8px'
                     },
                     child: [
                         Label,
@@ -1211,8 +1289,9 @@ export const ExternalAccount = () => {
                             tag: 'div',
                             style: {
                                 display: 'flex',
-                                gap: '1vw',
-                                alignItems: 'center'
+                                gap: '12px',
+                                alignItems: 'center',
+                                flexWrap: 'wrap'
                             },
                             child: [
                                 SearchBar(),
@@ -1235,7 +1314,7 @@ export const ExternalAccount = () => {
         style: {
             width: '100%',
             height: '100%',
-            backgroundColor: '#1a1a1a'
+            backgroundColor: '#f8fafc'
         },
         child: [
             MainPanel()
