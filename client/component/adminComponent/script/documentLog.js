@@ -1,8 +1,8 @@
-import {$, Base, Current, LoadLocation, Path, Request, TimeConvert} from '../../../lib/lib.js'
-import {Error} from "../../../error.js";
+import { $, Base, Current, LoadLocation, Path, Request, TimeConvert } from '../../../lib/lib.js'
+import { Error } from "../../../error.js";
 
 export const DocumentLog = () => {
-    const Bot = ({label, url}) => {
+    const Bot = ({ label, url }) => {
         return ($({
             tag: 'div',
             style: {
@@ -19,9 +19,9 @@ export const DocumentLog = () => {
             elementHandler: (el) => {
                 if (url.split('/')[3] === Path(3)) {
                     Object.assign(el.style, {
-                        color: '#00bcd4',
-                        background: 'linear-gradient(135deg, rgba(0,188,212,0.1) 0%, rgba(0,172,193,0.05) 100%)',
-                        borderBottom: '2px solid #00bcd4',
+                        color: '#3b82f6',
+                        background: 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(37,99,235,0.03) 100%)',
+                        borderBottom: '2px solid #3b82f6',
                         pointerEvents: 'none'
                     })
                 }
@@ -40,9 +40,9 @@ export const DocumentLog = () => {
                         width: 'fit-content',
                         height: 'fit-content',
                         fontFamily: 'Segoe UI, sans-serif',
-                        fontSize: '1vw',
+                        fontSize: '0.85vw',
                         margin: 'auto',
-                        fontWeight: '500',
+                        fontWeight: '600',
                         letterSpacing: '0.5px'
                     }
                 })
@@ -54,36 +54,36 @@ export const DocumentLog = () => {
         let bodyMainList
         let currentSort = { column: null, ascending: true }
 
-        const Logs = ({date, time, rdeName, details, id}) => {
+        const Logs = ({ date, time, rdeName, details, id }) => {
             return ($({
                 tag: 'div',
                 style: {
                     height: 'fit-content',
                     width: '100%',
-                    padding: '1.2vh 0',
-                    background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
-                    margin: '0.8vh auto',
+                    padding: '1vh 0',
+                    background: '#ffffff',
+                    margin: '0.5vh auto',
                     display: 'flex',
                     borderRadius: '0.5vw',
-                    border: '1px solid #333',
-                    transition: 'all 0.3s ease',
+                    border: '1px solid #e2e8f0',
+                    transition: 'all 0.2s ease',
                     fontFamily: 'Segoe UI, sans-serif',
-                    fontSize: '0.95vw',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                    fontSize: '0.85vw',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
                 },
                 att: {
                     className: 'logList'
                 },
                 event: {
                     mouseover: (e) => {
-                        e.currentTarget.style.transform = 'translateX(5px)'
-                        e.currentTarget.style.borderColor = '#00bcd4'
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,188,212,0.1)'
+                        e.currentTarget.style.transform = 'translateX(4px)'
+                        e.currentTarget.style.borderColor = '#3b82f6'
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.08)'
                     },
                     mouseout: (e) => {
                         e.currentTarget.style.transform = 'translateX(0)'
-                        e.currentTarget.style.borderColor = '#333'
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)'
+                        e.currentTarget.style.borderColor = '#e2e8f0'
+                        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)'
                     }
                 },
                 child: [
@@ -93,7 +93,8 @@ export const DocumentLog = () => {
                         style: {
                             width: '15%',
                             paddingLeft: '1vw',
-                            color: '#e0e0e0'
+                            color: '#1e293b',
+                            fontWeight: '500'
                         }
                     }),
                     $({
@@ -101,7 +102,7 @@ export const DocumentLog = () => {
                         text: time || 'N/A',
                         style: {
                             width: '15%',
-                            color: '#e0e0e0'
+                            color: '#1e293b'
                         }
                     }),
                     $({
@@ -119,16 +120,16 @@ export const DocumentLog = () => {
                                     className: 'fa-solid fa-user-circle'
                                 },
                                 style: {
-                                    color: 'rgba(0,188,212,0.6)',
-                                    fontSize: '1.1vw'
+                                    color: '#3b82f6',
+                                    fontSize: '0.9vw'
                                 }
                             }),
                             $({
                                 tag: 'span',
                                 text: rdeName || 'SYSTEM',
                                 style: {
-                                    color: '#00bcd4',
-                                    fontWeight: '500'
+                                    color: '#3b82f6',
+                                    fontWeight: '600'
                                 }
                             })
                         ]
@@ -150,8 +151,8 @@ export const DocumentLog = () => {
                                     className: 'fa-solid fa-message'
                                 },
                                 style: {
-                                    color: 'rgba(255,255,255,0.3)',
-                                    fontSize: '0.9vw'
+                                    color: '#94a3b8',
+                                    fontSize: '0.8vw'
                                 }
                             }),
                             $({
@@ -161,7 +162,7 @@ export const DocumentLog = () => {
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',
-                                    color: '#bbb',
+                                    color: '#475569',
                                     flex: '1'
                                 }
                             })
@@ -186,10 +187,10 @@ export const DocumentLog = () => {
                     left: '0',
                     width: '100%',
                     height: '100%',
-                    backgroundColor: 'rgba(0,0,0,0.9)',
+                    backgroundColor: 'rgba(0,0,0,0.5)',
                     display: 'flex',
                     zIndex: '9999',
-                    backdropFilter: 'blur(5px)'
+                    backdropFilter: 'blur(4px)'
                 },
                 child: [
                     $({
@@ -197,13 +198,13 @@ export const DocumentLog = () => {
                         style: {
                             width: '50%',
                             height: 'fit-content',
-                            background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
+                            background: '#ffffff',
                             margin: 'auto',
-                            padding: '2.5rem',
-                            borderRadius: '1vw',
+                            padding: '2rem',
+                            borderRadius: '0.8vw',
                             position: 'relative',
-                            border: '1px solid #333',
-                            boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
                         },
                         child: [
                             $({
@@ -213,9 +214,9 @@ export const DocumentLog = () => {
                                     top: '1.5vh',
                                     right: '1.5vw',
                                     cursor: 'pointer',
-                                    color: '#666',
+                                    color: '#94a3b8',
                                     fontSize: '1.5vw',
-                                    transition: 'all 0.3s ease'
+                                    transition: 'all 0.2s ease'
                                 },
                                 att: {
                                     className: 'fa-solid fa-circle-xmark'
@@ -226,10 +227,10 @@ export const DocumentLog = () => {
                                         modal.remove()
                                     },
                                     mouseover: (e) => {
-                                        e.target.style.color = '#00bcd4'
+                                        e.target.style.color = '#3b82f6'
                                     },
                                     mouseout: (e) => {
-                                        e.target.style.color = '#666'
+                                        e.target.style.color = '#94a3b8'
                                     }
                                 }
                             }),
@@ -237,17 +238,21 @@ export const DocumentLog = () => {
                                 tag: 'div',
                                 style: {
                                     fontFamily: 'Segoe UI, sans-serif',
-                                    fontSize: '1.8vw',
-                                    color: '#00bcd4',
+                                    fontSize: '1.4vw',
+                                    color: '#1e293b',
                                     textAlign: 'center',
                                     marginBottom: '2vh',
-                                    fontWeight: '600'
+                                    fontWeight: '700'
                                 },
                                 child: [
                                     $({
                                         tag: 'span',
                                         att: {
                                             className: 'fa-solid fa-file-lines me-2'
+                                        },
+                                        style: {
+                                            color: '#3b82f6',
+                                            marginRight: '0.5vw'
                                         }
                                     }),
                                     $({
@@ -259,10 +264,10 @@ export const DocumentLog = () => {
                             $({
                                 tag: 'div',
                                 style: {
-                                    background: '#1a1a1a',
-                                    borderRadius: '0.8vw',
+                                    background: '#f8fafc',
+                                    borderRadius: '0.6vw',
                                     padding: '1.5rem',
-                                    border: '1px solid #333',
+                                    border: '1px solid #e2e8f0',
                                     marginBottom: '2vh'
                                 },
                                 child: [
@@ -273,7 +278,7 @@ export const DocumentLog = () => {
                                             gap: '2vw',
                                             marginBottom: '1.5vh',
                                             paddingBottom: '1vh',
-                                            borderBottom: '1px solid #333'
+                                            borderBottom: '1px solid #e2e8f0'
                                         },
                                         child: [
                                             $({
@@ -290,16 +295,17 @@ export const DocumentLog = () => {
                                                             className: 'fa-solid fa-calendar'
                                                         },
                                                         style: {
-                                                            color: '#00bcd4',
-                                                            fontSize: '1vw'
+                                                            color: '#3b82f6',
+                                                            fontSize: '0.9vw'
                                                         }
                                                     }),
                                                     $({
                                                         tag: 'span',
                                                         text: date,
                                                         style: {
-                                                            color: '#e0e0e0',
-                                                            fontSize: '1vw'
+                                                            color: '#1e293b',
+                                                            fontSize: '0.9vw',
+                                                            fontWeight: '500'
                                                         }
                                                     })
                                                 ]
@@ -318,16 +324,17 @@ export const DocumentLog = () => {
                                                             className: 'fa-solid fa-clock'
                                                         },
                                                         style: {
-                                                            color: '#00bcd4',
-                                                            fontSize: '1vw'
+                                                            color: '#3b82f6',
+                                                            fontSize: '0.9vw'
                                                         }
                                                     }),
                                                     $({
                                                         tag: 'span',
                                                         text: time,
                                                         style: {
-                                                            color: '#e0e0e0',
-                                                            fontSize: '1vw'
+                                                            color: '#1e293b',
+                                                            fontSize: '0.9vw',
+                                                            fontWeight: '500'
                                                         }
                                                     })
                                                 ]
@@ -346,17 +353,17 @@ export const DocumentLog = () => {
                                                             className: 'fa-solid fa-user'
                                                         },
                                                         style: {
-                                                            color: '#00bcd4',
-                                                            fontSize: '1vw'
+                                                            color: '#3b82f6',
+                                                            fontSize: '0.9vw'
                                                         }
                                                     }),
                                                     $({
                                                         tag: 'span',
                                                         text: rdeName || 'SYSTEM',
                                                         style: {
-                                                            color: '#00bcd4',
-                                                            fontWeight: '500',
-                                                            fontSize: '1vw'
+                                                            color: '#3b82f6',
+                                                            fontWeight: '600',
+                                                            fontSize: '0.9vw'
                                                         }
                                                     })
                                                 ]
@@ -367,16 +374,17 @@ export const DocumentLog = () => {
                                         tag: 'div',
                                         style: {
                                             fontFamily: 'Segoe UI, sans-serif',
-                                            fontSize: '1.1vw',
-                                            color: '#bbb',
-                                            lineHeight: '1.6',
+                                            fontSize: '0.95vw',
+                                            color: '#334155',
+                                            lineHeight: '1.7',
                                             maxHeight: '40vh',
                                             overflowY: 'auto',
                                             padding: '1rem',
-                                            background: '#0a0a0a',
-                                            borderRadius: '0.5vw',
+                                            background: '#ffffff',
+                                            borderRadius: '0.4vw',
                                             whiteSpace: 'pre-wrap',
-                                            wordBreak: 'break-word'
+                                            wordBreak: 'break-word',
+                                            border: '1px solid #e2e8f0'
                                         },
                                         text: details || 'No details available'
                                     })
@@ -392,16 +400,16 @@ export const DocumentLog = () => {
                                     $({
                                         tag: 'button',
                                         style: {
-                                            padding: '0.8rem 2rem',
-                                            background: 'linear-gradient(135deg, #00bcd4 0%, #00acc1 100%)',
+                                            padding: '0.6rem 2rem',
+                                            background: '#3b82f6',
                                             border: 'none',
                                             borderRadius: '2vw',
                                             color: '#fff',
                                             cursor: 'pointer',
-                                            fontSize: '1vw',
+                                            fontSize: '0.9vw',
                                             fontFamily: 'Segoe UI, sans-serif',
                                             fontWeight: '600',
-                                            transition: 'all 0.3s ease',
+                                            transition: 'all 0.2s ease',
                                             minWidth: '150px'
                                         },
                                         text: 'Close',
@@ -411,10 +419,10 @@ export const DocumentLog = () => {
                                                 modal.remove()
                                             },
                                             mouseover: (e) => {
-                                                e.target.style.opacity = '0.9'
+                                                e.target.style.background = '#2563eb'
                                             },
                                             mouseout: (e) => {
-                                                e.target.style.opacity = '1'
+                                                e.target.style.background = '#3b82f6'
                                             }
                                         }
                                     })
@@ -431,11 +439,11 @@ export const DocumentLog = () => {
         const sortData = (column, data) => {
             const sorted = [...data]
             const ascending = currentSort.column === column ? !currentSort.ascending : true
-            
+
             sorted.sort((a, b) => {
                 let valA, valB
-                
-                switch(column) {
+
+                switch (column) {
                     case 'date':
                         valA = new Date(a.date)
                         valB = new Date(b.date)
@@ -455,12 +463,12 @@ export const DocumentLog = () => {
                     default:
                         return 0
                 }
-                
+
                 if (valA < valB) return ascending ? -1 : 1
                 if (valA > valB) return ascending ? 1 : -1
                 return 0
             })
-            
+
             currentSort = { column, ascending }
             return sorted
         }
@@ -472,40 +480,39 @@ export const DocumentLog = () => {
                     width: width,
                     height: '100%',
                     margin: 'auto',
-                    borderLeft: 'solid thin rgba(255,255,255,0.1)',
+                    borderLeft: 'solid thin #e2e8f0',
                     display: 'flex',
                     cursor: 'pointer',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.2s ease',
+                    alignItems: 'center'
                 },
                 att: {
                     className: 'sortHead'
                 },
                 event: {
                     type: 'click',
-                    method: () => {
-                        // Update sort icons
+                    method: (event) => {
                         const headers = document.querySelectorAll('.sortHead')
                         headers.forEach(header => {
                             const icon = header.querySelector('.sort-icon')
                             if (icon) {
                                 icon.className = 'fa-solid fa-sort sort-icon'
-                                icon.style.color = '#666'
+                                icon.style.color = '#94a3b8'
                             }
                         })
-                        
-                        const currentIcon = event.target.closest('.sortHead')?.querySelector('.sort-icon')
+
+                        const currentIcon = event.currentTarget.querySelector('.sort-icon')
                         if (currentIcon) {
                             if (currentSort.column === column) {
-                                currentIcon.className = currentSort.ascending ? 
-                                    'fa-solid fa-sort-up sort-icon' : 
+                                currentIcon.className = currentSort.ascending ?
+                                    'fa-solid fa-sort-up sort-icon' :
                                     'fa-solid fa-sort-down sort-icon'
                             } else {
                                 currentIcon.className = 'fa-solid fa-sort-up sort-icon'
                             }
-                            currentIcon.style.color = '#00bcd4'
+                            currentIcon.style.color = '#3b82f6'
                         }
-                        
-                        // Resort and redisplay data
+
                         const req = new Request('/documentLog');
                         req.Post([{ name: 'logRequest', value: '1' }])
                         req.Json()
@@ -530,7 +537,7 @@ export const DocumentLog = () => {
                         })
                     },
                     mouseover: (e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(0,188,212,0.1)'
+                        e.currentTarget.style.backgroundColor = '#f1f5f9'
                     },
                     mouseout: (e) => {
                         e.currentTarget.style.backgroundColor = 'transparent'
@@ -545,9 +552,9 @@ export const DocumentLog = () => {
                             height: 'fit-content',
                             margin: 'auto',
                             marginLeft: '1vw',
-                            color: '#888',
+                            color: '#64748b',
                             fontWeight: '600',
-                            fontSize: '0.9vw',
+                            fontSize: '0.75vw',
                             textTransform: 'uppercase',
                             letterSpacing: '0.5px'
                         }
@@ -564,9 +571,9 @@ export const DocumentLog = () => {
                             className: 'fa-solid fa-sort sort-icon'
                         },
                         style: {
-                            color: '#666',
-                            fontSize: '0.9vw',
-                            transition: 'color 0.3s ease'
+                            color: '#94a3b8',
+                            fontSize: '0.8vw',
+                            transition: 'color 0.2s ease'
                         }
                     })
                 ]
@@ -579,7 +586,8 @@ export const DocumentLog = () => {
                 height: '100%',
                 width: '100%',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                background: '#ffffff'
             },
             child: [
                 $({
@@ -590,22 +598,34 @@ export const DocumentLog = () => {
                         display: 'flex',
                         alignItems: 'center',
                         padding: '0 1vw',
-                        marginBottom: '1vh'
+                        marginBottom: '0.5vh'
                     },
                     child: [
                         $({
                             tag: 'div',
                             style: {
-                                height: '5vh',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                height: '4vh',
+                                border: '1px solid #e2e8f0',
                                 width: '30vw',
                                 borderRadius: '2vw',
                                 display: 'flex',
                                 padding: '0 1vw',
-                                backgroundColor: 'rgba(0,0,0,0.4)',
-                                color: '#bbb',
+                                backgroundColor: '#f8fafc',
+                                color: '#334155',
                                 alignItems: 'center',
-                                transition: 'all 0.3s ease'
+                                transition: 'all 0.2s ease'
+                            },
+                            event: {
+                                focusin: (e) => {
+                                    e.currentTarget.style.borderColor = '#3b82f6'
+                                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                                    e.currentTarget.style.backgroundColor = '#ffffff'
+                                },
+                                focusout: (e) => {
+                                    e.currentTarget.style.borderColor = '#e2e8f0'
+                                    e.currentTarget.style.boxShadow = 'none'
+                                    e.currentTarget.style.backgroundColor = '#f8fafc'
+                                }
                             },
                             child: [
                                 $({
@@ -614,8 +634,8 @@ export const DocumentLog = () => {
                                         className: 'fa-solid fa-search'
                                     },
                                     style: {
-                                        fontSize: '1vw',
-                                        color: '#666',
+                                        fontSize: '0.8vw',
+                                        color: '#94a3b8',
                                         marginRight: '0.5vw'
                                     }
                                 }),
@@ -627,8 +647,8 @@ export const DocumentLog = () => {
                                         outline: 'none',
                                         height: '100%',
                                         width: '100%',
-                                        color: '#e0e0e0',
-                                        fontSize: '0.95vw',
+                                        color: '#1e293b',
+                                        fontSize: '0.8vw',
                                         fontFamily: 'Segoe UI, sans-serif'
                                     },
                                     att: {
@@ -659,8 +679,8 @@ export const DocumentLog = () => {
                                 marginLeft: 'auto',
                                 display: 'flex',
                                 gap: '0.5vw',
-                                color: '#888',
-                                fontSize: '0.9vw'
+                                color: '#94a3b8',
+                                fontSize: '0.75vw'
                             },
                             child: [
                                 $({
@@ -669,7 +689,7 @@ export const DocumentLog = () => {
                                         className: 'fa-solid fa-info-circle'
                                     },
                                     style: {
-                                        color: '#00bcd4'
+                                        color: '#3b82f6'
                                     }
                                 }),
                                 $({
@@ -685,11 +705,11 @@ export const DocumentLog = () => {
                     style: {
                         width: '100%',
                         height: '6%',
-                        borderTop: '1px solid rgba(255,255,255,0.1)',
-                        borderBottom: '1px solid rgba(255,255,255,0.1)',
+                        borderTop: '1px solid #e2e8f0',
+                        borderBottom: '1px solid #e2e8f0',
                         display: 'flex',
                         fontFamily: 'Segoe UI, sans-serif',
-                        background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)'
+                        background: '#f8fafc'
                     },
                     child: [
                         SortHeader({ label: 'DATE', width: '15%', column: 'date' }),
@@ -705,8 +725,7 @@ export const DocumentLog = () => {
                         width: '100%',
                         overflowY: 'auto',
                         padding: '0.5vw',
-                        scrollbarWidth: 'thin',
-                        scrollbarColor: '#00bcd4 #1a1a1a'
+                        background: '#ffffff'
                     },
                     elementHandler: (el) => {
                         bodyMainList = el
@@ -720,9 +739,8 @@ export const DocumentLog = () => {
                         req.Json()
                         req.Send().then(data => {
                             if (data && data.length > 0) {
-                                // Sort by date initially (newest first)
                                 data.sort((a, b) => new Date(b.date) - new Date(a.date))
-                                
+
                                 data.forEach(val => {
                                     let name = val.rdeName
                                     if (val.rdeName === null) {
@@ -743,7 +761,7 @@ export const DocumentLog = () => {
                                         width: '100%',
                                         padding: '4rem 2rem',
                                         textAlign: 'center',
-                                        color: '#888'
+                                        color: '#94a3b8'
                                     },
                                     child: [
                                         $({
@@ -753,7 +771,7 @@ export const DocumentLog = () => {
                                             },
                                             style: {
                                                 fontSize: '3vw',
-                                                color: '#333',
+                                                color: '#e2e8f0',
                                                 marginBottom: '1vh'
                                             }
                                         }),
@@ -761,7 +779,8 @@ export const DocumentLog = () => {
                                             tag: 'div',
                                             text: 'No system logs found',
                                             style: {
-                                                fontSize: '1.2vw'
+                                                fontSize: '1vw',
+                                                color: '#64748b'
                                             }
                                         })
                                     ]
@@ -781,8 +800,7 @@ export const DocumentLog = () => {
         let bodyMainList
         let currentSort = { column: null, ascending: true }
 
-        // Email Log Item Component
-        const EmailLogItem = ({id, document_id, evaluator_id, author_email, sent_date, email_type, status}) => {
+        const EmailLogItem = ({ id, document_id, evaluator_id, author_email, sent_date, email_type, status }) => {
             const date = sent_date ? sent_date.split(" ")[0] : 'N/A'
             const time = sent_date ? TimeConvert(sent_date.split(" ")[1].split(":")) : 'N/A'
 
@@ -791,16 +809,16 @@ export const DocumentLog = () => {
                 style: {
                     height: 'fit-content',
                     width: '100%',
-                    padding: '1.2vh 0',
-                    background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
-                    margin: '0.8vh auto',
+                    padding: '1vh 0',
+                    background: '#ffffff',
+                    margin: '0.5vh auto',
                     display: 'flex',
                     borderRadius: '0.5vw',
-                    border: '1px solid #333',
-                    transition: 'all 0.3s ease',
+                    border: '1px solid #e2e8f0',
+                    transition: 'all 0.2s ease',
                     fontFamily: 'Segoe UI, sans-serif',
-                    fontSize: '0.95vw',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                    fontSize: '0.85vw',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                     boxSizing: 'border-box'
                 },
                 att: {
@@ -808,14 +826,14 @@ export const DocumentLog = () => {
                 },
                 event: {
                     mouseover: (e) => {
-                        e.currentTarget.style.transform = 'translateX(5px)'
-                        e.currentTarget.style.borderColor = '#00bcd4'
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,188,212,0.1)'
+                        e.currentTarget.style.transform = 'translateX(4px)'
+                        e.currentTarget.style.borderColor = '#3b82f6'
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.08)'
                     },
                     mouseout: (e) => {
                         e.currentTarget.style.transform = 'translateX(0)'
-                        e.currentTarget.style.borderColor = '#333'
-                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)'
+                        e.currentTarget.style.borderColor = '#e2e8f0'
+                        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)'
                     }
                 },
                 child: [
@@ -825,7 +843,8 @@ export const DocumentLog = () => {
                         style: {
                             width: '12%',
                             paddingLeft: '1vw',
-                            color: '#e0e0e0',
+                            color: '#1e293b',
+                            fontWeight: '500',
                             boxSizing: 'border-box',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -837,7 +856,7 @@ export const DocumentLog = () => {
                         text: time,
                         style: {
                             width: '10%',
-                            color: '#e0e0e0',
+                            color: '#1e293b',
                             boxSizing: 'border-box',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -861,8 +880,8 @@ export const DocumentLog = () => {
                                     className: 'fa-solid fa-envelope'
                                 },
                                 style: {
-                                    color: 'rgba(0,188,212,0.6)',
-                                    fontSize: '1.1vw',
+                                    color: '#3b82f6',
+                                    fontSize: '0.9vw',
                                     flexShrink: 0
                                 }
                             }),
@@ -870,7 +889,7 @@ export const DocumentLog = () => {
                                 tag: 'span',
                                 text: author_email || 'N/A',
                                 style: {
-                                    color: '#00bcd4',
+                                    color: '#3b82f6',
                                     fontWeight: '500',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
@@ -896,8 +915,8 @@ export const DocumentLog = () => {
                                     className: 'fa-solid fa-tag'
                                 },
                                 style: {
-                                    color: 'rgba(255,255,255,0.3)',
-                                    fontSize: '0.9vw',
+                                    color: '#94a3b8',
+                                    fontSize: '0.8vw',
                                     flexShrink: 0
                                 }
                             }),
@@ -905,7 +924,7 @@ export const DocumentLog = () => {
                                 tag: 'span',
                                 text: email_type || 'N/A',
                                 style: {
-                                    color: '#e0e0e0',
+                                    color: '#475569',
                                     textTransform: 'capitalize',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
@@ -930,8 +949,8 @@ export const DocumentLog = () => {
                                     className: `fa-solid ${status ? 'fa-check-circle' : 'fa-clock'}`
                                 },
                                 style: {
-                                    color: status ? '#4caf50' : '#ff9800',
-                                    fontSize: '0.9vw',
+                                    color: status ? '#22c55e' : '#f59e0b',
+                                    fontSize: '0.8vw',
                                     flexShrink: 0
                                 }
                             }),
@@ -939,7 +958,8 @@ export const DocumentLog = () => {
                                 tag: 'span',
                                 text: status ? 'Sent' : 'Pending',
                                 style: {
-                                    color: status ? '#4caf50' : '#ff9800',
+                                    color: status ? '#22c55e' : '#f59e0b',
+                                    fontWeight: '500',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden'
@@ -965,8 +985,8 @@ export const DocumentLog = () => {
                                     className: 'fa-solid fa-eye'
                                 },
                                 style: {
-                                    color: '#00bcd4',
-                                    fontSize: '0.9vw',
+                                    color: '#3b82f6',
+                                    fontSize: '0.8vw',
                                     flexShrink: 0
                                 }
                             }),
@@ -974,7 +994,8 @@ export const DocumentLog = () => {
                                 tag: 'span',
                                 text: `Doc #${document_id || 'N/A'}`,
                                 style: {
-                                    color: '#00bcd4',
+                                    color: '#3b82f6',
+                                    fontWeight: '500',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden'
@@ -1007,8 +1028,8 @@ export const DocumentLog = () => {
                                     className: 'fa-solid fa-id-card'
                                 },
                                 style: {
-                                    color: 'rgba(255,255,255,0.2)',
-                                    fontSize: '0.9vw',
+                                    color: '#cbd5e1',
+                                    fontSize: '0.8vw',
                                     flexShrink: 0
                                 }
                             }),
@@ -1016,8 +1037,8 @@ export const DocumentLog = () => {
                                 tag: 'span',
                                 text: `E-${id}`,
                                 style: {
-                                    color: '#888',
-                                    fontSize: '0.85vw',
+                                    color: '#94a3b8',
+                                    fontSize: '0.75vw',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden'
@@ -1029,19 +1050,363 @@ export const DocumentLog = () => {
             }))
         }
 
-        // Email Details Modal Component (keep as is)
         const showEmailDetailsModal = (data) => {
-            // ... (keep the existing showEmailDetailsModal function exactly as is)
+            const modal = $({
+                tag: 'div',
+                style: {
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    zIndex: '9999',
+                    backdropFilter: 'blur(4px)'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '50%',
+                            height: 'fit-content',
+                            background: '#ffffff',
+                            margin: 'auto',
+                            padding: '2rem',
+                            borderRadius: '0.8vw',
+                            position: 'relative',
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
+                        },
+                        child: [
+                            $({
+                                tag: 'div',
+                                style: {
+                                    position: 'absolute',
+                                    top: '1.5vh',
+                                    right: '1.5vw',
+                                    cursor: 'pointer',
+                                    color: '#94a3b8',
+                                    fontSize: '1.5vw',
+                                    transition: 'all 0.2s ease'
+                                },
+                                att: {
+                                    className: 'fa-solid fa-circle-xmark'
+                                },
+                                event: {
+                                    type: 'click',
+                                    method: () => {
+                                        modal.remove()
+                                    },
+                                    mouseover: (e) => {
+                                        e.target.style.color = '#3b82f6'
+                                    },
+                                    mouseout: (e) => {
+                                        e.target.style.color = '#94a3b8'
+                                    }
+                                }
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    fontFamily: 'Segoe UI, sans-serif',
+                                    fontSize: '1.4vw',
+                                    color: '#1e293b',
+                                    textAlign: 'center',
+                                    marginBottom: '2vh',
+                                    fontWeight: '700'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: {
+                                            className: 'fa-solid fa-envelope'
+                                        },
+                                        style: {
+                                            color: '#3b82f6',
+                                            marginRight: '0.5vw'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'span',
+                                        text: 'Email Log Details'
+                                    })
+                                ]
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    background: '#f8fafc',
+                                    borderRadius: '0.6vw',
+                                    padding: '1.5rem',
+                                    border: '1px solid #e2e8f0',
+                                    marginBottom: '2vh'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            display: 'grid',
+                                            gridTemplateColumns: '1fr 1fr',
+                                            gap: '1.5vh 2vw',
+                                            marginBottom: '1.5vh',
+                                            paddingBottom: '1vh',
+                                            borderBottom: '1px solid #e2e8f0'
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.5vw'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'span',
+                                                        att: {
+                                                            className: 'fa-solid fa-calendar'
+                                                        },
+                                                        style: {
+                                                            color: '#3b82f6',
+                                                            fontSize: '0.9vw'
+                                                        }
+                                                    }),
+                                                    $({
+                                                        tag: 'span',
+                                                        text: data.sent_date ? data.sent_date.split(" ")[0] : 'N/A',
+                                                        style: {
+                                                            color: '#1e293b',
+                                                            fontSize: '0.9vw',
+                                                            fontWeight: '500'
+                                                        }
+                                                    })
+                                                ]
+                                            }),
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.5vw'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'span',
+                                                        att: {
+                                                            className: 'fa-solid fa-clock'
+                                                        },
+                                                        style: {
+                                                            color: '#3b82f6',
+                                                            fontSize: '0.9vw'
+                                                        }
+                                                    }),
+                                                    $({
+                                                        tag: 'span',
+                                                        text: data.sent_date ? TimeConvert(data.sent_date.split(" ")[1].split(":")) : 'N/A',
+                                                        style: {
+                                                            color: '#1e293b',
+                                                            fontSize: '0.9vw',
+                                                            fontWeight: '500'
+                                                        }
+                                                    })
+                                                ]
+                                            }),
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.5vw'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'span',
+                                                        att: {
+                                                            className: 'fa-solid fa-user'
+                                                        },
+                                                        style: {
+                                                            color: '#3b82f6',
+                                                            fontSize: '0.9vw'
+                                                        }
+                                                    }),
+                                                    $({
+                                                        tag: 'span',
+                                                        text: data.author_email || 'N/A',
+                                                        style: {
+                                                            color: '#1e293b',
+                                                            fontSize: '0.9vw',
+                                                            fontWeight: '500'
+                                                        }
+                                                    })
+                                                ]
+                                            }),
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.5vw'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'span',
+                                                        att: {
+                                                            className: 'fa-solid fa-tag'
+                                                        },
+                                                        style: {
+                                                            color: '#3b82f6',
+                                                            fontSize: '0.9vw'
+                                                        }
+                                                    }),
+                                                    $({
+                                                        tag: 'span',
+                                                        text: data.email_type || 'N/A',
+                                                        style: {
+                                                            color: '#1e293b',
+                                                            fontSize: '0.9vw',
+                                                            fontWeight: '500',
+                                                            textTransform: 'capitalize'
+                                                        }
+                                                    })
+                                                ]
+                                            }),
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.5vw'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'span',
+                                                        att: {
+                                                            className: `fa-solid ${data.status ? 'fa-check-circle' : 'fa-clock'}`
+                                                        },
+                                                        style: {
+                                                            color: data.status ? '#22c55e' : '#f59e0b',
+                                                            fontSize: '0.9vw'
+                                                        }
+                                                    }),
+                                                    $({
+                                                        tag: 'span',
+                                                        text: data.status ? 'Sent' : 'Pending',
+                                                        style: {
+                                                            color: data.status ? '#22c55e' : '#f59e0b',
+                                                            fontSize: '0.9vw',
+                                                            fontWeight: '500'
+                                                        }
+                                                    })
+                                                ]
+                                            }),
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.5vw'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'span',
+                                                        att: {
+                                                            className: 'fa-solid fa-file'
+                                                        },
+                                                        style: {
+                                                            color: '#3b82f6',
+                                                            fontSize: '0.9vw'
+                                                        }
+                                                    }),
+                                                    $({
+                                                        tag: 'span',
+                                                        text: `Document #${data.document_id || 'N/A'}`,
+                                                        style: {
+                                                            color: '#1e293b',
+                                                            fontSize: '0.9vw',
+                                                            fontWeight: '500'
+                                                        }
+                                                    })
+                                                ]
+                                            })
+                                        ]
+                                    }),
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            padding: '0.5rem 0',
+                                            fontSize: '0.85vw',
+                                            color: '#64748b'
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'span',
+                                                text: `Log ID: E-${data.id}`
+                                            }),
+                                            $({
+                                                tag: 'span',
+                                                text: `Evaluator ID: ${data.evaluator_id || 'N/A'}`
+                                            })
+                                        ]
+                                    })
+                                ]
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'center'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'button',
+                                        style: {
+                                            padding: '0.6rem 2rem',
+                                            background: '#3b82f6',
+                                            border: 'none',
+                                            borderRadius: '2vw',
+                                            color: '#fff',
+                                            cursor: 'pointer',
+                                            fontSize: '0.9vw',
+                                            fontFamily: 'Segoe UI, sans-serif',
+                                            fontWeight: '600',
+                                            transition: 'all 0.2s ease',
+                                            minWidth: '150px'
+                                        },
+                                        text: 'Close',
+                                        event: {
+                                            type: 'click',
+                                            method: () => {
+                                                modal.remove()
+                                            },
+                                            mouseover: (e) => {
+                                                e.target.style.background = '#2563eb'
+                                            },
+                                            mouseout: (e) => {
+                                                e.target.style.background = '#3b82f6'
+                                            }
+                                        }
+                                    })
+                                ]
+                            })
+                        ]
+                    })
+                ]
+            })
+
+            document.body.appendChild(modal)
         }
 
         const sortEmailData = (column, data) => {
             const sorted = [...data]
             const ascending = currentSort.column === column ? !currentSort.ascending : true
-            
+
             sorted.sort((a, b) => {
                 let valA, valB
-                
-                switch(column) {
+
+                switch (column) {
                     case 'date':
                         valA = new Date(a.sent_date)
                         valB = new Date(b.sent_date)
@@ -1069,12 +1434,12 @@ export const DocumentLog = () => {
                     default:
                         return 0
                 }
-                
+
                 if (valA < valB) return ascending ? -1 : 1
                 if (valA > valB) return ascending ? 1 : -1
                 return 0
             })
-            
+
             currentSort = { column, ascending }
             return sorted
         }
@@ -1088,8 +1453,8 @@ export const DocumentLog = () => {
                     display: 'flex',
                     alignItems: 'center',
                     cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    borderLeft: 'solid thin rgba(255,255,255,0.1)',
+                    transition: 'all 0.2s ease',
+                    borderLeft: 'solid thin #e2e8f0',
                     boxSizing: 'border-box'
                 },
                 att: {
@@ -1098,29 +1463,27 @@ export const DocumentLog = () => {
                 event: {
                     type: 'click',
                     method: (event) => {
-                        // Update sort icons
                         const headers = document.querySelectorAll('.sortHead')
                         headers.forEach(header => {
                             const icon = header.querySelector('.sort-icon')
                             if (icon) {
                                 icon.className = 'fa-solid fa-sort sort-icon'
-                                icon.style.color = '#666'
+                                icon.style.color = '#94a3b8'
                             }
                         })
-                        
+
                         const currentIcon = event.currentTarget.querySelector('.sort-icon')
                         if (currentIcon) {
                             if (currentSort.column === column) {
-                                currentIcon.className = currentSort.ascending ? 
-                                    'fa-solid fa-sort-up sort-icon' : 
+                                currentIcon.className = currentSort.ascending ?
+                                    'fa-solid fa-sort-up sort-icon' :
                                     'fa-solid fa-sort-down sort-icon'
                             } else {
                                 currentIcon.className = 'fa-solid fa-sort-up sort-icon'
                             }
-                            currentIcon.style.color = '#00bcd4'
+                            currentIcon.style.color = '#3b82f6'
                         }
-                        
-                        // Resort and redisplay data
+
                         const req = new Request('/documentLog');
                         req.Post([{ name: 'emailLogRequest', value: '1' }])
                         req.Json()
@@ -1147,7 +1510,7 @@ export const DocumentLog = () => {
                         })
                     },
                     mouseover: (e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(0,188,212,0.1)'
+                        e.currentTarget.style.backgroundColor = '#f1f5f9'
                     },
                     mouseout: (e) => {
                         e.currentTarget.style.backgroundColor = 'transparent'
@@ -1159,9 +1522,9 @@ export const DocumentLog = () => {
                         text: label,
                         style: {
                             marginLeft: '1vw',
-                            color: '#888',
+                            color: '#64748b',
                             fontWeight: '600',
-                            fontSize: '0.9vw',
+                            fontSize: '0.75vw',
                             textTransform: 'uppercase',
                             letterSpacing: '0.5px',
                             flex: 1
@@ -1178,9 +1541,9 @@ export const DocumentLog = () => {
                             className: 'fa-solid fa-sort sort-icon'
                         },
                         style: {
-                            color: '#666',
-                            fontSize: '0.9vw',
-                            transition: 'color 0.3s ease'
+                            color: '#94a3b8',
+                            fontSize: '0.8vw',
+                            transition: 'color 0.2s ease'
                         }
                     })
                 ]
@@ -1193,7 +1556,8 @@ export const DocumentLog = () => {
                 height: '100%',
                 width: '100%',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                background: '#ffffff'
             },
             child: [
                 $({
@@ -1204,24 +1568,36 @@ export const DocumentLog = () => {
                         display: 'flex',
                         alignItems: 'center',
                         padding: '0 1vw',
-                        marginBottom: '1vh',
+                        marginBottom: '0.5vh',
                         boxSizing: 'border-box'
                     },
                     child: [
                         $({
                             tag: 'div',
                             style: {
-                                height: '5vh',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                height: '4vh',
+                                border: '1px solid #e2e8f0',
                                 width: '30vw',
                                 borderRadius: '2vw',
                                 display: 'flex',
                                 padding: '0 1vw',
-                                backgroundColor: 'rgba(0,0,0,0.4)',
-                                color: '#bbb',
+                                backgroundColor: '#f8fafc',
+                                color: '#334155',
                                 alignItems: 'center',
-                                transition: 'all 0.3s ease',
+                                transition: 'all 0.2s ease',
                                 boxSizing: 'border-box'
+                            },
+                            event: {
+                                focusin: (e) => {
+                                    e.currentTarget.style.borderColor = '#3b82f6'
+                                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                                    e.currentTarget.style.backgroundColor = '#ffffff'
+                                },
+                                focusout: (e) => {
+                                    e.currentTarget.style.borderColor = '#e2e8f0'
+                                    e.currentTarget.style.boxShadow = 'none'
+                                    e.currentTarget.style.backgroundColor = '#f8fafc'
+                                }
                             },
                             child: [
                                 $({
@@ -1230,8 +1606,8 @@ export const DocumentLog = () => {
                                         className: 'fa-solid fa-search'
                                     },
                                     style: {
-                                        fontSize: '1vw',
-                                        color: '#666',
+                                        fontSize: '0.8vw',
+                                        color: '#94a3b8',
                                         marginRight: '0.5vw'
                                     }
                                 }),
@@ -1243,8 +1619,8 @@ export const DocumentLog = () => {
                                         outline: 'none',
                                         height: '100%',
                                         width: '100%',
-                                        color: '#e0e0e0',
-                                        fontSize: '0.95vw',
+                                        color: '#1e293b',
+                                        fontSize: '0.8vw',
                                         fontFamily: 'Segoe UI, sans-serif'
                                     },
                                     att: {
@@ -1275,8 +1651,8 @@ export const DocumentLog = () => {
                                 marginLeft: 'auto',
                                 display: 'flex',
                                 gap: '0.5vw',
-                                color: '#888',
-                                fontSize: '0.9vw'
+                                color: '#94a3b8',
+                                fontSize: '0.75vw'
                             },
                             child: [
                                 $({
@@ -1285,7 +1661,7 @@ export const DocumentLog = () => {
                                         className: 'fa-solid fa-info-circle'
                                     },
                                     style: {
-                                        color: '#00bcd4'
+                                        color: '#3b82f6'
                                     }
                                 }),
                                 $({
@@ -1301,11 +1677,11 @@ export const DocumentLog = () => {
                     style: {
                         width: '100%',
                         height: '6%',
-                        borderTop: '1px solid rgba(255,255,255,0.1)',
-                        borderBottom: '1px solid rgba(255,255,255,0.1)',
+                        borderTop: '1px solid #e2e8f0',
+                        borderBottom: '1px solid #e2e8f0',
                         display: 'flex',
                         fontFamily: 'Segoe UI, sans-serif',
-                        background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
+                        background: '#f8fafc',
                         boxSizing: 'border-box'
                     },
                     child: [
@@ -1322,7 +1698,7 @@ export const DocumentLog = () => {
                                 height: '100%',
                                 display: 'flex',
                                 alignItems: 'center',
-                                borderLeft: 'solid thin rgba(255,255,255,0.1)',
+                                borderLeft: 'solid thin #e2e8f0',
                                 boxSizing: 'border-box'
                             },
                             child: [
@@ -1331,9 +1707,9 @@ export const DocumentLog = () => {
                                     text: 'LOG ID',
                                     style: {
                                         marginLeft: '1vw',
-                                        color: '#888',
+                                        color: '#64748b',
                                         fontWeight: '600',
-                                        fontSize: '0.9vw',
+                                        fontSize: '0.75vw',
                                         textTransform: 'uppercase',
                                         letterSpacing: '0.5px'
                                     }
@@ -1349,8 +1725,7 @@ export const DocumentLog = () => {
                         width: '100%',
                         overflowY: 'auto',
                         padding: '0.5vw',
-                        scrollbarWidth: 'thin',
-                        scrollbarColor: '#00bcd4 #1a1a1a',
+                        background: '#ffffff',
                         boxSizing: 'border-box'
                     },
                     elementHandler: (el) => {
@@ -1365,9 +1740,8 @@ export const DocumentLog = () => {
                         req.Json()
                         req.Send().then(data => {
                             if (Array.isArray(data) && data.length > 0) {
-                                // Sort by date initially (newest first)
                                 data.sort((a, b) => new Date(b.sent_date) - new Date(a.sent_date))
-                                
+
                                 data.forEach(val => {
                                     el.appendChild(EmailLogItem({
                                         id: val.id,
@@ -1386,7 +1760,7 @@ export const DocumentLog = () => {
                                         width: '100%',
                                         padding: '4rem 2rem',
                                         textAlign: 'center',
-                                        color: '#888'
+                                        color: '#94a3b8'
                                     },
                                     child: [
                                         $({
@@ -1396,7 +1770,7 @@ export const DocumentLog = () => {
                                             },
                                             style: {
                                                 fontSize: '3vw',
-                                                color: '#333',
+                                                color: '#e2e8f0',
                                                 marginBottom: '1vh'
                                             }
                                         }),
@@ -1404,7 +1778,8 @@ export const DocumentLog = () => {
                                             tag: 'div',
                                             text: 'No email logs found',
                                             style: {
-                                                fontSize: '1.2vw'
+                                                fontSize: '1vw',
+                                                color: '#64748b'
                                             }
                                         })
                                     ]
@@ -1418,7 +1793,7 @@ export const DocumentLog = () => {
                                     width: '100%',
                                     padding: '4rem 2rem',
                                     textAlign: 'center',
-                                    color: '#f44336'
+                                    color: '#ef4444'
                                 },
                                 child: [
                                     $({
@@ -1428,7 +1803,7 @@ export const DocumentLog = () => {
                                         },
                                         style: {
                                             fontSize: '3vw',
-                                            color: '#f44336',
+                                            color: '#ef4444',
                                             marginBottom: '1vh'
                                         }
                                     }),
@@ -1436,7 +1811,8 @@ export const DocumentLog = () => {
                                         tag: 'div',
                                         text: 'Failed to load email logs',
                                         style: {
-                                            fontSize: '1.2vw'
+                                            fontSize: '1vw',
+                                            color: '#ef4444'
                                         }
                                     })
                                 ]
@@ -1458,8 +1834,8 @@ export const DocumentLog = () => {
                 justifyContent: 'center',
                 gap: '0.5vw',
                 padding: '0 1vw',
-                background: 'linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%)',
-                borderBottom: '1px solid #333'
+                background: '#ffffff',
+                borderBottom: '1px solid #e2e8f0'
             },
             child: [
                 Bot({
@@ -1479,7 +1855,7 @@ export const DocumentLog = () => {
         style: {
             height: '100%',
             width: '100%',
-            backgroundColor: '#1a1a1a',
+            backgroundColor: '#ffffff',
             overflow: 'hidden'
         },
         externalStyle: '/client/component/adminComponent/componentStyle/docLogStyle.css',
