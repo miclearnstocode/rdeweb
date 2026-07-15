@@ -1,34 +1,43 @@
-/* Event Component Styles */
+/* Event Component Styles - Modern Light */
 .eventDet {
     cursor: default;
 }
 
 .eventDet:hover {
-    background-color: #333 !important;
-    border-color: #555 !important;
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 /* Input Styles */
 .event-name-input::placeholder {
-    color: #666;
+    color: #94a3b8;
 }
 
-/* Scrollbar Styles */
+.event-name-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Scrollbar Styles - Light */
 ::-webkit-scrollbar {
-    width: 6px;
+    width: 5px;
+    height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #2a2a2a;
+    background: #f1f5f9;
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #444;
-    border-radius: 3px;
+    background: #cbd5e1;
+    border-radius: 4px;
+    transition: all 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: #94a3b8;
 }
 
 /* Animations */
@@ -41,6 +50,18 @@
     to {
         transform: translateX(0);
         opacity: 1;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
@@ -57,22 +78,64 @@
     }
 
     25% {
-        transform: rotate(-10deg);
+        transform: rotate(-8deg);
     }
 
     75% {
-        transform: rotate(10deg);
+        transform: rotate(8deg);
     }
 }
 
+/* Button Hover States */
+button {
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .eventDet {
         flex-wrap: wrap;
         gap: 6px;
     }
 
     .eventDet>div {
+        min-width: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .eventDet {
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 10px !important;
+    }
+
+    .eventDet>div {
         width: calc(50% - 4px) !important;
+        flex: none !important;
+    }
+
+    .eventDet .fa-folder-open,
+    .eventDet .fa-trash-can {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 12px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .eventDet {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    .eventDet>div {
+        width: 100% !important;
+        text-align: left !important;
     }
 }

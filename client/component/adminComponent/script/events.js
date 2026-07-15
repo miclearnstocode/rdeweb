@@ -42,12 +42,12 @@ export const Events = () => {
                 right: '20px',
                 padding: '12px 24px',
                 borderRadius: '8px',
-                backgroundColor: type === 'error' ? '#e91e63' : '#4caf50',
+                backgroundColor: type === 'error' ? '#ef4444' : '#22c55e',
                 color: '#fff',
                 fontSize: '14px',
                 zIndex: '5000',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                fontFamily: 'Segoe UI, sans-serif',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                 animation: 'slideIn 0.3s ease'
             }
         })
@@ -63,16 +63,14 @@ export const Events = () => {
 
     // Format date helper
     const formatDate = (dateString) => {
-        if (!dateString || dateString === '—') return '—'
+        if (!dateString || dateString === '—' || dateString === '0000-00-00 00:00:00') return '—'
         try {
-            const date = new Date(dateString)
+            const date = new Date(dateString.replace(' ', 'T'))
             if (isNaN(date.getTime())) return dateString
             return date.toLocaleDateString('en-US', {
-                month: 'long',
+                month: 'short',
                 day: 'numeric',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+                year: 'numeric'
             })
         } catch (e) {
             return dateString
@@ -83,17 +81,13 @@ export const Events = () => {
     const formatDateForInput = (dateString) => {
         if (!dateString || dateString === '—' || dateString === '0000-00-00 00:00:00') return ''
         try {
-            // Handle the database format: "YYYY-MM-DD HH:MM:SS"
             const date = new Date(dateString.replace(' ', 'T'))
             if (isNaN(date.getTime())) return ''
-
-            // Format to YYYY-MM-DDTHH:MM
             const year = date.getFullYear()
             const month = String(date.getMonth() + 1).padStart(2, '0')
             const day = String(date.getDate()).padStart(2, '0')
             const hours = String(date.getHours()).padStart(2, '0')
             const minutes = String(date.getMinutes()).padStart(2, '0')
-
             return `${year}-${month}-${day}T${hours}:${minutes}`
         } catch (e) {
             return ''
@@ -111,9 +105,10 @@ export const Events = () => {
             style: {
                 width: '100%',
                 padding: '24px',
-                backgroundColor: '#2d2d2d',
-                borderRadius: '16px',
-                border: '1px solid #444'
+                backgroundColor: '#ffffff',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
             },
             child: [
                 $({
@@ -126,20 +121,20 @@ export const Events = () => {
                             tag: 'h2',
                             text: 'Add New Event',
                             style: {
-                                color: '#fff',
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '20px',
+                                color: '#1e293b',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '18px',
                                 fontWeight: '600',
-                                margin: '0 0 8px 0',
-                                letterSpacing: '-0.5px'
+                                margin: '0 0 4px 0',
+                                letterSpacing: '-0.3px'
                             }
                         }),
                         $({
                             tag: 'p',
                             text: 'Create a new event for research presentations and symposiums',
                             style: {
-                                color: '#888',
-                                fontFamily: 'Segoe UI, sans-serif',
+                                color: '#94a3b8',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                 fontSize: '13px',
                                 margin: '0'
                             }
@@ -157,11 +152,11 @@ export const Events = () => {
                             text: 'Event Name',
                             style: {
                                 display: 'block',
-                                marginBottom: '8px',
-                                color: '#aaa',
+                                marginBottom: '6px',
+                                color: '#64748b',
                                 fontSize: '13px',
                                 fontWeight: '500',
-                                fontFamily: 'Segoe UI, sans-serif'
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                             }
                         }),
                         $({
@@ -173,14 +168,14 @@ export const Events = () => {
                             },
                             style: {
                                 width: '100%',
-                                padding: '12px 16px',
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
+                                padding: '10px 14px',
+                                backgroundColor: '#f8fafc',
+                                border: '1px solid #e2e8f0',
                                 borderRadius: '8px',
-                                color: '#fff',
+                                color: '#1e293b',
                                 fontSize: '14px',
                                 outline: 'none',
-                                fontFamily: 'Segoe UI, sans-serif',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                 transition: 'all 0.2s ease',
                                 boxSizing: 'border-box'
                             },
@@ -192,12 +187,14 @@ export const Events = () => {
                             },
                             elementHandler: (el) => {
                                 el.addEventListener('focus', () => {
-                                    el.style.borderColor = 'deepskyblue'
-                                    el.style.boxShadow = '0 0 0 3px rgba(0, 191, 255, 0.1)'
+                                    el.style.borderColor = '#3b82f6'
+                                    el.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                                    el.style.backgroundColor = '#ffffff'
                                 })
                                 el.addEventListener('blur', () => {
-                                    el.style.borderColor = '#444'
+                                    el.style.borderColor = '#e2e8f0'
                                     el.style.boxShadow = 'none'
+                                    el.style.backgroundColor = '#f8fafc'
                                 })
                             }
                         })
@@ -210,15 +207,15 @@ export const Events = () => {
                     text: 'Save Event',
                     style: {
                         width: '100%',
-                        padding: '12px 24px',
-                        backgroundColor: 'deepskyblue',
+                        padding: '10px 24px',
+                        backgroundColor: '#3b82f6',
                         border: 'none',
                         borderRadius: '8px',
                         color: '#fff',
                         fontSize: '14px',
                         fontWeight: '600',
                         cursor: 'pointer',
-                        fontFamily: 'Segoe UI, sans-serif',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                         transition: 'all 0.2s ease',
                         letterSpacing: '0.3px'
                     },
@@ -252,14 +249,10 @@ export const Events = () => {
                     },
                     elementHandler: (el) => {
                         el.addEventListener('mouseenter', () => {
-                            el.style.backgroundColor = '#00bfff'
-                            el.style.transform = 'translateY(-2px)'
-                            el.style.boxShadow = '0 4px 12px rgba(0, 191, 255, 0.3)'
+                            el.style.backgroundColor = '#2563eb'
                         })
                         el.addEventListener('mouseleave', () => {
-                            el.style.backgroundColor = 'deepskyblue'
-                            el.style.transform = 'translateY(0)'
-                            el.style.boxShadow = 'none'
+                            el.style.backgroundColor = '#3b82f6'
                         })
                     }
                 })
@@ -274,14 +267,14 @@ export const Events = () => {
         return $({
             tag: 'div',
             style: {
-                backgroundColor: '#2d2d2d',
-                borderRadius: '16px',
+                backgroundColor: '#ffffff',
+                borderRadius: '12px',
                 width: '500px',
                 maxWidth: '95%',
                 padding: '32px',
-                border: '1px solid #444',
-                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
-                fontFamily: 'Segoe UI, sans-serif',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                 position: 'relative'
             },
             child: [
@@ -293,7 +286,7 @@ export const Events = () => {
                         position: 'absolute',
                         top: '16px',
                         right: '16px',
-                        color: '#888',
+                        color: '#94a3b8',
                         fontSize: '20px',
                         cursor: 'pointer',
                         padding: '8px',
@@ -306,11 +299,11 @@ export const Events = () => {
                     },
                     elementHandler: (el) => {
                         el.addEventListener('mouseenter', () => {
-                            el.style.color = '#fff'
-                            el.style.backgroundColor = '#444'
+                            el.style.color = '#1e293b'
+                            el.style.backgroundColor = '#f1f5f9'
                         })
                         el.addEventListener('mouseleave', () => {
-                            el.style.color = '#888'
+                            el.style.color = '#94a3b8'
                             el.style.backgroundColor = 'transparent'
                         })
                     }
@@ -325,18 +318,18 @@ export const Events = () => {
                             tag: 'h2',
                             text: 'Update Submission Deadline',
                             style: {
-                                color: '#fff',
-                                fontSize: '20px',
+                                color: '#1e293b',
+                                fontSize: '18px',
                                 fontWeight: '600',
-                                margin: '0 0 8px 0',
-                                letterSpacing: '-0.5px'
+                                margin: '0 0 4px 0',
+                                letterSpacing: '-0.3px'
                             }
                         }),
                         $({
                             tag: 'p',
                             text: eventName || 'Event',
                             style: {
-                                color: 'deepskyblue',
+                                color: '#3b82f6',
                                 fontSize: '14px',
                                 margin: '0',
                                 fontWeight: '500'
@@ -355,8 +348,8 @@ export const Events = () => {
                             text: 'Submission Deadline',
                             style: {
                                 display: 'block',
-                                marginBottom: '8px',
-                                color: '#aaa',
+                                marginBottom: '6px',
+                                color: '#64748b',
                                 fontSize: '13px',
                                 fontWeight: '500'
                             }
@@ -374,7 +367,7 @@ export const Events = () => {
                                         left: '12px',
                                         top: '50%',
                                         transform: 'translateY(-50%)',
-                                        color: 'deepskyblue',
+                                        color: '#3b82f6',
                                         fontSize: '18px',
                                         zIndex: '1'
                                     },
@@ -393,14 +386,14 @@ export const Events = () => {
                                     },
                                     style: {
                                         width: '100%',
-                                        padding: '12px 16px 12px 48px',
-                                        backgroundColor: '#333',
-                                        border: '1px solid #444',
+                                        padding: '10px 14px 10px 48px',
+                                        backgroundColor: '#f8fafc',
+                                        border: '1px solid #e2e8f0',
                                         borderRadius: '8px',
-                                        color: '#fff',
+                                        color: '#1e293b',
                                         fontSize: '14px',
                                         outline: 'none',
-                                        fontFamily: 'Segoe UI, sans-serif',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                         transition: 'all 0.2s ease',
                                         boxSizing: 'border-box'
                                     },
@@ -411,19 +404,20 @@ export const Events = () => {
                                         }
                                     },
                                     elementHandler: (el) => {
-                                        // FIXED: Use proper date formatting for datetime-local input
                                         const formattedDate = formatDateForInput(currentDeadline)
                                         if (formattedDate) {
                                             el.value = formattedDate
                                             timeIn = formattedDate
                                         }
                                         el.addEventListener('focus', () => {
-                                            el.style.borderColor = 'deepskyblue'
-                                            el.style.boxShadow = '0 0 0 3px rgba(0, 191, 255, 0.1)'
+                                            el.style.borderColor = '#3b82f6'
+                                            el.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                                            el.style.backgroundColor = '#ffffff'
                                         })
                                         el.addEventListener('blur', () => {
-                                            el.style.borderColor = '#444'
+                                            el.style.borderColor = '#e2e8f0'
                                             el.style.boxShadow = 'none'
+                                            el.style.backgroundColor = '#f8fafc'
                                         })
                                     }
                                 })
@@ -438,15 +432,15 @@ export const Events = () => {
                     text: 'Update Deadline',
                     style: {
                         width: '100%',
-                        padding: '12px 24px',
-                        backgroundColor: 'deepskyblue',
+                        padding: '10px 24px',
+                        backgroundColor: '#3b82f6',
                         border: 'none',
                         borderRadius: '8px',
                         color: '#fff',
                         fontSize: '14px',
                         fontWeight: '600',
                         cursor: 'pointer',
-                        fontFamily: 'Segoe UI, sans-serif',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                         transition: 'all 0.2s ease'
                     },
                     event: {
@@ -482,14 +476,10 @@ export const Events = () => {
                     },
                     elementHandler: (el) => {
                         el.addEventListener('mouseenter', () => {
-                            el.style.backgroundColor = '#00bfff'
-                            el.style.transform = 'translateY(-2px)'
-                            el.style.boxShadow = '0 4px 12px rgba(0, 191, 255, 0.3)'
+                            el.style.backgroundColor = '#2563eb'
                         })
                         el.addEventListener('mouseleave', () => {
-                            el.style.backgroundColor = 'deepskyblue'
-                            el.style.transform = 'translateY(0)'
-                            el.style.boxShadow = 'none'
+                            el.style.backgroundColor = '#3b82f6'
                         })
                     }
                 })
@@ -504,14 +494,14 @@ export const Events = () => {
         return $({
             tag: 'div',
             style: {
-                backgroundColor: '#2d2d2d',
-                borderRadius: '16px',
+                backgroundColor: '#ffffff',
+                borderRadius: '12px',
                 width: '500px',
                 maxWidth: '95%',
                 padding: '32px',
-                border: '1px solid #444',
-                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
-                fontFamily: 'Segoe UI, sans-serif',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                 position: 'relative'
             },
             child: [
@@ -523,7 +513,7 @@ export const Events = () => {
                         position: 'absolute',
                         top: '16px',
                         right: '16px',
-                        color: '#888',
+                        color: '#94a3b8',
                         fontSize: '20px',
                         cursor: 'pointer',
                         padding: '8px',
@@ -536,11 +526,11 @@ export const Events = () => {
                     },
                     elementHandler: (el) => {
                         el.addEventListener('mouseenter', () => {
-                            el.style.color = '#fff'
-                            el.style.backgroundColor = '#444'
+                            el.style.color = '#1e293b'
+                            el.style.backgroundColor = '#f1f5f9'
                         })
                         el.addEventListener('mouseleave', () => {
-                            el.style.color = '#888'
+                            el.style.color = '#94a3b8'
                             el.style.backgroundColor = 'transparent'
                         })
                     }
@@ -555,18 +545,18 @@ export const Events = () => {
                             tag: 'h2',
                             text: 'Update Presentation Date',
                             style: {
-                                color: '#fff',
-                                fontSize: '20px',
+                                color: '#1e293b',
+                                fontSize: '18px',
                                 fontWeight: '600',
-                                margin: '0 0 8px 0',
-                                letterSpacing: '-0.5px'
+                                margin: '0 0 4px 0',
+                                letterSpacing: '-0.3px'
                             }
                         }),
                         $({
                             tag: 'p',
                             text: eventName || 'Event',
                             style: {
-                                color: '#ff9800',
+                                color: '#f59e0b',
                                 fontSize: '14px',
                                 margin: '0',
                                 fontWeight: '500'
@@ -585,8 +575,8 @@ export const Events = () => {
                             text: 'Date of Presentation',
                             style: {
                                 display: 'block',
-                                marginBottom: '8px',
-                                color: '#aaa',
+                                marginBottom: '6px',
+                                color: '#64748b',
                                 fontSize: '13px',
                                 fontWeight: '500'
                             }
@@ -604,14 +594,14 @@ export const Events = () => {
                                         left: '12px',
                                         top: '50%',
                                         transform: 'translateY(-50%)',
-                                        color: '#ff9800',
+                                        color: '#f59e0b',
                                         fontSize: '18px',
                                         zIndex: '1'
                                     },
                                     child: [
                                         $({
                                             tag: 'span',
-                                            att: { className: 'fa-solid fa-presentation-screen' }
+                                            att: { className: 'fa-solid fa-calendar-alt' }
                                         })
                                     ]
                                 }),
@@ -623,14 +613,14 @@ export const Events = () => {
                                     },
                                     style: {
                                         width: '100%',
-                                        padding: '12px 16px 12px 48px',
-                                        backgroundColor: '#333',
-                                        border: '1px solid #444',
+                                        padding: '10px 14px 10px 48px',
+                                        backgroundColor: '#f8fafc',
+                                        border: '1px solid #e2e8f0',
                                         borderRadius: '8px',
-                                        color: '#fff',
+                                        color: '#1e293b',
                                         fontSize: '14px',
                                         outline: 'none',
-                                        fontFamily: 'Segoe UI, sans-serif',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                         transition: 'all 0.2s ease',
                                         boxSizing: 'border-box'
                                     },
@@ -641,19 +631,20 @@ export const Events = () => {
                                         }
                                     },
                                     elementHandler: (el) => {
-                                        // FIXED: Use proper date formatting for datetime-local input
                                         const formattedDate = formatDateForInput(currentPresentation)
                                         if (formattedDate) {
                                             el.value = formattedDate
                                             presentationDate = formattedDate
                                         }
                                         el.addEventListener('focus', () => {
-                                            el.style.borderColor = '#ff9800'
-                                            el.style.boxShadow = '0 0 0 3px rgba(255, 152, 0, 0.1)'
+                                            el.style.borderColor = '#f59e0b'
+                                            el.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.1)'
+                                            el.style.backgroundColor = '#ffffff'
                                         })
                                         el.addEventListener('blur', () => {
-                                            el.style.borderColor = '#444'
+                                            el.style.borderColor = '#e2e8f0'
                                             el.style.boxShadow = 'none'
+                                            el.style.backgroundColor = '#f8fafc'
                                         })
                                     }
                                 })
@@ -668,15 +659,15 @@ export const Events = () => {
                     text: 'Update Presentation Date',
                     style: {
                         width: '100%',
-                        padding: '12px 24px',
-                        backgroundColor: '#ff9800',
+                        padding: '10px 24px',
+                        backgroundColor: '#f59e0b',
                         border: 'none',
                         borderRadius: '8px',
                         color: '#fff',
                         fontSize: '14px',
                         fontWeight: '600',
                         cursor: 'pointer',
-                        fontFamily: 'Segoe UI, sans-serif',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                         transition: 'all 0.2s ease'
                     },
                     event: {
@@ -712,14 +703,10 @@ export const Events = () => {
                     },
                     elementHandler: (el) => {
                         el.addEventListener('mouseenter', () => {
-                            el.style.backgroundColor = '#ffb347'
-                            el.style.transform = 'translateY(-2px)'
-                            el.style.boxShadow = '0 4px 12px rgba(255, 152, 0, 0.3)'
+                            el.style.backgroundColor = '#d97706'
                         })
                         el.addEventListener('mouseleave', () => {
-                            el.style.backgroundColor = '#ff9800'
-                            el.style.transform = 'translateY(0)'
-                            el.style.boxShadow = 'none'
+                            el.style.backgroundColor = '#f59e0b'
                         })
                     }
                 })
@@ -741,7 +728,7 @@ export const Events = () => {
                     left: '0',
                     width: '100%',
                     height: '100%',
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    backgroundColor: 'rgba(15,23,42,0.6)',
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -780,7 +767,7 @@ export const Events = () => {
                     left: '0',
                     width: '100%',
                     height: '100%',
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    backgroundColor: 'rgba(15,23,42,0.6)',
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -815,11 +802,11 @@ export const Events = () => {
                 alignItems: 'center',
                 height: 'fit-content',
                 width: '100%',
-                margin: '6px 0',
-                padding: '14px 12px',
-                borderRadius: '10px',
-                backgroundColor: '#2d2d2d',
-                border: '1px solid #444',
+                margin: '4px 0',
+                padding: '12px 12px',
+                borderRadius: '8px',
+                backgroundColor: '#ffffff',
+                border: '1px solid #f1f5f9',
                 transition: 'all 0.2s ease',
                 gap: '8px'
             },
@@ -836,28 +823,28 @@ export const Events = () => {
                     },
                     style: {
                         margin: 'auto',
-                        width: '36px',
-                        height: '36px',
+                        width: '32px',
+                        height: '32px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        color: 'deepskyblue',
-                        backgroundColor: 'rgba(0, 191, 255, 0.1)',
-                        border: '1px solid rgba(0, 191, 255, 0.3)',
-                        borderRadius: '8px',
-                        fontSize: '16px',
+                        color: '#3b82f6',
+                        backgroundColor: 'rgba(59,130,246,0.08)',
+                        border: '1px solid rgba(59,130,246,0.15)',
+                        borderRadius: '6px',
+                        fontSize: '14px',
                         textDecoration: 'none',
                         transition: 'all 0.2s ease',
                         flexShrink: '0'
                     },
                     elementHandler: (el) => {
                         el.addEventListener('mouseenter', () => {
-                            el.style.backgroundColor = 'rgba(0, 191, 255, 0.2)'
-                            el.style.transform = 'scale(1.1)'
+                            el.style.backgroundColor = 'rgba(59,130,246,0.15)'
+                            el.style.transform = 'scale(1.05)'
                         })
                         el.addEventListener('mouseleave', () => {
-                            el.style.backgroundColor = 'rgba(0, 191, 255, 0.1)'
+                            el.style.backgroundColor = 'rgba(59,130,246,0.08)'
                             el.style.transform = 'scale(1)'
                         })
                     }
@@ -868,12 +855,12 @@ export const Events = () => {
                     tag: 'div',
                     style: {
                         flex: '1',
-                        fontFamily: 'Segoe UI, sans-serif',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                         fontSize: '13px',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
-                        color: '#ddd',
+                        color: '#1e293b',
                         margin: 'auto',
                         minWidth: '0',
                         fontWeight: '500'
@@ -887,11 +874,11 @@ export const Events = () => {
                     tag: 'div',
                     style: {
                         width: '80px',
-                        fontFamily: 'Segoe UI, sans-serif',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                         textAlign: 'center',
                         height: 'fit-content',
                         margin: 'auto',
-                        fontSize: '12px',
+                        fontSize: '11px',
                         fontWeight: '600',
                         padding: '4px 12px',
                         borderRadius: '20px',
@@ -907,18 +894,18 @@ export const Events = () => {
                             req.Json()
                             req.Send().then(responseData => {
                                 el.innerText = (responseData.status) ? "Active" : 'Closed'
-                                el.style.color = (responseData.status) ? '#4caf50' : '#e91e63'
-                                el.style.backgroundColor = (responseData.status) ? 'rgba(76, 175, 80, 0.15)' : 'rgba(233, 30, 99, 0.15)'
-                                el.style.border = (responseData.status) ? '1px solid rgba(76, 175, 80, 0.3)' : '1px solid rgba(233, 30, 99, 0.3)'
+                                el.style.color = (responseData.status) ? '#22c55e' : '#ef4444'
+                                el.style.backgroundColor = (responseData.status) ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)'
+                                el.style.border = (responseData.status) ? '1px solid rgba(34,197,94,0.15)' : '1px solid rgba(239,68,68,0.15)'
                             }).catch(() => {
                                 el.innerText = "Unknown"
-                                el.style.color = '#888'
-                                el.style.backgroundColor = 'rgba(136, 136, 136, 0.15)'
-                                el.style.border = '1px solid rgba(136, 136, 136, 0.3)'
+                                el.style.color = '#94a3b8'
+                                el.style.backgroundColor = 'rgba(148,163,184,0.08)'
+                                el.style.border = '1px solid rgba(148,163,184,0.15)'
                             })
                         } catch (e) {
                             el.innerText = "Error"
-                            el.style.color = '#888'
+                            el.style.color = '#94a3b8'
                         }
                     },
                     text: (status) ? "Active" : "Closed"
@@ -928,22 +915,22 @@ export const Events = () => {
                 $({
                     tag: 'div',
                     style: {
-                        width: '160px',
+                        width: '140px',
                         height: 'fit-content',
-                        padding: '6px 12px',
+                        padding: '5px 10px',
                         textAlign: "center",
-                        fontFamily: 'Segoe UI, sans-serif',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                         fontSize: '12px',
-                        backgroundColor: 'rgba(255, 152, 0, 0.1)',
-                        borderRadius: '8px',
-                        color: '#ff9800',
+                        backgroundColor: 'rgba(245,158,11,0.06)',
+                        borderRadius: '6px',
+                        color: '#f59e0b',
                         fontWeight: '500',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
                         flexShrink: '0',
-                        border: '1px solid rgba(255, 152, 0, 0.2)'
+                        border: '1px solid rgba(245,158,11,0.12)'
                     },
-                    text: presentationDate && presentationDate !== '0000-00-00 00:00:00' ? formatDate(presentationDate) : 'Click to Set',
+                    text: presentationDate && presentationDate !== '0000-00-00 00:00:00' ? formatDate(presentationDate) : 'Set Date',
                     title: 'Click to update Presentation Date',
                     event: {
                         type: 'click',
@@ -951,12 +938,10 @@ export const Events = () => {
                     },
                     elementHandler: (el) => {
                         el.addEventListener('mouseenter', () => {
-                            el.style.backgroundColor = 'rgba(255, 152, 0, 0.2)'
-                            el.style.transform = 'scale(1.02)'
+                            el.style.backgroundColor = 'rgba(245,158,11,0.12)'
                         })
                         el.addEventListener('mouseleave', () => {
-                            el.style.backgroundColor = 'rgba(255, 152, 0, 0.1)'
-                            el.style.transform = 'scale(1)'
+                            el.style.backgroundColor = 'rgba(245,158,11,0.06)'
                         })
                     }
                 }),
@@ -965,22 +950,22 @@ export const Events = () => {
                 $({
                     tag: 'div',
                     style: {
-                        width: '160px',
+                        width: '140px',
                         height: 'fit-content',
-                        padding: '6px 12px',
+                        padding: '5px 10px',
                         textAlign: "center",
-                        fontFamily: 'Segoe UI, sans-serif',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                         fontSize: '12px',
-                        backgroundColor: 'rgba(0, 191, 255, 0.1)',
-                        borderRadius: '8px',
-                        color: 'deepskyblue',
+                        backgroundColor: 'rgba(59,130,246,0.06)',
+                        borderRadius: '6px',
+                        color: '#3b82f6',
                         fontWeight: '500',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
                         flexShrink: '0',
-                        border: '1px solid rgba(0, 191, 255, 0.2)'
+                        border: '1px solid rgba(59,130,246,0.12)'
                     },
-                    text: deadline && deadline !== '0000-00-00 00:00:00' ? formatDate(deadline) : 'Click to Set',
+                    text: deadline && deadline !== '0000-00-00 00:00:00' ? formatDate(deadline) : 'Set Date',
                     title: 'Click to update Submission Deadline',
                     event: {
                         type: 'click',
@@ -988,12 +973,10 @@ export const Events = () => {
                     },
                     elementHandler: (el) => {
                         el.addEventListener('mouseenter', () => {
-                            el.style.backgroundColor = 'rgba(0, 191, 255, 0.2)'
-                            el.style.transform = 'scale(1.02)'
+                            el.style.backgroundColor = 'rgba(59,130,246,0.12)'
                         })
                         el.addEventListener('mouseleave', () => {
-                            el.style.backgroundColor = 'rgba(0, 191, 255, 0.1)'
-                            el.style.transform = 'scale(1)'
+                            el.style.backgroundColor = 'rgba(59,130,246,0.06)'
                         })
                     }
                 }),
@@ -1005,18 +988,18 @@ export const Events = () => {
                         className: 'fa-solid fa-trash-can'
                     },
                     style: {
-                        width: '36px',
-                        height: '36px',
+                        width: '32px',
+                        height: '32px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         margin: 'auto',
-                        fontSize: '14px',
+                        fontSize: '13px',
                         cursor: 'pointer',
-                        color: '#e91e63',
-                        backgroundColor: 'rgba(233, 30, 99, 0.1)',
-                        border: '1px solid rgba(233, 30, 99, 0.2)',
-                        borderRadius: '8px',
+                        color: '#ef4444',
+                        backgroundColor: 'rgba(239,68,68,0.06)',
+                        border: '1px solid rgba(239,68,68,0.12)',
+                        borderRadius: '6px',
                         transition: 'all 0.2s ease',
                         flexShrink: '0'
                     },
@@ -1049,11 +1032,11 @@ export const Events = () => {
                     },
                     elementHandler: (el) => {
                         el.addEventListener('mouseenter', () => {
-                            el.style.backgroundColor = 'rgba(233, 30, 99, 0.2)'
-                            el.style.transform = 'scale(1.1)'
+                            el.style.backgroundColor = 'rgba(239,68,68,0.12)'
+                            el.style.transform = 'scale(1.05)'
                         })
                         el.addEventListener('mouseleave', () => {
-                            el.style.backgroundColor = 'rgba(233, 30, 99, 0.1)'
+                            el.style.backgroundColor = 'rgba(239,68,68,0.06)'
                             el.style.transform = 'scale(1)'
                         })
                     }
@@ -1083,7 +1066,8 @@ export const Events = () => {
                 width: '100%',
                 height: '100%',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                background: '#ffffff'
             },
             child: [
                 // Header
@@ -1091,30 +1075,30 @@ export const Events = () => {
                     tag: 'div',
                     style: {
                         padding: '16px 20px',
-                        borderBottom: '1px solid #444',
-                        backgroundColor: '#2d2d2d'
+                        borderBottom: '1px solid #f1f5f9',
+                        backgroundColor: '#ffffff'
                     },
                     child: [
                         $({
                             tag: 'h2',
                             text: 'Event List',
                             style: {
-                                fontFamily: 'Segoe UI, sans-serif',
-                                fontSize: '18px',
-                                color: '#fff',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                fontSize: '16px',
+                                color: '#1e293b',
                                 margin: '0',
                                 fontWeight: '600',
-                                letterSpacing: '-0.5px'
+                                letterSpacing: '-0.3px'
                             }
                         }),
                         $({
                             tag: 'p',
                             text: 'Manage existing events, update deadlines, and create criteria',
                             style: {
-                                fontFamily: 'Segoe UI, sans-serif',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                 fontSize: '12px',
-                                color: '#888',
-                                margin: '4px 0 0 0'
+                                color: '#94a3b8',
+                                margin: '2px 0 0 0'
                             }
                         })
                     ]
@@ -1127,9 +1111,9 @@ export const Events = () => {
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
-                        padding: '10px 12px',
-                        backgroundColor: '#333',
-                        borderBottom: '1px solid #444',
+                        padding: '8px 12px',
+                        backgroundColor: '#f8fafc',
+                        borderBottom: '1px solid #f1f5f9',
                         gap: '8px',
                         position: 'sticky',
                         top: '0',
@@ -1140,7 +1124,7 @@ export const Events = () => {
                             tag: 'div',
                             text: '',
                             style: {
-                                width: '36px',
+                                width: '32px',
                                 flexShrink: '0'
                             }
                         }),
@@ -1149,10 +1133,10 @@ export const Events = () => {
                             text: 'Event Name',
                             style: {
                                 flex: '1',
-                                fontFamily: 'Segoe UI, sans-serif',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                 fontWeight: '600',
-                                fontSize: '12px',
-                                color: '#aaa',
+                                fontSize: '11px',
+                                color: '#94a3b8',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.5px',
                                 minWidth: '0'
@@ -1163,10 +1147,10 @@ export const Events = () => {
                             text: 'Status',
                             style: {
                                 width: '80px',
-                                fontFamily: 'Segoe UI, sans-serif',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                 fontWeight: '600',
-                                fontSize: '12px',
-                                color: '#aaa',
+                                fontSize: '11px',
+                                color: '#94a3b8',
                                 textAlign: 'center',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.5px',
@@ -1175,13 +1159,13 @@ export const Events = () => {
                         }),
                         $({
                             tag: 'div',
-                            text: 'Presentation Date',
+                            text: 'Presentation',
                             style: {
-                                width: '160px',
-                                fontFamily: 'Segoe UI, sans-serif',
+                                width: '140px',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                 fontWeight: '600',
-                                fontSize: '12px',
-                                color: '#aaa',
+                                fontSize: '11px',
+                                color: '#94a3b8',
                                 textAlign: 'center',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.5px',
@@ -1192,11 +1176,11 @@ export const Events = () => {
                             tag: 'div',
                             text: 'Deadline',
                             style: {
-                                width: '160px',
-                                fontFamily: 'Segoe UI, sans-serif',
+                                width: '140px',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                 fontWeight: '600',
-                                fontSize: '12px',
-                                color: '#aaa',
+                                fontSize: '11px',
+                                color: '#94a3b8',
                                 textAlign: 'center',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.5px',
@@ -1207,7 +1191,7 @@ export const Events = () => {
                             tag: 'div',
                             text: '',
                             style: {
-                                width: '36px',
+                                width: '32px',
                                 flexShrink: '0'
                             }
                         })
@@ -1221,11 +1205,10 @@ export const Events = () => {
                         flex: '1',
                         overflowY: 'auto',
                         overflowX: 'hidden',
-                        padding: '8px 12px',
-                        backgroundColor: '#2a2a2a'
+                        padding: '6px 12px',
+                        backgroundColor: '#fafafa'
                     },
                     elementHandler: async (el) => {
-                        // Show loading while fetching
                         showLoading()
 
                         const form = new FormData()
@@ -1245,10 +1228,7 @@ export const Events = () => {
 
                             if (data && data.length > 0) {
                                 data.forEach(val => {
-                                    // FIXED: Pass the raw deadline from database, not the formatted one
                                     const rawDeadline = val.dead_line || null
-
-                                    // Format for display only
                                     let displayDeadline = '—'
                                     if (rawDeadline && rawDeadline !== '0000-00-00 00:00:00') {
                                         const dateParts = rawDeadline.split(' ')[0].split('-')
@@ -1262,13 +1242,12 @@ export const Events = () => {
                                         Evename: val.name,
                                         status: Boolean(val.status * 1),
                                         eventID: val.id,
-                                        deadline: rawDeadline,  // Pass the raw datetime string
+                                        deadline: rawDeadline,
                                         presentationDate: val.date_of_presentation || null,
                                         scoreId: val.scID
                                     }))
                                 })
                             } else {
-                                // Empty state
                                 el.appendChild($({
                                     tag: 'div',
                                     style: {
@@ -1277,8 +1256,8 @@ export const Events = () => {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         height: '100%',
-                                        color: '#888',
-                                        fontFamily: 'Segoe UI, sans-serif'
+                                        color: '#94a3b8',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
                                     },
                                     child: [
                                         $({
@@ -1287,16 +1266,16 @@ export const Events = () => {
                                             style: {
                                                 fontSize: '48px',
                                                 marginBottom: '16px',
-                                                opacity: '0.3'
+                                                color: '#e2e8f0'
                                             }
                                         }),
                                         $({
                                             tag: 'div',
                                             text: 'No Events Found',
                                             style: {
-                                                fontSize: '18px',
+                                                fontSize: '16px',
                                                 fontWeight: '600',
-                                                color: '#aaa'
+                                                color: '#64748b'
                                             }
                                         }),
                                         $({
@@ -1304,7 +1283,8 @@ export const Events = () => {
                                             text: 'Create your first event to get started',
                                             style: {
                                                 fontSize: '13px',
-                                                marginTop: '8px'
+                                                marginTop: '4px',
+                                                color: '#94a3b8'
                                             }
                                         })
                                     ]
@@ -1319,8 +1299,8 @@ export const Events = () => {
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     height: '100%',
-                                    color: '#e91e63',
-                                    fontFamily: 'Segoe UI, sans-serif',
+                                    color: '#ef4444',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                     fontSize: '14px'
                                 },
                                 text: 'Failed to load events. Please try again.'
@@ -1341,7 +1321,7 @@ export const Events = () => {
             width: '100%',
             height: '100%',
             position: 'relative',
-            backgroundColor: '#1a1a1a'
+            backgroundColor: '#f8fafc'
         },
         externalStyle: '/client/component/adminComponent/componentStyle/event.css',
         elementHandler: (el) => {
@@ -1362,10 +1342,10 @@ export const Events = () => {
                     $({
                         tag: 'div',
                         style: {
-                            width: '40%',
-                            padding: '24px',
-                            backgroundColor: '#2a2a2a',
-                            borderRight: '1px solid #444',
+                            width: '38%',
+                            padding: '20px',
+                            backgroundColor: '#ffffff',
+                            borderRight: '1px solid #f1f5f9',
                             overflowY: 'auto'
                         },
                         child: [
@@ -1376,8 +1356,8 @@ export const Events = () => {
                     $({
                         tag: 'div',
                         style: {
-                            width: '60%',
-                            backgroundColor: '#2a2a2a',
+                            width: '62%',
+                            backgroundColor: '#ffffff',
                             overflow: 'hidden'
                         },
                         child: [
