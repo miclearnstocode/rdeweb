@@ -1,6 +1,6 @@
 import { $, Request, Waiting } from '../../../lib/lib.js'
 
-export const ScoreBoard = ({ resId, eventId, center }) => {
+export const ScoreBoard = ({ resId, eventId, center, categoryId, userType }) => {
     let AbstainState = false;
     const dataArray = [];
 
@@ -19,7 +19,9 @@ export const ScoreBoard = ({ resId, eventId, center }) => {
         loading.offsetHeight;
 
         const form = new FormData();
-        form.append('center', center);
+        form.append('center', center || '');
+        form.append('categoryId', categoryId || '');
+        form.append('userType', userType || 'center');
         form.append('docId', resId);
         form.append('scoreSave', '1');
 

@@ -310,14 +310,14 @@ if(isset($_POST['deleteEvent'])){
     exit();
 }
 
-// Request Event RDE Documents - FIXED VERSION
+// Request Event RDE Documents
 if (isset($_POST['requestEventRDE'])) {
     ob_clean();
     
     $eventId = $_POST['eventId'] ?? '0';
     $page = max(1, (int)($_POST['page'] ?? 1));
     $limit = max(1, min(50, (int)($_POST['limit'] ?? 10)));
-    $offset = ($page - 1) * $limit; // Use OFFSET instead of keyset pagination for simplicity
+    $offset = ($page - 1) * $limit; 
     
     $res = [
         'data' => [],
@@ -337,7 +337,6 @@ if (isset($_POST['requestEventRDE'])) {
         mysqli_report(MYSQLI_REPORT_OFF);
         $con->set_charset('utf8mb4');
         
-        // FIXED COUNT query - corrected the WHERE clause syntax
         if ($eventId === '0' || $eventId === '') {
             $countSql = "
                 SELECT COUNT(*) as total
@@ -380,9 +379,7 @@ if (isset($_POST['requestEventRDE'])) {
         $res['totalPages'] = $total > 0 ? (int)ceil($total / $limit) : 0;
 
         if ($total > 0) {
-            // FIXED DATA query - simplified with OFFSET pagination
             if ($eventId === '0' || $eventId === '') {
-                // Query for All Events
                 $sql = "
                     SELECT
                         researchfile.id,
@@ -415,7 +412,6 @@ if (isset($_POST['requestEventRDE'])) {
                 $stmt->bind_param('ii', $limit, $offset);
                 
             } else {
-                // Query for specific event
                 $sql = "
                     SELECT
                         researchfile.id,
@@ -456,7 +452,6 @@ if (isset($_POST['requestEventRDE'])) {
             $data = [];
             
             while ($row = $result->fetch_assoc()) {
-                // Handle file URL - prioritize drive_view_url
                 if (!empty($row['drive_view_url'])) {
                     $row['file'] = $row['drive_view_url'];
                 } elseif (empty($row['file']) && !empty($row['drive_file_id'])) {
@@ -466,8 +461,6 @@ if (isset($_POST['requestEventRDE'])) {
             }
 
             $res['data'] = $data;
-            
-            // Check if there are more records
             $res['hasMore'] = ($page * $limit) < $total;
 
             $result->free();
@@ -501,12 +494,21 @@ if (isset($_POST['requestEventRDE'])) {
 // Collect Entries for Evaluators
 if(isset($_POST['collectEntries'])){
     $count = 0;
-    
+    $response = new stdClass();
+    $response->count = 0;
+    $response->userType = '';
+
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $centerFilter = '';
+        $userId = $_SESSION['userId'] ?? '';
         $centerId = $_SESSION['centerId'] ?? '';
+        $eventId = $_SESSION['eventId'] ?? '';
+        $userType = 'none';
+        $centerFilter = '';
+        $categoryIds = [];
         
         if (!empty($centerId)) {
+            $userType = 'center';
+            
             $queryCenter = "SELECT name, code FROM center WHERE id = ?";
             $stmtCenter = $con->prepare($queryCenter);
             if ($stmtCenter) {
@@ -520,32 +522,101 @@ if(isset($_POST['collectEntries'])){
                 $resultCenter->free();
                 $stmtCenter->close();
             }
-        }
-        
-        if (empty($centerFilter)) {
-            $centerFilter = $_SESSION['center'] ?? '';
-        }
-        
-        $eventId = $_SESSION['eventId'] ?? '';
-        
-        $query = "SELECT COUNT(*) as count FROM researchfile 
-            LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-            LEFT JOIN event_list ON researchfile.event_id = event_list.id
-            WHERE endorsement.status = 'accepted' 
-            AND researchfile.center = ?
-            AND event_list.id = ?";
-
-        $statement = $con->prepare($query);
-        if ($statement) {
-            $statement->bind_param("ss", $centerFilter, $eventId);
-            $statement->execute();
-            $result = $statement->get_result();
-            $row = $result->fetch_assoc();
-            $count = $row['count'] ?? 0;
             
-            $result->free();
-            $statement->close();
+            if (empty($centerFilter)) {
+                $centerFilter = $_SESSION['center'] ?? '';
+            }
+            
+        } else if (!empty($userId)) {
+            $categoryQuery = "SELECT category_id FROM evaluator_categories WHERE evaluator_id = ?";
+            $catStmt = $con->prepare($categoryQuery);
+            if ($catStmt) {
+                $catStmt->bind_param("i", $userId);
+                $catStmt->execute();
+                $catResult = $catStmt->get_result();
+                
+                while ($row = $catResult->fetch_assoc()) {
+                    $categoryIds[] = $row['category_id'];
+                }
+                $catResult->free();
+                $catStmt->close();
+                
+                if (!empty($categoryIds)) {
+                    $userType = 'category';
+                }
+            }
         }
+        
+        if ($userType === 'center' && !empty($centerFilter) && !empty($eventId)) {
+            $query = "SELECT COUNT(*) as count FROM researchfile 
+                LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
+                LEFT JOIN event_list ON researchfile.event_id = event_list.id
+                WHERE endorsement.status = 'accepted' 
+                AND researchfile.center = ? 
+                AND event_list.id = ?";
+
+            $statement = $con->prepare($query);
+            if ($statement) {
+                $statement->bind_param("ss", $centerFilter, $eventId);
+                $statement->execute();
+                $result = $statement->get_result();
+                $row = $result->fetch_assoc();
+                $count = $row['count'] ?? 0;
+                
+                $result->free();
+                $statement->close();
+            }
+            
+        } else if ($userType === 'category' && !empty($categoryIds) && !empty($eventId)) {
+            $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
+            $query = "SELECT COUNT(*) as count FROM researchfile 
+                LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
+                LEFT JOIN event_list ON researchfile.event_id = event_list.id
+                LEFT JOIN category ON researchfile.category = category.name
+                WHERE endorsement.status = 'accepted' 
+                AND event_list.id = ?
+                AND category.id IN ($placeholders)";
+
+            $statement = $con->prepare($query);
+            if ($statement) {
+                $types = "s" . str_repeat("i", count($categoryIds));
+                $params = array_merge([$eventId], $categoryIds);
+                $statement->bind_param($types, ...$params);
+                $statement->execute();
+                $result = $statement->get_result();
+                $row = $result->fetch_assoc();
+                $count = $row['count'] ?? 0;
+                
+                $result->free();
+                $statement->close();
+            }
+            
+        } else if ($userType === 'center' && empty($centerFilter)) {
+            $centerFromSession = $_SESSION['center'] ?? '';
+            if (!empty($centerFromSession) && !empty($eventId)) {
+                $query = "SELECT COUNT(*) as count FROM researchfile 
+                    LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
+                    LEFT JOIN event_list ON researchfile.event_id = event_list.id
+                    WHERE endorsement.status = 'accepted' 
+                    AND (researchfile.center = ? OR researchfile.center LIKE ? OR UPPER(researchfile.center) = UPPER(?))
+                    AND event_list.id = ?";
+
+                $statement = $con->prepare($query);
+                if ($statement) {
+                    $centerLike = "%$centerFromSession%";
+                    $centerUpper = strtoupper($centerFromSession);
+                    $statement->bind_param("ssss", $centerFromSession, $centerLike, $centerUpper, $eventId);
+                    $statement->execute();
+                    $result = $statement->get_result();
+                    $row = $result->fetch_assoc();
+                    $count = $row['count'] ?? 0;
+                    
+                    $result->free();
+                    $statement->close();
+                }
+            }
+        }
+        
         $con->close();
     }
 

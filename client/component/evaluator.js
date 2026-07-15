@@ -5,6 +5,9 @@ import { Box, Search } from "./evaluatorComponent/script/listBox.js";
 export const Evaluator = () => {
     document.getElementById('root').appendChild(Header())
 
+    // Store user data for reuse
+    let userData = null;
+
     const Label = $({
         tag: 'div',
         style: {
@@ -57,6 +60,7 @@ export const Evaluator = () => {
                     flexWrap: 'wrap',
                 },
                 child: [
+                    // Dynamic Center/Category Display
                     $({
                         tag: 'div',
                         style: {
@@ -82,32 +86,42 @@ export const Evaluator = () => {
                             }),
                             $({
                                 tag: 'span',
-                                text: 'Center:',
-                                style: { color: '#64748b' }
-                            }),
-                            $({
-                                tag: 'span',
                                 style: {
                                     fontWeight: '600',
                                     color: '#0f172a'
                                 },
-                                elementHandler: (ev) => {
-                                    (async function () {
-                                        try {
-                                            const req = new Request('/evaluatorReg')
-                                            req.Post([{ name: 'evalLeb', value: '1' }])
-                                            req.Json()
-                                            const data = await req.Send()
-                                            ev.textContent = data.center || 'Not assigned'
-                                        } catch (err) {
-                                            console.error('Error loading center info:', err)
-                                            ev.textContent = 'Error loading'
+                                elementHandler: async (ev) => {
+                                    try {
+                                        const req = new Request('/evaluatorReg')
+                                        req.Post([{ name: 'evalLeb', value: '1' }])
+                                        req.Json()
+                                        const data = await req.Send()
+                                        userData = data;
+
+                                        // Check if user is category-based or center-based
+                                        if (data.userType === 'category' && data.categories && data.categories.length > 0) {
+                                            // Display categories
+                                            const categoryNames = data.categories.map(cat => cat.name).join(', ');
+                                            ev.textContent = 'Categories: ' + categoryNames;
+                                            ev.style.color = '#0f172a';
+                                        } else if (data.userType === 'center' && data.displayCenter) {
+                                            // Display center
+                                            ev.textContent = 'Center: ' + data.displayCenter;
+                                            ev.style.color = '#0f172a';
+                                        } else {
+                                            ev.textContent = 'No Access';
+                                            ev.style.color = '#ef4444';
                                         }
-                                    })()
+                                    } catch (err) {
+                                        console.error('Error loading user info:', err)
+                                        ev.textContent = 'Error loading'
+                                        ev.style.color = '#ef4444';
+                                    }
                                 }
                             })
                         ]
                     }),
+                    // Event Display
                     $({
                         tag: 'div',
                         style: {
@@ -168,6 +182,7 @@ export const Evaluator = () => {
     const getBox = (el) => {
         boxBody = el
     }
+
     const searchMethod = (ev) => {
         const searchTerm = ev.target.value.trim().toUpperCase()
 

@@ -56,59 +56,127 @@ if (isset($_POST['researchSubmit'])) {
     $response = new stdClass();
     $response->list = [];
     $response->userName = '';
+    $response->userType = '';
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        // Get center from POST or session
-        $center = isset($_POST['center']) ? $_POST['center'] : (isset($_SESSION['centerId']) ? $_SESSION['centerId'] : $_SESSION['center']);
+        // Get user info from session
+        $center = isset($_POST['center']) ? $_POST['center'] : (isset($_SESSION['centerId']) ? $_SESSION['centerId'] : '');
         $event = isset($_POST['event']) ? $_POST['event'] : $_SESSION['eventTYpe'];
         $eventId = isset($_POST['eventId']) ? $_POST['eventId'] : $_SESSION['eventId'];
-        $response->userName = $_SESSION['userName'];
         $evalId = $_SESSION['userId'];
+        $userType = isset($_POST['filterType']) ? $_POST['filterType'] : 'center';
+        $categoryIds = isset($_POST['categoryIds']) ? json_decode($_POST['categoryIds'], true) : [];
+        
+        $response->userName = $_SESSION['userName'];
+        $response->userType = $userType;
 
-        $centerNameQuery = "SELECT name FROM center WHERE code = ? OR UPPER(code) = UPPER(?) OR name LIKE ? LIMIT 1";
-        $centerStmt = $con->prepare($centerNameQuery);
-        $searchTerm = "%$center%";
-        $centerStmt->bind_param("sss", $center, $center, $searchTerm);
-        $centerStmt->execute();
-        $centerResult = $centerStmt->get_result();
-        $centerRow = $centerResult->fetch_assoc();
+        error_log("User Type: $userType");
+        error_log("Center: $center");
+        error_log("Category IDs: " . print_r($categoryIds, true));
+        error_log("Event ID: $eventId");
 
-        $dbCenterName = $centerRow ? $centerRow['name'] : $center;
+        if ($userType === 'category' && !empty($categoryIds)) {
+            $categoryNames = [];
+            $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
+            $catNameQuery = "SELECT name FROM category WHERE id IN ($placeholders)";
+            $catNameStmt = $con->prepare($catNameQuery);
+            $types = str_repeat('i', count($categoryIds));
+            $catNameStmt->bind_param($types, ...$categoryIds);
+            $catNameStmt->execute();
+            $catNameResult = $catNameStmt->get_result();
+            
+            while ($row = $catNameResult->fetch_assoc()) {
+                $categoryNames[] = $row['name'];
+            }
+            $catNameStmt->close();
+            
+            error_log("Category Names: " . print_r($categoryNames, true));
+            
+            if (empty($categoryNames)) {
+                error_log("No valid category names found for IDs: " . print_r($categoryIds, true));
+                echo json_encode($response);
+                exit();
+            }
+            
+            $catPlaceholders = implode(',', array_fill(0, count($categoryNames), '?'));
+            $sqlQueries = "SELECT 
+                rf.id,
+                rf.author,
+                rf.presenter,
+                rf.coauthor,
+                rf.drive_view_url,
+                rf.file as local_file,
+                rf.title as research_title,
+                rf.event,
+                rf.event_id,      
+                rf.category,
+                rf.center as center_name,
+                endorsement.center,
+                event_list.id as eventId,
+                category.id as catId,
+                category.name as category_name
+            FROM researchfile as rf
+            LEFT JOIN endorsement ON endorsement.id = rf.endorsementid
+            LEFT JOIN event_list ON rf.event_id = event_list.id
+            LEFT JOIN category ON rf.category = category.name
+            WHERE endorsement.status = ? 
+            AND rf.event_id = ?
+            AND rf.category IN ($catPlaceholders)";
+            
+            $params = array_merge(['accepted', $eventId], $categoryNames);
+            $types = "si" . str_repeat('s', count($categoryNames));
+            
+            $stm = $con->prepare($sqlQueries);
+            $stm->bind_param($types, ...$params);
+            
+            error_log("Category Query: " . $sqlQueries);
+            error_log("Params: " . print_r($params, true));
+            
+        } else {
+            $centerNameQuery = "SELECT name FROM center WHERE id = ? OR code = ? OR UPPER(code) = UPPER(?) OR name LIKE ? LIMIT 1";
+            $centerStmt = $con->prepare($centerNameQuery);
+            $searchTerm = "%$center%";
+            $centerStmt->bind_param("ssss", $center, $center, $center, $searchTerm);
+            $centerStmt->execute();
+            $centerResult = $centerStmt->get_result();
+            $centerRow = $centerResult->fetch_assoc();
 
-        error_log("Evaluator center (session): $center");
-        error_log("Looking for researchfiles with center: $dbCenterName");
+            $dbCenterName = $centerRow ? $centerRow['name'] : $center;
 
-        $sqlQueries = "SELECT 
-            rf.id,
-            rf.author,
-            rf.presenter,
-            rf.coauthor,
-            rf.drive_view_url,
-            rf.file as local_file,
-            rf.title as research_title,
-            rf.event,
-            rf.event_id,      
-            rf.category,
-            endorsement.center,
-            event_list.id as eventId,
-            category.id as catId
-        FROM researchfile as rf
-        LEFT JOIN endorsement ON endorsement.id = rf.endorsementid
-        LEFT JOIN event_list ON rf.event_id = event_list.id
-        LEFT JOIN category ON rf.category = category.name
-        WHERE endorsement.status = ? 
-        AND (rf.center = ? OR rf.center LIKE ? OR UPPER(rf.center) = UPPER(?) OR rf.center LIKE ?)
-        AND rf.event_id = ?";  
+            $sqlQueries = "SELECT 
+                rf.id,
+                rf.author,
+                rf.presenter,
+                rf.coauthor,
+                rf.drive_view_url,
+                rf.file as local_file,
+                rf.title as research_title,
+                rf.event,
+                rf.event_id,      
+                rf.category,
+                rf.center as center_name,
+                endorsement.center,
+                event_list.id as eventId,
+                category.id as catId,
+                category.name as category_name
+            FROM researchfile as rf
+            LEFT JOIN endorsement ON endorsement.id = rf.endorsementid
+            LEFT JOIN event_list ON rf.event_id = event_list.id
+            LEFT JOIN category ON rf.category = category.name
+            WHERE endorsement.status = ? 
+            AND (rf.center = ? OR rf.center LIKE ? OR UPPER(rf.center) = UPPER(?) OR rf.center LIKE ?)
+            AND rf.event_id = ?";  
 
-        $stm = $con->prepare($sqlQueries);
-        $stat = 'accepted';
+            $stm = $con->prepare($sqlQueries);
+            $stat = 'accepted';
 
-        $centerExact = $dbCenterName;
-        $centerLike = "%$dbCenterName%";
-        $centerUpper = strtoupper($center);
-        $centerLikeUpper = "%" . strtoupper($dbCenterName) . "%";
+            $centerExact = $dbCenterName;
+            $centerLike = "%$dbCenterName%";
+            $centerUpper = strtoupper($center);
+            $centerLikeUpper = "%" . strtoupper($dbCenterName) . "%";
 
-        $stm->bind_param("sssssi", $stat, $centerExact, $centerLike, $centerUpper, $centerLikeUpper, $eventId);
+            $stm->bind_param("sssssi", $stat, $centerExact, $centerLike, $centerUpper, $centerLikeUpper, $eventId);
+        }
 
         $stm->execute();
         $resultRes = $stm->get_result();
@@ -120,6 +188,11 @@ if (isset($_POST['researchSubmit'])) {
             $data->author = $val['author'];
             $data->presenter = $val['presenter'];
             $data->coauthor = $val['coauthor'];
+            $data->category = $val['category'];
+            $data->category_id = $val['catId'];
+            $data->category_name = $val['category_name'];
+            $data->center = $val['center'] ?? $val['center_name'] ?? '';
+            
             if (!empty($val['drive_view_url'])) {
                 $data->file = $val['drive_view_url']; 
                 $data->file_type = 'drive';
@@ -130,11 +203,9 @@ if (isset($_POST['researchSubmit'])) {
 
             $data->title = $val['research_title'];
             $data->event = $val['event'];
-            $data->category = $val['category'];
-            $data->campus = $val['campus'];
+            $data->campus = $val['campus'] ?? '';
             $data->eventId = $val['eventId'];
             $data->catId = $val['catId'];
-            $data->center = $val['center'];
 
             $data->comment_title = '';
             $data->intro = '';
@@ -193,6 +264,7 @@ if (isset($_POST['researchSubmit'])) {
                 $data->hasComment = ($v['has_comment_content'] == 1);
             }
 
+
             $scoreQuery = "SELECT 
                 COUNT(*) as score_count,
                 CASE 
@@ -214,7 +286,8 @@ if (isset($_POST['researchSubmit'])) {
             $response->list[] = $data;
         }
 
-        error_log("Found " . count($response->list) . " research files for center: $dbCenterName");
+        $count = count($response->list);
+        error_log("Found $count research files for user type: $userType");
     }
     echo json_encode($response);
 }

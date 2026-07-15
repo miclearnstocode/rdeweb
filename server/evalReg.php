@@ -1,12 +1,7 @@
 <?php
-
-// Set header FIRST before any output
 header('Content-Type: application/json; charset=utf-8');
-
-// Start output buffering to catch any notices/warnings
 ob_start();
 
-// Check if session is already started before starting it
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -17,8 +12,6 @@ include('db.php');
 /** @var TYPE_NAME $username */
 /** @var TYPE_NAME $pass */
 /** @var TYPE_NAME $dbName */
-
-// Helper function to log memory usage
 function logMemoryUsage($functionName) {
     $memoryUsage = memory_get_usage(true);
     $peakMemory = memory_get_peak_usage(true);
@@ -26,14 +19,11 @@ function logMemoryUsage($functionName) {
     $peakInMB = round($peakMemory / 1024 / 1024, 2);
     error_log("[Memory Debug] $functionName - Current: {$memoryInMB}MB, Peak: {$peakInMB}MB");
 }
-
-// Helper function to get script start time
 $scriptStartTime = microtime(true);
-
 function logExecutionTime($functionName) {
     global $scriptStartTime;
     $currentTime = microtime(true);
-    $executionTime = round(($currentTime - $scriptStartTime) * 1000, 2); // in milliseconds
+    $executionTime = round(($currentTime - $scriptStartTime) * 1000, 2); 
     error_log("[Time Debug] $functionName - Execution time so far: {$executionTime}ms");
 }
 
@@ -276,6 +266,8 @@ if (isset($_POST['auth'])) {
                         $categories[] = $catRow;
                     }
                     $_SESSION['userCategories'] = $categories;
+                    $_SESSION['hasCategories'] = !empty($categories);
+                    $_SESSION['userType'] = !empty($centerId) ? 'center' : 'category';
                     $catStmt->close();
 
                     $response->status = true;
@@ -474,73 +466,82 @@ if (isset($_POST['evalLeb'])) {
     // Get event info
     $res->event = $_SESSION['eventTYpe'] ?? '';
     $res->eventId = $_SESSION['eventId'] ?? '';
+    $res->userName = $_SESSION['userName'] ?? '';
+    $res->userFullname = $_SESSION['userFulname'] ?? '';
     
     // Get evaluator's center info
     $centerId = $_SESSION['centerId'] ?? '';
+    $userId = $_SESSION['userId'] ?? '';
     
-    // Fetch center details from database to get name and code
-    if (!empty($centerId) && $con = new mysqli($host, $username, $pass, $dbName)) {
-        logMemoryUsage('evalLeb - After DB Connection');
+    // Get categories from database for this evaluator
+    $categories = [];
+    $categoryNames = [];
+    $categoryIds = [];
+    
+    if (!empty($userId) && $con = new mysqli($host, $username, $pass, $dbName)) {
+        $categoryQuery = "SELECT c.id, c.name 
+                         FROM evaluator_categories ec 
+                         JOIN category c ON ec.category_id = c.id 
+                         WHERE ec.evaluator_id = ?";
+        $catStmt = $con->prepare($categoryQuery);
+        $catStmt->bind_param("i", $userId);
+        $catStmt->execute();
+        $catResult = $catStmt->get_result();
         
-        $query = "SELECT name, code FROM center WHERE id = ?";
-        $stmt = $con->prepare($query);
-        $stmt->bind_param("s", $centerId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        logMemoryUsage('evalLeb - Before Fetch Center Details');
-        
-        if ($row = $result->fetch_assoc()) {
-            // Format: "Center Name (CODE)"
-            $centerName = $row['name'] . " (" . $row['code'] . ")";
-            
-            // Store both formats for different uses
-            $res->center = $centerName; // Full display name: "Center Name (CODE)"
-            $res->centerId = $centerId; // Center ID for database queries
-            $res->centerName = $row['name']; // Just the name
-            $res->centerCode = $row['code']; // Just the code
-            $res->filterCenter = $centerName;
-            
-            logMemoryUsage('evalLeb - Center Details Found');
-        } else {
-            // Fallback if center not found
-            $res->center = $_SESSION['center'] ?? '';
-            $res->centerId = $centerId;
-            $res->filterCenter = $_SESSION['center'] ?? '';
-            logMemoryUsage('evalLeb - Center Not Found');
+        while ($catRow = $catResult->fetch_assoc()) {
+            $categories[] = $catRow;
+            $categoryIds[] = $catRow['id'];
+            $categoryNames[] = $catRow['name'];
         }
-        
-        $stmt->close();
+        $catStmt->close();
         $con->close();
-    } else {
-        // Fallback if no connection or no centerId
-        $res->center = $_SESSION['center'] ?? '';
-        $res->centerId = $centerId;
-        $res->filterCenter = $_SESSION['center'] ?? '';
-        logMemoryUsage('evalLeb - Using Session Data Only');
     }
-
-    // Also fetch categories for this evaluator if they have any
-    if (isset($_SESSION['userId'])) {
-        $userId = $_SESSION['userId'];
+    
+    // Determine user type
+    if (!empty($centerId)) {
+        // Center-based evaluator
+        $res->userType = 'center';
+        $res->centerId = $centerId;
+        $res->categoryIds = [];
+        $res->categories = [];
+        $res->displayCenter = '';
+        
+        // Fetch center details
         if ($con = new mysqli($host, $username, $pass, $dbName)) {
-            $categoryQuery = "SELECT c.id, c.name 
-                             FROM evaluator_categories ec 
-                             JOIN category c ON ec.category_id = c.id 
-                             WHERE ec.evaluator_id = ?";
-            $stmt = $con->prepare($categoryQuery);
-            $stmt->bind_param("i", $userId);
+            $query = "SELECT name, code FROM center WHERE id = ?";
+            $stmt = $con->prepare($query);
+            $stmt->bind_param("s", $centerId);
             $stmt->execute();
             $result = $stmt->get_result();
             
-            $categories = [];
-            while ($row = $result->fetch_assoc()) {
-                $categories[] = $row;
+            if ($row = $result->fetch_assoc()) {
+                $res->displayCenter = $row['name'] . " (" . $row['code'] . ")";
+                $res->centerName = $row['name'];
+                $res->centerCode = $row['code'];
+                $res->filterCenter = $row['name'] . " (" . $row['code'] . ")";
             }
-            $res->categories = $categories;
             $stmt->close();
             $con->close();
         }
+    } else if (!empty($categories)) {
+        // Category-based evaluator
+        $res->userType = 'category';
+        $res->categoryIds = $categoryIds;
+        $res->categories = $categories;
+        $res->centerId = null;
+        
+        // Create dynamic display string from categories
+        $res->displayCenter = 'Category: ' . implode(', ', $categoryNames);
+        $res->filterCenter = 'Category: ' . implode(', ', $categoryNames);
+        $res->categoryNames = $categoryNames;
+    } else {
+        // Fallback - no access
+        $res->userType = 'none';
+        $res->centerId = null;
+        $res->categoryIds = [];
+        $res->categories = [];
+        $res->displayCenter = 'No Access';
+        $res->filterCenter = 'No Access';
     }
 
     logMemoryUsage('evalLeb - End');

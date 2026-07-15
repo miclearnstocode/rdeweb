@@ -2,7 +2,7 @@ import { $, baseCheck, Request } from '../../../lib/lib.js'
 import { ScoreBoard } from "./score.js";
 import { CommentBoard } from "./commentpanel.js";
 
-export const EntryView = ({ docId, title, eventId, centerId }) => {
+export const EntryView = ({ docId, title, eventId, centerId, categoryId, userType }) => {
     let mainPanel, sidePanelScore, sidePanelComment
     const panelState = {
         comment: false,
@@ -107,7 +107,9 @@ export const EntryView = ({ docId, title, eventId, centerId }) => {
                         ScoreBoard({
                             resId: docId,
                             eventId: eventId,
-                            category: centerId
+                            center: centerId,
+                            categoryId: categoryId,
+                            userType: userType
                         })
                     ]
                 }),

@@ -85,12 +85,11 @@ const StatusLabels = ({ hasScore, hasComment }) => {
     });
 };
 
-// Modern Entry List Component with Presenter + Author + Co-authors
 export const EntryList = ({
     title,
-    presenter,      // Main presenter/defender
-    author,         // Primary author
-    coAuthors,      // Comma-separated string of co-authors
+    presenter,
+    author,
+    coAuthors,
     docId,
     index,
     center,
@@ -98,7 +97,9 @@ export const EntryList = ({
     eventId,
     catId,
     hasScore,
-    hasComment
+    hasComment,
+    userType,
+    categoryName
 }) => {
     const base = window.location.href
     const url = base.replace(window.location.origin, '').split('/')
@@ -112,7 +113,6 @@ export const EntryList = ({
         }))
     }
 
-    // Determine card style based on status
     const getCardStyle = () => {
         if (status === false) {
             return {
@@ -415,7 +415,38 @@ export const EntryList = ({
                                 ]
                             }) : null
                         ]
-                    })
+                    }),
+                    userType === 'category' && categoryName ? $({
+                        tag: 'span',
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            background: '#fef3c7',
+                            padding: '2px 10px 2px 6px',
+                            borderRadius: '12px',
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: {
+                                    className: 'fa-solid fa-tag'
+                                },
+                                style: {
+                                    fontSize: '12px',
+                                    color: '#d97706'
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: categoryName,
+                                style: {
+                                    color: '#92400e',
+                                    fontWeight: '500',
+                                }
+                            })
+                        ]
+                    }) : null,
                 ]
             }),
 
