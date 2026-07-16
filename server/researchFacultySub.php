@@ -32,6 +32,7 @@ ob_start(function ($buffer) {
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+require_once __DIR__ . '/SubmissionLogger.php';
 require_once __DIR__ . '/../config/driver_config.php';
 include(__DIR__ . '/db.php');
 
@@ -50,7 +51,6 @@ include(__DIR__ . '/db.php');
 require_once __DIR__ . '/Mailer/mailTemplate.php';
 require_once __DIR__ . '/Mailer/MailSender.php';
 date_default_timezone_set('Asia/Manila');
-
 function getCenterCode($centerName)
 {
 
@@ -777,6 +777,76 @@ function checkDuplicateByFileHashAndEvent($con, $fileHash, $fileType, $eventId =
     $stmt->close();
 
     return $existing;
+}
+function checkLocalInhouseDuplicate($con, $localTitle, $mainAuthor, $eventId, $senderId) {
+    $result = [
+        'isDuplicate' => false,
+        'existingRecord' => null,
+        'message' => ''
+    ];
+
+    if (empty($localTitle) || empty($mainAuthor) || empty($eventId)) {
+        $result['message'] = 'Missing required fields for duplicate check';
+        return $result;
+    }
+
+    $query = "SELECT 
+                li.id as local_inhouse_id,
+                li.document_title,
+                li.main_author,
+                li.campus,
+                li.category,
+                li.center,
+                rf.id as research_id,
+                rf.senderid,
+                rf.event_id,
+                rf.status,
+                rf.symposium_submitted
+            FROM local_inhouse li
+            INNER JOIN researchfile rf ON li.research_id = rf.id
+            WHERE TRIM(LOWER(li.document_title)) = TRIM(LOWER(?)) 
+            AND TRIM(LOWER(li.main_author)) = TRIM(LOWER(?))
+            AND rf.event_id = ?
+            ORDER BY rf.id DESC
+            LIMIT 1";
+
+    $stmt = $con->prepare($query);
+    if (!$stmt) {
+        $result['message'] = 'Prepare failed: ' . $con->error;
+        return $result;
+    }
+
+    $stmt->bind_param("ssi", $localTitle, $mainAuthor, $eventId);
+    $stmt->execute();
+    $queryResult = $stmt->get_result();
+
+    if ($queryResult->num_rows > 0) {
+        $existing = $queryResult->fetch_assoc();
+        
+        // Check if it's the same user
+        if ($existing['senderid'] == $senderId) {
+            // Same user - check if already submitted to symposium
+            if ($existing['symposium_submitted'] == 1) {
+                $result['isDuplicate'] = true;
+                $result['existingRecord'] = $existing;
+                $result['message'] = "You already have a Local In-House submission for '{$existing['document_title']}' that has been submitted to the symposium.";
+            } else {
+                // Same user, same title/author, but not yet submitted to symposium
+                // This might be a resubmission attempt - allow it but warn
+                $result['isDuplicate'] = false;
+                $result['existingRecord'] = $existing;
+                $result['message'] = "You have an existing Local In-House record with this title. Continuing will update it.";
+            }
+        } else {
+            // Different user - block the duplicate
+            $result['isDuplicate'] = true;
+            $result['existingRecord'] = $existing;
+            $result['message'] = "A Local In-House submission with title '{$existing['document_title']}' already exists for this event.";
+        }
+    }
+
+    $stmt->close();
+    return $result;
 }
 function generatePaperTrailNumber($con, $eventId, $center, $title, $author)
 {
@@ -2188,6 +2258,9 @@ if (isset($_POST['uploadSymposium'])) {
         if ($con->connect_error) {
             throw new Exception("Database connection failed: " . $con->connect_error);
         }
+        $logger = new SubmissionLogger($con);
+        // Start the log
+        $logId = $logger->startLog($_SESSION['userId'] ?? 0, 'symposium', $presentationType ?? 'local', $eventId ?? null );
 
         $senderId = isset($_SESSION['userId']) ? $_SESSION['userId'] : 0;
         $eventType = isset($_POST['eventType']) ? trim($_POST['eventType']) : '';
@@ -2196,10 +2269,10 @@ if (isset($_POST['uploadSymposium'])) {
         
         // Common symposium fields
         $category = isset($_POST['category']) ? trim($_POST['category']) : '';
-        $center = isset($_POST['center']) ? trim($_POST['center']) : '';
+        $center = isset($_POST['center']) && $_POST['center'] !== 'null' && $_POST['center'] !== '' ? trim($_POST['center']) : null;
         $author = isset($_POST['author']) ? trim($_POST['author']) : '';
         $presenter = isset($_POST['presenter']) ? trim($_POST['presenter']) : '';
-        $campus = isset($_POST['campus']) ? trim($_POST['campus']) : '';
+        $campus = isset($_POST['campus']) && $_POST['campus'] !== 'null' && $_POST['campus'] !== '' ? trim($_POST['campus']) : null;
         $coAuthor = isset($_POST['coAuthor']) ? $_POST['coAuthor'] : '[]';
         $date_started = isset($_POST['date_started']) && !empty($_POST['date_started']) ? $_POST['date_started'] : null;
         $date_completed = isset($_POST['date_completed']) && !empty($_POST['date_completed']) ? $_POST['date_completed'] : null;
@@ -2209,16 +2282,13 @@ if (isset($_POST['uploadSymposium'])) {
 
         $drive = new GoogleDriveService();
 
-        // ===== HELPER FUNCTION TO BUILD RESEARCHERS STRING =====
         function buildResearchersString($author, $coAuthor, $presenter) {
             $researchersParts = [];
             
-            // Add main author
             if (!empty($author)) {
                 $researchersParts[] = trim($author);
             }
             
-            // Add co-authors
             $coAuthorsArray = json_decode($coAuthor, true) ?? [];
             if (!empty($coAuthorsArray) && is_array($coAuthorsArray)) {
                 foreach ($coAuthorsArray as $coAuthorName) {
@@ -2253,28 +2323,134 @@ if (isset($_POST['uploadSymposium'])) {
             if (empty($localTitle) || empty($localAuthor)) {
                 throw new Exception("Local In-House title and author are required");
             }
-
-            // Generate paper trail number
+            
+            // ===== GENERATE PAPER TRAIL NUMBER FOR LOCAL IN-HOUSE =====
             $paperTrailNo = generatePaperTrailNumber($con, $eventId, $localCenter, $localTitle, $localAuthor);
+            
+            $localDuplicateQuery = "SELECT 
+                rf.id, 
+                rf.title, 
+                rf.author, 
+                rf.event_id,
+                rf.status,
+                rf.symposium_submitted
+            FROM researchfile rf
+            WHERE rf.event_id = ? 
+            AND TRIM(LOWER(rf.title)) = TRIM(LOWER(?))
+            AND TRIM(LOWER(rf.author)) = TRIM(LOWER(?))
+            AND rf.local_inhouse = 0
+            AND rf.symposium_submitted = 1
+            LIMIT 1";
+            
+            $symposiumStmt = $con->prepare($localDuplicateQuery);
+            $symposiumStmt->bind_param("iss", $eventId, $localTitle, $localAuthor);
+            $symposiumStmt->execute();
+            $symposiumResult = $symposiumStmt->get_result();
+            
+            if ($symposiumResult->num_rows > 0) {
+                $existing = $symposiumResult->fetch_assoc();
+                
+                // Check if it's the same user
+                $userCheckQuery = "SELECT senderid FROM researchfile WHERE id = ?";
+                $userStmt = $con->prepare($userCheckQuery);
+                $userStmt->bind_param("i", $existing['id']);
+                $userStmt->execute();
+                $userResult = $userStmt->get_result();
+                $userRow = $userResult->fetch_assoc();
+                
+                if ($userRow && $userRow['senderid'] == $senderId) {
+                    // Same user - warn but allow
+                    $response->duplicate_warning = true;
+                    $response->message = "You have already submitted this paper to the symposium. Continuing will update your submission.";
+                    $response->allow_continue = true;
+                } else {
+                    // Different user - block
+                    throw new Exception("This paper has already been submitted to the symposium by another user.");
+                }
+            }
+
+            $localDuplicateCheck = checkLocalInhouseDuplicate(
+                $con, $localTitle, $localAuthor, $eventId, $senderId );
+
+            if ($localDuplicateCheck['isDuplicate'] && is_array($localDuplicateCheck['existingRecord'])) {
+                $localRecord = $localDuplicateCheck['existingRecord'];
+                $logger->logDuplicate( 'local_inhouse', $localRecord['local_inhouse_id'] ?? null, $localRecord['senderid'] ?? null, true, $localDuplicateCheck['message'] );
+                $response->message = $localDuplicateCheck['message'];
+                $response->duplicate_warning = true;
+                $response->existing_record = $localRecord;
+                $response->allow_continue = false;
+                $response->status = false;
+                echo json_encode($response);
+                exit();
+            }
+
+            // If same user has existing record but not submitted, warn but allow
+            if (is_array($localDuplicateCheck['existingRecord'])) {
+                $localRecord = $localDuplicateCheck['existingRecord'];
+                if ($localRecord['senderid'] == $senderId) {
+                    $response->duplicate_warning = true;
+                    $response->message = "You have an existing Local In-House record with this title. Continuing will update it.";
+                    // Allow continuation
+                }
+            }
+
+            $researchData = [ 'title' => $localTitle, 'author' => $localAuthor, 'coauthor' => $localCoAuthors, 'presenter' => $presenter, 'event_id' => $eventId, 'category' => $localCategory, 'center' => $localCenter, 'campus' => $localCampus ];
+
+            $fileData = [];
+            if (isset($_FILES['researchDoc']) && $_FILES['researchDoc']['error'] === UPLOAD_ERR_OK) {
+                $fileData['proposal_hash'] = generateFileHash($_FILES['researchDoc']['tmp_name']);
+            }
+            if (isset($_FILES['endorsementFile']) && $_FILES['endorsementFile']['error'] === UPLOAD_ERR_OK) {
+                $fileData['endorsement_hash'] = generateFileHash($_FILES['endorsementFile']['tmp_name']);
+            }
+            if (isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
+                $fileData['program_hash'] = generateFileHash($_FILES['programFile']['tmp_name']);
+            }
+
+            $fileDuplicateResult = checkDuplicateResearch($con, $researchData, $fileData);
+            
+            if ($fileDuplicateResult['isDuplicate'] && is_array($fileDuplicateResult['existingRecord'])) {
+                $fileRecord = $fileDuplicateResult['existingRecord'];
+                $existingSenderId = $fileRecord['senderid'] ?? null;
+                
+                if ($existingSenderId !== null && $existingSenderId == $senderId) {
+                    // Same user - log as warning (not blocked)
+                    $logger->logDuplicate(
+                        'file_hash',
+                        $fileRecord['id'] ?? null,
+                        $existingSenderId,
+                        false,  // not blocked, just warning
+                        $fileDuplicateResult['duplicateReason'] ?? 'Duplicate file detected - same user'
+                    );
+                    $response->duplicate_warning = true;
+                } else {
+                    // Different user - block
+                    $logger->logDuplicate(
+                        'file_hash',
+                        $fileRecord['id'] ?? null,
+                        $existingSenderId,
+                        true,  // blocked
+                        $fileDuplicateResult['duplicateReason'] ?? 'Duplicate file detected - different user'
+                    );
+                    throw new Exception($fileDuplicateResult['duplicateReason'] ?? 'Duplicate submission detected');
+                }
+            }
+
             $currentYear = date('Y');
 
             // Clean names for folder creation
             $cleanEventName = cleanFolderNameForDrive($eventType);
-            $cleanCenterName = cleanFolderNameForDrive($localCenter);
             $cleanCategoryName = cleanFolderNameForDrive($localCategory);
             $cleanLocalTitle = cleanFolderNameForDrive($localTitle);
             $authorParts = explode(' ', trim($localAuthor));
             $authorLastName = end($authorParts);
             $authorLastName = cleanFolderNameForDrive($authorLastName);
 
-            // Create folder structure: Event -> Center -> Category
+            // Create folder structure: Event -> Category
             $eventFolderId = $drive->findOrCreateFolder($cleanEventName, null);
             if (!$eventFolderId) throw new Exception("Failed to create event folder");
 
-            $centerFolderId = $drive->findOrCreateFolder($cleanCenterName, $eventFolderId);
-            if (!$centerFolderId) throw new Exception("Failed to create center folder");
-
-            $categoryFolderId = $drive->findOrCreateFolder($cleanCategoryName, $centerFolderId);
+            $categoryFolderId = $drive->findOrCreateFolder($cleanCategoryName, $eventFolderId);
             if (!$categoryFolderId) throw new Exception("Failed to create category folder");
 
             // Create entry folder for symposium files: {author last name} - {title keywords}
@@ -2369,7 +2545,7 @@ if (isset($_POST['uploadSymposium'])) {
             $endorsementStmt = $con->prepare($endorsementQuery);
             $endorsementStatus = 'pending';
             $endorsementDriveDownloadUrl = "https://drive.google.com/uc?id={$endorsementDriveFileId}&export=download";
-            
+            $centerFolderId = null;
             $endorsementStmt->bind_param(
                 'issssssssssss',
                 $senderId,
@@ -2468,7 +2644,7 @@ if (isset($_POST['uploadSymposium'])) {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
             $researchStmt = $con->prepare($researchQuery);
-            
+            $centerFolderId = null;
             $researchStmt->bind_param(
                 'siiissssssssssssisssssssssss',
                 $paperTrailNo,
@@ -2592,18 +2768,20 @@ if (isset($_POST['uploadSymposium'])) {
             }
 
             // ===== STEP 6: INSERT INTO local_inhouse TABLE =====
+            // NOW WITH paper_trail_no column
             $localQuery = "INSERT INTO local_inhouse (
-                research_id,local_eventname, document_title, campus, category, center, main_author, co_authors,
+                paper_trail_no, research_id, local_eventname, document_title, campus, category, center, main_author, co_authors,
                 program_file_view_url, program_file_download_url,
                 certificate_file_view_url, certificate_file_download_url,
                 created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
             $localStmt = $con->prepare($localQuery);
             $programDownloadUrl = $programDriveFileId ? "https://drive.google.com/uc?id={$programDriveFileId}&export=download" : null;
             
             $localStmt->bind_param(
-                'isssssssssss',
+                'sisssssssssss',
+                $paperTrailNo,
                 $researchId,
                 $localEventName,
                 $localTitle,
@@ -2660,22 +2838,139 @@ if (isset($_POST['uploadSymposium'])) {
                 savePaperTrailRecord($con, $researchId, $paperTrailNo, $currentYear, 'Local In-House Review', $localCertificatePaperTrailResult);
             }
             
+            // ===== SET $localInhouseId for logging =====
+            // Already set above, but ensure it exists
+            if (!isset($localInhouseId)) {
+                $localInhouseId = null;
+            }
+            
         } else {
             // ===== UNIVERSITY SYMPOSIUM SUBMISSION =====
             $originalTitle = isset($_POST['original_title']) ? trim($_POST['original_title']) : '';
+            $originalAuthor = isset($_POST['original_author']) ? trim($_POST['original_author']) : '';
+            $originalCategory = isset($_POST['original_category']) ? trim($_POST['original_category']) : null;
+            $originalCenter = isset($_POST['original_center']) ? trim($_POST['original_center']) : null;
+            $originalCoauthors = isset($_POST['original_coauthors']) ? $_POST['original_coauthors'] : '[]';
+
             $selectedInhouseId = isset($_POST['selected_inhouse_id']) ? (int) $_POST['selected_inhouse_id'] : null;
             $currentYear = date('Y');
             
-            if (empty($originalTitle) || empty($author) || empty($category) || empty($center) || empty($campus) || empty($presenter)) {
+            if (empty($originalTitle) || empty($originalAuthor)) {
                 throw new Exception("Missing required fields for Symposium submission");
             }
             
-            // Generate paper trail number
-            $paperTrailNo = generatePaperTrailNumber($con, $eventId, $center, $originalTitle, $author);
+            // ===== GET THE PAPER TRAIL NUMBER FROM THE SELECTED IN-HOUSE REVIEW =====
+            // This is REQUIRED - no fallback to generate new number
+            if (!$selectedInhouseId) {
+                throw new Exception("Please select an accepted in-house review for this symposium submission.");
+            }
             
-            // Clean names for folder creation
+            $paperTrailQuery = "SELECT paper_trail_no FROM researchfile WHERE id = ?";
+            $paperTrailStmt = $con->prepare($paperTrailQuery);
+            $paperTrailStmt->bind_param("i", $selectedInhouseId);
+            $paperTrailStmt->execute();
+            $paperTrailResult = $paperTrailStmt->get_result();
+            $paperTrailRow = $paperTrailResult->fetch_assoc();
+            $paperTrailStmt->close();
+            
+            // ===== PAPER TRAIL NUMBER IS MANDATORY - NO FALLBACK =====
+            if (!$paperTrailRow || empty($paperTrailRow['paper_trail_no'])) {
+                throw new Exception("The selected in-house review does not have a paper trail number. This is a required field for symposium submission.");
+            }
+            
+            $paperTrailNo = $paperTrailRow['paper_trail_no'];
+            error_log("Using paper trail number from in-house review ID $selectedInhouseId: $paperTrailNo");
+            
+            $symposiumDuplicateQuery = "SELECT 
+                rf.id, 
+                rf.title, 
+                rf.author, 
+                rf.event_id,
+                rf.status,
+                rf.symposium_submitted,
+                rf.senderid
+            FROM researchfile rf
+            WHERE rf.event_id = ? 
+            AND TRIM(LOWER(rf.title)) = TRIM(LOWER(?))
+            AND TRIM(LOWER(rf.author)) = TRIM(LOWER(?))
+            AND rf.local_inhouse = 0
+            AND (rf.symposium_submitted = 1 OR rf.status = 'pending' OR rf.status = 'accepted' OR rf.status IS NULL)
+            ORDER BY rf.id DESC
+            LIMIT 1";
+
+            $symposiumStmt = $con->prepare($symposiumDuplicateQuery);
+            $symposiumStmt->bind_param("iss", $eventId, $originalTitle, $author);
+            $symposiumStmt->execute();
+            $symposiumResult = $symposiumStmt->get_result();
+
+            if ($symposiumResult->num_rows > 0) {
+                $existing = $symposiumResult->fetch_assoc();
+                
+                // Check if it's the same user
+                if ($existing['senderid'] == $senderId) {
+                    // Same user - warn but allow
+                    $response->duplicate_warning = true;
+                    $response->message = "You have already submitted this paper to the symposium. Continuing will update your submission.";
+                    $response->allow_continue = true;
+                    $response->existing_id = $existing['id'];
+                } else {
+                    // Different user - block
+                    throw new Exception("This paper has already been submitted to the symposium by another user.");
+                }
+            }
+
+            $researchData = [
+                'title' => $originalTitle,
+                'author' => $author,
+                'coauthor' => $coAuthor,
+                'presenter' => $presenter,
+                'event_id' => $eventId,
+                'category' => $category,
+                'center' => $center,
+                'campus' => $campus
+            ];
+            
+            $existingResearch = checkDuplicateResearch($con, $researchData, []);
+            if ($existingResearch['isDuplicate'] && is_array($existingResearch['existingRecord'])) {
+                $existingRecord = $existingResearch['existingRecord'];
+                $existingSenderId = $existingRecord['senderid'] ?? null;
+                
+                if ($existingSenderId !== null && $existingSenderId == $senderId) {
+                    $response->duplicate_warning = true;
+                    $response->message = "You already have a symposium submission with this title and author. Continuing will update it.";
+                    $response->allow_continue = true;
+                    $response->existing_id = $existingRecord['id'];
+                } else {
+                    throw new Exception("A symposium submission with this title and author already exists.");
+                }
+            }
+
+            $fileData = [];
+            if (isset($_FILES['researchDoc']) && $_FILES['researchDoc']['error'] === UPLOAD_ERR_OK) {
+                $fileData['proposal_hash'] = generateFileHash($_FILES['researchDoc']['tmp_name']);
+            }
+            if (isset($_FILES['endorsementFile']) && $_FILES['endorsementFile']['error'] === UPLOAD_ERR_OK) {
+                $fileData['endorsement_hash'] = generateFileHash($_FILES['endorsementFile']['tmp_name']);
+            }
+
+            // Only run file duplicate check if we have file hashes
+            if (!empty($fileData)) {
+                $fileDuplicateResult = checkDuplicateResearch($con, $researchData, $fileData);
+                
+                if ($fileDuplicateResult['isDuplicate'] && is_array($fileDuplicateResult['existingRecord'])) {
+                    $fileRecord = $fileDuplicateResult['existingRecord'];
+                    $existingSenderId = $fileRecord['senderid'] ?? null;
+                    
+                    if ($existingSenderId !== null && $existingSenderId == $senderId) {
+                        $response->duplicate_warning = true;
+                        $response->message .= " You already have a symposium submission with these files. Continuing will update it.";
+                    } else {
+                        throw new Exception($fileDuplicateResult['duplicateReason'] ?? 'Duplicate file detected');
+                    }
+                }
+            }
+
             $cleanEventName = cleanFolderNameForDrive($eventType);
-            $cleanCenterName = cleanFolderNameForDrive($center);
             $cleanCategoryName = cleanFolderNameForDrive($category);
             $authorParts = explode(' ', trim($author));
             $authorLastName = end($authorParts);
@@ -2685,18 +2980,12 @@ if (isset($_POST['uploadSymposium'])) {
             $titleWords = explode(' ', trim($originalTitle));
             $titleKeywords = implode('_', array_slice($titleWords, 0, 3));
             $titleKeywords = cleanFolderNameForDrive($titleKeywords);
-            
-            // Create entry folder name: {author last name} - {title keywords}
             $entryFolderName = $authorLastName . ' - ' . $titleKeywords;
-            
-            // Create folder structure: Event -> Center -> Category -> EntryFolder
+            //folder structure
             $eventFolderId = $drive->findOrCreateFolder($cleanEventName, null);
             if (!$eventFolderId) throw new Exception("Failed to create event folder");
             
-            $centerFolderId = $drive->findOrCreateFolder($cleanCenterName, $eventFolderId);
-            if (!$centerFolderId) throw new Exception("Failed to create center folder");
-            
-            $categoryFolderId = $drive->findOrCreateFolder($cleanCategoryName, $centerFolderId);
+            $categoryFolderId = $drive->findOrCreateFolder($cleanCategoryName, $eventFolderId);
             if (!$categoryFolderId) throw new Exception("Failed to create category folder");
             
             $entryFolderId = $drive->findOrCreateFolder($entryFolderName, $categoryFolderId);
@@ -2777,7 +3066,7 @@ if (isset($_POST['uploadSymposium'])) {
             $endorsementStmt = $con->prepare($endorsementQuery);
             $endorsementStatus = 'pending';
             $endorsementDriveDownloadUrl = "https://drive.google.com/uc?id={$endorsementDriveFileId}&export=download";
-            
+            $centerFolderId = null;
             $endorsementStmt->bind_param(
                 'issssssssssss',
                 $senderId,
@@ -2868,7 +3157,7 @@ if (isset($_POST['uploadSymposium'])) {
 
             $researchStmt = $con->prepare($researchQuery);
             $researchDriveDownloadUrl = "https://drive.google.com/uc?id={$researchDriveFileId}&export=download";
-            
+            $centerFolderId = null;
             $researchStmt->bind_param(
                 'siiissssssssssssssssssssiss',
                 $paperTrailNo,
@@ -2950,15 +3239,66 @@ if (isset($_POST['uploadSymposium'])) {
                 savePaperTrailRecord($con, $researchId, $paperTrailNo, $currentYear, 'Symposium', $titleCertificatePaperTrailResult);
             }
             
+            // ===== SET $localInhouseId TO NULL FOR UNIVERSITY SUBMISSIONS =====
+            $localInhouseId = null;
             $response->local_inhouse_id = null;
         }
 
+        // ===== COMMIT TRANSACTION =====
         $con->commit();
+
+        // ===== SET RESPONSE =====
         $response->status = true;
         $response->success = true;
         $response->message = "Symposium submission successful! Files have been saved to both event folder and Paper Trail.";
-        
-        $con->close();
+
+        // ===== LOG SUCCESS BEFORE CLOSING CONNECTION =====
+        if (isset($logger) && $logger) {
+            $logger->logSuccess(
+                $researchId ?? null, 
+                $endorsementId ?? null, 
+                $localInhouseId ?? null,
+                [
+                    'paper_trail_no' => $paperTrailNo ?? null,
+                    'event_type' => $eventType ?? null
+                ]
+            );
+
+            // Log file uploads
+            if (isset($researchDriveFileId) && isset($_FILES['researchDoc']) && $_FILES['researchDoc']['error'] === UPLOAD_ERR_OK) {
+                $logger->logFileUpload(
+                    'research',
+                    $_FILES['researchDoc']['name'],
+                    $_FILES['researchDoc']['size'],
+                    'success',
+                    $researchDriveFileId,
+                    $entryFolderId ?? null,
+                    $researchDriveViewUrl ?? null
+                );
+            }
+
+            if (isset($endorsementDriveFileId) && isset($_FILES['endorsementFile']) && $_FILES['endorsementFile']['error'] === UPLOAD_ERR_OK) {
+                $logger->logFileUpload(
+                    'endorsement',
+                    $_FILES['endorsementFile']['name'],
+                    $_FILES['endorsementFile']['size'], 
+                    'success', 
+                    $endorsementDriveFileId, 
+                    $entryFolderId ?? null, 
+                    $endorsementDriveViewUrl ?? null
+                );
+            }
+        }
+
+        // ===== NOW CLOSE THE CONNECTION =====
+        if (isset($con) && $con) {
+            $con->close();
+        }
+
+        // ===== RETURN RESPONSE =====
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($response);
+        exit();
 
     } catch (Exception $e) {
         if (isset($con) && $con) {
@@ -2968,11 +3308,35 @@ if (isset($_POST['uploadSymposium'])) {
         $response->message = $e->getMessage();
         $response->status = false;
         $response->success = false;
-    }
+        
+        // On failure - check if logger exists
+        if (isset($logger) && $logger) {
+            $logger->logFailure($e->getMessage(), get_class($e), null, [
+                'exception_type' => get_class($e),
+                'presentation_type' => $presentationType ?? 'unknown'
+            ]);
 
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($response);
-    exit();
+            // Log any failed file uploads using a helper function instead of $this
+            if (isset($_FILES['researchDoc']) && $_FILES['researchDoc']['error'] !== UPLOAD_ERR_OK) {
+                $errorMsg = getUploadErrorMessage($_FILES['researchDoc']['error'] ?? UPLOAD_ERR_NO_FILE);
+                $logger->logFileUpload(
+                    'research',
+                    $_FILES['researchDoc']['name'] ?? 'unknown',
+                    0,
+                    'failed',
+                    null,
+                    null,
+                    null,
+                    $errorMsg
+                );
+            }
+        }
+
+        // Return error response
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($response);
+        exit();
+    }
 }
 
 function savePaperTrailRecord($con, $researchId, $paperTrailNo, $year, $submissionType, $paperTrailResult) {
