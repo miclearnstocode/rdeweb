@@ -4,6 +4,7 @@ import { $, Waiting, ConfirmationAlert, DragDropUpload, ValidatePDF, CustomModal
 export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedded = false }) => {
     let currentStep = 1
     let modalContainer
+    let closeModalFn = null
     let stepIndicators
     let stepContents
     let inhouseReviewsList = []
@@ -70,6 +71,161 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         "Social Science", "Natural / Biological", "Food", "Development",
         "Extension"
     ]
+    const resetFormData = () => {
+        // Use Object.assign to update the existing formData object
+        Object.assign(formData, {
+            presentation_type: null,
+            local_eventname: '',
+            local_title: '',
+            local_campus: '',
+            local_category: '',
+            local_center: '',
+            local_author: '',
+            local_coAuthors: [],
+            local_researchFile: null,
+            local_endorsementFile: null,
+            local_program: null,
+            local_certificateFile: null,
+
+            title_changed: false,
+            new_title: '',
+            title_certificate_file: null,
+
+            selected_inhouse_id: null,
+            selected_university_review: null,
+            university_title: '',
+            university_author: '',
+            university_category: '',
+            university_center: '',
+            university_coauthors: [],
+
+            title: '',
+            category: '',
+            center: '',
+            author: '',
+            presenter: '',
+            coAuthors: [],
+            date_started: '',
+            date_completed: '',
+            campus: '',
+            researchFile: null,
+            endorsementFile: null,
+            fundSource: '',
+            fundSourceOther: '',
+            campusCenterType: '',
+            campusCenterId: ''
+        });
+
+        // Reset current step to 1
+        currentStep = 1;
+
+        // Clear file inputs
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.value = '';
+        });
+
+        // Clear file name displays
+        document.querySelectorAll('[style*="color: #2e7d32"]').forEach(el => {
+            if (el.innerText && el.innerText.includes('✓')) {
+                el.innerText = '';
+            }
+        });
+
+        // Clear co-author lists
+        document.querySelectorAll('.coauthor-list, .local-coauthor-list').forEach(list => {
+            list.innerHTML = '';
+        });
+
+        // Reset select dropdowns
+        document.querySelectorAll('select').forEach(select => {
+            const firstOption = select.querySelector('option[selected]') || select.querySelector('option[disabled]');
+            if (firstOption) {
+                select.value = firstOption.value;
+            } else if (select.options.length > 0) {
+                select.selectedIndex = 0;
+            }
+        });
+
+        // Reset radio buttons
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.checked = false;
+        });
+
+        // Reset checkboxes
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Clear text inputs
+        document.querySelectorAll('input[type="text"], input[type="date"]').forEach(input => {
+            input.value = '';
+        });
+
+        // Hide local and university fields
+        const localFieldsContainer = document.querySelector('.local-fields-container');
+        const universityFieldsContainer = document.querySelector('.university-fields-container');
+        if (localFieldsContainer) localFieldsContainer.style.display = 'none';
+        if (universityFieldsContainer) universityFieldsContainer.style.display = 'none';
+
+        // Reset step indicators
+        for (let i = 1; i <= 3; i++) {
+            const circle = document.querySelector(`.step-circle-${i}`);
+            const text = document.querySelector(`.step-text-${i}`);
+            if (circle) {
+                circle.style.backgroundColor = i === 1 ? '#1976D2' : '#e8ecf0';
+                circle.style.color = i === 1 ? '#fff' : '#94a3b8';
+            }
+            if (text) {
+                text.style.color = i === 1 ? '#1976D2' : '#94a3b8';
+                text.style.fontWeight = i === 1 ? '600' : '400';
+            }
+        }
+
+        // Reset progress line
+        const progressFill = document.querySelector('.progress-fill');
+        if (progressFill) {
+            progressFill.style.width = '33.33%';
+        }
+
+        // Reset buttons
+        const prevBtn = document.querySelector('.footer-prev');
+        const nextBtn = document.querySelector('.footer-next');
+        const submitBtn = document.querySelector('.footer-submit');
+
+        if (prevBtn) prevBtn.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'block';
+        if (submitBtn) submitBtn.style.display = 'none';
+
+        // Show step 1, hide others
+        if (stepContents) {
+            stepContents.forEach((content, idx) => {
+                if (content) {
+                    content.style.display = idx === 0 ? 'block' : 'none';
+                }
+            });
+        }
+
+        // Reset the selected review display
+        const selectedReviewSection = document.getElementById('selectedReviewDisplay');
+        if (selectedReviewSection) {
+            selectedReviewSection.style.display = 'none';
+            const contentEl = selectedReviewSection.querySelector('#selectedReviewContent');
+            if (contentEl) contentEl.innerHTML = '';
+        }
+
+        // Clear search input
+        const searchInput = document.querySelector('input[placeholder*="search"]');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+
+        // Hide search results
+        const searchResults = document.querySelector('[style*="max-height: 300px"]');
+        if (searchResults) {
+            searchResults.style.display = 'none';
+            searchResults.innerHTML = '';
+        }
+    };
 
     const createModal = () => {
         let modalRef = null
@@ -445,6 +601,11 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             closeOnOverlayClick: false,
             showCloseButton: true
         })
+
+        // Store the closeModal function
+        if (modalRef && modalRef.closeModal) {
+            closeModalFn = modalRef.closeModal
+        }
 
         modalContainer = modalRef?.element
 
@@ -2207,10 +2368,10 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
 
                             if (selectedOption.type === 'campus') {
                                 formData.campus = selectedOption.value
-                                formData.center = ''
+                                formData.center = 'null'
                             } else {
                                 formData.center = selectedOption.value
-                                formData.campus = ''
+                                formData.campus = 'null'
                             }
                         }
                     }
@@ -2938,7 +3099,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         document.body.appendChild(loading)
 
         try {
-            // Determine the final funding source value
             let finalFundSource = formData.fundSource
             if (formData.fundSource === 'Others' && formData.fundSourceOther) {
                 finalFundSource = formData.fundSourceOther
@@ -2948,15 +3108,12 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 if (!formData.local_program) throw new Error('Program file is required')
                 if (!formData.local_certificateFile) throw new Error('Local certificate file is required')
 
-                const researchTitle = formData.title_changed ? formData.new_title : formData.local_title
-
                 const symposiumFormData = new FormData()
                 symposiumFormData.append('uploadSymposium', 'true')
                 symposiumFormData.append('eventType', eventName)
                 symposiumFormData.append('eventId', eventId)
                 symposiumFormData.append('presentation_type', 'local')
 
-                // Local In-House fields
                 symposiumFormData.append('local_eventname', formData.local_eventname)
                 symposiumFormData.append('local_title', formData.local_title)
                 symposiumFormData.append('original_title', formData.local_title)
@@ -3016,10 +3173,22 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     throw new Error(result.message || 'Symposium submission failed')
                 }
 
+                // STEP 1: Remove loading indicator
                 if (loading && loading.remove) loading.remove()
-                if (modalContainer) modalContainer.remove()
 
+                // STEP 2: Close modal
+                if (closeModalFn) {
+                    closeModalFn();
+                } else if (modalContainer && modalContainer.remove) {
+                    modalContainer.remove();
+                }
+
+                // STEP 3: Reset all form data
+                resetFormData()
+
+                // STEP 4: Show success alert
                 ConfirmationAlert('Paper successfully submitted! Paper status is currently pending', () => {
+                    // STEP 5: Call onSuccess callback to refresh parent component
                     if (onSuccess) onSuccess()
                 })
 
@@ -3090,14 +3259,28 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 if (!result.status || !result.success) {
                     throw new Error(result.message || 'Symposium submission failed')
                 }
+
+                // STEP 1: Remove loading indicator
+                if (loading && loading.remove) loading.remove()
+
+                // STEP 2: Close modal
+                if (closeModalFn) {
+                    closeModalFn();
+                } else if (modalContainer && modalContainer.remove) {
+                    modalContainer.remove();
+                }
+
+                // STEP 3: Reset all form data
+                resetFormData()
+
+                // STEP 4: Show success alert
+                ConfirmationAlert('Paper successfully submitted! Paper status is currently pending', () => {
+                    // STEP 5: Call onSuccess callback to refresh parent component
+                    if (onSuccess) onSuccess()
+                })
+
+                return
             }
-
-            if (loading && loading.remove) loading.remove()
-            if (modalContainer) modalContainer.remove()
-
-            ConfirmationAlert('Paper and Local Proposal have been successfully uploaded!', () => {
-                if (onSuccess) onSuccess()
-            })
 
         } catch (error) {
             if (loading && loading.remove) loading.remove()
