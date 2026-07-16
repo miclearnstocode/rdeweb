@@ -1824,6 +1824,918 @@ export const DocumentLog = () => {
         }))
     }
 
+    const submissionLogs = () => {
+        let bodyMainList
+        let currentSort = { column: null, ascending: true }
+        let currentFilter = { status: '', type: '' }
+        let isLoading = false
+
+        const SubmissionLogItem = ({
+            id, user_id, user_fullname, submission_type, presentation_type,
+            status, error_message, event_name, research_id, endorsement_id,
+            local_inhouse_id, duplicate_detected, duplicate_type,
+            response_time_ms, created_at, file_count, request_data
+        }) => {
+            const date = created_at ? created_at.split(" ")[0] : 'N/A'
+            const time = created_at ? TimeConvert(created_at.split(" ")[1].split(":")) : 'N/A'
+
+            const getStatusBadge = (status) => {
+                const styles = {
+                    'success': { bg: '#22c55e', text: 'Success', icon: 'fa-check-circle' },
+                    'failed': { bg: '#ef4444', text: 'Failed', icon: 'fa-times-circle' },
+                    'duplicate_blocked': { bg: '#f59e0b', text: 'Duplicate Blocked', icon: 'fa-ban' },
+                    'duplicate_warning': { bg: '#f59e0b', text: 'Duplicate Warning', icon: 'fa-triangle-exclamation' },
+                    'warning': { bg: '#f59e0b', text: 'Warning', icon: 'fa-triangle-exclamation' }
+                }
+                const config = styles[status] || styles['warning']
+
+                return $({
+                    tag: 'span',
+                    style: {
+                        backgroundColor: config.bg,
+                        color: 'white',
+                        padding: '2px 10px',
+                        borderRadius: '20px',
+                        fontSize: '0.7vw',
+                        fontWeight: '500',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        whiteSpace: 'nowrap'
+                    },
+                    child: [
+                        $({ tag: 'span', att: { className: `fa-solid ${config.icon}` }, style: { fontSize: '0.6vw' } }),
+                        $({ tag: 'span', text: config.text })
+                    ]
+                })
+            }
+
+            const getTypeBadge = (type) => {
+                const colors = {
+                    'symposium': '#3b82f6',
+                    'inhouse': '#8b5cf6',
+                    'research_chair': '#06b6d4',
+                    'extension': '#ec4899',
+                    'resubmit': '#f59e0b',
+                    'revision': '#14b8a6',
+                    'student': '#22c55e'
+                }
+                const color = colors[type] || '#64748b'
+
+                return $({
+                    tag: 'span',
+                    text: type ? type.replace('_', ' ').toUpperCase() : 'N/A',
+                    style: {
+                        backgroundColor: color + '20',
+                        color: color,
+                        padding: '2px 10px',
+                        borderRadius: '20px',
+                        fontSize: '0.7vw',
+                        fontWeight: '500',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        whiteSpace: 'nowrap'
+                    }
+                })
+            }
+
+            const getRequestSummary = (requestData) => {
+                if (!requestData) return 'No request data'
+                if (typeof requestData === 'string') {
+                    try {
+                        requestData = JSON.parse(requestData)
+                    } catch {
+                        return requestData.substring(0, 50)
+                    }
+                }
+
+                const fields = []
+                if (requestData.post) {
+                    if (requestData.post.title) fields.push(`Title: ${requestData.post.title.substring(0, 30)}...`)
+                    if (requestData.post.author) fields.push(`Author: ${requestData.post.author}`)
+                    if (requestData.post.eventType) fields.push(`Event: ${requestData.post.eventType}`)
+                    if (requestData.post.presentation_type) fields.push(`Type: ${requestData.post.presentation_type}`)
+                }
+                return fields.length > 0 ? fields.join(' | ') : 'Request data available'
+            }
+
+            return ($({
+                tag: 'div',
+                style: {
+                    height: 'fit-content',
+                    width: '100%',
+                    padding: '1vh 0',
+                    background: '#ffffff',
+                    margin: '0.3vh auto',
+                    display: 'flex',
+                    borderRadius: '0.5vw',
+                    border: '1px solid #e2e8f0',
+                    transition: 'all 0.2s ease',
+                    fontFamily: 'Segoe UI, sans-serif',
+                    fontSize: '0.8vw',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                    boxSizing: 'border-box',
+                    cursor: 'pointer'
+                },
+                att: {
+                    className: 'logList'
+                },
+                event: {
+                    mouseover: (e) => {
+                        e.currentTarget.style.transform = 'translateX(4px)'
+                        e.currentTarget.style.borderColor = '#3b82f6'
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.08)'
+                    },
+                    mouseout: (e) => {
+                        e.currentTarget.style.transform = 'translateX(0)'
+                        e.currentTarget.style.borderColor = '#e2e8f0'
+                        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)'
+                    },
+                    click: () => {
+                        showSubmissionDetailModal({
+                            id, user_id, user_fullname, submission_type, presentation_type,
+                            status, error_message, event_name, research_id, endorsement_id,
+                            local_inhouse_id, duplicate_detected, duplicate_type,
+                            response_time_ms, created_at, file_count, request_data
+                        })
+                    }
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        text: date,
+                        style: {
+                            width: '10%',
+                            paddingLeft: '1vw',
+                            color: '#1e293b',
+                            fontWeight: '500',
+                            boxSizing: 'border-box',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                        }
+                    }),
+                    $({
+                        tag: 'div',
+                        text: time,
+                        style: {
+                            width: '8%',
+                            color: '#1e293b',
+                            boxSizing: 'border-box',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                        }
+                    }),
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '15%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5vw',
+                            boxSizing: 'border-box'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-user' },
+                                style: {
+                                    color: '#3b82f6',
+                                    fontSize: '0.8vw',
+                                    flexShrink: 0
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: user_fullname || `User #${user_id}`,
+                                style: {
+                                    color: '#1e293b',
+                                    fontWeight: '500',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden'
+                                }
+                            })
+                        ]
+                    }),
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '12%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            boxSizing: 'border-box'
+                        },
+                        child: [getTypeBadge(submission_type)]
+                    }),
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '12%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            boxSizing: 'border-box'
+                        },
+                        child: [getStatusBadge(status)]
+                    }),
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '25%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5vw',
+                            boxSizing: 'border-box',
+                            paddingRight: '0.5vw'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-message' },
+                                style: {
+                                    color: '#94a3b8',
+                                    fontSize: '0.7vw',
+                                    flexShrink: 0
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: getRequestSummary(request_data),
+                                style: {
+                                    color: '#475569',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden'
+                                }
+                            })
+                        ]
+                    }),
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '10%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5vw',
+                            boxSizing: 'border-box'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-file' },
+                                style: {
+                                    color: '#94a3b8',
+                                    fontSize: '0.7vw',
+                                    flexShrink: 0
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: `${file_count || 0} files`,
+                                style: {
+                                    color: '#64748b',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden'
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-clock' },
+                                style: {
+                                    color: '#94a3b8',
+                                    fontSize: '0.7vw',
+                                    marginLeft: 'auto',
+                                    flexShrink: 0
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: `${response_time_ms || 0}ms`,
+                                style: {
+                                    color: '#64748b',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    fontSize: '0.7vw'
+                                }
+                            })
+                        ]
+                    }),
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '8%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.3vw',
+                            boxSizing: 'border-box'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-hashtag' },
+                                style: {
+                                    color: '#cbd5e1',
+                                    fontSize: '0.7vw',
+                                    flexShrink: 0
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: `#${id}`,
+                                style: {
+                                    color: '#94a3b8',
+                                    fontSize: '0.7vw'
+                                }
+                            })
+                        ]
+                    })
+                ]
+            }))
+        }
+
+        const showSubmissionDetailModal = (data) => {
+            const modal = $({
+                tag: 'div',
+                style: {
+                    position: 'fixed',
+                    top: '0',
+                    left: '0',
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    zIndex: '9999',
+                    backdropFilter: 'blur(4px)'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '70%',
+                            height: '80%',
+                            background: '#ffffff',
+                            margin: 'auto',
+                            padding: '2rem',
+                            borderRadius: '0.8vw',
+                            position: 'relative',
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+                            overflowY: 'auto',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        },
+                        child: [
+                            // Close button
+                            $({
+                                tag: 'div',
+                                style: {
+                                    position: 'absolute',
+                                    top: '1.5vh',
+                                    right: '1.5vw',
+                                    cursor: 'pointer',
+                                    color: '#94a3b8',
+                                    fontSize: '1.5vw',
+                                    transition: 'all 0.2s ease'
+                                },
+                                att: { className: 'fa-solid fa-circle-xmark' },
+                                event: {
+                                    type: 'click',
+                                    method: () => { modal.remove() },
+                                    mouseover: (e) => { e.target.style.color = '#3b82f6' },
+                                    mouseout: (e) => { e.target.style.color = '#94a3b8' }
+                                }
+                            }),
+                            // Header
+                            $({
+                                tag: 'div',
+                                style: {
+                                    fontFamily: 'Segoe UI, sans-serif',
+                                    fontSize: '1.4vw',
+                                    color: '#1e293b',
+                                    marginBottom: '2vh',
+                                    fontWeight: '700',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '1vw'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-file-lines' },
+                                        style: { color: '#3b82f6' }
+                                    }),
+                                    $({
+                                        tag: 'span',
+                                        text: `Submission Log #${data.id}`
+                                    }),
+                                    $({
+                                        tag: 'span',
+                                        text: data.status ? data.status.toUpperCase() : '',
+                                        style: {
+                                            backgroundColor: data.status === 'success' ? '#22c55e' :
+                                                data.status === 'failed' ? '#ef4444' : '#f59e0b',
+                                            color: 'white',
+                                            padding: '2px 12px',
+                                            borderRadius: '20px',
+                                            fontSize: '0.7vw',
+                                            fontWeight: '500'
+                                        }
+                                    })
+                                ]
+                            }),
+                            // Content
+                            $({
+                                tag: 'div',
+                                style: {
+                                    flex: 1,
+                                    overflowY: 'auto',
+                                    display: 'grid',
+                                    gridTemplateColumns: '1fr 1fr',
+                                    gap: '1.5vh 2vw',
+                                    padding: '1rem',
+                                    background: '#f8fafc',
+                                    borderRadius: '0.6vw',
+                                    border: '1px solid #e2e8f0'
+                                },
+                                child: [
+                                    // Left column
+                                    $({
+                                        tag: 'div',
+                                        style: { display: 'flex', flexDirection: 'column', gap: '1vh' },
+                                        child: [
+                                            $({ tag: 'div', style: { fontWeight: '600', color: '#64748b' }, text: 'Basic Information' }),
+                                            $({ tag: 'div', text: `User: ${data.user_fullname || 'N/A'}`, style: { color: '#1e293b' } }),
+                                            $({ tag: 'div', text: `Submission Type: ${data.submission_type || 'N/A'}`, style: { color: '#1e293b' } }),
+                                            $({ tag: 'div', text: `Presentation Type: ${data.presentation_type || 'N/A'}`, style: { color: '#1e293b' } }),
+                                            $({ tag: 'div', text: `Event: ${data.event_name || 'N/A'}`, style: { color: '#1e293b' } }),
+                                            $({ tag: 'div', text: `Created: ${data.created_at || 'N/A'}`, style: { color: '#1e293b' } }),
+                                            $({ tag: 'div', text: `Response Time: ${data.response_time_ms || 0}ms`, style: { color: '#1e293b' } })
+                                        ]
+                                    }),
+                                    // Right column
+                                    $({
+                                        tag: 'div',
+                                        style: { display: 'flex', flexDirection: 'column', gap: '1vh' },
+                                        child: [
+                                            $({ tag: 'div', style: { fontWeight: '600', color: '#64748b' }, text: 'References' }),
+                                            $({ tag: 'div', text: `Research ID: ${data.research_id || 'N/A'}`, style: { color: '#1e293b' } }),
+                                            $({ tag: 'div', text: `Endorsement ID: ${data.endorsement_id || 'N/A'}`, style: { color: '#1e293b' } }),
+                                            $({ tag: 'div', text: `Local In-House ID: ${data.local_inhouse_id || 'N/A'}`, style: { color: '#1e293b' } }),
+                                            $({ tag: 'div', text: `Event ID: ${data.event_id || 'N/A'}`, style: { color: '#1e293b' } }),
+                                            data.duplicate_detected ? $({ tag: 'div', text: `⚠️ Duplicate: ${data.duplicate_type || 'unknown'} (Record: ${data.duplicate_record_id})`, style: { color: '#f59e0b' } }) : null,
+                                            data.error_message ? $({ tag: 'div', text: `❌ Error: ${data.error_message}`, style: { color: '#ef4444' } }) : null
+                                        ]
+                                    }),
+                                    // File Upload Details (Full width)
+                                    data.files && data.files.length > 0 ? $({
+                                        tag: 'div',
+                                        style: { gridColumn: '1 / -1', marginTop: '1vh' },
+                                        child: [
+                                            $({ tag: 'div', style: { fontWeight: '600', color: '#64748b', marginBottom: '0.5vh' }, text: 'File Uploads' }),
+                                            $({
+                                                tag: 'table',
+                                                style: { width: '100%', fontSize: '0.75vw', borderCollapse: 'collapse' },
+                                                child: [
+                                                    $({
+                                                        tag: 'thead',
+                                                        child: [
+                                                            $({
+                                                                tag: 'tr',
+                                                                style: { borderBottom: '1px solid #e2e8f0' },
+                                                                child: [
+                                                                    $({ tag: 'th', text: 'File Type', style: { textAlign: 'left', padding: '0.3vw' } }),
+                                                                    $({ tag: 'th', text: 'File Name', style: { textAlign: 'left', padding: '0.3vw' } }),
+                                                                    $({ tag: 'th', text: 'Status', style: { textAlign: 'left', padding: '0.3vw' } }),
+                                                                    $({ tag: 'th', text: 'Drive ID', style: { textAlign: 'left', padding: '0.3vw' } })
+                                                                ]
+                                                            })
+                                                        ]
+                                                    }),
+                                                    $({
+                                                        tag: 'tbody',
+                                                        child: data.files.map(file =>
+                                                            $({
+                                                                tag: 'tr',
+                                                                style: { borderBottom: '1px solid #f1f5f9' },
+                                                                child: [
+                                                                    $({ tag: 'td', text: file.file_type || 'N/A', style: { padding: '0.3vw' } }),
+                                                                    $({ tag: 'td', text: file.file_name || 'N/A', style: { padding: '0.3vw' } }),
+                                                                    $({ tag: 'td', text: file.upload_status || 'N/A', style: { padding: '0.3vw', color: file.upload_status === 'success' ? '#22c55e' : '#ef4444' } }),
+                                                                    $({ tag: 'td', text: file.drive_file_id || 'N/A', style: { padding: '0.3vw', fontSize: '0.65vw', color: '#64748b' } })
+                                                                ]
+                                                            })
+                                                        )
+                                                    })
+                                                ]
+                                            })
+                                        ]
+                                    }) : null
+                                ]
+                            }),
+                            // Close button
+                            $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    paddingTop: '1.5vh',
+                                    borderTop: '1px solid #e2e8f0',
+                                    marginTop: '1.5vh'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'button',
+                                        style: {
+                                            padding: '0.6rem 2rem',
+                                            background: '#3b82f6',
+                                            border: 'none',
+                                            borderRadius: '2vw',
+                                            color: '#fff',
+                                            cursor: 'pointer',
+                                            fontSize: '0.9vw',
+                                            fontFamily: 'Segoe UI, sans-serif',
+                                            fontWeight: '600',
+                                            transition: 'all 0.2s ease',
+                                            minWidth: '150px'
+                                        },
+                                        text: 'Close',
+                                        event: {
+                                            type: 'click',
+                                            method: () => { modal.remove() },
+                                            mouseover: (e) => { e.target.style.background = '#2563eb' },
+                                            mouseout: (e) => { e.target.style.background = '#3b82f6' }
+                                        }
+                                    })
+                                ]
+                            })
+                        ]
+                    })
+                ]
+            })
+
+            document.body.appendChild(modal)
+        }
+
+        const loadSubmissionLogs = (el, filters = {}) => {
+            if (isLoading) return
+            isLoading = true
+
+            // Show loading indicator
+            el.innerHTML = ''
+            el.appendChild($({
+                tag: 'div',
+                style: {
+                    width: '100%',
+                    padding: '4rem 2rem',
+                    textAlign: 'center',
+                    color: '#94a3b8'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        att: { className: 'fa-solid fa-spinner fa-pulse' },
+                        style: { fontSize: '3vw', color: '#3b82f6', marginBottom: '1vh' }
+                    }),
+                    $({
+                        tag: 'div',
+                        text: 'Loading submission logs...',
+                        style: { fontSize: '1vw', color: '#64748b' }
+                    })
+                ]
+            }))
+
+            const req = new Request('/submissionLogs');
+            const params = [
+                { name: 'submissionLogRequest', value: '1' },
+                { name: 'limit', value: '200' }
+            ]
+
+            if (filters.status && filters.status !== '') {
+                params.push({ name: 'status', value: filters.status })
+            }
+            if (filters.type && filters.type !== '') {
+                params.push({ name: 'submission_type', value: filters.type })
+            }
+
+            req.Post(params)
+            req.Json()
+            req.Send().then(data => {
+                isLoading = false
+                el.innerHTML = ''
+                if (data && data.length > 0) {
+                    data.forEach(val => {
+                        el.appendChild(SubmissionLogItem(val))
+                    })
+                } else {
+                    el.appendChild($({
+                        tag: 'div',
+                        style: {
+                            width: '100%',
+                            padding: '4rem 2rem',
+                            textAlign: 'center',
+                            color: '#94a3b8'
+                        },
+                        child: [
+                            $({
+                                tag: 'div',
+                                att: { className: 'fa-solid fa-folder-open' },
+                                style: { fontSize: '3vw', color: '#e2e8f0', marginBottom: '1vh' }
+                            }),
+                            $({
+                                tag: 'div',
+                                text: filters.status || filters.type ?
+                                    `No submission logs found matching the selected filters` :
+                                    'No submission logs found',
+                                style: { fontSize: '1vw', color: '#64748b' }
+                            })
+                        ]
+                    }))
+                }
+            }).catch(error => {
+                isLoading = false
+                console.error('Error loading submission logs:', error)
+                el.innerHTML = ''
+                el.appendChild($({
+                    tag: 'div',
+                    style: {
+                        width: '100%',
+                        padding: '4rem 2rem',
+                        textAlign: 'center',
+                        color: '#ef4444'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            att: { className: 'fa-solid fa-exclamation-circle' },
+                            style: { fontSize: '3vw', color: '#ef4444', marginBottom: '1vh' }
+                        }),
+                        $({
+                            tag: 'div',
+                            text: 'Failed to load submission logs: ' + (error.message || 'Unknown error'),
+                            style: { fontSize: '1vw', color: '#64748b' }
+                        })
+                    ]
+                }))
+            })
+        }
+
+        // Function to apply filters
+        const applyFilters = () => {
+            const statusFilter = document.getElementById('statusFilter')
+            const typeFilter = document.getElementById('typeFilter')
+            const status = statusFilter ? statusFilter.value : ''
+            const type = typeFilter ? typeFilter.value : ''
+            currentFilter.status = status
+            currentFilter.type = type
+            if (bodyMainList) {
+                loadSubmissionLogs(bodyMainList, { status, type })
+            }
+        }
+
+        return ($({
+            tag: 'div',
+            style: {
+                height: '100%',
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                background: '#ffffff'
+            },
+            child: [
+                // Filter bar
+                $({
+                    tag: 'div',
+                    style: {
+                        height: '8%',
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '0 1vw',
+                        gap: '1vw',
+                        marginBottom: '0.5vh',
+                        boxSizing: 'border-box',
+                        flexWrap: 'wrap'
+                    },
+                    child: [
+                        // Search
+                        $({
+                            tag: 'div',
+                            style: {
+                                height: '4vh',
+                                border: '1px solid #e2e8f0',
+                                width: '25vw',
+                                borderRadius: '2vw',
+                                display: 'flex',
+                                padding: '0 1vw',
+                                backgroundColor: '#f8fafc',
+                                alignItems: 'center',
+                                transition: 'all 0.2s ease',
+                                boxSizing: 'border-box'
+                            },
+                            event: {
+                                focusin: (e) => {
+                                    e.currentTarget.style.borderColor = '#3b82f6'
+                                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+                                    e.currentTarget.style.backgroundColor = '#ffffff'
+                                },
+                                focusout: (e) => {
+                                    e.currentTarget.style.borderColor = '#e2e8f0'
+                                    e.currentTarget.style.boxShadow = 'none'
+                                    e.currentTarget.style.backgroundColor = '#f8fafc'
+                                }
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    att: { className: 'fa-solid fa-search' },
+                                    style: { fontSize: '0.8vw', color: '#94a3b8', marginRight: '0.5vw' }
+                                }),
+                                $({
+                                    tag: 'input',
+                                    style: {
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        outline: 'none',
+                                        height: '100%',
+                                        width: '100%',
+                                        color: '#1e293b',
+                                        fontSize: '0.8vw',
+                                        fontFamily: 'Segoe UI, sans-serif'
+                                    },
+                                    att: { placeholder: 'Search submission logs...', type: 'text' },
+                                    event: {
+                                        type: 'input',
+                                        method: (ev) => {
+                                            if (bodyMainList) {
+                                                const searchTerm = ev.target.value.toUpperCase()
+                                                const list = bodyMainList.children
+                                                for (const v of list) {
+                                                    if (v.innerText && v.innerText.toUpperCase().includes(searchTerm)) {
+                                                        v.style.display = 'flex'
+                                                    } else {
+                                                        v.style.display = 'none'
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                })
+                            ]
+                        }),
+                        // Status filter
+                        $({
+                            tag: 'select',
+                            style: {
+                                height: '4vh',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '2vw',
+                                padding: '0 1vw',
+                                backgroundColor: '#f8fafc',
+                                color: '#1e293b',
+                                fontSize: '0.8vw',
+                                outline: 'none',
+                                cursor: 'pointer'
+                            },
+                            att: { id: 'statusFilter' },
+                            event: {
+                                change: applyFilters
+                            },
+                            child: [
+                                $({ tag: 'option', text: 'All Status', att: { value: '' } }),
+                                $({ tag: 'option', text: 'Success', att: { value: 'success' } }),
+                                $({ tag: 'option', text: 'Failed', att: { value: 'failed' } }),
+                                $({ tag: 'option', text: 'Duplicate Blocked', att: { value: 'duplicate_blocked' } }),
+                                $({ tag: 'option', text: 'Duplicate Warning', att: { value: 'duplicate_warning' } })
+                            ]
+                        }),
+                        // Type filter
+                        $({
+                            tag: 'select',
+                            style: {
+                                height: '4vh',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '2vw',
+                                padding: '0 1vw',
+                                backgroundColor: '#f8fafc',
+                                color: '#1e293b',
+                                fontSize: '0.8vw',
+                                outline: 'none',
+                                cursor: 'pointer'
+                            },
+                            att: { id: 'typeFilter' },
+                            event: {
+                                change: applyFilters
+                            },
+                            child: [
+                                $({ tag: 'option', text: 'All Types', att: { value: '' } }),
+                                $({ tag: 'option', text: 'Symposium', att: { value: 'symposium' } }),
+                                $({ tag: 'option', text: 'In-House', att: { value: 'inhouse' } }),
+                                $({ tag: 'option', text: 'Research Chair', att: { value: 'research_chair' } }),
+                                $({ tag: 'option', text: 'Resubmit', att: { value: 'resubmit' } }),
+                                $({ tag: 'option', text: 'Revision', att: { value: 'revision' } }),
+                                $({ tag: 'option', text: 'Student', att: { value: 'student' } })
+                            ]
+                        }),
+                        // Apply Filters button
+                        $({
+                            tag: 'button',
+                            style: {
+                                height: '4vh',
+                                padding: '0 1.5vw',
+                                background: '#3b82f6',
+                                border: 'none',
+                                borderRadius: '2vw',
+                                color: 'white',
+                                fontSize: '0.75vw',
+                                fontWeight: '500',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5vw',
+                                transition: 'all 0.2s ease'
+                            },
+                            event: {
+                                click: applyFilters,
+                                mouseenter: (e) => { e.currentTarget.style.background = '#2563eb' },
+                                mouseleave: (e) => { e.currentTarget.style.background = '#3b82f6' }
+                            },
+                            child: [
+                                $({ tag: 'span', att: { className: 'fa-solid fa-filter' } }),
+                                $({ tag: 'span', text: 'Apply Filters' })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: {
+                                marginLeft: 'auto',
+                                display: 'flex',
+                                gap: '0.5vw',
+                                color: '#94a3b8',
+                                fontSize: '0.75vw'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-info-circle' },
+                                    style: { color: '#3b82f6' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Click on any log to view full details'
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                // Header
+                $({
+                    tag: 'div',
+                    style: {
+                        width: '100%',
+                        height: '6%',
+                        borderTop: '1px solid #e2e8f0',
+                        borderBottom: '1px solid #e2e8f0',
+                        display: 'flex',
+                        fontFamily: 'Segoe UI, sans-serif',
+                        background: '#f8fafc',
+                        boxSizing: 'border-box',
+                        flexShrink: 0
+                    },
+                    child: [
+                        $({ tag: 'div', text: 'DATE', style: { width: '10%', paddingLeft: '1vw', color: '#64748b', fontWeight: '600', fontSize: '0.75vw', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center' } }),
+                        $({ tag: 'div', text: 'TIME', style: { width: '8%', color: '#64748b', fontWeight: '600', fontSize: '0.75vw', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center' } }),
+                        $({ tag: 'div', text: 'USER', style: { width: '15%', color: '#64748b', fontWeight: '600', fontSize: '0.75vw', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center' } }),
+                        $({ tag: 'div', text: 'TYPE', style: { width: '12%', color: '#64748b', fontWeight: '600', fontSize: '0.75vw', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center' } }),
+                        $({ tag: 'div', text: 'STATUS', style: { width: '12%', color: '#64748b', fontWeight: '600', fontSize: '0.75vw', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center' } }),
+                        $({ tag: 'div', text: 'DETAILS', style: { width: '25%', color: '#64748b', fontWeight: '600', fontSize: '0.75vw', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center' } }),
+                        $({ tag: 'div', text: 'FILES / MS', style: { width: '10%', color: '#64748b', fontWeight: '600', fontSize: '0.75vw', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center' } }),
+                        $({ tag: 'div', text: 'ID', style: { width: '8%', color: '#64748b', fontWeight: '600', fontSize: '0.75vw', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', justifyContent: 'center' } })
+                    ]
+                }),
+                // Body
+                $({
+                    tag: 'div',
+                    style: {
+                        height: '85%',
+                        width: '100%',
+                        overflowY: 'auto',
+                        padding: '0.5vw',
+                        background: '#ffffff',
+                        boxSizing: 'border-box'
+                    },
+                    elementHandler: (el) => {
+                        bodyMainList = el
+                        loadSubmissionLogs(el, { status: '', type: '' })
+                    }
+                })
+            ]
+        }))
+    }
+
     const Top = () => {
         return ($({
             tag: 'div',
@@ -1845,6 +2757,10 @@ export const DocumentLog = () => {
                 Bot({
                     label: 'Email Logs',
                     url: '/admin/document_logs/email'
+                }),
+                Bot({  // ← NEW
+                    label: 'Submission Logs',
+                    url: '/admin/document_logs/submission'
                 })
             ]
         }))
@@ -1876,6 +2792,9 @@ export const DocumentLog = () => {
                             break
                         case 'email':
                             el.appendChild(emailLogs())
+                            break
+                        case 'submission':  // ← NEW
+                            el.appendChild(submissionLogs())
                             break
                         default:
                             el.appendChild(Error({ message: 'Page not found' }))
