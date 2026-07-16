@@ -373,17 +373,15 @@ export const ResearchMain = () => {
                     bodyContent.innerHTML = ''
                     bodyContent.appendChild($({
                         tag: 'div',
-                        style: { textAlign: 'center', padding: '40px', color: '#f44' },
-                        text: 'Error loading data. Please refresh.'
+                        style: { textAlign: 'center', padding: '40px', color: '#888', fontSize: '1.1vw' },
+                        child: [
+                            $({ tag: 'span', att: { className: 'fa-solid fa-inbox' }, style: { fontSize: '3vw', display: 'block', marginBottom: '10px' } }),
+                            $({ tag: 'div', text: `No pending ${currentTab === 'faculty' ? 'faculty research' : currentTab === 'undergraduate' ? 'undergraduate' : 'graduate'} submissions found` })
+                        ]
                     }))
                 })
         }
 
-        const showSuccessAndReload = (message) => {
-            document.body.appendChild(ConfirmationAlert(message, () => {
-                window.location.reload()
-            }))
-        }
 
         // Faculty Research Document Component
         const docsFaculty = ({ date, eventType, file, research, docId, status, sender, smail, center, campus, locationType }) => {
@@ -392,6 +390,8 @@ export const ResearchMain = () => {
             let certificateFile = null
             let localInhouseData = null
             let endorsementLetterUrl = null
+            let inhouseSource = null // For university symposium source
+            let paperTrailNo = null
 
             research.forEach(val => {
                 category = val.category
@@ -404,6 +404,13 @@ export const ResearchMain = () => {
                 }
                 if (val.document_title) {
                     localInhouseData = val
+                }
+                // Capture in-house source and paper trail no from the first research item
+                if (val.inhouse_source) {
+                    inhouseSource = val.inhouse_source
+                }
+                if (val.paper_trail_no) {
+                    paperTrailNo = val.paper_trail_no
                 }
             })
 
@@ -426,6 +433,7 @@ export const ResearchMain = () => {
             const isExtension = center === 'Extension (Extension)' || center === 'Extension'
             const isSymposium = eventType && (eventType.toLowerCase().includes('symposium') || eventType.toLowerCase().includes('rde'))
             const isInHouse = eventType && (eventType.toLowerCase().includes('in-house') || eventType.toLowerCase().includes('in house'))
+            const isUniversitySymposium = isSymposium && !localInhouseData // No local_inhouse data means it's a university symposium
 
             let researchFileLabel = ''
             if (isExtension) {
@@ -544,23 +552,23 @@ export const ResearchMain = () => {
                             iframe.onerror = () => {
                                 loadingIndicator.remove();
                                 container.innerHTML = `
-                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
-                                        <span class="fa-solid fa-circle-exclamation" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
-                                        <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">Unable to load ${fileType}</h3>
-                                        <a href="${driveViewUrl}" target="_blank" style="padding: 10px 20px; background: #0d6efd; color: white; text-decoration: none; border-radius: 8px; margin-top: 16px;">Open in Google Drive</a>
-                                    </div>
-                                `;
+                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
+                                <span class="fa-solid fa-circle-exclamation" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
+                                <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">Unable to load ${fileType}</h3>
+                                <a href="${driveViewUrl}" target="_blank" style="padding: 10px 20px; background: #0d6efd; color: white; text-decoration: none; border-radius: 8px; margin-top: 16px;">Open in Google Drive</a>
+                            </div>
+                        `;
                             };
 
                             container.appendChild(iframe);
                         } else {
                             container.innerHTML = `
-                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
-                                    <span class="fa-solid fa-link-slash" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
-                                    <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">Invalid Google Drive URL</h3>
-                                    <p style="font-family: Inter, sans-serif; color: #6c757d;">Could not extract file ID from the URL.</p>
-                                </div>
-                            `;
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
+                            <span class="fa-solid fa-link-slash" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
+                            <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">Invalid Google Drive URL</h3>
+                            <p style="font-family: Inter, sans-serif; color: #6c757d;">Could not extract file ID from the URL.</p>
+                        </div>
+                    `;
                         }
                     } else if (driveViewUrl) {
                         const objectEl = $({
@@ -579,24 +587,24 @@ export const ResearchMain = () => {
                             elementHandler: (obj) => {
                                 obj.onerror = () => {
                                     obj.innerHTML = `
-                                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
-                                            <span class="fa-solid fa-file-pdf" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
-                                            <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">Unable to load PDF</h3>
-                                            <a href="${driveViewUrl}" target="_blank" style="padding: 10px 20px; background: #0d6efd; color: white; text-decoration: none; border-radius: 8px; margin-top: 16px;">Download PDF</a>
-                                        </div>
-                                    `;
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
+                                    <span class="fa-solid fa-file-pdf" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
+                                    <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">Unable to load PDF</h3>
+                                    <a href="${driveViewUrl}" target="_blank" style="padding: 10px 20px; background: #0d6efd; color: white; text-decoration: none; border-radius: 8px; margin-top: 16px;">Download PDF</a>
+                                </div>
+                            `;
                                 };
                             }
                         });
                         container.appendChild(objectEl);
                     } else {
                         container.innerHTML = `
-                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
-                                <span class="fa-solid fa-link-slash" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
-                                <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">No valid file available</h3>
-                                <p style="font-family: Inter, sans-serif; color: #6c757d;">The ${fileType} file could not be found.</p>
-                            </div>
-                        `;
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
+                        <span class="fa-solid fa-link-slash" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
+                        <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">No valid file available</h3>
+                        <p style="font-family: Inter, sans-serif; color: #6c757d;">The ${fileType} file could not be found.</p>
+                    </div>
+                `;
                     }
 
                     return container;
@@ -613,16 +621,17 @@ export const ResearchMain = () => {
 
             const viewDocs = () => {
                 const DetailsPanel = () => {
-                    const researchBot = ({ dataURLResearch, title, category, author, coAuthor, presenter, center, campus, programFile, certificateFile }) => {
-                        const labelDetails = (label, data) => {
+                    const researchBot = ({ dataURLResearch, title, category, author, coAuthor, presenter, center, campus, programFile, certificateFile, inhouseSource, localInhouseData, paperTrailNo }) => {
+                        const labelDetails = (label, data, highlight = false) => {
                             return $({
                                 tag: 'div',
                                 style: {
                                     display: 'flex',
                                     marginBottom: '12px',
                                     padding: '8px',
-                                    backgroundColor: '#f8f9fa',
-                                    borderRadius: '8px'
+                                    backgroundColor: highlight ? '#fff3cd' : '#f8f9fa',
+                                    borderRadius: '8px',
+                                    border: highlight ? '1px solid #ffc107' : 'none'
                                 },
                                 child: [
                                     $({
@@ -631,7 +640,7 @@ export const ResearchMain = () => {
                                         style: {
                                             fontFamily: 'Inter, sans-serif',
                                             fontWeight: '600',
-                                            color: '#0d6efd',
+                                            color: highlight ? '#856404' : '#0d6efd',
                                             fontSize: '13px',
                                             minWidth: '120px'
                                         }
@@ -641,7 +650,7 @@ export const ResearchMain = () => {
                                         text: data || 'N/A',
                                         style: {
                                             fontFamily: 'Inter, sans-serif',
-                                            color: '#2c3e50',
+                                            color: highlight ? '#856404' : '#2c3e50',
                                             fontSize: '13px',
                                             flex: '1'
                                         }
@@ -710,6 +719,175 @@ export const ResearchMain = () => {
                         const locationLabel = isResearchExtension ? 'Campus' : 'Center'
                         const locationValue = isResearchExtension ? (campus || 'N/A') : (center || 'N/A')
 
+                        // Build the research details section
+                        const researchDetails = [
+                            labelDetails("Title", title),
+                            labelDetails("Author", author),
+                            CoAuthorList(),
+                            labelDetails("Presenter", presenter),
+                            labelDetails(locationLabel, locationValue),
+                            labelDetails("Category", category)
+                        ]
+
+                        // If this is a symposium submission with in-house source, add the source info
+                        if (inhouseSource) {
+                            researchDetails.push(
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        marginTop: '16px',
+                                        padding: '12px 16px',
+                                        backgroundColor: '#e3f2fd',
+                                        borderRadius: '8px',
+                                        borderLeft: '4px solid #1976D2'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                marginBottom: '8px'
+                                            },
+                                            child: [
+                                                $({
+                                                    tag: 'span',
+                                                    att: { className: 'fa-solid fa-link' },
+                                                    style: { color: '#1976D2', fontSize: '14px' }
+                                                }),
+                                                $({
+                                                    tag: 'span',
+                                                    text: 'Source In-House Review:',
+                                                    style: {
+                                                        fontFamily: 'Inter, sans-serif',
+                                                        fontWeight: '600',
+                                                        color: '#1976D2',
+                                                        fontSize: '13px'
+                                                    }
+                                                }),
+                                                $({
+                                                    tag: 'span',
+                                                    text: paperTrailNo || 'N/A',
+                                                    style: {
+                                                        fontFamily: 'monospace',
+                                                        fontSize: '12px',
+                                                        color: '#1976D2',
+                                                        backgroundColor: '#bbdefb',
+                                                        padding: '2px 8px',
+                                                        borderRadius: '4px'
+                                                    }
+                                                })
+                                            ]
+                                        }),
+                                        labelDetails("In-House Title", inhouseSource.title || 'N/A', true),
+                                        labelDetails("In-House Event", inhouseSource.event || inhouseSource.event_name || 'N/A', true),
+                                        labelDetails("In-House Author", inhouseSource.author || 'N/A', true)
+                                    ]
+                                })
+                            )
+                        }
+
+                        // If this is a local in-house submission, show local data
+                        if (localInhouseData) {
+                            researchDetails.push(
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        marginTop: '16px',
+                                        padding: '12px 16px',
+                                        backgroundColor: '#e8f5e9',
+                                        borderRadius: '8px',
+                                        borderLeft: '4px solid #4caf50'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                marginBottom: '8px'
+                                            },
+                                            child: [
+                                                $({
+                                                    tag: 'span',
+                                                    att: { className: 'fa-solid fa-file-lines' },
+                                                    style: { color: '#4caf50', fontSize: '14px' }
+                                                }),
+                                                $({
+                                                    tag: 'span',
+                                                    text: 'Local In-House Data:',
+                                                    style: {
+                                                        fontFamily: 'Inter, sans-serif',
+                                                        fontWeight: '600',
+                                                        color: '#4caf50',
+                                                        fontSize: '13px'
+                                                    }
+                                                }),
+                                                ...(localInhouseData.paper_trail_no ? [
+                                                    $({
+                                                        tag: 'span',
+                                                        text: localInhouseData.paper_trail_no,
+                                                        style: {
+                                                            fontFamily: 'monospace',
+                                                            fontSize: '12px',
+                                                            color: '#4caf50',
+                                                            backgroundColor: '#c8e6c9',
+                                                            padding: '2px 8px',
+                                                            borderRadius: '4px'
+                                                        }
+                                                    })
+                                                ] : [])
+                                            ]
+                                        }),
+                                        labelDetails("Document Title", localInhouseData.document_title || 'N/A', true),
+                                        labelDetails("Local Event", localInhouseData.local_eventname || 'N/A', true),
+                                        labelDetails("Main Author", localInhouseData.main_author || 'N/A', true),
+                                        labelDetails("Campus", localInhouseData.campus || 'N/A', true),
+                                        labelDetails("Category", localInhouseData.category || 'N/A', true)
+                                    ]
+                                })
+                            )
+                        }
+
+                        // Add paper trail number display
+                        if (paperTrailNo && !inhouseSource && !localInhouseData) {
+                            researchDetails.push(
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        marginTop: '8px',
+                                        padding: '4px 12px',
+                                        backgroundColor: '#f8f9fa',
+                                        borderRadius: '4px',
+                                        display: 'inline-block'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            text: 'Paper Trail No: ',
+                                            style: {
+                                                fontFamily: 'Inter, sans-serif',
+                                                fontWeight: '500',
+                                                color: '#6c757d',
+                                                fontSize: '12px'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            text: paperTrailNo,
+                                            style: {
+                                                fontFamily: 'monospace',
+                                                fontSize: '12px',
+                                                color: '#2c3e50'
+                                            }
+                                        })
+                                    ]
+                                })
+                            )
+                        }
+
                         return $({
                             tag: 'div',
                             style: {
@@ -720,14 +898,7 @@ export const ResearchMain = () => {
                                 borderRadius: '12px',
                                 border: '1px solid #e9ecef'
                             },
-                            child: [
-                                labelDetails("Title", title),
-                                labelDetails("Author", author),
-                                CoAuthorList(),
-                                labelDetails("Presenter", presenter),
-                                labelDetails(locationLabel, locationValue),
-                                labelDetails("Category", category)
-                            ]
+                            child: researchDetails
                         })
                     }
 
@@ -870,13 +1041,11 @@ export const ResearchMain = () => {
                                                 let loading = Waiting()
                                                 document.body.appendChild(loading)
 
-                                                // Simplified: Only send docId, reason, and rejection flag
                                                 const form = new FormData()
                                                 form.append('docId', docId)
                                                 form.append('reasonEnd', rejectReason)
                                                 form.append('rejectIndorse', 'true')
                                                 form.append('fileType', `EndorsementLetter:${eventType}`)
-                                                // fileUrl is NO LONGER needed
 
                                                 await fetch('/getresearch', {
                                                     method: 'POST',
@@ -891,7 +1060,6 @@ export const ResearchMain = () => {
                                                         }
                                                     }).catch(() => {
                                                         loading.remove()
-                                                        alert('Error submitting rejection. Please try again.')
                                                     })
                                             },
                                             mouseenter: (e) => { e.target.style.backgroundColor = '#c82333' },
@@ -982,7 +1150,10 @@ export const ResearchMain = () => {
                                 center: val.center,
                                 campus: val.campus || val.local_campus,
                                 programFile: val.programFile,
-                                certificateFile: val.certificateFile
+                                certificateFile: val.certificateFile,
+                                inhouseSource: val.inhouse_source,
+                                localInhouseData: val.local_inhouse_data || (val.document_title ? val : null),
+                                paperTrailNo: val.paper_trail_no
                             }))
                         })
 
@@ -1010,12 +1181,9 @@ export const ResearchMain = () => {
                     const extractFileUrl = (fileData) => {
                         if (!fileData) return null;
 
-                        // If it's a string, return it
                         if (typeof fileData === 'string') return fileData;
 
-                        // If it's an object
                         if (typeof fileData === 'object') {
-                            // Check for drive_view_url first (primary for research proposals)
                             if (fileData.driveViewUrl) return fileData.driveViewUrl;
                             if (fileData.drive_view_url) return fileData.drive_view_url;
                             if (fileData.viewUrl) return fileData.viewUrl;
@@ -1029,28 +1197,21 @@ export const ResearchMain = () => {
                         return null;
                     };
 
-                    // Check if a file has a valid viewable URL
                     const hasViewableFile = (fileData) => {
                         if (!fileData) return false;
 
-                        // If it's an object with hasFile property
                         if (typeof fileData === 'object' && fileData.hasFile !== undefined) {
                             return fileData.hasFile === true;
                         }
 
-                        // Check if we can extract a URL
                         const url = extractFileUrl(fileData);
                         return url !== null && url !== '';
                     };
 
-                    // Get the research file from the first research entry
                     const researchFile = research.length > 0 ? research[0].file : null;
-
-                    // Get program and certificate files
                     const programFileData = research.length > 0 ? research[0].programFile : null;
                     const certificateFileData = research.length > 0 ? research[0].certificateFile : null;
 
-                    // Common action button style
                     const actionButton = ({ icon, label, onClick, color, description, disabled = false }) => {
                         return $({
                             tag: 'div',
@@ -1087,7 +1248,6 @@ export const ResearchMain = () => {
                                                 margin: '0'
                                             }
                                         }),
-                                        // Add a small indicator if file is missing
                                         ...(disabled ? [
                                             $({
                                                 tag: 'span',
@@ -1153,7 +1313,6 @@ export const ResearchMain = () => {
                         })
                     };
 
-                    // Determine research button label and description
                     let researchLabel = '';
                     let researchDescription = '';
                     let researchColor = '#0d6efd';
@@ -1183,10 +1342,8 @@ export const ResearchMain = () => {
                         }
                     }
 
-                    // Endorsement Letter description
                     const endorsementDescription = 'The faculty endorsement letter confirming the validity of this research submission and recommending it for review.';
 
-                    // Check if files exist
                     const hasResearchFile = hasViewableFile(researchFile);
                     const hasProgramFile = hasViewableFile(programFileData);
                     const hasCertificateFile = hasViewableFile(certificateFileData);
@@ -1210,7 +1367,6 @@ export const ResearchMain = () => {
                                     padding: '24px 20px'
                                 },
                                 child: [
-                                    // Endorsement Letter Button (First - most important)
                                     actionButton({
                                         icon: 'fa-regular fa-file-pdf',
                                         label: 'Endorsement Letter',
@@ -1219,15 +1375,12 @@ export const ResearchMain = () => {
                                         color: '#0d6efd',
                                         disabled: !hasEndorsementFile
                                     }),
-
-                                    // Research Document Button - FIX: Use researchFile (the actual research proposal/paper)
                                     actionButton({
                                         icon: researchIcon,
                                         label: researchLabel,
                                         description: researchDescription,
                                         onClick: () => {
                                             if (hasResearchFile) {
-                                                // Use the research file from the first research entry
                                                 openFileInModal(researchFile, titleEntry || research[0]?.title || 'Document', researchLabel);
                                             } else {
                                                 alert(`${researchLabel} file is not available.`);
@@ -1236,8 +1389,6 @@ export const ResearchMain = () => {
                                         color: researchColor,
                                         disabled: !hasResearchFile
                                     }),
-
-                                    // Program File Button (if available)
                                     ...(programFileData ? [actionButton({
                                         icon: 'fa-solid fa-file-alt',
                                         label: isExtension ? 'Local Program File' : 'Program File',
@@ -1248,8 +1399,6 @@ export const ResearchMain = () => {
                                         color: '#fd7e14',
                                         disabled: !hasProgramFile
                                     })] : []),
-
-                                    // Certificate File Button (if available)
                                     ...(certificateFileData ? [actionButton({
                                         icon: 'fa-solid fa-certificate',
                                         label: isExtension ? 'Local Certificate File' : 'Certificate File',
@@ -1266,7 +1415,6 @@ export const ResearchMain = () => {
                     });
                 }
 
-                // Open modal using CustomModal
                 CustomModal({
                     title: `Document Review - ${eventType}`,
                     size: 'full',
@@ -1353,6 +1501,161 @@ export const ResearchMain = () => {
                     details("Date Submitted", `${formatDate(datePart)} at ${timeFormat}`)
                 ]
 
+                // ===== ADD IN-HOUSE SOURCE TITLE (NOT PAPER TRAIL NO) =====
+                if (inhouseSource && inhouseSource.title) {
+                    detailItems.push(
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                marginBottom: '4px',
+                                padding: '6px 10px',
+                                backgroundColor: '#e3f2fd',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                fontFamily: 'Inter, sans-serif',
+                                borderLeft: '3px solid #1976D2'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-link' },
+                                    style: { color: '#1976D2', marginRight: '8px', fontSize: '12px' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    style: {
+                                        color: '#1565C0',
+                                        fontWeight: '500',
+                                        flex: '1'
+                                    },
+                                    elementHandler: (el) => {
+                                        // Display the in-house title with a label
+                                        const titleText = inhouseSource.title || 'N/A';
+                                        const truncatedTitle = titleText.length > 45 ? titleText.substring(0, 45) + '...' : titleText;
+                                        el.innerHTML = `<span style="color:#6c757d;font-weight:400;">In-House:</span> ${truncatedTitle}`;
+                                    }
+                                })
+                            ]
+                        })
+                    )
+                    // Also add paper trail no as a separate line but with label
+                    if (paperTrailNo) {
+                        detailItems.push(
+                            $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    marginBottom: '4px',
+                                    padding: '2px 10px',
+                                    fontSize: '11px',
+                                    fontFamily: 'monospace',
+                                    color: '#6c757d'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        text: `Paper Trail: ${paperTrailNo}`,
+                                        style: {
+                                            color: '#6c757d'
+                                        }
+                                    })
+                                ]
+                            })
+                        )
+                    }
+                }
+
+                // ===== ADD LOCAL IN-HOUSE TITLE (NOT PAPER TRAIL NO) =====
+                if (localInhouseData && localInhouseData.document_title) {
+                    detailItems.push(
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                marginBottom: '4px',
+                                padding: '6px 10px',
+                                backgroundColor: '#e8f5e9',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                fontFamily: 'Inter, sans-serif',
+                                borderLeft: '3px solid #4caf50'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-file-lines' },
+                                    style: { color: '#4caf50', marginRight: '8px', fontSize: '12px' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    style: {
+                                        color: '#2e7d32',
+                                        fontWeight: '500',
+                                        flex: '1'
+                                    },
+                                    elementHandler: (el) => {
+                                        const titleText = localInhouseData.document_title || 'N/A';
+                                        const truncatedTitle = titleText.length > 45 ? titleText.substring(0, 45) + '...' : titleText;
+                                        el.innerHTML = `<span style="color:#6c757d;font-weight:400;">Local:</span> ${truncatedTitle}`;
+                                    }
+                                })
+                            ]
+                        })
+                    )
+                    // Also add local paper trail no if available
+                    if (localInhouseData.paper_trail_no) {
+                        detailItems.push(
+                            $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    marginBottom: '4px',
+                                    padding: '2px 10px',
+                                    fontSize: '11px',
+                                    fontFamily: 'monospace',
+                                    color: '#6c757d'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        text: `Paper Trail: ${localInhouseData.paper_trail_no}`,
+                                        style: {
+                                            color: '#6c757d'
+                                        }
+                                    })
+                                ]
+                            })
+                        )
+                    }
+                }
+
+                // ===== IF NO SOURCE, SHOW PAPER TRAIL NO ONLY =====
+                if (paperTrailNo && !inhouseSource && !localInhouseData) {
+                    detailItems.push(
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                marginBottom: '4px',
+                                padding: '2px 10px',
+                                fontSize: '11px',
+                                fontFamily: 'monospace',
+                                color: '#6c757d'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    text: `Paper Trail: ${paperTrailNo}`,
+                                    style: {
+                                        color: '#6c757d'
+                                    }
+                                })
+                            ]
+                        })
+                    )
+                }
+
                 return $({
                     tag: 'div',
                     style: {
@@ -1421,6 +1724,7 @@ export const ResearchMain = () => {
                 }
             })
         }
+
         // Student Research Document
         const docsStudent = ({ id, title, author, coauthor, presenter, category, campus, event, paper_type, created_at, sender_type, sender_email, research_file, endorsement_file }) => {
 

@@ -139,6 +139,9 @@ if (isset($_POST['incomingEndorsement'])) {
                 rf.coauthor,
                 rf.presenter,
                 rf.category,
+                rf.paper_trail_no,
+                rf.local_inhouse,
+                rf.symposium_submitted,
                 li.program_file_view_url,
                 li.program_file_download_url,
                 li.certificate_file_view_url,
@@ -146,7 +149,8 @@ if (isset($_POST['incomingEndorsement'])) {
                 li.document_title,
                 li.campus as local_campus,
                 li.main_author,
-                li.co_authors
+                li.co_authors,
+                li.paper_trail_no as local_paper_trail_no
             FROM researchfile rf
             LEFT JOIN local_inhouse li ON rf.id = li.research_id
             WHERE rf.endorsementid = ?";
@@ -168,6 +172,101 @@ if (isset($_POST['incomingEndorsement'])) {
                 $research->coauthor = $v['coauthor'];
                 $research->presenter = $v['presenter'];
                 $research->category = $v['category'];
+                $research->paper_trail_no = $v['paper_trail_no'];
+                $research->local_inhouse = (int)$v['local_inhouse'];
+                $research->symposium_submitted = (int)$v['symposium_submitted'];
+                
+                // ===== TRACE IN-HOUSE SOURCE USING PAPER TRAIL NO =====
+                $research->inhouse_source = null;
+                $research->local_inhouse_data = null;
+                
+                if (!empty($v['paper_trail_no'])) {
+                    // Check if this is a symposium submission
+                    $isSymposium = stripos($v['event'], 'Symposium') !== false;
+                    
+                    if ($isSymposium) {
+                        // FIRST: Check for in-house review with same paper_trail_no in researchfile table
+                        $inhouseQuery = "SELECT 
+                            rf.id as inhouse_id,
+                            rf.title as inhouse_title,
+                            rf.event as inhouse_event,
+                            rf.author as inhouse_author,
+                            rf.paper_trail_no,
+                            rf.symposium_submitted,
+                            el.name as event_name,
+                            el.date_of_presentation
+                        FROM researchfile rf
+                        LEFT JOIN event_list el ON rf.event_id = el.id
+                        WHERE rf.paper_trail_no = ?
+                        AND (rf.event LIKE '%In-House Review%' 
+                             OR rf.event LIKE '%In House Review%'
+                             OR rf.event LIKE '%in-house review%'
+                             OR rf.event LIKE '%in house review%')
+                        AND rf.id != ?  -- Exclude the current record
+                        LIMIT 1";
+                        
+                        $inhouseStmt = $con->prepare($inhouseQuery);
+                        $inhouseStmt->bind_param("si", $v['paper_trail_no'], $v['id']);
+                        $inhouseStmt->execute();
+                        $inhouseResult = $inhouseStmt->get_result();
+                        
+                        if ($inhouseRow = $inhouseResult->fetch_assoc()) {
+                            // Found in-house review in researchfile table
+                            $research->inhouse_source = new stdClass();
+                            $research->inhouse_source->id = $inhouseRow['inhouse_id'];
+                            $research->inhouse_source->title = $inhouseRow['inhouse_title'];
+                            $research->inhouse_source->event = $inhouseRow['inhouse_event'];
+                            $research->inhouse_source->author = $inhouseRow['inhouse_author'];
+                            $research->inhouse_source->paper_trail_no = $inhouseRow['paper_trail_no'];
+                            $research->inhouse_source->event_name = $inhouseRow['event_name'];
+                            $research->inhouse_source->date_of_presentation = $inhouseRow['date_of_presentation'];
+                            $research->inhouse_source->source_type = 'researchfile';
+                            
+                            error_log("Found in-house source in researchfile for paper_trail_no: " . $v['paper_trail_no'] . " - ID: " . $inhouseRow['inhouse_id']);
+                        }
+                        $inhouseStmt->close();
+                    }
+                    
+                    // ===== IF NO IN-HOUSE SOURCE FOUND IN researchfile, CHECK local_inhouse =====
+                    if ($research->inhouse_source === null && $v['local_inhouse'] == 1) {
+                        // This is a local in-house submission, get the local_inhouse record
+                        $localSourceQuery = "SELECT 
+                            id,
+                            document_title,
+                            campus,
+                            category,
+                            center,
+                            main_author,
+                            co_authors,
+                            local_eventname,
+                            paper_trail_no,
+                            created_at
+                        FROM local_inhouse 
+                        WHERE research_id = ?";
+                        
+                        $localSourceStmt = $con->prepare($localSourceQuery);
+                        $localSourceStmt->bind_param("i", $v['id']);
+                        $localSourceStmt->execute();
+                        $localSourceResult = $localSourceStmt->get_result();
+                        
+                        if ($localSourceRow = $localSourceResult->fetch_assoc()) {
+                            $research->local_inhouse_data = new stdClass();
+                            $research->local_inhouse_data->id = $localSourceRow['id'];
+                            $research->local_inhouse_data->document_title = $localSourceRow['document_title'];
+                            $research->local_inhouse_data->campus = $localSourceRow['campus'];
+                            $research->local_inhouse_data->category = $localSourceRow['category'];
+                            $research->local_inhouse_data->center = $localSourceRow['center'];
+                            $research->local_inhouse_data->main_author = $localSourceRow['main_author'];
+                            $research->local_inhouse_data->local_eventname = $localSourceRow['local_eventname'];
+                            $research->local_inhouse_data->paper_trail_no = $localSourceRow['paper_trail_no'];
+                            $research->local_inhouse_data->created_at = $localSourceRow['created_at'];
+                            $research->local_inhouse_data->source_type = 'local_inhouse';
+                            
+                            error_log("Found local_inhouse data for research_id: " . $v['id']);
+                        }
+                        $localSourceStmt->close();
+                    }
+                }
                 
                 if ($isExtension) {
                     $research->displayLocation = $val['campus'];
@@ -285,6 +384,7 @@ if (isset($_POST['incomingEndorsement'])) {
                 $research->drive_folder_id = $v['drive_folder_id'];
                 $research->drive_event_folder_id = $v['drive_event_folder_id'];
                 $research->drive_center_folder_id = $v['drive_center_folder_id'];
+                $research->local_paper_trail_no = $v['local_paper_trail_no'];
 
                 $data->researchDocs[] = $research;
             }
