@@ -6,19 +6,15 @@ ini_set('error_log', __DIR__ . '/drive_errors.log');
 
 header('Content-Type: application/json; charset=utf-8');
 
-// Start output buffering with callback to catch errors
 ob_start(function ($buffer) {
-    // Check if the buffer contains HTML error messages
     if (
         strpos($buffer, '<b>Warning</b>') !== false ||
         strpos($buffer, '<b>Notice</b>') !== false ||
         strpos($buffer, '<b>Fatal error</b>') !== false
     ) {
 
-        // Log the error
         error_log("HTML error in output buffer: " . substr($buffer, 0, 500));
 
-        // Return a clean JSON error
         return json_encode([
             'status' => false,
             'message' => 'Server error occurred',
@@ -28,7 +24,6 @@ ob_start(function ($buffer) {
     return $buffer;
 });
 
-// Check if session is already started before starting it
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -84,25 +79,21 @@ if (isset($_POST['incomingEndorsement'])) {
             $data->senderEmail = $val['email'];
             $data->researchDocs = [];
 
-            // Determine location type based on center (handle NULL for Extension)
-            $isExtension = ($val['center'] === 'Extension' || $val['center'] === null || $val['center'] === '');
+            $isExtension = ($val['center'] === 'Extension (Extension)');
             if ($isExtension) {
                 $data->locationType = 'campus';
             } else {
                 $data->locationType = 'center';
             }
 
-            // Handle file URL with backward compatibility - ENDORSEMENT LETTER
             $legacyFile = $val['file'];
             $driveFileId = $val['drive_file_id'];
             $driveViewUrl = $val['drive_view_url'];
             $driveDownloadUrl = $val['drive_download_url'];
 
-            // Create a unified file object for ENDORSEMENT LETTER
             $fileObject = new stdClass();
             $fileObject->hasFile = false;
 
-            // Check if we have Google Drive URLs
             $hasGoogleDrive = !empty($driveFileId) || !empty($driveViewUrl) || !empty($driveDownloadUrl);
 
             if ($hasGoogleDrive) {
@@ -127,7 +118,6 @@ if (isset($_POST['incomingEndorsement'])) {
 
             $data->file = $fileObject;
 
-            // Query for research files with JOIN to local_inhouse
             $researchQuery = "SELECT 
                 rf.id, 
                 rf.senderid, 
@@ -156,7 +146,6 @@ if (isset($_POST['incomingEndorsement'])) {
                 li.document_title,
                 li.campus as local_campus,
                 li.main_author,
-                li.presenter as local_presenter,
                 li.co_authors
             FROM researchfile rf
             LEFT JOIN local_inhouse li ON rf.id = li.research_id
@@ -180,7 +169,6 @@ if (isset($_POST['incomingEndorsement'])) {
                 $research->presenter = $v['presenter'];
                 $research->category = $v['category'];
                 
-                // Handle location display for Extension
                 if ($isExtension) {
                     $research->displayLocation = $val['campus'];
                     $research->locationType = 'campus';
@@ -189,7 +177,6 @@ if (isset($_POST['incomingEndorsement'])) {
                     $research->locationType = 'center';
                 }
 
-                // ===== FIX: Handle RESEARCH PROPOSAL/PAPER file =====
                 $researchLegacyFile = $v['legacy_file'];
                 $researchDriveViewUrl = $v['drive_view_url'];
                 $researchDriveFileId = $v['drive_file_id'];
@@ -200,16 +187,13 @@ if (isset($_POST['incomingEndorsement'])) {
                 $hasResearchGoogleDrive = !empty($researchDriveFileId) || !empty($researchDriveViewUrl) || !empty($researchDriveDownloadUrl);
 
                 if ($hasResearchGoogleDrive) {
-                    // PRIMARY: Use drive_view_url for viewing the research proposal
                     $researchFileObject->driveViewUrl = $researchDriveViewUrl;
                     $researchFileObject->driveFileId = $researchDriveFileId;
                     $researchFileObject->driveDownloadUrl = $researchDriveDownloadUrl;
                     
-                    // Set viewUrl - PRIORITIZE drive_view_url (this is the research proposal)
                     $researchFileObject->viewUrl = !empty($researchDriveViewUrl) ? $researchDriveViewUrl : 
                         (!empty($researchDriveDownloadUrl) ? $researchDriveDownloadUrl : '');
                     
-                    // Set fileUrl - use download URL if available, fallback to view URL
                     $researchFileObject->fileUrl = !empty($researchDriveDownloadUrl) ? $researchDriveDownloadUrl : 
                         (!empty($researchDriveViewUrl) ? $researchDriveViewUrl : '');
                     
@@ -217,7 +201,6 @@ if (isset($_POST['incomingEndorsement'])) {
                     $researchFileObject->hasFile = !empty($researchDriveViewUrl) || !empty($researchDriveDownloadUrl);
                 }
 
-                // If no Google Drive but legacy file exists (fallback)
                 if (!empty($researchLegacyFile) && !$hasResearchGoogleDrive) {
                     $researchFileObject->legacyFile = $researchLegacyFile;
                     $researchFileObject->fileUrl = $researchLegacyFile;
@@ -226,14 +209,12 @@ if (isset($_POST['incomingEndorsement'])) {
                     $researchFileObject->hasFile = true;
                 }
 
-                // If still no file, set hasFile to false
                 if (empty($researchFileObject->viewUrl) && empty($researchFileObject->fileUrl)) {
                     $researchFileObject->hasFile = false;
                 }
 
                 $research->file = $researchFileObject;
 
-                // Handle program file (from local_inhouse or researchfile)
                 $programFileViewUrl = $v['program_file_view_url'] ?? null;
                 $programFileDownloadUrl = $v['program_file_download_url'] ?? null;
                 
@@ -245,7 +226,6 @@ if (isset($_POST['incomingEndorsement'])) {
                     $research->programFile = $programFileObject;
                     $research->program_drive_view_url = $programFileViewUrl;
                 } else {
-                    // Fallback to old program_drive_view_url
                     $oldProgramUrl = $v['program_drive_view_url'] ?? null;
                     if (!empty($oldProgramUrl)) {
                         $programFileObject = new stdClass();
@@ -260,14 +240,12 @@ if (isset($_POST['incomingEndorsement'])) {
                     }
                 }
 
-                // Handle certificate file (from local_inhouse OR researchfile for center)
                 $certificateFileViewUrl = $v['certificate_file_view_url'] ?? null;
                 $certificateFileDownloadUrl = $v['certificate_file_download_url'] ?? null;
                 $certificateDriveFileId = $v['certificate_drive_file_id'] ?? null;
                 $certificateDriveViewUrl = $v['certificate_drive_view_url'] ?? null;
                 
                 if ($isExtension) {
-                    // Extension
                     if (!empty($certificateFileViewUrl) || !empty($certificateFileDownloadUrl)) {
                         $certificateFileObject = new stdClass();
                         $certificateFileObject->viewUrl = $certificateFileViewUrl;
@@ -300,14 +278,10 @@ if (isset($_POST['incomingEndorsement'])) {
                     }
                 }
 
-                // Include local_inhouse data (for Extension submissions)
                 $research->document_title = $v['document_title'];
                 $research->local_campus = $v['local_campus'];
                 $research->main_author = $v['main_author'];
-                $research->local_presenter = $v['local_presenter'];
                 $research->co_authors = $v['co_authors'];
-                
-                // Include folder IDs
                 $research->drive_folder_id = $v['drive_folder_id'];
                 $research->drive_event_folder_id = $v['drive_event_folder_id'];
                 $research->drive_center_folder_id = $v['drive_center_folder_id'];
@@ -459,23 +433,42 @@ if (isset($_POST['rejectIndorse'])) {
             $reason = $_POST['reasonEnd'] ?? 'No reason provided';
             $type = $_POST['fileType'] ?? 'Unknown';
 
+            // Update endorsement status to rejected
             $query = "UPDATE endorsement SET endorsement.status='rejected' WHERE endorsement.id=?";
             $statement = $con->prepare($query);
             $statement->bind_param("s", $docId);
             $statement->execute();
 
+            // Update all research files under this endorsement
             $researchUpdateQuery = "UPDATE researchfile SET status='rejected' WHERE endorsementid=?";
             $researchStmt = $con->prepare($researchUpdateQuery);
             $researchStmt->bind_param("i", $docId);
             $researchStmt->execute();
 
+            // Insert into rejecteddocs - url is now NULL since we don't send it
             $query = "INSERT INTO `rejecteddocs`(`id`, `docid`, `url`, `type`, `reason`, `rejectedby`, `date`) VALUES (?, ?, ?, ?, ?, ?, NOW())";
             $idEn = round(microtime(true) * 1000) . '';
-            $placeholderUrl = 'Status updated to rejected - no file needed';
+            // IMPORTANT: URL is now NULL instead of placeholder
+            $placeholderUrl = null;
             
             $statement2 = $con->prepare($query);
             $statement2->bind_param("ssssss", $idEn, $docId, $placeholderUrl, $type, $reason, $staffId);
             $statement2->execute();
+
+            // FIXED: Add document log entry for rejection
+            $details = "RDE staff: $staffName rejected endorsement letter for $type from " . ($_POST['campus'] ?? 'Unknown campus') . ". Reason: $reason";
+            $userId = $_SESSION['userId'];
+            $logQuery = "INSERT INTO document_log (document_log.user_id, document_log.doc_id, document_log.details, document_log.date) VALUES (?, ?, ?, ?)";
+            $logStmt = $con->prepare($logQuery);
+            $defaultTime = date('Y-m-d H:i:s');
+            $logStmt->bind_param('ssss', $userId, $docId, $details, $defaultTime);
+            $logStatus = $logStmt->execute();
+            
+            if ($logStatus) {
+                error_log("Document log entry created for rejection of endorsement ID: $docId");
+            } else {
+                error_log("Failed to create document log entry: " . $logStmt->error);
+            }
 
             // Commit transaction
             $con->commit();
@@ -483,6 +476,7 @@ if (isset($_POST['rejectIndorse'])) {
             $response->status = true;
             $response->message = "Document Rejected Successfully";
 
+            // Email configuration
             $from = new stdClass();
             $from->email = $rdeEmail;
             $from->password = $emailPassword;
