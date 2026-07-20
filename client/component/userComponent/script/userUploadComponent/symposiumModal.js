@@ -1466,7 +1466,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
             }
         })
         localFileUploadsGrid.appendChild(createLocalFileUploadField('Program File *', 'local_programFile', (file) => { formData.local_program = file }))
-        localFileUploadsGrid.appendChild(createLocalFileUploadField('Certificate File *', 'local_certificateFile', (file) => { formData.local_certificateFile = file }))
+        localFileUploadsGrid.appendChild(createLocalFileUploadField('Certificate File (Optional)', 'local_certificateFile', (file) => { formData.local_certificateFile = file }))
 
         localFieldsContainer.appendChild(localFileUploadsGrid)
 
@@ -1844,10 +1844,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 }
                 if (!formData.local_program) {
                     ConfirmationAlert('Please upload the Program File', () => { })
-                    return false
-                }
-                if (!formData.local_certificateFile) {
-                    ConfirmationAlert('Please upload the Certificate File', () => { })
                     return false
                 }
             } else if (formData.presentation_type === 'university') {
@@ -3090,210 +3086,216 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         return container
     }
 
+
     const submitSymposium = async () => {
-        if (stepContents[2] && stepContents[2].__validate) {
-            if (!stepContents[2].__validate()) return
-        }
-
-        let loading = Waiting()
-        document.body.appendChild(loading)
-
-        try {
-            let finalFundSource = formData.fundSource
-            if (formData.fundSource === 'Others' && formData.fundSourceOther) {
-                finalFundSource = formData.fundSourceOther
-            }
-
-            if (formData.presentation_type === 'local') {
-                if (!formData.local_program) throw new Error('Program file is required')
-                if (!formData.local_certificateFile) throw new Error('Local certificate file is required')
-
-                const symposiumFormData = new FormData()
-                symposiumFormData.append('uploadSymposium', 'true')
-                symposiumFormData.append('eventType', eventName)
-                symposiumFormData.append('eventId', eventId)
-                symposiumFormData.append('presentation_type', 'local')
-
-                symposiumFormData.append('local_eventname', formData.local_eventname)
-                symposiumFormData.append('local_title', formData.local_title)
-                symposiumFormData.append('original_title', formData.local_title)
-                symposiumFormData.append('local_campus', formData.local_campus)
-                symposiumFormData.append('local_category', formData.local_category)
-                symposiumFormData.append('local_center', formData.local_center)
-                symposiumFormData.append('local_author', formData.local_author)
-                symposiumFormData.append('local_coAuthors', JSON.stringify(formData.local_coAuthors || []))
-
-                if (formData.local_program) {
-                    symposiumFormData.append('programFile', formData.local_program)
-                }
-                if (formData.local_certificateFile) {
-                    symposiumFormData.append('local_certificateFile', formData.local_certificateFile)
-                }
-
-                symposiumFormData.append('title_changed', formData.title_changed ? '1' : '0')
-                if (formData.title_changed && formData.new_title) {
-                    symposiumFormData.append('final_symposium_title', formData.new_title)
-                } else {
-                    symposiumFormData.append('final_symposium_title', '')
-                }
-
-                if (formData.title_changed && formData.title_certificate_file) {
-                    symposiumFormData.append('titleCertificateFile', formData.title_certificate_file)
-                }
-
-                symposiumFormData.append('category', formData.category)
-                symposiumFormData.append('center', formData.center || '')
-                symposiumFormData.append('author', formData.author)
-                symposiumFormData.append('presenter', formData.presenter)
-                symposiumFormData.append('coAuthor', JSON.stringify(formData.coAuthors))
-                symposiumFormData.append('campus', formData.campus || '')
-                symposiumFormData.append('fundSource', finalFundSource)
-                symposiumFormData.append('date_started', formData.date_started)
-                symposiumFormData.append('date_completed', formData.date_completed)
-
-                if (formData.researchFile) {
-                    symposiumFormData.append('researchDoc', formData.researchFile)
-                }
-                if (formData.endorsementFile) {
-                    symposiumFormData.append('endorsementFile', formData.endorsementFile)
-                }
-
-                const response = await fetch('/uploadFacultyDocs', {
-                    method: 'POST',
-                    body: symposiumFormData
-                })
-
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`)
-                }
-
-                const result = await response.json()
-
-                if (!result.status || !result.success) {
-                    throw new Error(result.message || 'Symposium submission failed')
-                }
-
-                // STEP 1: Remove loading indicator
-                if (loading && loading.remove) loading.remove()
-
-                // STEP 2: Close modal
-                if (closeModalFn) {
-                    closeModalFn();
-                } else if (modalContainer && modalContainer.remove) {
-                    modalContainer.remove();
-                }
-
-                // STEP 3: Reset all form data
-                resetFormData()
-
-                // STEP 4: Show success alert
-                ConfirmationAlert('Paper successfully submitted! Paper status is currently pending', () => {
-                    // STEP 5: Call onSuccess callback to refresh parent component
-                    if (onSuccess) onSuccess()
-                })
-
-                return
-
-            } else if (formData.presentation_type === 'university') {
-                if (stepContents[1] && stepContents[1].__validate && !stepContents[1].__validate()) {
-                    throw new Error('Please complete the title change section')
-                }
-
-                const selectedReview = inhouseReviewsList.find(r => r.id == formData.selected_inhouse_id)
-
-                const symposiumFormData = new FormData()
-                symposiumFormData.append('uploadSymposium', 'true')
-                symposiumFormData.append('eventType', eventName)
-                symposiumFormData.append('eventId', eventId)
-                symposiumFormData.append('presentation_type', 'university')
-                symposiumFormData.append('selected_inhouse_id', formData.selected_inhouse_id)
-
-                symposiumFormData.append('original_title', selectedReview ? selectedReview.title : '')
-
-                if (selectedReview) {
-                    symposiumFormData.append('original_author', selectedReview.author)
-                    symposiumFormData.append('original_category', selectedReview.category || '')
-                    symposiumFormData.append('original_center', selectedReview.center || '')
-                    symposiumFormData.append('original_coauthors', JSON.stringify(selectedReview.coauthors || []))
-                }
-
-                symposiumFormData.append('title_changed', formData.title_changed ? '1' : '0')
-                if (formData.title_changed && formData.new_title) {
-                    symposiumFormData.append('final_symposium_title', formData.new_title)
-                } else {
-                    symposiumFormData.append('final_symposium_title', '')
-                }
-
-                if (formData.title_changed && formData.title_certificate_file) {
-                    symposiumFormData.append('titleCertificateFile', formData.title_certificate_file)
-                }
-
-                symposiumFormData.append('category', formData.category)
-                symposiumFormData.append('center', formData.center || '')
-                symposiumFormData.append('author', formData.author)
-                symposiumFormData.append('presenter', formData.presenter)
-                symposiumFormData.append('coAuthor', JSON.stringify(formData.coAuthors))
-                symposiumFormData.append('campus', formData.campus || '')
-                symposiumFormData.append('fundSource', finalFundSource)
-                symposiumFormData.append('date_started', formData.date_started)
-                symposiumFormData.append('date_completed', formData.date_completed)
-
-                if (formData.researchFile) {
-                    symposiumFormData.append('researchDoc', formData.researchFile)
-                }
-                if (formData.endorsementFile) {
-                    symposiumFormData.append('endorsementFile', formData.endorsementFile)
-                }
-
-                const response = await fetch('/uploadFacultyDocs', {
-                    method: 'POST',
-                    body: symposiumFormData
-                })
-
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`)
-                }
-
-                const result = await response.json()
-
-                if (!result.status || !result.success) {
-                    throw new Error(result.message || 'Symposium submission failed')
-                }
-
-                // STEP 1: Remove loading indicator
-                if (loading && loading.remove) loading.remove()
-
-                // STEP 2: Close modal
-                if (closeModalFn) {
-                    closeModalFn();
-                } else if (modalContainer && modalContainer.remove) {
-                    modalContainer.remove();
-                }
-
-                // STEP 3: Reset all form data
-                resetFormData()
-
-                // STEP 4: Show success alert
-                ConfirmationAlert('Paper successfully submitted! Paper status is currently pending', () => {
-                    // STEP 5: Call onSuccess callback to refresh parent component
-                    if (onSuccess) onSuccess()
-                })
-
-                return
-            }
-
-        } catch (error) {
-            if (loading && loading.remove) loading.remove()
-            console.error('Submission error:', error)
-
-            ConfirmationAlert({
-                title: 'Submission Failed',
-                message: error.message || 'An error occurred during submission. Please try again.',
-                confirmText: 'OK',
-                cancelText: ''
-            })
-        }
+    if (stepContents[2] && stepContents[2].__validate) {
+        if (!stepContents[2].__validate()) return
     }
+
+    let loading = Waiting()
+    document.body.appendChild(loading)
+
+    try {
+        let finalFundSource = formData.fundSource
+        if (formData.fundSource === 'Others' && formData.fundSourceOther) {
+            finalFundSource = formData.fundSourceOther
+        }
+
+        if (formData.presentation_type === 'local') {
+            if (!formData.local_program) throw new Error('Program file is required')
+
+            const symposiumFormData = new FormData()
+            symposiumFormData.append('uploadSymposium', 'true')
+            symposiumFormData.append('eventType', eventName)
+            symposiumFormData.append('eventId', eventId)
+            symposiumFormData.append('presentation_type', 'local')
+
+            symposiumFormData.append('local_eventname', formData.local_eventname)
+            symposiumFormData.append('local_title', formData.local_title)
+            symposiumFormData.append('original_title', formData.local_title)
+            symposiumFormData.append('local_campus', formData.local_campus)
+            symposiumFormData.append('local_category', formData.local_category)
+            symposiumFormData.append('local_center', formData.local_center)
+            symposiumFormData.append('local_author', formData.local_author)
+            symposiumFormData.append('local_coAuthors', JSON.stringify(formData.local_coAuthors || []))
+
+            if (formData.local_program) {
+                symposiumFormData.append('programFile', formData.local_program)
+            }
+            if (formData.local_certificateFile) {
+                symposiumFormData.append('local_certificateFile', formData.local_certificateFile)
+            }
+
+            symposiumFormData.append('title_changed', formData.title_changed ? '1' : '0')
+            if (formData.title_changed && formData.new_title) {
+                symposiumFormData.append('final_symposium_title', formData.new_title)
+            } else {
+                symposiumFormData.append('final_symposium_title', '')
+            }
+
+            if (formData.title_changed && formData.title_certificate_file) {
+                symposiumFormData.append('titleCertificateFile', formData.title_certificate_file)
+            }
+
+            symposiumFormData.append('category', formData.category)
+            symposiumFormData.append('author', formData.author)
+            symposiumFormData.append('presenter', formData.presenter)
+            symposiumFormData.append('coAuthor', JSON.stringify(formData.coAuthors))
+            symposiumFormData.append('campus', formData.campus || '')
+            symposiumFormData.append('fundSource', finalFundSource)
+            symposiumFormData.append('date_started', formData.date_started)
+            symposiumFormData.append('date_completed', formData.date_completed)
+
+            if (formData.researchFile) {
+                symposiumFormData.append('researchDoc', formData.researchFile)
+            }
+            if (formData.endorsementFile) {
+                symposiumFormData.append('endorsementFile', formData.endorsementFile)
+            }
+
+            const response = await fetch('/uploadFacultyDocs', {
+                method: 'POST',
+                body: symposiumFormData
+            })
+
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`)
+            }
+
+            const result = await response.json()
+
+            if (!result.status || !result.success) {
+                throw new Error(result.message || 'Symposium submission failed')
+            }
+
+            // STEP 1: Remove loading indicator
+            if (loading && loading.remove) loading.remove()
+
+            // STEP 2: Close modal
+            if (closeModalFn) {
+                closeModalFn();
+            } else if (modalContainer && modalContainer.remove) {
+                modalContainer.remove();
+            }
+
+            // STEP 3: Reset all form data
+            resetFormData()
+
+            const alertResult = ConfirmationAlert('Paper successfully submitted! Paper status is currently pending', () => {
+                if (onSuccess) onSuccess()
+            })
+            document.body.appendChild(alertResult.element)
+
+            return
+
+        } else if (formData.presentation_type === 'university') {
+            if (stepContents[1] && stepContents[1].__validate && !stepContents[1].__validate()) {
+                throw new Error('Please complete the title change section')
+            }
+
+            const selectedReview = inhouseReviewsList.find(r => r.id == formData.selected_inhouse_id)
+
+            const symposiumFormData = new FormData()
+            symposiumFormData.append('uploadSymposium', 'true')
+            symposiumFormData.append('eventType', eventName)
+            symposiumFormData.append('eventId', eventId)
+            symposiumFormData.append('presentation_type', 'university')
+            symposiumFormData.append('selected_inhouse_id', formData.selected_inhouse_id)
+
+            symposiumFormData.append('original_title', selectedReview ? selectedReview.title : '')
+
+            if (selectedReview) {
+                symposiumFormData.append('original_author', selectedReview.author)
+                symposiumFormData.append('original_category', selectedReview.category || '')
+                symposiumFormData.append('original_center', selectedReview.center || '')
+                symposiumFormData.append('original_coauthors', JSON.stringify(selectedReview.coauthors || []))
+            }
+
+            symposiumFormData.append('title_changed', formData.title_changed ? '1' : '0')
+            if (formData.title_changed && formData.new_title) {
+                symposiumFormData.append('final_symposium_title', formData.new_title)
+            } else {
+                symposiumFormData.append('final_symposium_title', '')
+            }
+
+            if (formData.title_changed && formData.title_certificate_file) {
+                symposiumFormData.append('titleCertificateFile', formData.title_certificate_file)
+            }
+
+            symposiumFormData.append('category', formData.category)
+            symposiumFormData.append('author', formData.author)
+            symposiumFormData.append('presenter', formData.presenter)
+            symposiumFormData.append('coAuthor', JSON.stringify(formData.coAuthors))
+            symposiumFormData.append('campus', formData.campus || '')
+            symposiumFormData.append('fundSource', finalFundSource)
+            symposiumFormData.append('date_started', formData.date_started)
+            symposiumFormData.append('date_completed', formData.date_completed)
+
+            if (formData.researchFile) {
+                symposiumFormData.append('researchDoc', formData.researchFile)
+            }
+            if (formData.endorsementFile) {
+                symposiumFormData.append('endorsementFile', formData.endorsementFile)
+            }
+
+            const response = await fetch('/uploadFacultyDocs', {
+                method: 'POST',
+                body: symposiumFormData
+            })
+
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`)
+            }
+
+            const result = await response.json()
+
+            if (!result.status || !result.success) {
+                throw new Error(result.message || 'Symposium submission failed')
+            }
+
+            // STEP 1: Remove loading indicator
+            if (loading && loading.remove) loading.remove()
+
+            // STEP 2: Close modal
+            if (closeModalFn) {
+                closeModalFn();
+            } else if (modalContainer && modalContainer.remove) {
+                modalContainer.remove();
+            }
+
+            // STEP 3: Reset all form data
+            resetFormData()
+
+            // STEP 4: Show success alert - FIX: ConfirmationAlert expects (message, callback)
+            const alertResult = ConfirmationAlert('Paper successfully submitted! Paper status is currently pending', () => {
+                // STEP 5: Call onSuccess callback to refresh parent component
+                if (onSuccess) onSuccess()
+            })
+            document.body.appendChild(alertResult.element)
+
+            return
+        }
+
+    } catch (error) {
+        if (loading && loading.remove) loading.remove()
+        console.error('Submission error:', error)
+        
+        // FIX: Use ConfirmationAlert with proper parameters
+        // (message, callback, options) - or use AlertModal for simple error alerts
+        const alertResult = ConfirmationAlert(
+            error.message || 'An error occurred during submission. Please try again.',
+            null,
+            { 
+                title: 'Submission Failed', 
+                icon: 'fa-circle-xmark',
+                iconColor: '#f44336',
+                type: 'error',
+                duration: 5000
+            }
+        )
+        document.body.appendChild(alertResult.element)
+    }
+}
 
     const addProgressAnimation = () => {
         if (!document.querySelector('#progress-animation-style')) {

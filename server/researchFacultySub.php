@@ -855,7 +855,7 @@ function generatePaperTrailNumber($con, $eventId, $center, $title, $author)
         'Crop Science Research & Developement Center (CSRDC)' => 'A',
         'Livestock Research & Development Center (LRDC)' => 'B',
         'Fisheries Research & Development Center (FRDC)' => 'C',
-        'Food and Industrial Technology Research & Development Center (FIRDC)' => 'D',
+        'Food and Industrial Technology Research & Development Center (FITRDC)' => 'D',
         'Social Science Research & Development Center (SSRDC)' => 'E',
         'Machinery and Agricultural Technology Engineering Center (MATEC)' => 'F',
         'Coconut Research and Development Center (Coco RDC)' => 'G',
@@ -863,7 +863,7 @@ function generatePaperTrailNumber($con, $eventId, $center, $title, $author)
     ];
 
     // Get center code
-    $centerCode = $centerCodes[$center] ?? 'X';
+    $centerCode = $centerCodes[$center];
 
     // FIRST: Check if this research already has a paper trail number from a previous submission
     // Match by title and author (case-insensitive, trimmed)
