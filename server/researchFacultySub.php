@@ -5863,3 +5863,411 @@ if (isset($_POST['getUserPosters'])) {
     echo json_encode($response);
     exit();
 }
+
+// Update Poster (Replace file)
+if (isset($_POST['updatePoster'])) {
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+
+    try {
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception("User not logged in");
+        }
+
+        $senderId = $_SESSION['userId'];
+        $posterId = isset($_POST['poster_id']) ? (int)$_POST['poster_id'] : 0;
+        $researchId = isset($_POST['research_id']) ? (int)$_POST['research_id'] : 0;
+
+        if ($posterId <= 0) {
+            throw new Exception("Invalid poster ID");
+        }
+
+        if (!isset($_FILES['posterFile']) || $_FILES['posterFile']['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("Poster file is required.");
+        }
+
+        $file = $_FILES['posterFile'];
+        if ($file['type'] !== 'application/pdf' && !str_ends_with($file['name'], '.pdf')) {
+            throw new Exception("Only PDF files are allowed.");
+        }
+
+        if ($file['size'] > 10 * 1024 * 1024) {
+            throw new Exception("File size exceeds 10MB limit.");
+        }
+
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        // Get existing poster record with research file title
+        $getQuery = "SELECT ps.*, rf.title as research_title 
+                     FROM poster_submissions ps
+                     LEFT JOIN researchfile rf ON ps.research_id = rf.id
+                     WHERE ps.id = ? AND ps.sender_id = ?";
+        $getStmt = $con->prepare($getQuery);
+        $getStmt->bind_param("ii", $posterId, $senderId);
+        $getStmt->execute();
+        $getResult = $getStmt->get_result();
+        $poster = $getResult->fetch_assoc();
+
+        if (!$poster) {
+            throw new Exception("Poster not found or you don't have permission to edit it.");
+        }
+        $getStmt->close();
+
+        // Initialize Google Drive service
+        if (!class_exists('GoogleDriveService')) {
+            throw new Exception("GoogleDriveService class not found");
+        }
+
+        $drive = new GoogleDriveService();
+
+        // ===== DELETE OLD FILE FROM GOOGLE DRIVE (Move to Trash) =====
+        $oldFileId = $poster['poster_drive_file_id'];
+        if (!empty($oldFileId)) {
+            try {
+                error_log("Attempting to move old poster file to trash: " . $oldFileId);
+                $result = $drive->trashFile($oldFileId);
+                if ($result) {
+                    error_log("Old poster file successfully moved to trash: " . $oldFileId);
+                } else {
+                    error_log("Failed to move old poster file to trash: " . $oldFileId);
+                }
+            } catch (Exception $e) {
+                error_log("Exception while trashing old poster file: " . $e->getMessage());
+                // Continue with upload even if trash fails
+            }
+        }
+
+        // ===== UPLOAD NEW FILE WITH RESEARCH TITLE =====
+        // Use the research title from the database
+        $researchTitle = $poster['research_title'] ?? 'Poster';
+        $cleanTitle = preg_replace('/[^\w\s\-]/', '', $researchTitle);
+        $cleanTitle = preg_replace('/\s+/', '_', $cleanTitle);
+        $cleanTitle = substr($cleanTitle, 0, 80);
+
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $paperTrailPrefix = !empty($poster['paper_trail_no']) ? $poster['paper_trail_no'] . ' - ' : '';
+        $posterFileName = $paperTrailPrefix . 'Poster - ' . $cleanTitle . '.' . $extension;
+
+        error_log("Uploading new poster file: " . $posterFileName . " to folder: " . $poster['poster_folder_id']);
+
+        $uploadResult = $drive->uploadFile($file['tmp_name'], $posterFileName, $poster['poster_folder_id']);
+        if (!$uploadResult['success'] || empty($uploadResult['id'])) {
+            throw new Exception("Failed to upload new poster: " . ($uploadResult['error'] ?? 'Unknown error'));
+        }
+
+        $drive->makeFilePublic($uploadResult['id']);
+        $fileId = $uploadResult['id'];
+        $viewUrl = "https://drive.google.com/file/d/{$fileId}/preview";
+        $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
+
+        // ===== UPDATE DATABASE =====
+        $updateQuery = "UPDATE poster_submissions SET 
+            poster_drive_file_id = ?,
+            poster_drive_view_url = ?,
+            poster_drive_download_url = ?,
+            poster_file_name = ?,
+            status = 'pending',
+            updated_at = NOW()
+            WHERE id = ? AND sender_id = ?";
+
+        $updateStmt = $con->prepare($updateQuery);
+        if (!$updateStmt) {
+            throw new Exception("Prepare failed: " . $con->error);
+        }
+
+        $updateStmt->bind_param(
+            'ssssii',
+            $fileId,
+            $viewUrl,
+            $downloadUrl,
+            $posterFileName,
+            $posterId,
+            $senderId
+        );
+
+        if (!$updateStmt->execute()) {
+            throw new Exception("Failed to update poster: " . $updateStmt->error);
+        }
+        $updateStmt->close();
+
+        $response->status = true;
+        $response->message = "Poster updated successfully! Old file moved to trash.";
+        $response->new_file_id = $fileId;
+        $response->old_file_id = $oldFileId;
+        $con->close();
+
+    } catch (Exception $e) {
+        error_log("updatePoster error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+    }
+
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+// Resubmit Poster (for rejected)
+if (isset($_POST['resubmitPoster'])) {
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+
+    try {
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception("User not logged in");
+        }
+
+        $senderId = $_SESSION['userId'];
+        $posterId = isset($_POST['poster_id']) ? (int)$_POST['poster_id'] : 0;
+        $researchId = isset($_POST['research_id']) ? (int)$_POST['research_id'] : 0;
+
+        if ($posterId <= 0) {
+            throw new Exception("Invalid poster ID");
+        }
+
+        if (!isset($_FILES['posterFile']) || $_FILES['posterFile']['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("Poster file is required.");
+        }
+
+        $file = $_FILES['posterFile'];
+        if ($file['type'] !== 'application/pdf' && !str_ends_with($file['name'], '.pdf')) {
+            throw new Exception("Only PDF files are allowed.");
+        }
+
+        if ($file['size'] > 10 * 1024 * 1024) {
+            throw new Exception("File size exceeds 10MB limit.");
+        }
+
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        // Get existing poster record with research title - must be rejected status
+        $getQuery = "SELECT ps.*, rf.title as research_title 
+                     FROM poster_submissions ps
+                     LEFT JOIN researchfile rf ON ps.research_id = rf.id
+                     WHERE ps.id = ? AND ps.sender_id = ? AND ps.status = 'rejected'";
+        $getStmt = $con->prepare($getQuery);
+        $getStmt->bind_param("ii", $posterId, $senderId);
+        $getStmt->execute();
+        $getResult = $getStmt->get_result();
+        $poster = $getResult->fetch_assoc();
+
+        if (!$poster) {
+            throw new Exception("Poster not found or it's not in rejected status.");
+        }
+        $getStmt->close();
+
+        if (!class_exists('GoogleDriveService')) {
+            throw new Exception("GoogleDriveService class not found");
+        }
+
+        $drive = new GoogleDriveService();
+
+        // ===== DELETE OLD FILE FROM GOOGLE DRIVE (Move to Trash) =====
+        $oldFileId = $poster['poster_drive_file_id'];
+        if (!empty($oldFileId)) {
+            try {
+                error_log("Attempting to move old poster file to trash during resubmit: " . $oldFileId);
+                $result = $drive->trashFile($oldFileId);
+                if ($result) {
+                    error_log("Old poster file successfully moved to trash: " . $oldFileId);
+                } else {
+                    error_log("Failed to move old poster file to trash: " . $oldFileId);
+                }
+            } catch (Exception $e) {
+                error_log("Exception while trashing old poster file: " . $e->getMessage());
+                // Continue with upload even if trash fails
+            }
+        }
+
+        // ===== UPLOAD NEW FILE WITH RESEARCH TITLE =====
+        // Use the research title from the database
+        $researchTitle = $poster['research_title'] ?? 'Poster';
+        $cleanTitle = preg_replace('/[^\w\s\-]/', '', $researchTitle);
+        $cleanTitle = preg_replace('/\s+/', '_', $cleanTitle);
+        $cleanTitle = substr($cleanTitle, 0, 80);
+
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $paperTrailPrefix = !empty($poster['paper_trail_no']) ? $poster['paper_trail_no'] . ' - ' : '';
+        $posterFileName = $paperTrailPrefix . 'Poster - ' . $cleanTitle . '.' . $extension;
+
+        $uploadResult = $drive->uploadFile($file['tmp_name'], $posterFileName, $poster['poster_folder_id']);
+        if (!$uploadResult['success'] || empty($uploadResult['id'])) {
+            throw new Exception("Failed to upload poster: " . ($uploadResult['error'] ?? 'Unknown error'));
+        }
+
+        $drive->makeFilePublic($uploadResult['id']);
+        $fileId = $uploadResult['id'];
+        $viewUrl = "https://drive.google.com/file/d/{$fileId}/preview";
+        $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
+
+        // ===== UPDATE DATABASE =====
+        $updateQuery = "UPDATE poster_submissions SET 
+            poster_drive_file_id = ?,
+            poster_drive_view_url = ?,
+            poster_drive_download_url = ?,
+            poster_file_name = ?,
+            status = 'pending',
+            updated_at = NOW()
+            WHERE id = ? AND sender_id = ?";
+
+        $updateStmt = $con->prepare($updateQuery);
+        if (!$updateStmt) {
+            throw new Exception("Prepare failed: " . $con->error);
+        }
+
+        $updateStmt->bind_param(
+            'ssssii',
+            $fileId,
+            $viewUrl,
+            $downloadUrl,
+            $posterFileName,
+            $posterId,
+            $senderId
+        );
+
+        if (!$updateStmt->execute()) {
+            throw new Exception("Failed to update poster: " . $updateStmt->error);
+        }
+        $updateStmt->close();
+
+        $response->status = true;
+        $response->message = "Poster resubmitted successfully! Old file moved to trash.";
+        $response->new_file_id = $fileId;
+        $response->old_file_id = $oldFileId;
+        $con->close();
+
+    } catch (Exception $e) {
+        error_log("resubmitPoster error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+    }
+
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+// Delete Poster
+if (isset($_POST['deletePoster'])) {
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+
+    try {
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception("User not logged in");
+        }
+
+        $senderId = $_SESSION['userId'];
+        $posterId = isset($_POST['poster_id']) ? (int)$_POST['poster_id'] : 0;
+        $researchId = isset($_POST['research_id']) ? (int)$_POST['research_id'] : 0;
+
+        if ($posterId <= 0) {
+            throw new Exception("Invalid poster ID");
+        }
+
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        // Start transaction
+        $con->begin_transaction();
+
+        // Get existing poster record
+        $getQuery = "SELECT * FROM poster_submissions WHERE id = ? AND sender_id = ?";
+        $getStmt = $con->prepare($getQuery);
+        $getStmt->bind_param("ii", $posterId, $senderId);
+        $getStmt->execute();
+        $getResult = $getStmt->get_result();
+        $poster = $getResult->fetch_assoc();
+
+        if (!$poster) {
+            throw new Exception("Poster not found or you don't have permission to delete it.");
+        }
+        $getStmt->close();
+
+        // Initialize Google Drive service
+        if (!class_exists('GoogleDriveService')) {
+            throw new Exception("GoogleDriveService class not found");
+        }
+
+        $drive = new GoogleDriveService();
+
+        // ===== DELETE FILE FROM GOOGLE DRIVE (Move to Trash) =====
+        $oldFileId = $poster['poster_drive_file_id'];
+        if (!empty($oldFileId)) {
+            try {
+                error_log("Attempting to move poster file to trash during delete: " . $oldFileId);
+                $result = $drive->trashFile($oldFileId);
+                if ($result) {
+                    error_log("Poster file successfully moved to trash: " . $oldFileId);
+                } else {
+                    error_log("Failed to move poster file to trash: " . $oldFileId);
+                }
+            } catch (Exception $e) {
+                error_log("Exception while trashing poster file: " . $e->getMessage());
+                // Continue with database deletion even if trash fails
+            }
+        }
+
+        // ===== DELETE FROM DATABASE =====
+        $deleteQuery = "DELETE FROM poster_submissions WHERE id = ? AND sender_id = ?";
+        $deleteStmt = $con->prepare($deleteQuery);
+        $deleteStmt->bind_param("ii", $posterId, $senderId);
+
+        if (!$deleteStmt->execute()) {
+            throw new Exception("Failed to delete poster: " . $deleteStmt->error);
+        }
+        $deleteStmt->close();
+
+        // ===== RESET POSTER_SUBMITTED FLAG IN RESEARCHFILE =====
+        $resetQuery = "UPDATE researchfile SET poster_submitted = 0 WHERE id = ?";
+        $resetStmt = $con->prepare($resetQuery);
+        $resetStmt->bind_param("i", $researchId);
+        if (!$resetStmt->execute()) {
+            throw new Exception("Failed to reset poster_submitted flag: " . $resetStmt->error);
+        }
+        $resetStmt->close();
+
+        // Commit transaction
+        $con->commit();
+
+        $response->status = true;
+        $response->message = "Poster deleted successfully! File moved to trash.";
+        $con->close();
+
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        if (isset($con) && $con) {
+            $con->rollback();
+        }
+        error_log("deletePoster error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+    }
+
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
