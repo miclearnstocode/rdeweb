@@ -3671,6 +3671,11 @@ if (isset($_POST['researchFile'])) {
     $response->message = '';
 
     try {
+        // Check if user is logged in
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception('User not logged in');
+        }
+
         if (!isset($_POST['eventId']) || intval($_POST['eventId']) === 0) {
             throw new Exception('Event ID is required');
         }
@@ -3699,6 +3704,7 @@ if (isset($_POST['researchFile'])) {
 
             $isNewEvent = ($eventId >= 13);
 
+            // Updated query: Filter by sender_id and status = 'accepted'
             $query = "SELECT 
                 rf.id,
                 rf.author,
@@ -3712,12 +3718,16 @@ if (isset($_POST['researchFile'])) {
                 rf.category,
                 rf.campus,
                 rf.center,
+                rf.paper_trail_no,
+                rf.status as research_status,
                 el.name as event_name
             FROM researchfile rf
             INNER JOIN endorsement e ON e.id = rf.endorsementid
             INNER JOIN event_list el ON el.id = rf.event_id
-            WHERE (e.status = 'accepted' OR rf.status = 'accepted')
-            AND rf.event_id = ?";
+            WHERE rf.senderid = ?
+            AND rf.event_id = ?
+            AND rf.status = 'accepted'
+            AND (e.status = 'accepted' OR e.status IS NULL)";
 
             if ($isNewEvent) {
                 $query .= " AND rf.center IS NOT NULL AND rf.center != ''";
@@ -3734,7 +3744,8 @@ if (isset($_POST['researchFile'])) {
                     rf.presenter LIKE ? OR 
                     rf.title LIKE ? OR 
                     rf.campus LIKE ? OR 
-                    rf.center LIKE ?
+                    rf.center LIKE ? OR
+                    rf.paper_trail_no LIKE ?
                 )";
             }
 
@@ -3748,9 +3759,9 @@ if (isset($_POST['researchFile'])) {
             // Bind parameters
             if (!empty($searchTerm)) {
                 $searchPattern = '%' . $searchTerm . '%';
-                $stmt->bind_param('issssss', $eventId, $searchPattern, $searchPattern, $searchPattern, $searchPattern, $searchPattern, $searchPattern);
+                $stmt->bind_param('iisssssss', $userId, $eventId, $searchPattern, $searchPattern, $searchPattern, $searchPattern, $searchPattern, $searchPattern, $searchPattern);
             } else {
-                $stmt->bind_param('i', $eventId);
+                $stmt->bind_param('ii', $userId, $eventId);
             }
 
             $stmt->execute();
@@ -3771,8 +3782,8 @@ if (isset($_POST['researchFile'])) {
 
                     if (!isset($groupedResults[$key])) {
                         $groupedResults[$key] = [
-                            'name' => $currentEventName,     // → Event Name column
-                            'location' => $location,              // → Campus/Center column
+                            'name' => $currentEventName,
+                            'location' => $location,
                             'list' => []
                         ];
                     }
@@ -3783,6 +3794,8 @@ if (isset($_POST['researchFile'])) {
                     $data->presenter = htmlspecialchars($row['presenter'] ?? '', ENT_QUOTES, 'UTF-8');
                     $data->title = htmlspecialchars($row['title'] ?? '', ENT_QUOTES, 'UTF-8');
                     $data->id = intval($row['id']);
+                    $data->paper_trail_no = htmlspecialchars($row['paper_trail_no'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $data->status = htmlspecialchars($row['research_status'] ?? 'accepted', ENT_QUOTES, 'UTF-8');
 
                     if (!empty($row['drive_view_url'])) {
                         $data->file = filter_var($row['drive_view_url'], FILTER_SANITIZE_URL);
@@ -3804,16 +3817,11 @@ if (isset($_POST['researchFile'])) {
                     $groupedResults[$key]['list'][] = $data;
                 }
 
-                // Store the number of rows BEFORE freeing the result
                 $totalRows = $result->num_rows;
-
-                // Now it's safe to free the result
                 $result->free();
 
-                // Convert to indexed array
                 $response->list = array_values($groupedResults);
 
-                // Sort by event name then location
                 usort($response->list, function ($a, $b) {
                     $nameCompare = strcasecmp($a['name'], $b['name']);
                     if ($nameCompare !== 0)
@@ -3821,15 +3829,15 @@ if (isset($_POST['researchFile'])) {
                     return strcasecmp($a['location'], $b['location']);
                 });
 
-                // Set status to true since we have data
                 $response->status = true;
-                $response->message = 'Retrieved ' . count($response->list) . ' groups with ' . $totalRows . ' total files';
+                $response->message = 'Retrieved ' . count($response->list) . ' groups with ' . $totalRows . ' total accepted files for user ' . $userId;
                 $response->search_term = $searchTerm;
 
             } else {
-                // No data found
-                $response->status = true; // Still true, just empty result
-                $response->message = empty($searchTerm) ? 'No research documents found for this event' : 'No matching research documents found';
+                $response->status = true;
+                $response->message = empty($searchTerm) 
+                    ? 'No accepted research documents found for this event' 
+                    : 'No matching accepted research documents found';
                 $response->list = [];
                 $response->search_term = $searchTerm;
             }
@@ -3855,6 +3863,7 @@ if (isset($_POST['researchFile'])) {
     echo json_encode($response, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
     exit();
 }
+
 //displayed the data in the center table
 if (isset($_POST['researchReviewed'])) {
     // Clean any previous output
@@ -5368,6 +5377,488 @@ if (isset($_POST['deleteEndorsement'])) {
     }
 
     // Ensure clean JSON output
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+// Search accepted papers for poster submission - ONLY SYMPOSIUM EVENTS
+if (isset($_POST['searchAcceptedPapers'])) {
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->data = [];
+
+    try {
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception("User not logged in");
+        }
+
+        $userId = $_SESSION['userId'];
+        $searchTerm = isset($_POST['searchTerm']) ? trim($_POST['searchTerm']) : '';
+
+        if (empty($searchTerm) || strlen($searchTerm) < 2) {
+            throw new Exception("Please enter at least 2 characters to search");
+        }
+
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        // Search for accepted papers from SYMPOSIUM events only
+        // EXCLUDE papers that already have a poster submitted (poster_submitted = 1)
+        $searchPattern = '%' . $con->real_escape_string($searchTerm) . '%';
+
+        // Query faculty research papers that are accepted and from Symposium events
+        $query = "SELECT DISTINCT 
+                    rf.id,
+                    rf.title,
+                    rf.author,
+                    rf.coauthor,
+                    rf.center,
+                    rf.campus,
+                    rf.category,
+                    rf.paper_trail_no,
+                    rf.event,
+                    rf.event_id,
+                    el.name as event_name,
+                    rf.status,
+                    rf.poster_submitted,
+                    e.status as endorsement_status
+                  FROM researchfile rf
+                  LEFT JOIN event_list el ON rf.event_id = el.id
+                  LEFT JOIN endorsement e ON rf.endorsementid = e.id
+                  WHERE rf.senderid = ?
+                  AND (rf.status = 'accepted' OR e.status = 'accepted')
+                  AND rf.event LIKE '%Symposium%'
+                  AND (rf.poster_submitted IS NULL OR rf.poster_submitted = 0)
+                  AND (rf.title LIKE ? 
+                       OR rf.author LIKE ? 
+                       OR rf.paper_trail_no LIKE ?)
+                  ORDER BY rf.id DESC
+                  LIMIT 50";
+
+        $stmt = $con->prepare($query);
+        if (!$stmt) {
+            throw new Exception("Prepare failed: " . $con->error);
+        }
+
+        $stmt->bind_param("isss", $userId, $searchPattern, $searchPattern, $searchPattern);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        while ($row = $result->fetch_assoc()) {
+            $paper = new stdClass();
+            $paper->id = (int)$row['id'];
+            $paper->title = $row['title'] ?? '';
+            $paper->author = $row['author'] ?? '';
+            $paper->coauthors = [];
+            $paper->center = $row['center'] ?? '';
+            $paper->campus = $row['campus'] ?? '';
+            $paper->category = $row['category'] ?? '';
+            $paper->paper_trail_no = $row['paper_trail_no'] ?? '';
+            $paper->event = $row['event'] ?? '';
+            $paper->event_id = $row['event_id'] ? (int)$row['event_id'] : null;
+            $paper->event_name = $row['event_name'] ?? $row['event'] ?? '';
+            $paper->status = $row['status'] ?? '';
+            $paper->poster_submitted = (int)($row['poster_submitted'] ?? 0);
+
+            // Parse coauthors
+            if (!empty($row['coauthor'])) {
+                $coauthors = json_decode($row['coauthor'], true);
+                $paper->coauthors = is_array($coauthors) ? $coauthors : [];
+            }
+
+            $response->data[] = $paper;
+        }
+
+        $stmt->close();
+
+        // If no faculty papers found, search student papers from Symposium events
+        // Note: Student papers table doesn't have poster_submitted flag yet
+        // We'll check against poster_submissions table directly
+        if (count($response->data) === 0) {
+            $studentQuery = "SELECT 
+                                srp.id,
+                                srp.title,
+                                srp.author,
+                                srp.coauthor,
+                                srp.category,
+                                srp.campus,
+                                srp.paper_type,
+                                srp.event_id,
+                                srp.event,
+                                srp.status,
+                                el.name as event_name
+                             FROM student_research_papers srp
+                             LEFT JOIN event_list el ON srp.event_id = el.id
+                             WHERE srp.senderid = ?
+                             AND srp.status = 'accepted'
+                             AND srp.event LIKE '%Symposium%'
+                             AND srp.id NOT IN (
+                                 SELECT research_id FROM poster_submissions WHERE sender_id = ?
+                             )
+                             AND (srp.title LIKE ? 
+                                  OR srp.author LIKE ?)
+                             ORDER BY srp.id DESC
+                             LIMIT 50";
+
+            $studentStmt = $con->prepare($studentQuery);
+            if ($studentStmt) {
+                $studentStmt->bind_param("iiss", $userId, $userId, $searchPattern, $searchPattern);
+                $studentStmt->execute();
+                $studentResult = $studentStmt->get_result();
+
+                while ($row = $studentResult->fetch_assoc()) {
+                    $paper = new stdClass();
+                    $paper->id = (int)$row['id'];
+                    $paper->title = $row['title'] ?? '';
+                    $paper->author = $row['author'] ?? '';
+                    $paper->coauthors = [];
+                    $paper->center = '';
+                    $paper->campus = $row['campus'] ?? '';
+                    $paper->category = $row['category'] ?? '';
+                    $paper->paper_trail_no = '';
+                    $paper->event = $row['event'] ?? '';
+                    $paper->event_id = $row['event_id'] ? (int)$row['event_id'] : null;
+                    $paper->event_name = $row['event_name'] ?? $row['event'] ?? '';
+                    $paper->status = $row['status'] ?? '';
+                    $paper->poster_submitted = 0;
+
+                    if (!empty($row['coauthor'])) {
+                        $coauthors = json_decode($row['coauthor'], true);
+                        $paper->coauthors = is_array($coauthors) ? $coauthors : [];
+                    }
+
+                    $response->data[] = $paper;
+                }
+                $studentStmt->close();
+            }
+        }
+
+        $response->status = true;
+        $response->message = count($response->data) . ' paper(s) found from Symposium events';
+
+        $con->close();
+
+    } catch (Exception $e) {
+        error_log("searchAcceptedPapers error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+    }
+
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+// Submit Poster
+if (isset($_POST['submitPoster'])) {
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->poster_id = null;
+    $response->drive_file_id = null;
+
+    try {
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception("User not logged in");
+        }
+
+        $senderId = $_SESSION['userId'];
+        $researchId = isset($_POST['research_id']) ? (int)$_POST['research_id'] : 0;
+        $eventId = isset($_POST['event_id']) ? (int)$_POST['event_id'] : 0;
+        $eventName = isset($_POST['event_name']) ? trim($_POST['event_name']) : '';
+        $title = isset($_POST['title']) ? trim($_POST['title']) : '';
+        $author = isset($_POST['author']) ? trim($_POST['author']) : '';
+        $coAuthors = isset($_POST['coAuthors']) ? $_POST['coAuthors'] : '[]';
+        $campus = isset($_POST['campus']) ? trim($_POST['campus']) : '';
+        $center = isset($_POST['center']) ? trim($_POST['center']) : '';
+        $category = isset($_POST['category']) ? trim($_POST['category']) : '';
+
+        if ($researchId <= 0) {
+            throw new Exception("Please select a valid research paper.");
+        }
+
+        if (!isset($_FILES['posterFile']) || $_FILES['posterFile']['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("Poster file is required.");
+        }
+
+        $file = $_FILES['posterFile'];
+        if ($file['type'] !== 'application/pdf' && !str_ends_with($file['name'], '.pdf')) {
+            throw new Exception("Only PDF files are allowed.");
+        }
+
+        if ($file['size'] > 30 * 1024 * 1024) {
+            throw new Exception("File size exceeds 30MB limit.");
+        }
+
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        // Start transaction
+        $con->begin_transaction();
+
+        // ===== CHECK IF POSTER ALREADY EXISTS =====
+        // Check poster_submissions table
+        $checkQuery = "SELECT id FROM poster_submissions WHERE research_id = ? AND sender_id = ?";
+        $checkStmt = $con->prepare($checkQuery);
+        $checkStmt->bind_param("ii", $researchId, $senderId);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+
+        if ($checkResult->num_rows > 0) {
+            throw new Exception("A poster has already been submitted for this paper.");
+        }
+        $checkStmt->close();
+
+        // Also check researchfile.poster_submitted flag as a secondary check
+        $flagCheckQuery = "SELECT poster_submitted FROM researchfile WHERE id = ?";
+        $flagStmt = $con->prepare($flagCheckQuery);
+        $flagStmt->bind_param("i", $researchId);
+        $flagStmt->execute();
+        $flagResult = $flagStmt->get_result();
+        $flagRow = $flagResult->fetch_assoc();
+        $flagStmt->close();
+
+        if ($flagRow && isset($flagRow['poster_submitted']) && $flagRow['poster_submitted'] == 1) {
+            throw new Exception("A poster has already been submitted for this paper.");
+        }
+
+        // ===== GET PAPER TRAIL NO FROM RESEARCHFILE =====
+        $paperTrailNo = null;
+        $paperTrailQuery = "SELECT paper_trail_no FROM researchfile WHERE id = ?";
+        $paperTrailStmt = $con->prepare($paperTrailQuery);
+        $paperTrailStmt->bind_param("i", $researchId);
+        $paperTrailStmt->execute();
+        $paperTrailResult = $paperTrailStmt->get_result();
+        if ($paperTrailRow = $paperTrailResult->fetch_assoc()) {
+            $paperTrailNo = $paperTrailRow['paper_trail_no'];
+        }
+        $paperTrailStmt->close();
+
+        // ===== UPLOAD TO GOOGLE DRIVE =====
+        if (!class_exists('GoogleDriveService')) {
+            throw new Exception("GoogleDriveService class not found");
+        }
+
+        $drive = new GoogleDriveService();
+
+        // Clean folder names
+        $cleanEventName = cleanFolderNameForDrive($eventName);
+
+        // Create folder structure: Event -> Posters
+        $eventFolderId = $drive->findOrCreateFolder($cleanEventName, null);
+        if (!$eventFolderId) throw new Exception("Failed to create event folder");
+
+        // Create Posters folder inside Event folder
+        $posterFolderId = $drive->findOrCreateFolder('Posters', $eventFolderId);
+        if (!$posterFolderId) throw new Exception("Failed to create Posters folder");
+
+        // Clean title for filename
+        $cleanTitle = preg_replace('/[^\w\s\-]/', '', $title);
+        $cleanTitle = preg_replace('/\s+/', '_', $cleanTitle);
+        $cleanTitle = substr($cleanTitle, 0, 80);
+
+        // Generate filename with paper trail no prefix
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $paperTrailPrefix = !empty($paperTrailNo) ? $paperTrailNo . ' - ' : '';
+        $posterFileName = $paperTrailPrefix . 'Poster - ' . $cleanTitle . '.' . $extension;
+
+        // Upload to Google Drive
+        $uploadResult = $drive->uploadFile($file['tmp_name'], $posterFileName, $posterFolderId);
+        if (!$uploadResult['success'] || empty($uploadResult['id'])) {
+            throw new Exception("Failed to upload poster: " . ($uploadResult['error'] ?? 'Unknown error'));
+        }
+
+        $drive->makeFilePublic($uploadResult['id']);
+        $fileId = $uploadResult['id'];
+        $viewUrl = "https://drive.google.com/file/d/{$fileId}/preview";
+        $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
+
+        // ===== SAVE TO DATABASE =====
+        $insertQuery = "INSERT INTO poster_submissions (
+            research_id, paper_trail_no, sender_id, event_id,
+            event_folder_id, poster_folder_id,
+            poster_drive_file_id, poster_drive_view_url, poster_drive_download_url,
+            poster_file_name, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+
+        $insertStmt = $con->prepare($insertQuery);
+        if (!$insertStmt) {
+            throw new Exception("Prepare failed: " . $con->error);
+        }
+
+        $status = 'pending';
+        $insertStmt->bind_param(
+            'issssssssss',
+            $researchId,
+            $paperTrailNo,
+            $senderId,
+            $eventId,
+            $eventFolderId,
+            $posterFolderId,
+            $fileId,
+            $viewUrl,
+            $downloadUrl,
+            $posterFileName,
+            $status
+        );
+
+        if (!$insertStmt->execute()) {
+            throw new Exception("Failed to save poster: " . $insertStmt->error);
+        }
+
+        $posterId = $con->insert_id;
+        $insertStmt->close();
+
+        // ===== UPDATE RESEARCHFILE POSTER_SUBMITTED FLAG =====
+        $updateFlagQuery = "UPDATE researchfile SET poster_submitted = 1 WHERE id = ?";
+        $updateStmt = $con->prepare($updateFlagQuery);
+        $updateStmt->bind_param("i", $researchId);
+        if (!$updateStmt->execute()) {
+            throw new Exception("Failed to update poster_submitted flag: " . $updateStmt->error);
+        }
+        $updateStmt->close();
+
+        // Commit transaction
+        $con->commit();
+
+        $response->status = true;
+        $response->message = "Poster submitted successfully!";
+        $response->poster_id = $posterId;
+        $response->paper_trail_no = $paperTrailNo;
+        $response->drive_file_id = $fileId;
+        $response->drive_view_url = $viewUrl;
+
+        $con->close();
+
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        if (isset($con) && $con) {
+            $con->rollback();
+        }
+        error_log("submitPoster error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+    }
+
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+// Get user's submitted posters
+if (isset($_POST['getUserPosters'])) {
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->data = [];
+
+    try {
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception("User not logged in");
+        }
+
+        $userId = $_SESSION['userId'];
+        $searchTerm = isset($_POST['search']) ? trim($_POST['search']) : '';
+        $status = isset($_POST['status']) ? trim($_POST['status']) : '';
+
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        $query = "SELECT 
+                    ps.*,
+                    rf.title,
+                    rf.author,
+                    rf.coauthor,
+                    rf.event,
+                    rf.event_id,
+                    rf.poster_submitted,
+                    el.name as event_name
+                  FROM poster_submissions ps
+                  LEFT JOIN researchfile rf ON ps.research_id = rf.id
+                  LEFT JOIN event_list el ON rf.event_id = el.id
+                  WHERE ps.sender_id = ?";
+
+        $params = [$userId];
+        $types = "i";
+
+        if (!empty($status)) {
+            $query .= " AND ps.status = ?";
+            $params[] = $status;
+            $types .= "s";
+        }
+
+        if (!empty($searchTerm)) {
+            $searchPattern = '%' . $con->real_escape_string($searchTerm) . '%';
+            $query .= " AND (rf.title LIKE ? OR rf.author LIKE ? OR el.name LIKE ? OR ps.paper_trail_no LIKE ?)";
+            $params[] = $searchPattern;
+            $params[] = $searchPattern;
+            $params[] = $searchPattern;
+            $params[] = $searchPattern;
+            $types .= "ssss";
+        }
+
+        $query .= " ORDER BY ps.created_at DESC";
+
+        $stmt = $con->prepare($query);
+        if (!$stmt) {
+            throw new Exception("Prepare failed: " . $con->error);
+        }
+
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        while ($row = $result->fetch_assoc()) {
+            $poster = new stdClass();
+            $poster->id = (int)$row['id'];
+            $poster->research_id = (int)$row['research_id'];
+            $poster->paper_trail_no = $row['paper_trail_no'] ?? '';
+            $poster->title = $row['title'] ?? '';
+            $poster->author = $row['author'] ?? '';
+            $poster->event_name = $row['event_name'] ?? $row['event'] ?? '';
+            $poster->status = $row['status'] ?? 'pending';
+            $poster->poster_file_name = $row['poster_file_name'] ?? '';
+            $poster->poster_drive_view_url = $row['poster_drive_view_url'] ?? '';
+            $poster->poster_drive_download_url = $row['poster_drive_download_url'] ?? '';
+            $poster->poster_submitted = (int)($row['poster_submitted'] ?? 0);
+            $poster->created_at = $row['created_at'] ?? null;
+            $poster->updated_at = $row['updated_at'] ?? null;
+            
+            $response->data[] = $poster;
+        }
+
+        $response->status = true;
+        $response->message = count($response->data) . ' poster(s) found';
+
+        $stmt->close();
+        $con->close();
+
+    } catch (Exception $e) {
+        error_log("getUserPosters error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+    }
+
+    ob_clean();
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
     exit();
