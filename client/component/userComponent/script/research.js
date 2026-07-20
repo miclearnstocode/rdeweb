@@ -3,6 +3,8 @@ import { handleResubmit } from './resubmit.js'
 import { Print } from "../../otherComponent/comment.js"
 import { SymposiumModal } from './userUploadComponent/symposiumModal.js'
 import { ResearchChairSubmissionModal } from './userUploadComponent/researchChairSubmission.js'
+import { PosterSubmissionModal } from './userUploadComponent/posterSubmission.js'
+import { PosterChoiceModal } from './userUploadComponent/posterChoiceModal.js'
 
 // View Researches Modal
 const openViewResearchesModal = () => {
@@ -719,7 +721,7 @@ const openViewResearchesModal = () => {
     wireEvents()
 
     currentModal = CustomModal({
-        title: 'Research Document of other Campuses',
+        title: 'Submitted Research Documents',
         content: content,
         size: 'large',
         onClose: () => {
@@ -4390,6 +4392,60 @@ export const Research = () => {
             }
         })
 
+        const posterBtn = $({
+            tag: 'button',
+            style: {
+                backgroundColor: '#ffffff',
+                border: '1px solid #e8ecf0',
+                borderRadius: '12px',
+                padding: '12px 28px',
+                color: '#1a2a3a',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                transition: 'all 0.25s ease',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+            },
+            child: [
+                $({
+                    tag: 'i',
+                    att: { className: 'fas fa-image' },
+                    style: { color: '#E91E63', fontSize: '16px' }
+                }),
+                $({ tag: 'span', text: 'Poster', style: { fontWeight: '600' } })
+            ],
+            event: {
+                type: 'click',
+                method: () => {
+                    const choiceModal = PosterChoiceModal({
+                        onSuccess: () => {
+                            if (window.refreshDocumentsTable) {
+                                window.refreshDocumentsTable()
+                            }
+                        }
+                    })
+                    document.body.appendChild(choiceModal.element || choiceModal)
+                },
+                type2: 'mouseenter',
+                method2: (e) => {
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.08)';
+                },
+                type3: 'mouseleave',
+                method3: (e) => {
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)';
+                }
+            }
+        })
+
         const uploadBtn = $({
             tag: 'button',
             style: {
@@ -4478,6 +4534,7 @@ export const Research = () => {
             }
         })
 
+        buttonGroup.appendChild(posterBtn)
         buttonGroup.appendChild(uploadBtn)
         buttonGroup.appendChild(viewResearchesBtn)
         header.appendChild(titleSection)
