@@ -9,7 +9,6 @@ import { PrintResearch } from "../../otherComponent/researchSummary.js";
 import { Forwarded } from "./src/forwarded.js";
 
 
-//add certification attachment when there is title changes
 export const ResearchMain = () => {
     let mainFrame, leftPdiv
     const getMainFrame = (el) => {
@@ -83,7 +82,8 @@ export const ResearchMain = () => {
             const tabs = [
                 { id: 'faculty', label: 'Faculty', icon: 'fa-solid fa-chalkboard-user' },
                 { id: 'undergraduate', label: 'Undergraduate', icon: 'fa-solid fa-graduation-cap' },
-                { id: 'graduate', label: 'Graduate', icon: 'fa-solid fa-user-graduate' }
+                { id: 'graduate', label: 'Graduate', icon: 'fa-solid fa-user-graduate' },
+                { id: 'poster', label: 'Poster', icon: 'fa-solid fa-image' }
             ]
 
             tabs.forEach(tab => {
@@ -311,6 +311,8 @@ export const ResearchMain = () => {
             } else if (currentTab === 'graduate') {
                 form.append('incomingStudentResearch', 'true')
                 form.append('paper_type', 'graduate')
+            } else if (currentTab === 'poster') {
+                form.append('incomingPosterSubmissions', 'true')
             }
 
             fetch('/getresearch', {
@@ -327,14 +329,21 @@ export const ResearchMain = () => {
                             style: { textAlign: 'center', padding: '40px', color: '#888', fontSize: '1.1vw' },
                             child: [
                                 $({ tag: 'span', att: { className: 'fa-solid fa-inbox' }, style: { fontSize: '3vw', display: 'block', marginBottom: '10px' } }),
-                                $({ tag: 'div', text: `No pending ${currentTab === 'faculty' ? 'faculty research' : currentTab === 'undergraduate' ? 'undergraduate' : 'graduate'} submissions found` })
+                                $({ tag: 'div', text: currentTab === 'faculty' ? 'No pending faculty research submissions found' : 
+                                            currentTab === 'undergraduate' ? 'No pending undergraduate submissions found' :
+                                            currentTab === 'graduate' ? 'No pending graduate submissions found' :
+                                            'No pending poster submissions found' })
                             ]
                         }))
                         return
                     }
 
-                    data.forEach(val => {
-                        if (currentTab === 'faculty') {
+                    if (currentTab === 'poster') {
+                        data.forEach(val => {
+                            bodyContent.appendChild(docsPoster(val))
+                        })
+                    } else if (currentTab === 'faculty') {
+                        data.forEach(val => {
                             bodyContent.appendChild(docsFaculty({
                                 date: val.date,
                                 campus: val.campus,
@@ -347,8 +356,10 @@ export const ResearchMain = () => {
                                 sender: val.senderType,
                                 smail: val.senderEmail
                             }))
-                        } else {
-                            // For undergraduate and graduate
+                        })
+                    } else {
+                        // For undergraduate and graduate
+                        data.forEach(val => {
                             bodyContent.appendChild(docsStudent({
                                 id: val.id,
                                 title: val.title,
@@ -366,8 +377,8 @@ export const ResearchMain = () => {
                                 research_file: val.research_file,
                                 endorsement_file: val.endorsement_file
                             }))
-                        }
-                    })
+                        })
+                    }
                 })
                 .catch(err => {
                     bodyContent.innerHTML = ''
@@ -376,12 +387,11 @@ export const ResearchMain = () => {
                         style: { textAlign: 'center', padding: '40px', color: '#888', fontSize: '1.1vw' },
                         child: [
                             $({ tag: 'span', att: { className: 'fa-solid fa-inbox' }, style: { fontSize: '3vw', display: 'block', marginBottom: '10px' } }),
-                            $({ tag: 'div', text: `No pending ${currentTab === 'faculty' ? 'faculty research' : currentTab === 'undergraduate' ? 'undergraduate' : 'graduate'} submissions found` })
+                            $({ tag: 'div', text: 'Error loading submissions. Please try again.' })
                         ]
                     }))
                 })
         }
-
 
         // Faculty Research Document Component
         const docsFaculty = ({ date, eventType, file, research, docId, status, sender, smail, center, campus, locationType }) => {
@@ -2604,6 +2614,814 @@ export const ResearchMain = () => {
                 event: {
                     type: 'click',
                     method: () => viewStudentDocs(),
+                    mouseenter: (e) => {
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                    },
+                    mouseleave: (e) => {
+                        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                    }
+                }
+            })
+        }
+
+        const docsPoster = (posterData) => {
+            const formatDate = (dateStr) => {
+                if (!dateStr) return 'N/A';
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            };
+
+            const formatDateTime = (dateStr) => {
+                if (!dateStr) return 'N/A';
+                let [datePart, timePart] = dateStr.split(' ');
+                let timeFormat = timePart ? TimeConvert(timePart.split(":")) : 'N/A';
+                return formatDate(datePart) + " at " + timeFormat;
+            };
+
+            const openFileInModal = (fileData, title, fileType) => {
+                let fileUrl = '';
+
+                if (typeof fileData === 'object' && fileData !== null) {
+                    fileUrl = fileData.poster_drive_view_url || fileData.drive_view_url || fileData.viewUrl || fileData.fileUrl || fileData.file || '';
+                } else if (typeof fileData === 'string') {
+                    fileUrl = fileData;
+                }
+
+                if (!fileUrl) {
+                    alert(`No ${fileType} file available`);
+                    return;
+                }
+
+                const createViewerContent = () => {
+                    const container = $({
+                        tag: 'div',
+                        style: {
+                            width: '100%',
+                            height: '100%',
+                            minHeight: '500px',
+                            position: 'relative'
+                        }
+                    });
+
+                    const isGoogleDriveUrl = fileUrl && typeof fileUrl === 'string' && (fileUrl.includes('drive.google.com') || fileUrl.includes('/d/'));
+
+                    if (isGoogleDriveUrl) {
+                        let fileId = null;
+                        const patterns = [
+                            /\/d\/([a-zA-Z0-9_-]+)/,
+                            /id=([a-zA-Z0-9_-]+)/,
+                            /open\?id=([a-zA-Z0-9_-]+)/,
+                            /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                            /([a-zA-Z0-9_-]{25,})/
+                        ];
+
+                        for (let pattern of patterns) {
+                            const match = fileUrl.match(pattern);
+                            if (match && match[1]) {
+                                fileId = match[1];
+                                break;
+                            }
+                        }
+
+                        if (fileId) {
+                            fileId = fileId.split('?')[0].split('&')[0];
+                            const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+
+                            const loadingIndicator = $({
+                                tag: 'div',
+                                style: {
+                                    position: 'absolute',
+                                    top: '50%',
+                                    left: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    textAlign: 'center',
+                                    zIndex: 10
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-spinner fa-pulse' },
+                                        style: { fontSize: '32px', color: '#0d6efd', marginBottom: '12px', display: 'block' }
+                                    }),
+                                    $({
+                                        tag: 'div',
+                                        text: `Loading ${fileType}...`,
+                                        style: { fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#6c757d' }
+                                    })
+                                ]
+                            });
+                            container.appendChild(loadingIndicator);
+
+                            const iframe = document.createElement('iframe');
+                            iframe.src = embedUrl;
+                            iframe.style.width = '100%';
+                            iframe.style.height = '100%';
+                            iframe.style.border = 'none';
+                            iframe.style.position = 'absolute';
+                            iframe.style.top = '0';
+                            iframe.style.left = '0';
+                            iframe.allow = 'autoplay; fullscreen';
+                            iframe.allowFullscreen = true;
+
+                            iframe.onload = () => loadingIndicator.remove();
+                            iframe.onerror = () => {
+                                loadingIndicator.remove();
+                                container.innerHTML = `
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
+                                        <span class="fa-solid fa-circle-exclamation" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
+                                        <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">Unable to load ${fileType}</h3>
+                                        <a href="${fileUrl}" target="_blank" style="padding: 10px 20px; background: #0d6efd; color: white; text-decoration: none; border-radius: 8px; margin-top: 16px;">Open in Google Drive</a>
+                                    </div>
+                                `;
+                            };
+
+                            container.appendChild(iframe);
+                        } else {
+                            container.innerHTML = `
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
+                                    <span class="fa-solid fa-link-slash" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
+                                    <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">Invalid Google Drive URL</h3>
+                                    <p style="font-family: Inter, sans-serif; color: #6c757d;">Could not extract file ID from the URL.</p>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        container.innerHTML = `
+                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
+                                <span class="fa-solid fa-link-slash" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
+                                <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">No valid file available</h3>
+                                <p style="font-family: Inter, sans-serif; color: #6c757d;">The ${fileType} file could not be found.</p>
+                            </div>
+                        `;
+                    }
+
+                    return container;
+                };
+
+                CustomModal({
+                    title: `${fileType} - ${title.substring(0, 50)}${title.length > 50 ? '...' : ''}`,
+                    size: 'large',
+                    content: createViewerContent,
+                    showCloseButton: true,
+                    closeOnOverlayClick: true
+                });
+            };
+
+            const viewPosterDocs = () => {
+                // Details Panel (Left side - 70%)
+                const DetailsPanel = () => {
+                    const labelDetails = (label, data) => {
+                        return $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                marginBottom: '12px',
+                                padding: '8px',
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '8px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    text: `${label}:`,
+                                    style: {
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontWeight: '600',
+                                        color: '#0d6efd',
+                                        fontSize: '13px',
+                                        minWidth: '120px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: data || 'N/A',
+                                    style: {
+                                        fontFamily: 'Inter, sans-serif',
+                                        color: '#2c3e50',
+                                        fontSize: '13px',
+                                        flex: '1'
+                                    }
+                                })
+                            ]
+                        });
+                    }
+
+                    const CoAuthorList = () => {
+                        let coauthors = []
+                        try {
+                            if (posterData.coauthor && posterData.coauthor !== '[]' && posterData.coauthor !== 'null') {
+                                coauthors = JSON.parse(posterData.coauthor)
+                            }
+                        } catch (e) {
+                            coauthors = []
+                        }
+
+                        if (coauthors.length === 0) return null
+
+                        return $({
+                            tag: 'div',
+                            style: {
+                                marginBottom: '12px',
+                                padding: '8px',
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '8px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    text: 'Co-Authors:',
+                                    style: {
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontWeight: '600',
+                                        color: '#0d6efd',
+                                        fontSize: '13px',
+                                        minWidth: '120px',
+                                        display: 'block',
+                                        marginBottom: '8px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    style: { marginLeft: '120px' },
+                                    elementHandler: (el) => {
+                                        coauthors.forEach(val => {
+                                            el.appendChild($({
+                                                tag: 'div',
+                                                text: `• ${val}`,
+                                                style: {
+                                                    fontFamily: 'Inter, sans-serif',
+                                                    color: '#2c3e50',
+                                                    fontSize: '13px',
+                                                    marginBottom: '4px'
+                                                }
+                                            }))
+                                        })
+                                    }
+                                })
+                            ]
+                        })
+                    }
+
+                    const Button = ({ Label, Event, isAccept = false }) => {
+                        const colors = isAccept
+                            ? { bg: '#28a745', hover: '#218838' }
+                            : { bg: '#dc3545', hover: '#c82333' }
+
+                        return $({
+                            tag: 'button',
+                            style: {
+                                padding: '12px 24px',
+                                backgroundColor: colors.bg,
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontFamily: 'Inter, sans-serif',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                transition: 'all 0.2s ease',
+                                flex: '1'
+                            },
+                            text: Label,
+                            event: {
+                                type: 'click',
+                                method: Event
+                            },
+                            mouseenter: (e) => {
+                                e.target.style.backgroundColor = colors.hover;
+                                e.target.style.transform = 'translateY(-1px)';
+                            },
+                            mouseleave: (e) => {
+                                e.target.style.backgroundColor = colors.bg;
+                                e.target.style.transform = 'translateY(0)';
+                            }
+                        })
+                    }
+
+                    const showRejectModal = () => {
+                        let rejectReason = ''
+
+                        const modalContent = ({ closeModal }) => {
+                            return $({
+                                tag: 'div',
+                                style: { display: 'flex', flexDirection: 'column', gap: '20px' },
+                                child: [
+                                    $({
+                                        tag: 'div',
+                                        style: { display: 'flex', flexDirection: 'column', gap: '8px' },
+                                        child: [
+                                            $({
+                                                tag: 'label',
+                                                text: 'Reason for Rejection',
+                                                style: {
+                                                    color: '#495057',
+                                                    fontSize: '14px',
+                                                    fontWeight: '600',
+                                                    fontFamily: 'Inter, sans-serif'
+                                                }
+                                            }),
+                                            $({
+                                                tag: 'textarea',
+                                                att: { placeholder: 'Please provide a detailed reason for rejecting this poster...' },
+                                                style: {
+                                                    width: '100%',
+                                                    minHeight: '150px',
+                                                    padding: '12px',
+                                                    backgroundColor: '#ffffff',
+                                                    border: '1px solid #dee2e6',
+                                                    borderRadius: '8px',
+                                                    color: '#2c3e50',
+                                                    fontSize: '14px',
+                                                    fontFamily: 'monospace',
+                                                    resize: 'vertical',
+                                                    outline: 'none',
+                                                    transition: 'border-color 0.2s ease'
+                                                },
+                                                event: {
+                                                    type: 'input',
+                                                    method: (e) => { rejectReason = e.target.value },
+                                                    focus: (e) => { e.target.style.borderColor = '#0d6efd' },
+                                                    blur: (e) => { e.target.style.borderColor = '#dee2e6' }
+                                                }
+                                            })
+                                        ]
+                                    })
+                                ]
+                            })
+                        }
+
+                        const modalFooter = ({ closeModal }) => {
+                            return $({
+                                tag: 'div',
+                                style: { display: 'flex', gap: '12px', justifyContent: 'flex-end' },
+                                child: [
+                                    $({
+                                        tag: 'button',
+                                        text: 'Cancel',
+                                        style: {
+                                            padding: '10px 24px',
+                                            backgroundColor: '#ffffff',
+                                            border: '1px solid #dee2e6',
+                                            borderRadius: '8px',
+                                            color: '#6c757d',
+                                            cursor: 'pointer',
+                                            fontSize: '14px',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: closeModal,
+                                            mouseenter: (e) => { e.target.style.backgroundColor = '#f8f9fa' },
+                                            mouseleave: (e) => { e.target.style.backgroundColor = '#ffffff' }
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'button',
+                                        text: 'Submit Rejection',
+                                        style: {
+                                            padding: '10px 24px',
+                                            backgroundColor: '#dc3545',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            color: 'white',
+                                            cursor: 'pointer',
+                                            fontSize: '14px',
+                                            fontWeight: 'bold',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: async () => {
+                                                if (!rejectReason.trim()) {
+                                                    alert('Please provide a reason for rejection')
+                                                    return
+                                                }
+                                                closeModal()
+
+                                                let loading = Waiting()
+                                                document.body.appendChild(loading)
+
+                                                const form = new FormData()
+                                                form.append('rejectPoster', 'true')
+                                                form.append('posterId', posterData.id)
+                                                form.append('reason', rejectReason)
+
+                                                fetch('/getresearch', {
+                                                    method: 'POST',
+                                                    body: form
+                                                }).then(res => res.json())
+                                                    .then(dat => {
+                                                        loading.remove()
+                                                        if (dat?.status) {
+                                                            document.body.appendChild(ConfirmationAlert(dat.message, () => window.location.reload()))
+                                                        } else {
+                                                            document.body.appendChild(ConfirmationAlert(dat?.message || 'Error processing request', () => window.location.reload()))
+                                                        }
+                                                    }).catch(() => {
+                                                        loading.remove()
+                                                    })
+                                            },
+                                            mouseenter: (e) => { e.target.style.backgroundColor = '#c82333' },
+                                            mouseleave: (e) => { e.target.style.backgroundColor = '#dc3545' }
+                                        }
+                                    })
+                                ]
+                            })
+                        }
+
+                        CustomModal({
+                            title: 'Reject Poster',
+                            size: 'medium',
+                            content: modalContent,
+                            footer: modalFooter,
+                            closeOnOverlayClick: true
+                        })
+                    }
+
+                    const Controller = () => {
+                        return $({
+                            tag: 'div',
+                            style: {
+                                width: '100%',
+                                padding: '20px',
+                                backgroundColor: '#ffffff',
+                                borderTop: '1px solid #e9ecef',
+                                display: 'flex',
+                                gap: '12px'
+                            },
+                            child: [
+                                Button({
+                                    Label: '✓ ACCEPT',
+                                    Event: async () => {
+                                        if (confirm("Are you sure you want to accept this poster?")) {
+                                            let loading = Waiting()
+                                            document.body.appendChild(loading)
+                                            const form = new FormData()
+                                            form.append('acceptPoster', 'true')
+                                            form.append('posterId', posterData.id)
+
+                                            fetch('/getresearch', {
+                                                method: 'POST',
+                                                body: form
+                                            }).then(res => res.json())
+                                                .then(data => {
+                                                    loading.remove()
+                                                    if (data.status) {
+                                                        document.body.appendChild(ConfirmationAlert(data.message, () => window.location.reload()))
+                                                    } else {
+                                                        alert(data.message || "Failed to accept poster")
+                                                    }
+                                                }).catch(() => loading.remove())
+                                        }
+                                    },
+                                    isAccept: true
+                                }),
+                                Button({
+                                    Label: '✗ REJECT',
+                                    Event: () => {
+                                        if (confirm("Are you sure you want to reject this poster?")) showRejectModal()
+                                    },
+                                    isAccept: false
+                                })
+                            ]
+                        })
+                    }
+
+                    const getClickBot = (el) => {
+                        const holder = $({
+                            tag: 'div',
+                            style: {
+                                flex: '1',
+                                overflowY: 'auto',
+                                padding: '20px',
+                                backgroundColor: '#f8f9fa'
+                            }
+                        })
+
+                        holder.appendChild($({
+                            tag: 'div',
+                            style: {
+                                width: '100%',
+                                padding: '20px',
+                                marginBottom: '16px',
+                                backgroundColor: '#ffffff',
+                                borderRadius: '12px',
+                                border: '1px solid #e9ecef'
+                            },
+                            child: [
+                                labelDetails("Paper Trail No", posterData.paper_trail_no || 'N/A'),
+                                labelDetails("Title", posterData.title || 'N/A'),
+                                labelDetails("Author", posterData.author || 'N/A'),
+                                CoAuthorList(),
+                                labelDetails("Event", posterData.event_name || posterData.event || 'N/A'),
+                                labelDetails("Campus / Center", posterData.campus || posterData.center || 'N/A'),
+                                labelDetails("Category", posterData.category || 'N/A'),
+                                labelDetails("Status", posterData.status || 'pending'),
+                                labelDetails("Submitted", formatDateTime(posterData.created_at))
+                            ]
+                        }))
+
+                        el.appendChild(holder)
+                        el.appendChild(Controller())
+                    }
+
+                    return $({
+                        tag: 'div',
+                        style: {
+                            width: '70%',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            backgroundColor: '#ffffff',
+                            borderRight: '1px solid #e9ecef'
+                        },
+                        elementHandler: getClickBot
+                    })
+                }
+
+                const RightPanel = () => {
+                    const actionButton = ({ icon, label, onClick, color, description, disabled = false }) => {
+                        return $({
+                            tag: 'div',
+                            style: {
+                                marginBottom: '24px',
+                                opacity: disabled ? '0.5' : '1',
+                                pointerEvents: disabled ? 'none' : 'auto'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        marginBottom: '12px',
+                                        paddingBottom: '12px',
+                                        borderBottom: '1px solid #e9ecef'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: { className: icon },
+                                            style: { fontSize: '18px', color: color }
+                                        }),
+                                        $({
+                                            tag: 'h4',
+                                            text: label,
+                                            style: {
+                                                fontFamily: 'Inter, sans-serif',
+                                                fontSize: '15px',
+                                                fontWeight: '600',
+                                                color: '#1a1a2e',
+                                                margin: '0'
+                                            }
+                                        }),
+                                        ...(disabled ? [
+                                            $({
+                                                tag: 'span',
+                                                text: '(No file)',
+                                                style: {
+                                                    fontFamily: 'Inter, sans-serif',
+                                                    fontSize: '11px',
+                                                    color: '#dc3545',
+                                                    fontWeight: '400'
+                                                }
+                                            })
+                                        ] : [])
+                                    ]
+                                }),
+                                $({
+                                    tag: 'p',
+                                    text: description,
+                                    style: {
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontSize: '13px',
+                                        color: '#6c757d',
+                                        margin: '0 0 16px 0',
+                                        lineHeight: '1.5'
+                                    }
+                                }),
+                                $({
+                                    tag: 'button',
+                                    style: {
+                                        width: '100%',
+                                        padding: '12px 20px',
+                                        backgroundColor: '#ffffff',
+                                        border: `1px solid ${color}`,
+                                        borderRadius: '10px',
+                                        cursor: disabled ? 'not-allowed' : 'pointer',
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        color: disabled ? '#adb5bd' : color,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '10px',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    child: [
+                                        $({ tag: 'span', att: { className: disabled ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye' }, style: { fontSize: '14px' } }),
+                                        $({ tag: 'span', text: disabled ? `${label} Unavailable` : `View ${label}` })
+                                    ],
+                                    event: {
+                                        type: 'click',
+                                        method: disabled ? () => alert(`${label} file is not available.`) : onClick
+                                    },
+                                    mouseenter: !disabled ? (e) => {
+                                        e.target.style.backgroundColor = `${color}10`;
+                                        e.target.style.transform = 'translateY(-2px)';
+                                    } : null,
+                                    mouseleave: !disabled ? (e) => {
+                                        e.target.style.backgroundColor = '#ffffff';
+                                        e.target.style.transform = 'translateY(0)';
+                                    } : null
+                                })
+                            ]
+                        })
+                    };
+
+                    const hasPosterFile = posterData.poster_drive_view_url && posterData.poster_drive_view_url !== '';
+
+                    return $({
+                        tag: 'div',
+                        style: {
+                            width: '30%',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            backgroundColor: '#ffffff',
+                            borderLeft: '1px solid #e9ecef',
+                            overflowY: 'auto'
+                        },
+                        child: [
+                            $({
+                                tag: 'div',
+                                style: {
+                                    padding: '24px 20px'
+                                },
+                                child: [
+                                    actionButton({
+                                        icon: 'fa-regular fa-image',
+                                        label: 'Poster File',
+                                        description: 'The poster file submitted for review and evaluation.',
+                                        onClick: () => {
+                                            if (hasPosterFile) {
+                                                openFileInModal(posterData, posterData.title || 'Poster', 'Poster');
+                                            } else {
+                                                alert('Poster file is not available.');
+                                            }
+                                        },
+                                        color: '#E91E63',
+                                        disabled: !hasPosterFile
+                                    })
+                                ]
+                            })
+                        ]
+                    });
+                }
+
+                // Open modal using CustomModal
+                CustomModal({
+                    title: `Poster Review - ${posterData.title || 'Poster'}`,
+                    size: 'full',
+                    content: ({ closeModal }) => {
+                        return $({
+                            tag: 'div',
+                            style: {
+                                width: '100%',
+                                height: '70vh',
+                                display: 'flex',
+                                backgroundColor: '#ffffff'
+                            },
+                            child: [
+                                DetailsPanel(),
+                                RightPanel()
+                            ]
+                        })
+                    },
+                    showCloseButton: true,
+                    closeOnOverlayClick: true
+                });
+            };
+
+            const icon = $({
+                tag: 'div',
+                att: { className: 'fa-solid fa-image' },
+                style: {
+                    fontSize: '28px',
+                    margin: 'auto',
+                    color: '#E91E63',
+                    width: '48px',
+                    height: '48px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#fce4ec',
+                    borderRadius: '12px'
+                }
+            })
+
+            const leftBox = () => {
+                const details = (label, data) => $({
+                    tag: 'div',
+                    style: {
+                        display: 'flex',
+                        marginBottom: '8px',
+                        fontSize: '13px',
+                        fontFamily: 'Inter, sans-serif'
+                    },
+                    child: [
+                        $({
+                            tag: 'span',
+                            text: `${label}:`,
+                            style: {
+                                color: '#6c757d',
+                                fontWeight: '500',
+                                minWidth: '100px'
+                            }
+                        }),
+                        $({
+                            tag: 'span',
+                            text: data || 'N/A',
+                            style: {
+                                color: '#2c3e50',
+                                flex: '1'
+                            }
+                        })
+                    ]
+                })
+
+                const detailItems = [
+                    details("Paper Trail No", posterData.paper_trail_no || 'N/A'),
+                    details("Title", (posterData.title || '').substring(0, 60) + ((posterData.title || '').length > 60 ? '...' : '')),
+                    details("Author", posterData.author || 'N/A'),
+                    details("Event", posterData.event_name || posterData.event || 'N/A'),
+                    details("Campus/Center", posterData.campus || posterData.center || 'N/A'),
+                    details("Status", posterData.status || 'pending'),
+                    details("Submitted", formatDate(posterData.created_at))
+                ]
+
+                return $({
+                    tag: 'div',
+                    style: {
+                        flex: '1',
+                        padding: '12px 16px'
+                    },
+                    child: detailItems
+                })
+            }
+
+            // Main card return
+            return $({
+                tag: 'div',
+                style: {
+                    width: '100%',
+                    marginBottom: '12px',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '12px',
+                    border: '1px solid #e9ecef',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                    overflow: 'hidden'
+                },
+                att: { className: 'posterItem' },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            padding: '16px',
+                            gap: '16px',
+                            alignItems: 'center'
+                        },
+                        child: [
+                            icon,
+                            leftBox(),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    padding: '0 8px'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-chevron-right' },
+                                        style: { fontSize: '14px', color: '#adb5bd' }
+                                    })
+                                ]
+                            })
+                        ]
+                    })
+                ],
+                event: {
+                    type: 'click',
+                    method: () => viewPosterDocs(),
                     mouseenter: (e) => {
                         e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
                         e.currentTarget.style.transform = 'translateY(-2px)';

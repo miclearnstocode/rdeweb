@@ -226,46 +226,46 @@ if (isset($_POST['incomingEndorsement'])) {
                         }
                         $inhouseStmt->close();
                     }
+                }
+                
+                // ===== IF NO IN-HOUSE SOURCE FOUND IN researchfile, CHECK local_inhouse =====
+                if ($research->inhouse_source === null && $v['local_inhouse'] == 1) {
+                    // This is a local in-house submission, get the local_inhouse record
+                    $localSourceQuery = "SELECT 
+                        id,
+                        document_title,
+                        campus,
+                        category,
+                        center,
+                        main_author,
+                        co_authors,
+                        local_eventname,
+                        paper_trail_no,
+                        created_at
+                    FROM local_inhouse 
+                    WHERE research_id = ?";
                     
-                    // ===== IF NO IN-HOUSE SOURCE FOUND IN researchfile, CHECK local_inhouse =====
-                    if ($research->inhouse_source === null && $v['local_inhouse'] == 1) {
-                        // This is a local in-house submission, get the local_inhouse record
-                        $localSourceQuery = "SELECT 
-                            id,
-                            document_title,
-                            campus,
-                            category,
-                            center,
-                            main_author,
-                            co_authors,
-                            local_eventname,
-                            paper_trail_no,
-                            created_at
-                        FROM local_inhouse 
-                        WHERE research_id = ?";
+                    $localSourceStmt = $con->prepare($localSourceQuery);
+                    $localSourceStmt->bind_param("i", $v['id']);
+                    $localSourceStmt->execute();
+                    $localSourceResult = $localSourceStmt->get_result();
+                    
+                    if ($localSourceRow = $localSourceResult->fetch_assoc()) {
+                        $research->local_inhouse_data = new stdClass();
+                        $research->local_inhouse_data->id = $localSourceRow['id'];
+                        $research->local_inhouse_data->document_title = $localSourceRow['document_title'];
+                        $research->local_inhouse_data->campus = $localSourceRow['campus'];
+                        $research->local_inhouse_data->category = $localSourceRow['category'];
+                        $research->local_inhouse_data->center = $localSourceRow['center'];
+                        $research->local_inhouse_data->main_author = $localSourceRow['main_author'];
+                        $research->local_inhouse_data->local_eventname = $localSourceRow['local_eventname'];
+                        $research->local_inhouse_data->paper_trail_no = $localSourceRow['paper_trail_no'];
+                        $research->local_inhouse_data->created_at = $localSourceRow['created_at'];
+                        $research->local_inhouse_data->source_type = 'local_inhouse';
                         
-                        $localSourceStmt = $con->prepare($localSourceQuery);
-                        $localSourceStmt->bind_param("i", $v['id']);
-                        $localSourceStmt->execute();
-                        $localSourceResult = $localSourceStmt->get_result();
-                        
-                        if ($localSourceRow = $localSourceResult->fetch_assoc()) {
-                            $research->local_inhouse_data = new stdClass();
-                            $research->local_inhouse_data->id = $localSourceRow['id'];
-                            $research->local_inhouse_data->document_title = $localSourceRow['document_title'];
-                            $research->local_inhouse_data->campus = $localSourceRow['campus'];
-                            $research->local_inhouse_data->category = $localSourceRow['category'];
-                            $research->local_inhouse_data->center = $localSourceRow['center'];
-                            $research->local_inhouse_data->main_author = $localSourceRow['main_author'];
-                            $research->local_inhouse_data->local_eventname = $localSourceRow['local_eventname'];
-                            $research->local_inhouse_data->paper_trail_no = $localSourceRow['paper_trail_no'];
-                            $research->local_inhouse_data->created_at = $localSourceRow['created_at'];
-                            $research->local_inhouse_data->source_type = 'local_inhouse';
-                            
-                            error_log("Found local_inhouse data for research_id: " . $v['id']);
-                        }
-                        $localSourceStmt->close();
+                        error_log("Found local_inhouse data for research_id: " . $v['id']);
                     }
+                    $localSourceStmt->close();
                 }
                 
                 if ($isExtension) {
@@ -545,17 +545,16 @@ if (isset($_POST['rejectIndorse'])) {
             $researchStmt->bind_param("i", $docId);
             $researchStmt->execute();
 
-            // Insert into rejecteddocs - url is now NULL since we don't send it
-            $query = "INSERT INTO `rejecteddocs`(`id`, `docid`, `url`, `type`, `reason`, `rejectedby`, `date`) VALUES (?, ?, ?, ?, ?, ?, NOW())";
-            $idEn = round(microtime(true) * 1000) . '';
-            // IMPORTANT: URL is now NULL instead of placeholder
-            $placeholderUrl = null;
+            // Insert into rejecteddocs - id is AUTO_INCREMENT, so we don't specify it
+            // url is NULL since we don't send it
+            $query = "INSERT INTO `rejecteddocs` (`docid`, `url`, `type`, `reason`, `rejectedby`, `date`) 
+                      VALUES (?, NULL, ?, ?, ?, NOW())";
             
             $statement2 = $con->prepare($query);
-            $statement2->bind_param("ssssss", $idEn, $docId, $placeholderUrl, $type, $reason, $staffId);
+            $statement2->bind_param("isss", $docId, $type, $reason, $staffId);
             $statement2->execute();
 
-            // FIXED: Add document log entry for rejection
+            // Add document log entry for rejection
             $details = "RDE staff: $staffName rejected endorsement letter for $type from " . ($_POST['campus'] ?? 'Unknown campus') . ". Reason: $reason";
             $userId = $_SESSION['userId'];
             $logQuery = "INSERT INTO document_log (document_log.user_id, document_log.doc_id, document_log.details, document_log.date) VALUES (?, ?, ?, ?)";
@@ -836,51 +835,124 @@ if (isset($_POST['acceptStudentResearch'])) {
     echo json_encode($response);
 }
 
-
 if (isset($_POST['rejectStudentResearch'])) {
+    // Clear any previous output
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+    
     $response = ['status' => false, 'message' => ''];
     
-    $paperId = isset($_POST['paperId']) ? intval($_POST['paperId']) : 0;
-    $reason = isset($_POST['reason']) ? $_POST['reason'] : '';
-    
-    if ($paperId <= 0) {
-        $response['message'] = 'Invalid paper ID';
-        echo json_encode($response);
-        exit;
-    }
-    
-    // Create database connection FIRST
-    $con = new mysqli($host, $username, $pass, $dbName);
-    
-    // Check connection
-    if ($con->connect_error) {
-        $response['message'] = 'Database connection failed: ' . $con->connect_error;
-        echo json_encode($response);
-        exit;
-    }
-    
-    // Escape reason string after connection is established
-    $reason_escaped = $con->real_escape_string($reason);
-    
-    // Update the status to 'rejected'
-    $updateQuery = "UPDATE student_research_papers 
-                    SET status = 'rejected', updated_at = NOW() 
-                    WHERE id = $paperId AND status = 'pending'";
-    
-    if ($con->query($updateQuery)) {
-        if ($con->affected_rows > 0) {
-            $response['status'] = true;
-            $response['message'] = 'Research paper rejected.' . ($reason ? ' Reason: ' . $reason : '');
-        } else {
-            $response['message'] = 'Research paper not found or already processed';
+    try {
+        $paperId = isset($_POST['paperId']) ? intval($_POST['paperId']) : 0;
+        $reason = isset($_POST['reason']) ? trim($_POST['reason']) : '';
+        
+        if ($paperId <= 0) {
+            throw new Exception('Invalid paper ID');
         }
-    } else {
-        $response['message'] = 'Failed to reject research paper: ' . $con->error;
+        
+        if (empty($reason)) {
+            throw new Exception('Please provide a reason for rejection');
+        }
+        
+        // Check if user is logged in
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception('User not logged in');
+        }
+        
+        $staffId = $_SESSION['userId'];
+        $staffName = $_SESSION['userName'] ?? $_SESSION['userFulname'] ?? 'RDE Staff';
+        
+        $con = new mysqli($host, $username, $pass, $dbName);
+        
+        if ($con->connect_error) {
+            throw new Exception('Database connection failed: ' . $con->connect_error);
+        }
+        
+        // Start transaction
+        $con->begin_transaction();
+        
+        // Get paper details first to check if it exists and is pending
+        $checkQuery = "SELECT id, title, author, event, campus FROM student_research_papers WHERE id = ? AND status = 'pending'";
+        $checkStmt = $con->prepare($checkQuery);
+        $checkStmt->bind_param("i", $paperId);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        
+        if ($checkResult->num_rows === 0) {
+            throw new Exception('Research paper not found or already processed');
+        }
+        
+        $paperData = $checkResult->fetch_assoc();
+        $checkStmt->close();
+        
+        // Update the status to 'rejected'
+        $updateQuery = "UPDATE student_research_papers 
+                        SET status = 'rejected', updated_at = NOW() 
+                        WHERE id = ? AND status = 'pending'";
+        
+        $updateStmt = $con->prepare($updateQuery);
+        $updateStmt->bind_param("i", $paperId);
+        
+        if (!$updateStmt->execute()) {
+            throw new Exception('Failed to update research paper status: ' . $updateStmt->error);
+        }
+        
+        if ($updateStmt->affected_rows === 0) {
+            throw new Exception('Research paper not found or already processed');
+        }
+        $updateStmt->close();
+        
+        // Log the rejection in rejecteddocs - id is AUTO_INCREMENT
+        $docId = $paperId;
+        $type = 'Student Research';
+        $reason = $reason;
+        
+        $insertRejectQuery = "INSERT INTO rejecteddocs (docid, url, type, reason, rejectedby, date) 
+                              VALUES (?, NULL, ?, ?, ?, NOW())";
+        $insertStmt = $con->prepare($insertRejectQuery);
+        $insertStmt->bind_param("isss", $docId, $type, $reason, $staffId);
+        
+        if (!$insertStmt->execute()) {
+            throw new Exception('Failed to log rejection: ' . $insertStmt->error);
+        }
+        $insertStmt->close();
+        
+        // Log the action in document_log
+        $logQuery = "INSERT INTO document_log (user_id, doc_id, details, date) VALUES (?, ?, ?, NOW())";
+        $logStmt = $con->prepare($logQuery);
+        $logDetails = "RDE staff: $staffName rejected student research paper ID: $paperId. Title: " . ($paperData['title'] ?? 'N/A') . ". Reason: $reason";
+        $logStmt->bind_param("iss", $staffId, $paperId, $logDetails);
+        
+        if (!$logStmt->execute()) {
+            error_log('Failed to log rejection in document_log: ' . $logStmt->error);
+        }
+        $logStmt->close();
+        
+        // Commit transaction
+        $con->commit();
+        
+        $response['status'] = true;
+        $response['message'] = 'Research paper rejected successfully.' . ($reason ? ' Reason: ' . $reason : '');
+        
+        $con->close();
+        
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        if (isset($con) && $con) {
+            $con->rollback();
+        }
+        error_log("rejectStudentResearch error: " . $e->getMessage());
+        $response['status'] = false;
+        $response['message'] = $e->getMessage();
     }
     
-    $con->close();
+    // Clear output buffer and send JSON
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
-} 
+    ob_end_flush();
+    exit();
+}
 
 if (isset($_POST['getStudentResearchById'])) {
     $response = null;
@@ -909,4 +981,390 @@ if (isset($_POST['getStudentResearchById'])) {
     }
     
     echo json_encode($response);
+}
+
+// Get incoming poster submissions
+if (isset($_POST['incomingPosterSubmissions'])) {
+    $response = [];
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $query = "SELECT 
+            ps.id,
+            ps.research_id,
+            ps.paper_trail_no,
+            ps.sender_id,
+            ps.event_id,
+            ps.status,
+            ps.poster_drive_file_id,
+            ps.poster_drive_view_url,
+            ps.poster_drive_download_url,
+            ps.poster_file_name,
+            ps.created_at,
+            ps.updated_at,
+            rf.title,
+            rf.author,
+            rf.coauthor,
+            rf.category,
+            rf.campus,
+            rf.center,
+            rf.event,
+            el.name as event_name,
+            account_detail.email as sender_email,
+            account_detail.fullname as sender_name,
+            account_detail.usertype as sender_type
+        FROM poster_submissions ps
+        LEFT JOIN researchfile rf ON ps.research_id = rf.id
+        LEFT JOIN event_list el ON rf.event_id = el.id
+        LEFT JOIN account_detail ON ps.sender_id = account_detail.id
+        WHERE ps.status = 'pending' OR ps.status IS NULL
+        ORDER BY ps.created_at DESC";
+        
+        $result = $con->query($query);
+        
+        if ($result && $result->num_rows > 0) {
+            foreach ($result as $row) {
+                $data = new stdClass();
+                $data->id = $row['id'];
+                $data->research_id = $row['research_id'];
+                $data->paper_trail_no = $row['paper_trail_no'];
+                $data->sender_id = $row['sender_id'];
+                $data->event_id = $row['event_id'];
+                $data->status = $row['status'] ?? 'pending';
+                $data->title = $row['title'];
+                $data->author = $row['author'];
+                $data->coauthor = $row['coauthor'];
+                $data->category = $row['category'];
+                $data->campus = $row['campus'];
+                $data->center = $row['center'];
+                $data->event = $row['event'];
+                $data->event_name = $row['event_name'] ?? $row['event'];
+                $data->sender_email = $row['sender_email'];
+                $data->sender_name = $row['sender_name'];
+                $data->sender_type = $row['sender_type'];
+                $data->poster_file_name = $row['poster_file_name'];
+                $data->poster_drive_file_id = $row['poster_drive_file_id'];
+                $data->poster_drive_view_url = $row['poster_drive_view_url'];
+                $data->poster_drive_download_url = $row['poster_drive_download_url'];
+                $data->created_at = $row['created_at'];
+                $data->updated_at = $row['updated_at'];
+                
+                $response[] = $data;
+            }
+        }
+        $con->close();
+    }
+    
+    echo json_encode($response);
+    exit();
+}
+
+// Accept Poster
+if (isset($_POST['acceptPoster'])) {
+    $response = ['status' => false, 'message' => ''];
+    
+    $posterId = isset($_POST['posterId']) ? intval($_POST['posterId']) : 0;
+    
+    if ($posterId <= 0) {
+        $response['message'] = 'Invalid poster ID';
+        echo json_encode($response);
+        exit;
+    }
+    
+    $con = new mysqli($host, $username, $pass, $dbName);
+    
+    if ($con->connect_error) {
+        $response['message'] = 'Database connection failed: ' . $con->connect_error;
+        echo json_encode($response);
+        exit;
+    }
+    
+    // Update poster status to accepted
+    $updateQuery = "UPDATE poster_submissions 
+                    SET status = 'accepted', updated_at = NOW() 
+                    WHERE id = ? AND status = 'pending'";
+    
+    $stmt = $con->prepare($updateQuery);
+    $stmt->bind_param("i", $posterId);
+    
+    if ($stmt->execute()) {
+        if ($stmt->affected_rows > 0) {
+            $response['status'] = true;
+            $response['message'] = 'Poster accepted successfully!';
+            
+            // Get research_id to update the poster_submitted flag
+            $getResearchQuery = "SELECT research_id FROM poster_submissions WHERE id = ?";
+            $getStmt = $con->prepare($getResearchQuery);
+            $getStmt->bind_param("i", $posterId);
+            $getStmt->execute();
+            $result = $getStmt->get_result();
+            if ($row = $result->fetch_assoc()) {
+                $researchId = $row['research_id'];
+                // Ensure poster_submitted is set to 1 in researchfile
+                $updateFlagQuery = "UPDATE researchfile SET poster_submitted = 1 WHERE id = ?";
+                $flagStmt = $con->prepare($updateFlagQuery);
+                $flagStmt->bind_param("i", $researchId);
+                $flagStmt->execute();
+                $flagStmt->close();
+            }
+            $getStmt->close();
+        } else {
+            $response['message'] = 'Poster not found or already processed';
+        }
+    } else {
+        $response['message'] = 'Failed to accept poster: ' . $stmt->error;
+    }
+    
+    $stmt->close();
+    $con->close();
+    echo json_encode($response);
+    exit();
+}
+
+// Reject Poster
+if (isset($_POST['rejectPoster'])) {
+    // Clear any previous output
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+    
+    $response = ['status' => false, 'message' => ''];
+    
+    try {
+        $posterId = isset($_POST['posterId']) ? intval($_POST['posterId']) : 0;
+        $reason = isset($_POST['reason']) ? trim($_POST['reason']) : '';
+        
+        if ($posterId <= 0) {
+            throw new Exception('Invalid poster ID');
+        }
+        
+        if (empty($reason)) {
+            throw new Exception('Please provide a reason for rejection');
+        }
+        
+        // Check if user is logged in
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception('User not logged in');
+        }
+        
+        // Get staff info for logging
+        $staffId = $_SESSION['userId'];
+        $staffName = $_SESSION['userName'] ?? $_SESSION['userFulname'] ?? 'RDE Staff';
+        
+        $con = new mysqli($host, $username, $pass, $dbName);
+        
+        if ($con->connect_error) {
+            throw new Exception('Database connection failed: ' . $con->connect_error);
+        }
+        
+        // Start transaction
+        $con->begin_transaction();
+        
+        // Get poster details first to check if it exists and is pending
+        $checkQuery = "SELECT id, research_id, paper_trail_no, sender_id FROM poster_submissions WHERE id = ? AND status = 'pending'";
+        $checkStmt = $con->prepare($checkQuery);
+        $checkStmt->bind_param("i", $posterId);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        
+        if ($checkResult->num_rows === 0) {
+            throw new Exception('Poster not found or already processed');
+        }
+        
+        $posterData = $checkResult->fetch_assoc();
+        $checkStmt->close();
+        
+        // Update poster status to rejected
+        $updateQuery = "UPDATE poster_submissions 
+                        SET status = 'rejected', updated_at = NOW() 
+                        WHERE id = ?";
+        
+        $stmt = $con->prepare($updateQuery);
+        $stmt->bind_param("i", $posterId);
+        
+        if (!$stmt->execute()) {
+            throw new Exception('Failed to update poster status: ' . $stmt->error);
+        }
+        
+        if ($stmt->affected_rows === 0) {
+            throw new Exception('Poster not found or already processed');
+        }
+        $stmt->close();
+        
+        // Log the rejection reason - id is AUTO_INCREMENT, so we don't specify it
+        $docId = $posterId;
+        $type = 'Poster';
+        $staffIdStr = (string)$staffId; // Convert to string for TEXT column
+        
+        // Insert into rejecteddocs - id will be auto-generated, url is NULL
+        $insertRejectQuery = "INSERT INTO rejecteddocs (docid, url, type, reason, rejectedby, date) 
+                              VALUES (?, NULL, ?, ?, ?, NOW())";
+        $insertStmt = $con->prepare($insertRejectQuery);
+        $insertStmt->bind_param("isss", $docId, $type, $reason, $staffIdStr);
+        
+        if (!$insertStmt->execute()) {
+            throw new Exception('Failed to log rejection: ' . $insertStmt->error);
+        }
+        $insertStmt->close();
+        
+        // Log the action in document_log
+        $logQuery = "INSERT INTO document_log (user_id, doc_id, details, date) VALUES (?, ?, ?, NOW())";
+        $logStmt = $con->prepare($logQuery);
+        $logDetails = "RDE staff: $staffName rejected poster ID: $posterId. Reason: $reason";
+        $logStmt->bind_param("iss", $staffId, $posterId, $logDetails);
+        
+        if (!$logStmt->execute()) {
+            // Log failure shouldn't break the main process
+            error_log('Failed to log rejection in document_log: ' . $logStmt->error);
+        }
+        $logStmt->close();
+        
+        // Commit transaction
+        $con->commit();
+        
+        $response['status'] = true;
+        $response['message'] = 'Poster rejected successfully.';
+        
+        $con->close();
+        
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        if (isset($con) && $con) {
+            $con->rollback();
+        }
+        error_log("rejectPoster error: " . $e->getMessage());
+        $response['status'] = false;
+        $response['message'] = $e->getMessage();
+    }
+    
+    // Clear output buffer and send JSON
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    ob_end_flush();
+    exit();
+}
+
+// Get accepted posters with pagination
+if (isset($_POST['getAcceptedPosters'])) {
+    // Clear any previous output
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+
+    $response = ['status' => false, 'message' => '', 'data' => [], 'total' => 0, 'total_pages' => 0];
+    
+    try {
+        $searchTerm = isset($_POST['search']) ? trim($_POST['search']) : '';
+        $page = isset($_POST['page']) ? intval($_POST['page']) : 1;
+        $limit = isset($_POST['limit']) ? intval($_POST['limit']) : 10;
+        $offset = ($page - 1) * $limit;
+        
+        $con = new mysqli($host, $username, $pass, $dbName);
+        
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+        
+        // Build base query
+        $baseQuery = "SELECT 
+            ps.id,
+            ps.research_id,
+            ps.paper_trail_no,
+            ps.sender_id,
+            ps.event_id,
+            ps.status,
+            ps.poster_drive_file_id,
+            ps.poster_drive_view_url,
+            ps.poster_drive_download_url,
+            ps.poster_file_name,
+            ps.created_at,
+            ps.updated_at,
+            rf.title,
+            rf.author,
+            rf.coauthor,
+            rf.category,
+            rf.campus,
+            rf.center,
+            rf.event,
+            el.name as event_name,
+            account_detail.email as sender_email,
+            account_detail.fullname as sender_name,
+            account_detail.usertype as sender_type
+        FROM poster_submissions ps
+        LEFT JOIN researchfile rf ON ps.research_id = rf.id
+        LEFT JOIN event_list el ON rf.event_id = el.id
+        LEFT JOIN account_detail ON ps.sender_id = account_detail.id
+        WHERE ps.status = 'accepted'";
+        
+        // Add search filter
+        if (!empty($searchTerm)) {
+            $searchPattern = '%' . $con->real_escape_string($searchTerm) . '%';
+            $baseQuery .= " AND (rf.title LIKE '$searchPattern' 
+                               OR rf.author LIKE '$searchPattern' 
+                               OR el.name LIKE '$searchPattern'
+                               OR ps.paper_trail_no LIKE '$searchPattern')";
+        }
+        
+        // Get total count
+        $countQuery = "SELECT COUNT(*) as total FROM ($baseQuery) as subquery";
+        $countResult = $con->query($countQuery);
+        $total = 0;
+        if ($countResult && $countResult->num_rows > 0) {
+            $row = $countResult->fetch_assoc();
+            $total = intval($row['total']);
+        }
+        
+        // Add pagination
+        $query = $baseQuery . " ORDER BY ps.created_at DESC LIMIT $offset, $limit";
+        $result = $con->query($query);
+        
+        if ($result && $result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $poster = new stdClass();
+                $poster->id = $row['id'];
+                $poster->research_id = $row['research_id'];
+                $poster->paper_trail_no = $row['paper_trail_no'];
+                $poster->sender_id = $row['sender_id'];
+                $poster->event_id = $row['event_id'];
+                $poster->status = $row['status'];
+                $poster->title = $row['title'];
+                $poster->author = $row['author'];
+                $poster->coauthor = $row['coauthor'];
+                $poster->category = $row['category'];
+                $poster->campus = $row['campus'];
+                $poster->center = $row['center'];
+                $poster->event = $row['event'];
+                $poster->event_name = $row['event_name'];
+                $poster->sender_email = $row['sender_email'];
+                $poster->sender_name = $row['sender_name'];
+                $poster->sender_type = $row['sender_type'];
+                $poster->poster_file_name = $row['poster_file_name'];
+                $poster->poster_drive_file_id = $row['poster_drive_file_id'];
+                $poster->poster_drive_view_url = $row['poster_drive_view_url'];
+                $poster->poster_drive_download_url = $row['poster_drive_download_url'];
+                $poster->created_at = $row['created_at'];
+                $poster->updated_at = $row['updated_at'];
+                
+                $response['data'][] = $poster;
+            }
+        }
+        
+        $response['status'] = true;
+        $response['total'] = $total;
+        $response['total_pages'] = ceil($total / $limit);
+        $response['current_page'] = $page;
+        $response['message'] = count($response['data']) . ' poster(s) found';
+        
+        $con->close();
+        
+    } catch (Exception $e) {
+        error_log("getAcceptedPosters error: " . $e->getMessage());
+        $response['status'] = false;
+        $response['message'] = $e->getMessage();
+    }
+    
+    // Clear output buffer and send JSON
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    ob_end_flush();
+    exit();
 }
