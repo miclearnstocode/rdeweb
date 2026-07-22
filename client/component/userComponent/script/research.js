@@ -1,5 +1,5 @@
 import { $, ConfirmationAlert, Waiting, DeleteConfirmModal, FileViewerModal, CustomModal, AlertModal } from '../../../lib/lib.js'
-import { handleResubmit } from './resubmit.js'
+import { handleResubmit } from './userUploadComponent/resubmit.js'
 import { Print } from "../../otherComponent/comment.js"
 import { SymposiumModal } from './userUploadComponent/symposiumModal.js'
 import { ResearchChairSubmissionModal } from './userUploadComponent/researchChairSubmission.js'
@@ -4372,7 +4372,7 @@ export const Research = () => {
                     att: { className: 'fas fa-image' },
                     style: { color: '#E91E63', fontSize: '16px' }
                 }),
-                $({ tag: 'span', text: 'Poster', style: { fontWeight: '600' } })
+                $({ tag: 'span', text: 'Poster Submission', style: { fontWeight: '600' } })
             ],
             event: {
                 type: 'click',
