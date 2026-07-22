@@ -776,7 +776,7 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
                         ...(data.message ? [
                             $({
                                 tag: 'div',
-                                text: 'Server: ' + data.message,
+                                text: data.message,
                                 style: { fontSize: '12px', color: '#94a3b8', marginTop: '8px', fontStyle: 'italic' }
                             })
                         ] : [])

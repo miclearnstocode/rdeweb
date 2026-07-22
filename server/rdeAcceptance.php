@@ -123,6 +123,7 @@ if (isset($_POST['incomingEndorsement'])) {
                 rf.senderid, 
                 rf.author, 
                 rf.title, 
+                rf.final_symposium_title,
                 rf.file as legacy_file,
                 rf.drive_view_url,
                 rf.drive_file_id,
@@ -166,6 +167,7 @@ if (isset($_POST['incomingEndorsement'])) {
                 $research->senderid = $v['senderid'];
                 $research->author = $v['author'];
                 $research->title = $v['title'];
+                $research->final_symposium_title = $v['final_symposium_title'];
                 $research->center = $v['center'];
                 $research->event = $v['event'];
                 $research->status = $v['status'];
