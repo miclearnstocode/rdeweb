@@ -3,9 +3,9 @@ import { handleResubmit } from './userUploadComponent/resubmit.js'
 import { Print } from "../../otherComponent/comment.js"
 import { SymposiumModal } from './userUploadComponent/symposiumModal.js'
 import { ResearchChairSubmissionModal } from './userUploadComponent/researchChairSubmission.js'
-import { PosterSubmissionModal } from './userUploadComponent/posterSubmission.js'
-import { PosterChoiceModal } from './userUploadComponent/posterChoiceModal.js'
+import { PosterViewModel } from './userUploadComponent/posterViewModal.js'
 import { ResearchEditModal } from './userUploadComponent/researchEditModal.js';
+import { PosterSubmissionModal } from './userUploadComponent/posterSubmission.js'
 
 // View Researches Modal
 const openViewResearchesModal = () => {
@@ -3073,10 +3073,27 @@ export const Research = () => {
 
                             const isInHouse = selectedEventName && selectedEventName.toLowerCase().includes('in-house')
                             const isSymposium = selectedEventName && selectedEventName.toLowerCase().includes('symposium')
-
-                            // Check if this is specifically an Undergraduate or Graduate symposium
+                            const isPosterOnly = selectedEventName && selectedEventName.toLowerCase().includes('(poster only)')
                             const isUndergraduate = selectedEventName && selectedEventName.toLowerCase().includes('undergraduate')
                             const isGraduate = selectedEventName && selectedEventName.toLowerCase().includes('graduate')
+
+                            if (isPosterOnly && !isEdit) {
+                                // Close the current modal if open
+                                if (uploadModal) {
+                                    uploadModal.remove()
+                                }
+                                
+                                // Open PosterSubmissionModal directly
+                                const posterModal = PosterSubmissionModal({
+                                    onSuccess: () => {
+                                        if (window.refreshDocumentsTable) {
+                                            window.refreshDocumentsTable()
+                                        }
+                                    }
+                                })
+                                document.body.appendChild(posterModal.element || posterModal)
+                                return // Exit early, don't show the rest of the form
+                            }
 
                             // Handle Symposium events
                             if (isSymposium && !isEdit && !symposiumModalActive) {
@@ -4372,12 +4389,12 @@ export const Research = () => {
                     att: { className: 'fas fa-image' },
                     style: { color: '#E91E63', fontSize: '16px' }
                 }),
-                $({ tag: 'span', text: 'Poster Submission', style: { fontWeight: '600' } })
+                $({ tag: 'span', text: 'Submitted Poster', style: { fontWeight: '600' } })
             ],
             event: {
                 type: 'click',
                 method: () => {
-                    const choiceModal = PosterChoiceModal({
+                    const choiceModal = PosterViewModel({
                         onSuccess: () => {
                             if (window.refreshDocumentsTable) {
                                 window.refreshDocumentsTable()
@@ -4740,12 +4757,18 @@ export const Research = () => {
                         let acceptedCount = 0
                         let rejectedCount = 0
 
+                        // Loop through each endorsement (which contains ResearchDocs)
                         data.list.forEach(endorsement => {
+                            // Check if this endorsement has ResearchDocs
                             if (endorsement.ResearchDocs && Array.isArray(endorsement.ResearchDocs)) {
                                 endorsement.ResearchDocs.forEach(researchDoc => {
+                                    // Count each research document
                                     totalDocs++
 
-                                    const status = (endorsement.status || '').toLowerCase().trim()
+                                    // Determine status from the researchDoc status
+                                    const status = (researchDoc.status || '').toLowerCase().trim()
+                                    
+                                    // Count statuses based on researchDoc.status
                                     if (status === 'rejected') {
                                         rejectedCount++
                                     } else if (status === 'accepted') {
@@ -4754,6 +4777,7 @@ export const Research = () => {
                                         pendingCount++
                                     }
 
+                                    // Parse co-authors
                                     let coAuthors = []
                                     if (researchDoc.coauthor) {
                                         try {
@@ -4771,6 +4795,8 @@ export const Research = () => {
                                     if (titleChanged && finalSymposiumTitle) {
                                         displayTitle = finalSymposiumTitle
                                     }
+
+                                    // Build document object
                                     const documentObj = {
                                         id: researchDoc.docId,
                                         eventName: endorsement.eventType || '—',
@@ -4782,20 +4808,20 @@ export const Research = () => {
                                         presenter: researchDoc.presenter || '—',
                                         author: researchDoc.author || '—',
                                         coAuthors: coAuthors,
-                                        status: researchDoc.status,
-                                        revision_status: endorsement.revision_status || researchDoc.revision_status || null,
-                                        revision_count: endorsement.revision_count || researchDoc.revision_count || 0,
-                                        revised_title: endorsement.revised_title || researchDoc.revised_title || null,
-                                        researchFile: researchDoc.drive_view_url || researchDoc.researchFile || '—',
-                                        programFile: researchDoc.program_drive_view_url || researchDoc.program_drive_file_id || '—',
-                                        endorsementFile: endorsement.drive_view_url || endorsement.endorsementFile || '—',
+                                        status: researchDoc.status || 'pending',
+                                        revision_status: researchDoc.revision_status || null,
+                                        revision_count: researchDoc.revision_count || 0,
+                                        revised_title: researchDoc.revised_title || null,
+                                        researchFile: researchDoc.researchFile || researchDoc.drive_view_url || '—',
+                                        programFile: researchDoc.program_drive_view_url || '—',
+                                        endorsementFile: endorsement.endorsementFile || '—',
                                         certificateFile: researchDoc.certificate_drive_view_url || '—',
                                         title_certificate_view_url: researchDoc.title_certificate_view_url || null,
                                         drive_file_id: researchDoc.drive_file_id,
                                         drive_view_url: researchDoc.drive_view_url,
                                         endorsement_id: endorsement.id,
-                                        campus: endorsement.campus || researchDoc.campus,
-                                        center: endorsement.center || researchDoc.center,
+                                        campus: researchDoc.campus || '',
+                                        center: researchDoc.center || '',
                                         date: endorsement.date,
                                         date_started: researchDoc.date_started || null,
                                         date_completed: researchDoc.date_completed || null,
@@ -4811,9 +4837,10 @@ export const Research = () => {
                             }
                         })
 
-                        // Update stats
+                        // Update stats with the correct counts
                         updateStatsFromData(totalDocs, pendingCount, acceptedCount, rejectedCount)
                         applyCurrentFilter()
+                        
                         if (totalDocs === 0) {
                             showEmptyState()
                         }

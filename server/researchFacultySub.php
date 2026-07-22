@@ -6189,7 +6189,6 @@ if (isset($_POST['submitPoster'])) {
         $con->begin_transaction();
 
         // ===== CHECK IF POSTER ALREADY EXISTS =====
-        // Check poster_submissions table
         $checkQuery = "SELECT id FROM poster_submissions WHERE research_id = ? AND sender_id = ?";
         $checkStmt = $con->prepare($checkQuery);
         $checkStmt->bind_param("ii", $researchId, $senderId);
@@ -6201,30 +6200,24 @@ if (isset($_POST['submitPoster'])) {
         }
         $checkStmt->close();
 
-        // Also check researchfile.poster_submitted flag as a secondary check
-        $flagCheckQuery = "SELECT poster_submitted FROM researchfile WHERE id = ?";
+        $flagCheckQuery = "SELECT poster_submitted, paper_trail_no, author, title, event, center, category FROM researchfile WHERE id = ?";
         $flagStmt = $con->prepare($flagCheckQuery);
         $flagStmt->bind_param("i", $researchId);
         $flagStmt->execute();
         $flagResult = $flagStmt->get_result();
-        $flagRow = $flagResult->fetch_assoc();
+        $researchData = $flagResult->fetch_assoc();
         $flagStmt->close();
 
-        if ($flagRow && isset($flagRow['poster_submitted']) && $flagRow['poster_submitted'] == 1) {
+        if ($researchData && isset($researchData['poster_submitted']) && $researchData['poster_submitted'] == 1) {
             throw new Exception("A poster has already been submitted for this paper.");
         }
 
-        // ===== GET PAPER TRAIL NO FROM RESEARCHFILE =====
-        $paperTrailNo = null;
-        $paperTrailQuery = "SELECT paper_trail_no FROM researchfile WHERE id = ?";
-        $paperTrailStmt = $con->prepare($paperTrailQuery);
-        $paperTrailStmt->bind_param("i", $researchId);
-        $paperTrailStmt->execute();
-        $paperTrailResult = $paperTrailStmt->get_result();
-        if ($paperTrailRow = $paperTrailResult->fetch_assoc()) {
-            $paperTrailNo = $paperTrailRow['paper_trail_no'];
-        }
-        $paperTrailStmt->close();
+        $paperTrailNo = $researchData['paper_trail_no'] ?? null;
+        $authorName = $researchData['author'] ?? $author;
+        $researchTitle = $researchData['title'] ?? $title;
+        $eventType = $researchData['event'] ?? $eventName;
+        $centerName = $researchData['center'] ?? $center;
+        $categoryName = $researchData['category'] ?? $category;
 
         // ===== UPLOAD TO GOOGLE DRIVE =====
         if (!class_exists('GoogleDriveService')) {
@@ -6234,27 +6227,24 @@ if (isset($_POST['submitPoster'])) {
         $drive = new GoogleDriveService();
 
         // Clean folder names
-        $cleanEventName = cleanFolderNameForDrive($eventName);
+        $cleanEventName = cleanFolderNameForDrive($eventType);
+        $cleanTitle = preg_replace('/[^\w\s\-]/', '', $researchTitle);
+        $cleanTitle = preg_replace('/\s+/', '_', $cleanTitle);
+        $cleanTitle = substr($cleanTitle, 0, 80);
 
-        // Create folder structure: Event -> Posters
+        // ===== LOCATION 1: Event -> Posters (for easy access) =====
         $eventFolderId = $drive->findOrCreateFolder($cleanEventName, null);
         if (!$eventFolderId) throw new Exception("Failed to create event folder");
 
-        // Create Posters folder inside Event folder
         $posterFolderId = $drive->findOrCreateFolder('Posters', $eventFolderId);
         if (!$posterFolderId) throw new Exception("Failed to create Posters folder");
-
-        // Clean title for filename
-        $cleanTitle = preg_replace('/[^\w\s\-]/', '', $title);
-        $cleanTitle = preg_replace('/\s+/', '_', $cleanTitle);
-        $cleanTitle = substr($cleanTitle, 0, 80);
 
         // Generate filename with paper trail no prefix
         $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
         $paperTrailPrefix = !empty($paperTrailNo) ? $paperTrailNo . ' - ' : '';
         $posterFileName = $paperTrailPrefix . 'Poster - ' . $cleanTitle . '.' . $extension;
 
-        // Upload to Google Drive
+        // Upload to Event -> Posters folder
         $uploadResult = $drive->uploadFile($file['tmp_name'], $posterFileName, $posterFolderId);
         if (!$uploadResult['success'] || empty($uploadResult['id'])) {
             throw new Exception("Failed to upload poster: " . ($uploadResult['error'] ?? 'Unknown error'));
@@ -6265,22 +6255,49 @@ if (isset($_POST['submitPoster'])) {
         $viewUrl = "https://drive.google.com/file/d/{$fileId}/preview";
         $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
 
+        // ===== LOCATION 2: Paper Trail -> Symposium -> Year -> {Paper Trail No} - {Title} =====
+        // Upload poster to Paper Trail folder structure
+        $paperTrailPosterResult = uploadPosterToPaperTrail(
+            $con,
+            $file['tmp_name'],
+            $posterFileName,
+            $researchId,
+            $paperTrailNo,
+            $researchTitle,
+            $authorName,
+            $eventType
+        );
+
+        $posterPaperTrailFileId = null;
+        $posterPaperTrailViewUrl = null;
+        $posterPaperTrailDownloadUrl = null;
+        $paperTrailFolderId = null;
+
+        if ($paperTrailPosterResult && $paperTrailPosterResult['success']) {
+            $posterPaperTrailFileId = $paperTrailPosterResult['drive_file_id'] ?? null;
+            $posterPaperTrailViewUrl = $paperTrailPosterResult['drive_view_url'] ?? null;
+            $posterPaperTrailDownloadUrl = $paperTrailPosterResult['drive_download_url'] ?? null;
+            $paperTrailFolderId = $paperTrailPosterResult['research_folder_id'] ?? null;
+            error_log("Poster uploaded to Paper Trail: " . $posterPaperTrailFileId);
+        } else {
+            error_log("Failed to upload poster to Paper Trail: " . ($paperTrailPosterResult['error'] ?? 'Unknown error'));
+        }
+
         // ===== SAVE TO DATABASE =====
         $insertQuery = "INSERT INTO poster_submissions (
             research_id, paper_trail_no, sender_id, event_id,
             event_folder_id, poster_folder_id,
             poster_drive_file_id, poster_drive_view_url, poster_drive_download_url,
-            poster_file_name, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+            poster_file_name, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
         $insertStmt = $con->prepare($insertQuery);
         if (!$insertStmt) {
             throw new Exception("Prepare failed: " . $con->error);
         }
 
-        $status = 'pending';
         $insertStmt->bind_param(
-            'issssssssss',
+            'isssssssss',
             $researchId,
             $paperTrailNo,
             $senderId,
@@ -6290,8 +6307,7 @@ if (isset($_POST['submitPoster'])) {
             $fileId,
             $viewUrl,
             $downloadUrl,
-            $posterFileName,
-            $status
+            $posterFileName
         );
 
         if (!$insertStmt->execute()) {
@@ -6300,6 +6316,64 @@ if (isset($_POST['submitPoster'])) {
 
         $posterId = $con->insert_id;
         $insertStmt->close();
+
+        // ===== UPDATE PAPER_TRAIL_FILES WITH POSTER INFO =====
+        if ($posterPaperTrailFileId && $paperTrailFolderId) {
+            // Check if paper_trail_files record exists for this research
+            $checkPaperTrailQuery = "SELECT id FROM paper_trail_files WHERE research_id = ? AND paper_trail_no = ? AND submission_type = 'Symposium' LIMIT 1";
+            $checkPaperTrailStmt = $con->prepare($checkPaperTrailQuery);
+            $checkPaperTrailStmt->bind_param("is", $researchId, $paperTrailNo);
+            $checkPaperTrailStmt->execute();
+            $checkPaperTrailResult = $checkPaperTrailStmt->get_result();
+            
+            if ($checkPaperTrailResult->num_rows > 0) {
+                // Update existing record with poster info
+                $updatePaperTrailQuery = "UPDATE paper_trail_files SET 
+                    poster_drive_view_url = ?,
+                    poster_drive_download_url = ?
+                    WHERE research_id = ? AND paper_trail_no = ? AND submission_type = 'Symposium'";
+                
+                $updatePaperTrailStmt = $con->prepare($updatePaperTrailQuery);
+                $updatePaperTrailStmt->bind_param("ssis", $posterPaperTrailViewUrl, $posterPaperTrailDownloadUrl, $researchId, $paperTrailNo);
+                $updatePaperTrailStmt->execute();
+                $updatePaperTrailStmt->close();
+                error_log("Updated paper_trail_files with poster info for research_id: $researchId");
+            } else {
+                // Insert new paper_trail_files record
+                $insertPaperTrailQuery = "INSERT INTO paper_trail_files (
+                    research_id, paper_trail_no, submission_type, year,
+                    paper_trail_root_id, submission_folder_id, year_folder_id,
+                    research_folder_id, research_folder_name,
+                    poster_drive_view_url, poster_drive_download_url,
+                    created_at
+                ) VALUES (?, ?, 'Symposium', ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                
+                $currentYear = date('Y');
+                $paperTrailRootId = $paperTrailPosterResult['paper_trail_root_id'] ?? null;
+                $submissionFolderId = $paperTrailPosterResult['sub_type_folder_id'] ?? null;
+                $yearFolderId = $paperTrailPosterResult['year_folder_id'] ?? null;
+                $researchFolderName = $paperTrailPosterResult['research_folder_name'] ?? null;
+                
+                $insertPaperTrailStmt = $con->prepare($insertPaperTrailQuery);
+                $insertPaperTrailStmt->bind_param(
+                    'ississsssss',
+                    $researchId,
+                    $paperTrailNo,
+                    $currentYear,
+                    $paperTrailRootId,
+                    $submissionFolderId,
+                    $yearFolderId,
+                    $paperTrailFolderId,
+                    $researchFolderName,
+                    $posterPaperTrailViewUrl,
+                    $posterPaperTrailDownloadUrl
+                );
+                $insertPaperTrailStmt->execute();
+                $insertPaperTrailStmt->close();
+                error_log("Inserted new paper_trail_files record for research_id: $researchId with poster info");
+            }
+            $checkPaperTrailStmt->close();
+        }
 
         // ===== UPDATE RESEARCHFILE POSTER_SUBMITTED FLAG =====
         $updateFlagQuery = "UPDATE researchfile SET poster_submitted = 1 WHERE id = ?";
@@ -6319,6 +6393,7 @@ if (isset($_POST['submitPoster'])) {
         $response->paper_trail_no = $paperTrailNo;
         $response->drive_file_id = $fileId;
         $response->drive_view_url = $viewUrl;
+        $response->paper_trail_file_id = $posterPaperTrailFileId;
 
         $con->close();
 
@@ -6336,6 +6411,103 @@ if (isset($_POST['submitPoster'])) {
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
     exit();
+}
+
+// Helper function to upload poster to Paper Trail
+function uploadPosterToPaperTrail($con, $tempFilePath, $fileName, $researchId, $paperTrailNo, $title, $author, $eventType)
+{
+    try {
+        if (!file_exists($tempFilePath)) {
+            return ['success' => false, 'error' => "Temporary file not found: $tempFilePath"];
+        }
+
+        if (!class_exists('GoogleDriveService')) {
+            return ['success' => false, 'error' => "GoogleDriveService class not found"];
+        }
+
+        $drive = new GoogleDriveService();
+        $year = date('Y');
+
+        $authorParts = explode(' ', trim($author));
+        $authorLastName = end($authorParts);
+        $authorLastName = cleanFolderNameForDrive($authorLastName);
+
+        $cleanTitle = preg_replace('/[^\w\s\-]/', '', $title);
+        $cleanTitle = preg_replace('/\s+/', ' ', $cleanTitle);
+        $cleanTitle = trim($cleanTitle);
+        if (strlen($cleanTitle) > 80) {
+            $cleanTitle = substr($cleanTitle, 0, 77) . '...';
+        }
+        $cleanTitle = cleanFolderNameForDrive($cleanTitle);
+
+        // Paper Trail -> Symposium -> Year -> {paper_trail_no} - {title}
+        $paperTrailRootId = $drive->findOrCreateFolder('Paper Trail', null);
+        if (!$paperTrailRootId) {
+            return ['success' => false, 'error' => "Failed to create Paper Trail root folder"];
+        }
+
+        $symposiumFolderId = $drive->findOrCreateFolder('Symposium', $paperTrailRootId);
+        if (!$symposiumFolderId) {
+            return ['success' => false, 'error' => "Failed to create Symposium folder"];
+        }
+
+        $yearFolderId = $drive->findOrCreateFolder($year, $symposiumFolderId);
+        if (!$yearFolderId) {
+            return ['success' => false, 'error' => "Failed to create Year folder: $year"];
+        }
+
+        // Create research folder: {paper_trail_no} - {title}
+        $researchFolderName = '';
+        if (!empty($paperTrailNo)) {
+            $researchFolderName = $paperTrailNo . ' - ' . $cleanTitle;
+        } else {
+            $researchFolderName = $authorLastName . '_' . preg_replace('/[^a-zA-Z0-9]/', '_', substr($cleanTitle, 0, 30));
+        }
+        $researchFolderName = cleanFolderNameForDrive($researchFolderName);
+
+        // Check if research folder already exists
+        $researchFolderId = $drive->findOrCreateFolder($researchFolderName, $yearFolderId);
+        if (!$researchFolderId) {
+            return ['success' => false, 'error' => "Failed to create research folder: $researchFolderName"];
+        }
+
+        // Poster file name
+        $posterFileName = 'Poster.pdf';
+
+        $uploadResult = $drive->uploadFile($tempFilePath, $posterFileName, $researchFolderId);
+
+        if (!$uploadResult['success'] || empty($uploadResult['id'])) {
+            $errorMsg = $uploadResult['error'] ?? 'Unknown error';
+            return ['success' => false, 'error' => $errorMsg];
+        }
+
+        $drive->makeFilePublic($uploadResult['id']);
+
+        $fileId = $uploadResult['id'];
+        $embedUrl = "https://drive.google.com/file/d/{$fileId}/preview";
+        $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
+
+        return [
+            'success' => true,
+            'drive_file_id' => $fileId,
+            'drive_view_url' => $embedUrl,
+            'drive_download_url' => $downloadUrl,
+            'paper_trail_root_id' => $paperTrailRootId,
+            'sub_type_folder_id' => $symposiumFolderId,
+            'year_folder_id' => $yearFolderId,
+            'research_folder_id' => $researchFolderId,
+            'research_folder_name' => $researchFolderName,
+            'year' => $year,
+            'submission_type' => 'Symposium',
+            'file_name' => $posterFileName,
+            'paper_trail_no' => $paperTrailNo,
+            'author_last_name' => $authorLastName
+        ];
+
+    } catch (Exception $e) {
+        error_log("Poster Paper Trail upload failed: " . $e->getMessage());
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
 }
 
 // Get user's submitted posters
@@ -6443,7 +6615,6 @@ if (isset($_POST['getUserPosters'])) {
     exit();
 }
 
-// Update Poster (Replace file)
 if (isset($_POST['updatePoster'])) {
     while (ob_get_level()) ob_end_clean();
     ob_start();
@@ -6593,155 +6764,6 @@ if (isset($_POST['updatePoster'])) {
     echo json_encode($response);
     exit();
 }
-
-// Resubmit Poster (for rejected)
-if (isset($_POST['resubmitPoster'])) {
-    while (ob_get_level()) ob_end_clean();
-    ob_start();
-
-    $response = new stdClass();
-    $response->status = false;
-    $response->message = '';
-
-    try {
-        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
-            throw new Exception("User not logged in");
-        }
-
-        $senderId = $_SESSION['userId'];
-        $posterId = isset($_POST['poster_id']) ? (int)$_POST['poster_id'] : 0;
-        $researchId = isset($_POST['research_id']) ? (int)$_POST['research_id'] : 0;
-
-        if ($posterId <= 0) {
-            throw new Exception("Invalid poster ID");
-        }
-
-        if (!isset($_FILES['posterFile']) || $_FILES['posterFile']['error'] !== UPLOAD_ERR_OK) {
-            throw new Exception("Poster file is required.");
-        }
-
-        $file = $_FILES['posterFile'];
-        if ($file['type'] !== 'application/pdf' && !str_ends_with($file['name'], '.pdf')) {
-            throw new Exception("Only PDF files are allowed.");
-        }
-
-        if ($file['size'] > 10 * 1024 * 1024) {
-            throw new Exception("File size exceeds 10MB limit.");
-        }
-
-        $con = new mysqli($host, $username, $pass, $dbName);
-        if ($con->connect_error) {
-            throw new Exception("Database connection failed: " . $con->connect_error);
-        }
-
-        // Get existing poster record with research title - must be rejected status
-        $getQuery = "SELECT ps.*, rf.title as research_title 
-                     FROM poster_submissions ps
-                     LEFT JOIN researchfile rf ON ps.research_id = rf.id
-                     WHERE ps.id = ? AND ps.sender_id = ? AND ps.status = 'rejected'";
-        $getStmt = $con->prepare($getQuery);
-        $getStmt->bind_param("ii", $posterId, $senderId);
-        $getStmt->execute();
-        $getResult = $getStmt->get_result();
-        $poster = $getResult->fetch_assoc();
-
-        if (!$poster) {
-            throw new Exception("Poster not found or it's not in rejected status.");
-        }
-        $getStmt->close();
-
-        if (!class_exists('GoogleDriveService')) {
-            throw new Exception("GoogleDriveService class not found");
-        }
-
-        $drive = new GoogleDriveService();
-
-        // ===== DELETE OLD FILE FROM GOOGLE DRIVE (Move to Trash) =====
-        $oldFileId = $poster['poster_drive_file_id'];
-        if (!empty($oldFileId)) {
-            try {
-                error_log("Attempting to move old poster file to trash during resubmit: " . $oldFileId);
-                $result = $drive->trashFile($oldFileId);
-                if ($result) {
-                    error_log("Old poster file successfully moved to trash: " . $oldFileId);
-                } else {
-                    error_log("Failed to move old poster file to trash: " . $oldFileId);
-                }
-            } catch (Exception $e) {
-                error_log("Exception while trashing old poster file: " . $e->getMessage());
-                // Continue with upload even if trash fails
-            }
-        }
-
-        // ===== UPLOAD NEW FILE WITH RESEARCH TITLE =====
-        // Use the research title from the database
-        $researchTitle = $poster['research_title'] ?? 'Poster';
-        $cleanTitle = preg_replace('/[^\w\s\-]/', '', $researchTitle);
-        $cleanTitle = preg_replace('/\s+/', '_', $cleanTitle);
-        $cleanTitle = substr($cleanTitle, 0, 80);
-
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $paperTrailPrefix = !empty($poster['paper_trail_no']) ? $poster['paper_trail_no'] . ' - ' : '';
-        $posterFileName = $paperTrailPrefix . 'Poster - ' . $cleanTitle . '.' . $extension;
-
-        $uploadResult = $drive->uploadFile($file['tmp_name'], $posterFileName, $poster['poster_folder_id']);
-        if (!$uploadResult['success'] || empty($uploadResult['id'])) {
-            throw new Exception("Failed to upload poster: " . ($uploadResult['error'] ?? 'Unknown error'));
-        }
-
-        $drive->makeFilePublic($uploadResult['id']);
-        $fileId = $uploadResult['id'];
-        $viewUrl = "https://drive.google.com/file/d/{$fileId}/preview";
-        $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
-
-        // ===== UPDATE DATABASE =====
-        $updateQuery = "UPDATE poster_submissions SET 
-            poster_drive_file_id = ?,
-            poster_drive_view_url = ?,
-            poster_drive_download_url = ?,
-            poster_file_name = ?,
-            status = 'pending',
-            updated_at = NOW()
-            WHERE id = ? AND sender_id = ?";
-
-        $updateStmt = $con->prepare($updateQuery);
-        if (!$updateStmt) {
-            throw new Exception("Prepare failed: " . $con->error);
-        }
-
-        $updateStmt->bind_param(
-            'ssssii',
-            $fileId,
-            $viewUrl,
-            $downloadUrl,
-            $posterFileName,
-            $posterId,
-            $senderId
-        );
-
-        if (!$updateStmt->execute()) {
-            throw new Exception("Failed to update poster: " . $updateStmt->error);
-        }
-        $updateStmt->close();
-
-        $response->status = true;
-        $response->message = "Poster resubmitted successfully! Old file moved to trash.";
-        $response->new_file_id = $fileId;
-        $response->old_file_id = $oldFileId;
-        $con->close();
-
-    } catch (Exception $e) {
-        error_log("resubmitPoster error: " . $e->getMessage());
-        $response->status = false;
-        $response->message = $e->getMessage();
-    }
-
-    ob_clean();
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($response);
-    exit();
-}
-
 // Delete Poster
 if (isset($_POST['deletePoster'])) {
     while (ob_get_level()) ob_end_clean();
@@ -6848,150 +6870,5 @@ if (isset($_POST['deletePoster'])) {
     ob_clean();
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
-    exit();
-}
-
-// Get poster rejection details
-if (isset($_POST['getPosterRejection'])) {
-    // Clear any previous output
-    while (ob_get_level()) ob_end_clean();
-    ob_start();
-    
-    $response = new stdClass();
-    $response->status = false;
-    $response->message = '';
-    $response->reason = '';
-    $response->date = '';
-    $response->documentTitle = '';
-    $response->eventName = '';
-    $response->author = '';
-    $response->category = '';
-    $response->campus = '';
-    $response->center = '';
-    $response->documentStatus = '';
-    
-    try {
-        $posterId = isset($_POST['posterId']) ? intval($_POST['posterId']) : 0;
-        
-        if ($posterId <= 0) {
-            throw new Exception('Invalid poster ID');
-        }
-        
-        if (!isset($host) || !isset($username) || !isset($pass) || !isset($dbName)) {
-            throw new Exception('Database configuration error');
-        }
-        
-        $con = new mysqli($host, $username, $pass, $dbName);
-        
-        if ($con->connect_error) {
-            throw new Exception('Database connection failed: ' . $con->connect_error);
-        }
-        
-        $query = "SELECT 
-            rd.reason,
-            rd.date,
-            ps.id as poster_id,
-            ps.research_id,
-            ps.status as poster_status,
-            ps.created_at as poster_created_at,
-            rf.title as document_title,
-            rf.author,
-            rf.category,
-            rf.campus,
-            rf.center,
-            rf.event,
-            el.name as event_name
-        FROM rejecteddocs rd
-        LEFT JOIN poster_submissions ps ON rd.docid = ps.id
-        LEFT JOIN researchfile rf ON ps.research_id = rf.id
-        LEFT JOIN event_list el ON rf.event_id = el.id
-        WHERE rd.docid = ? AND rd.type = 'Poster'
-        ORDER BY rd.date DESC
-        LIMIT 1";
-        
-        $stmt = $con->prepare($query);
-        if (!$stmt) {
-            throw new Exception('Prepare failed: ' . $con->error);
-        }
-        
-        $stmt->bind_param("i", $posterId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result && $result->num_rows > 0) {
-            $row = $result->fetch_assoc();
-            
-            $response->status = true;
-            $response->message = 'Rejection reason found';
-            $response->reason = $row['reason'] ?? 'No reason provided';
-            $response->date = $row['date'] ?? '';
-            $response->documentTitle = $row['document_title'] ?? 'N/A';
-            $response->eventName = $row['event_name'] ?? $row['event'] ?? 'N/A';
-            $response->author = $row['author'] ?? 'N/A';
-            $response->category = $row['category'] ?? 'N/A';
-            $response->campus = $row['campus'] ?? 'N/A';
-            $response->center = $row['center'] ?? 'N/A';
-            $response->documentStatus = $row['poster_status'] ?? 'rejected';
-            $response->poster_id = $row['poster_id'] ?? null;
-            $response->research_id = $row['research_id'] ?? null;
-            $response->poster_created_at = $row['poster_created_at'] ?? null;
-            
-            error_log("Poster rejection found for ID: " . $posterId);
-        } else {
-            // No rejection found in rejecteddocs
-            $response->status = false;
-            $response->message = 'No rejection record found for this poster';
-            
-            $statusQuery = "SELECT 
-                ps.id,
-                ps.status,
-                ps.created_at,
-                rf.title,
-                rf.author,
-                rf.category,
-                rf.campus,
-                rf.center,
-                rf.event,
-                el.name as event_name
-            FROM poster_submissions ps
-            LEFT JOIN researchfile rf ON ps.research_id = rf.id
-            LEFT JOIN event_list el ON rf.event_id = el.id
-            WHERE ps.id = ?";
-            
-            $statusStmt = $con->prepare($statusQuery);
-            $statusStmt->bind_param("i", $posterId);
-            $statusStmt->execute();
-            $statusResult = $statusStmt->get_result();
-            
-            if ($statusResult && $statusResult->num_rows > 0) {
-                $statusRow = $statusResult->fetch_assoc();
-                if ($statusRow['status'] === 'rejected') {
-                    $response->documentTitle = $statusRow['title'] ?? 'N/A';
-                    $response->eventName = $statusRow['event_name'] ?? $statusRow['event'] ?? 'N/A';
-                    $response->author = $statusRow['author'] ?? 'N/A';
-                    $response->category = $statusRow['category'] ?? 'N/A';
-                    $response->campus = $statusRow['campus'] ?? 'N/A';
-                    $response->center = $statusRow['center'] ?? 'N/A';
-                    $response->documentStatus = 'rejected';
-                    $response->reason = 'Document was rejected but no rejection reason was recorded.';
-                    $response->status = true;
-                }
-            }
-            $statusStmt->close();
-        }
-        
-        $stmt->close();
-        $con->close();
-        
-    } catch (Exception $e) {
-        error_log("getPosterRejection error: " . $e->getMessage());
-        $response->status = false;
-        $response->message = $e->getMessage();
-    }
-    
-    ob_clean();
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($response);
-    ob_end_flush();
     exit();
 }

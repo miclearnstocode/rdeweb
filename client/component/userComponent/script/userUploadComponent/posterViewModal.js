@@ -2,7 +2,7 @@ import { $, Waiting, ConfirmationAlert, FileViewerModal, CustomModal } from '../
 import { createPosterActionButtons } from './posterActions.js'
 
 export const PosterViewModel = ({ onClose }) => {
-    let searchInput, tableBody, statusFilter = 'all'
+    let searchInput, tableBody
     let modalRef = null
 
     const buildContent = () => {
@@ -17,8 +17,8 @@ export const PosterViewModel = ({ onClose }) => {
             }
         })
 
-        // Search and Filter Section
-        const filterContainer = $({
+        // Search Section (no filter)
+        const searchContainer = $({
             tag: 'div',
             style: {
                 padding: '16px 20px',
@@ -26,7 +26,6 @@ export const PosterViewModel = ({ onClose }) => {
                 display: 'flex',
                 gap: '12px',
                 alignItems: 'center',
-                flexWrap: 'wrap',
                 backgroundColor: '#f8fafc',
                 borderRadius: '12px 12px 0 0'
             }
@@ -82,113 +81,16 @@ export const PosterViewModel = ({ onClose }) => {
             event: {
                 type: 'input',
                 method: (e) => {
-                    loadPosters(e.target.value.trim(), statusFilter)
+                    loadPosters(e.target.value.trim())
                 }
             }
         })
 
         searchWrapper.appendChild(searchIcon)
         searchWrapper.appendChild(searchInput)
+        searchContainer.appendChild(searchWrapper)
 
-        // Status Filter - Radio buttons
-        const filterLabel = $({
-            tag: 'span',
-            text: 'Status:',
-            style: {
-                fontSize: '13px',
-                color: '#475569',
-                fontWeight: '500',
-                marginRight: '4px'
-            }
-        })
-
-        const filterGroup = $({
-            tag: 'div',
-            style: {
-                display: 'flex',
-                gap: '16px',
-                alignItems: 'center',
-                flexWrap: 'wrap'
-            }
-        })
-
-        const statusOptions = [
-            { value: 'all', label: 'All', color: '#1976D2' },
-            { value: 'pending', label: 'Pending', color: '#FF9800' },
-            { value: 'accepted', label: 'Accepted', color: '#4CAF50' },
-            { value: 'rejected', label: 'Rejected', color: '#f44336' }
-        ]
-
-        statusOptions.forEach(opt => {
-            const radioWrapper = $({
-                tag: 'label',
-                style: {
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    color: '#1a2a3a',
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    transition: 'all 0.2s ease'
-                },
-                child: [
-                    $({
-                        tag: 'input',
-                        att: {
-                            type: 'radio',
-                            name: 'poster_status_filter',
-                            value: opt.value,
-                            checked: opt.value === 'all'
-                        },
-                        style: {
-                            accentColor: opt.color,
-                            cursor: 'pointer',
-                            width: '15px',
-                            height: '15px'
-                        },
-                        event: {
-                            type: 'change',
-                            method: (e) => {
-                                if (e.target.checked) {
-                                    statusFilter = e.target.value
-                                    const searchTerm = searchInput?.value?.trim() || ''
-                                    loadPosters(searchTerm, statusFilter)
-                                }
-                            }
-                        }
-                    }),
-                    $({
-                        tag: 'span',
-                        text: opt.label,
-                        style: {
-                            color: opt.color,
-                            fontWeight: opt.value === 'all' ? '500' : '400'
-                        }
-                    }),
-                    // Status dot indicator
-                    opt.value !== 'all' ? $({
-                        tag: 'span',
-                        style: {
-                            display: 'inline-block',
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            backgroundColor: opt.color,
-                            marginLeft: '2px'
-                        }
-                    }) : null
-                ]
-            })
-            filterGroup.appendChild(radioWrapper)
-        })
-
-        filterContainer.appendChild(searchWrapper)
-        filterContainer.appendChild(filterLabel)
-        filterContainer.appendChild(filterGroup)
-
-        container.appendChild(filterContainer)
+        container.appendChild(searchContainer)
 
         // Table Container
         const tableContainer = $({
@@ -222,7 +124,8 @@ export const PosterViewModel = ({ onClose }) => {
             }
         })
 
-        const columns = ['Poster', 'Title', 'Author', 'Event', 'Status', 'Submitted', 'Actions']
+        // Removed 'Status' column
+        const columns = ['Poster', 'Title', 'Author', 'Event', 'Submitted', 'Actions']
 
         columns.forEach(col => {
             headerRow.appendChild($({
@@ -251,34 +154,6 @@ export const PosterViewModel = ({ onClose }) => {
         container.appendChild(tableContainer)
 
         return container
-    }
-
-    const getStatusBadge = (status) => {
-        const styles = {
-            pending: { bg: '#FFF3E0', text: '#E65100', label: 'Pending', icon: 'fa-clock' },
-            accepted: { bg: '#E8F5E9', text: '#2E7D32', label: 'Accepted', icon: 'fa-check-circle' },
-            rejected: { bg: '#FFEBEE', text: '#C62828', label: 'Rejected', icon: 'fa-times-circle' }
-        }
-        const config = styles[status] || styles.pending
-
-        return $({
-            tag: 'span',
-            style: {
-                backgroundColor: config.bg,
-                color: config.text,
-                padding: '4px 12px',
-                borderRadius: '20px',
-                fontSize: '12px',
-                fontWeight: '500',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-            },
-            child: [
-                $({ tag: 'i', att: { className: `fas ${config.icon}` }, style: { fontSize: '11px' } }),
-                $({ tag: 'span', text: config.label })
-            ]
-        })
     }
 
     const createPosterRow = (poster, onSuccess) => {
@@ -421,16 +296,6 @@ export const PosterViewModel = ({ onClose }) => {
             }
         })
 
-        // Status
-        const statusCell = $({
-            tag: 'td',
-            style: {
-                padding: '12px 16px',
-                verticalAlign: 'middle'
-            }
-        })
-        statusCell.appendChild(getStatusBadge(poster.status || 'pending'))
-
         // Date
         const dateCell = $({
             tag: 'td',
@@ -460,7 +325,7 @@ export const PosterViewModel = ({ onClose }) => {
         const actionButtons = createPosterActionButtons(poster, () => {
             // Refresh the poster list after action
             const searchTerm = searchInput?.value?.trim() || ''
-            loadPosters(searchTerm, statusFilter)
+            loadPosters(searchTerm)
         })
         actionsCell.appendChild(actionButtons)
 
@@ -468,14 +333,13 @@ export const PosterViewModel = ({ onClose }) => {
         row.appendChild(titleCell)
         row.appendChild(authorCell)
         row.appendChild(eventCell)
-        row.appendChild(statusCell)
         row.appendChild(dateCell)
         row.appendChild(actionsCell)
 
         return row
     }
 
-    const loadPosters = async (searchTerm = '', status = 'all') => {
+    const loadPosters = async (searchTerm = '') => {
         if (!tableBody) return
 
         tableBody.innerHTML = ''
@@ -510,9 +374,6 @@ export const PosterViewModel = ({ onClose }) => {
             if (searchTerm) {
                 form.append('search', searchTerm)
             }
-            if (status && status !== 'all') {
-                form.append('status', status)
-            }
 
             const response = await fetch('/uploadFacultyDocs', {
                 method: 'POST',
@@ -532,7 +393,7 @@ export const PosterViewModel = ({ onClose }) => {
                     const row = createPosterRow(poster, () => {
                         // Refresh after action
                         const currentSearch = searchInput?.value?.trim() || ''
-                        loadPosters(currentSearch, statusFilter)
+                        loadPosters(currentSearch)
                     })
                     tableBody.appendChild(row)
                 })
@@ -620,7 +481,7 @@ export const PosterViewModel = ({ onClose }) => {
     const content = buildContent()
 
     modalRef = CustomModal({
-        title: 'My Submitted Posters',
+        title: 'Submitted Posters',
         content: content,
         footer: buildFooter,
         size: 'large',
@@ -634,7 +495,7 @@ export const PosterViewModel = ({ onClose }) => {
 
     // Load posters after modal is open
     setTimeout(() => {
-        loadPosters('', 'all')
+        loadPosters('')
     }, 200)
 
     return modalRef
