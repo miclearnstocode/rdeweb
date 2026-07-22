@@ -1243,6 +1243,347 @@ class ProposedResearchAPI {
         
         echo json_encode($this->response);
     }
+
+    public function importProposedResearch() {
+        try {
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            if (!$input || !isset($input['data']) || empty($input['data'])) {
+                $this->response->message = 'No data to import';
+                echo json_encode($this->response);
+                return;
+            }
+            
+            $importData = $input['data'];
+            $eventId = isset($input['event_id']) ? intval($input['event_id']) : 0;
+            $importedCount = 0;
+            $skippedCount = 0;
+            $errors = [];
+            
+            // Get event details if event_id is provided - use deadline for year
+            $eventName = '';
+            $eventYear = date('Y');
+            if ($eventId > 0) {
+                $eventQuery = "SELECT name, YEAR(dead_line) as year FROM event_list WHERE id = ?";
+                $eventStmt = $this->con->prepare($eventQuery);
+                $eventStmt->bind_param("i", $eventId);
+                $eventStmt->execute();
+                $eventResult = $eventStmt->get_result();
+                if ($eventRow = $eventResult->fetch_assoc()) {
+                    $eventName = $eventRow['name'];
+                    $eventYear = $eventRow['year'] ?? date('Y');
+                }
+                $eventStmt->close();
+            }
+            
+            // Start transaction
+            $this->con->begin_transaction();
+            
+            try {
+                foreach ($importData as $row) {
+                    // Skip invalid rows
+                    if (isset($row['valid']) && $row['valid'] === false) {
+                        $skippedCount++;
+                        continue;
+                    }
+                    
+                    $title = $row['title'] ?? '';
+                    $author = $row['author'] ?? '';
+                    $coauthor = $row['coauthor'] ?? '';
+                    $category = $row['category'] ?? '';
+                    $campus = $row['campus'] ?? '';
+                    $code = $row['code'] ?? '';
+                    
+                    // Validate required fields
+                    if (empty($title) || empty($author) || empty($campus)) {
+                        $skippedCount++;
+                        $errors[] = "Row {$row['row']}: Missing required fields (Title, Author, or Campus)";
+                        continue;
+                    }
+                    
+                    // Generate paper trail number
+                    $paperTrailNo = '';
+                    try {
+                        // If Code column exists, use it to generate paper trail number
+                        if (!empty($code)) {
+                            $paperTrailNo = $this->generatePaperTrailNumberFromCode($code, $campus);
+                        } else {
+                            // Fallback: generate from scratch using campus code and event year from deadline
+                            $paperTrailNo = $this->generatePaperTrailNumber($this->con, $eventId, $campus, $title, $author);
+                        }
+                    } catch (Exception $e) {
+                        error_log("Paper trail generation error: " . $e->getMessage());
+                        // If generation fails, use a temporary number with event year from deadline
+                        $paperTrailNo = $eventYear . '-X-001';
+                    }
+                    
+                    // Insert into researchfile with event_id and event_name
+                    if ($eventId > 0 && !empty($eventName)) {
+                        $insertQuery = "INSERT INTO researchfile (
+                            title, author, coauthor, category, campus,
+                            event_id, event, paper_trail_no, date_started, 
+                            status, revision_status, completion_status
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 
+                            'accepted', 'revision_pending', 'pending_confirmation')";
+                        
+                        $stmt = $this->con->prepare($insertQuery);
+                        $stmt->bind_param("sssssiss", $title, $author, $coauthor, $category, $campus, $eventId, $eventName, $paperTrailNo);
+                    } else {
+                        // Fallback: insert without event
+                        $insertQuery = "INSERT INTO researchfile (
+                            title, author, coauthor, category, campus,
+                            paper_trail_no, date_started, 
+                            status, revision_status, completion_status
+                        ) VALUES (?, ?, ?, ?, ?, ?, NULL, 
+                            'accepted', 'revision_pending', 'pending_confirmation')";
+                        
+                        $stmt = $this->con->prepare($insertQuery);
+                        $stmt->bind_param("ssssss", $title, $author, $coauthor, $category, $campus, $paperTrailNo);
+                    }
+                    
+                    if ($stmt->execute()) {
+                        $importedCount++;
+                    } else {
+                        $skippedCount++;
+                        $errors[] = "Row {$row['row']}: " . $stmt->error;
+                    }
+                    
+                    $stmt->close();
+                }
+                
+                // Commit transaction
+                $this->con->commit();
+                
+                $this->response->status = true;
+                $this->response->message = "Import completed: $importedCount imported, $skippedCount skipped";
+                $this->response->imported_count = $importedCount;
+                $this->response->skipped_count = $skippedCount;
+                $this->response->errors = $errors;
+                
+            } catch (Exception $e) {
+                $this->con->rollback();
+                throw $e;
+            }
+            
+        } catch (Exception $e) {
+            $this->response->message = 'Error during import: ' . $e->getMessage();
+            error_log("Import error: " . $e->getMessage());
+        }
+        
+        echo json_encode($this->response);
+    }
+
+    public function getEventsList() {
+        try {
+            $query = "SELECT id, name, date, dead_line, status FROM event_list ORDER BY date DESC";
+            $result = $this->con->query($query);
+            
+            if (!$result) {
+                throw new Exception("Failed to fetch events: " . $this->con->error);
+            }
+            
+            $events = [];
+            while ($row = $result->fetch_assoc()) {
+                $events[] = [
+                    'id' => $row['id'],
+                    'name' => $row['name'],
+                    'date' => date('Y-m-d', strtotime($row['date'])),
+                    'deadline' => !empty($row['dead_line']) ? date('Y-m-d', strtotime($row['dead_line'])) : null,
+                    'status' => $row['status']
+                ];
+            }
+            
+            $this->response->status = true;
+            $this->response->message = 'Events fetched successfully';
+            $this->response->data = $events;
+            
+        } catch (Exception $e) {
+            $this->response->message = 'Error: ' . $e->getMessage();
+            error_log("Error fetching events: " . $e->getMessage());
+        }
+        
+        echo json_encode($this->response);
+    }
+
+    function generatePaperTrailNumber($con, $eventId, $campus, $title, $author)
+    {
+        // Campus codes mapping (based on your CASE statement)
+        $campusCodes = [
+            'Burias' => 'A',
+            'Dayao' => 'B',
+            'Dumarao' => 'C',
+            'Mambusao' => 'D',
+            'Pilar' => 'E',
+            'Pontevedra' => 'F',
+            'Roxas City Main' => 'G',
+            'Central Office' => 'G',
+            'Sigma' => 'H',
+            'Tapaz' => 'I'
+        ];
+
+        // Normalize campus name - trim and handle variations
+        $normalizedCampus = trim($campus);
+        
+        // Get campus code - if not found, default to 'X' for unknown
+        $campusCode = $campusCodes[$normalizedCampus] ?? 'X';
+
+        // FIRST: Check if this research already has a paper trail number from a previous submission
+        // Match by title and author (case-insensitive, trimmed)
+        $checkExistingQuery = "SELECT paper_trail_no, campus, event_id 
+                            FROM researchfile 
+                            WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
+                            AND TRIM(LOWER(author)) = TRIM(LOWER(?))
+                            AND paper_trail_no IS NOT NULL 
+                            AND paper_trail_no != ''
+                            LIMIT 1";
+
+        $checkStmt = $con->prepare($checkExistingQuery);
+        if (!$checkStmt) {
+            throw new Exception("Failed to prepare existing check query: " . $con->error);
+        }
+
+        $checkStmt->bind_param("ss", $title, $author);
+        $checkStmt->execute();
+        $existingResult = $checkStmt->get_result();
+        $existingPaper = $existingResult->fetch_assoc();
+
+        // If existing paper trail number found, return it (maintain consistency)
+        if ($existingPaper && !empty($existingPaper['paper_trail_no'])) {
+            return $existingPaper['paper_trail_no'];
+        }
+
+        // SECOND: If no existing paper trail number, check for duplicate submissions
+        // (same title and author but no paper trail number yet - should use same campus logic)
+        $checkDuplicateQuery = "SELECT id, campus, event_id 
+                            FROM researchfile 
+                            WHERE TRIM(LOWER(title)) = TRIM(LOWER(?)) 
+                            AND TRIM(LOWER(author)) = TRIM(LOWER(?))
+                            LIMIT 1";
+
+        $dupStmt = $con->prepare($checkDuplicateQuery);
+        if (!$dupStmt) {
+            throw new Exception("Failed to prepare duplicate check query: " . $con->error);
+        }
+
+        $dupStmt->bind_param("ss", $title, $author);
+        $dupStmt->execute();
+        $dupResult = $dupStmt->get_result();
+        $duplicate = $dupResult->fetch_assoc();
+
+        // If duplicate found but no paper trail number, we need to generate one
+        // Use the original submission's campus (not the current one) for consistency
+        if ($duplicate) {
+            // Use the campus from the original submission
+            $originalCampus = $duplicate['campus'];
+            $normalizedOriginalCampus = trim($originalCampus);
+            $campusCode = $campusCodes[$normalizedOriginalCampus] ?? 'X';
+
+            // Get the original submission's event year from deadline
+            $originalEventId = $duplicate['event_id'];
+            $yearQuery = "SELECT YEAR(dead_line) as year FROM event_list WHERE id = ? LIMIT 1";
+            $yearStmt = $con->prepare($yearQuery);
+            if ($yearStmt) {
+                $yearStmt->bind_param("i", $originalEventId);
+                $yearStmt->execute();
+                $yearResult = $yearStmt->get_result();
+                $yearRow = $yearResult->fetch_assoc();
+                $eventYear = $yearRow['year'] ?? date('Y');
+                $yearStmt->close();
+            } else {
+                $eventYear = date('Y');
+            }
+        } else {
+            // THIRD: No existing paper trail number and no duplicate - generate new one
+            // Get event year from event_list using deadline for the current submission
+            $yearQuery = "SELECT YEAR(dead_line) as year FROM event_list WHERE id = ? LIMIT 1";
+            $yearStmt = $con->prepare($yearQuery);
+            if (!$yearStmt) {
+                throw new Exception("Failed to prepare year query: " . $con->error);
+            }
+
+            $yearStmt->bind_param("i", $eventId);
+            $yearStmt->execute();
+            $yearResult = $yearStmt->get_result();
+            $yearRow = $yearResult->fetch_assoc();
+
+            if (!$yearRow || !$yearRow['year']) {
+                throw new Exception("Could not determine event year for event ID: $eventId");
+            }
+
+            $eventYear = $yearRow['year'];
+            $yearStmt->close();
+        }
+
+        // Get the next sequence number for this year and campus code
+        $pattern = $eventYear . '-' . $campusCode . '-%';
+
+        $seqQuery = "SELECT MAX(CAST(SUBSTRING_INDEX(paper_trail_no, '-', -1) AS UNSIGNED)) as max_seq 
+                    FROM researchfile 
+                    WHERE paper_trail_no LIKE ?";
+
+        $seqStmt = $con->prepare($seqQuery);
+        if (!$seqStmt) {
+            throw new Exception("Failed to prepare sequence query: " . $con->error);
+        }
+
+        $seqStmt->bind_param("s", $pattern);
+        $seqStmt->execute();
+        $seqResult = $seqStmt->get_result();
+        $seqRow = $seqResult->fetch_assoc();
+
+        $nextSeq = ($seqRow['max_seq'] ?? 0) + 1;
+
+        // Format with leading zeros (3 digits)
+        $formattedSeq = str_pad($nextSeq, 3, '0', STR_PAD_LEFT);
+
+        // Generate the paper trail number
+        $paperTrailNo = $eventYear . '-' . $campusCode . '-' . $formattedSeq;
+
+        // Clean up statements
+        $checkStmt->close();
+        if (isset($dupStmt)) {
+            $dupStmt->close();
+        }
+        if (isset($seqStmt)) {
+            $seqStmt->close();
+        }
+
+        return $paperTrailNo;
+    }
+
+    private function generatePaperTrailNumberFromCode($code, $campus) {
+        // Campus codes mapping
+        $campusCodes = [
+            'Burias' => 'A',
+            'Dayao' => 'B',
+            'Dumarao' => 'C',
+            'Mambusao' => 'D',
+            'Pilar' => 'E',
+            'Pontevedra' => 'F',
+            'Roxas City Main' => 'G',
+            'Central Office' => 'G',
+            'Sigma' => 'H',
+            'Tapaz' => 'I'
+        ];
+        
+        // Normalize campus name
+        $normalizedCampus = trim($campus);
+        $campusCode = $campusCodes[$normalizedCampus] ?? 'X';
+        
+        // Parse the code (e.g., "2020-83" -> year = "2020", seq = "83")
+        $parts = explode('-', $code);
+        
+        // Always expect valid format, no else fallback
+        $year = $parts[0];
+        $seq = $parts[1] ?? '001';
+        
+        // Format sequence with leading zeros (3 digits)
+        $formattedSeq = str_pad($seq, 3, '0', STR_PAD_LEFT);
+        
+        // Generate paper trail number
+        return $year . '-' . $campusCode . '-' . $formattedSeq;
+    }
+
 }
 
 // Initialize database connection
@@ -1280,6 +1621,14 @@ switch ($action) {
         
     case 'update_presentation':
         $api->updatePresentationStatus();
+        break;
+
+    case 'get_events':
+        $api->getEventsList();
+        break;
+
+    case 'import_proposed':
+        $api->importProposedResearch();
         break;
         
     case 'get':

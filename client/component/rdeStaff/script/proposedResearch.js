@@ -1,5 +1,6 @@
 import { $, Waiting, RejectCommentModal } from "../../../lib/lib.js"
 import { InhouseConfirmationModal } from './helperComponents/InhouseConfirmationModal.js';
+import { ImportProposedModal } from './helperComponents/ImportProposedModal.js';
 
 export const ProposedResearch = () => {
     let mainTableContainer
@@ -2350,7 +2351,67 @@ export const ProposedResearch = () => {
                                     e.target.style.boxShadow = 'none';
                                 }
                             }
-                        })
+                        }),
+                        $({
+                        tag: 'button',
+                        style: {
+                            padding: '8px 20px',
+                            backgroundColor: '#217346',
+                            border: 'none',
+                            borderRadius: '8px',
+                            color: '#fff',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-file-import' },
+                                style: { fontSize: '14px' }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: 'Import Proposed'
+                            })
+                        ],
+                        event: {
+                            type: 'click',
+                            method: () => {
+                                const importModal = ImportProposedModal({
+                                    onImportComplete: () => {
+                                        // Refresh the data after import
+                                        researchData = [];
+                                        filteredData = [];
+                                        hasMore = true;
+                                        nextCursor = null;
+                                        fetchProposedResearch();
+                                    }
+                                });
+                                importModal.openModal();
+                            }
+                        },
+                        event2: {
+                            type: 'mouseenter',
+                            method: (e) => {
+                                e.target.style.backgroundColor = '#1a5c3a';
+                                e.target.style.transform = 'translateY(-1px)';
+                                e.target.style.boxShadow = '0 4px 12px rgba(33, 115, 70, 0.3)';
+                            }
+                        },
+                        event3: {
+                            type: 'mouseleave',
+                            method: (e) => {
+                                e.target.style.backgroundColor = '#217346';
+                                e.target.style.transform = 'translateY(0)';
+                                e.target.style.boxShadow = 'none';
+                            }
+                        }
+                    })
                     ]
                 })
             ]

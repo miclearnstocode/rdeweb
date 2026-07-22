@@ -2228,13 +2228,13 @@ export const DragDropUpload = ({
     // Update file count
     const updateFileCount = () => {
         if (fileCountElement) {
-            fileCountElement.textContent = `${fileList.length} file${fileList.length !== 1 ? 's' : ''}`;
+            const count = fileList.length;
+            fileCountElement.textContent = `${count} file${count !== 1 ? 's' : ''}`;
         }
     };
 
     // Open file viewer with CustomModal
     const openFileViewer = (file, fileName) => {
-        // Use the provided onFileView callback if available
         if (onFileView && typeof onFileView === 'function') {
             onFileView(file);
             return;
@@ -2243,6 +2243,8 @@ export const DragDropUpload = ({
 
     // Render preview items
     const renderPreviews = () => {
+        updateFileCount();
+        
         if (!previewContainer) return;
         previewContainer.innerHTML = '';
 
@@ -2256,7 +2258,6 @@ export const DragDropUpload = ({
             `;
             emptyMsg.textContent = 'No files uploaded yet';
             previewContainer.appendChild(emptyMsg);
-            updateFileCount();
             return;
         }
 
@@ -2267,7 +2268,6 @@ export const DragDropUpload = ({
             const fileIcon = getFileIcon(file);
             const fileColor = getFileColor(file);
             
-            // Determine the URL for viewing
             let fileUrl = typeof file === 'string' ? file : URL.createObjectURL(file);
 
             const previewItem = document.createElement('div');
@@ -2284,7 +2284,6 @@ export const DragDropUpload = ({
                 cursor: pointer;
             `;
 
-            // Thumbnail / Icon
             const thumb = document.createElement('div');
             thumb.style.cssText = `
                 width: 44px;
@@ -2320,7 +2319,6 @@ export const DragDropUpload = ({
                 thumb.appendChild(icon);
             }
 
-            // File info
             const info = document.createElement('div');
             info.style.cssText = `
                 flex: 1;
@@ -2349,7 +2347,6 @@ export const DragDropUpload = ({
             info.appendChild(nameEl);
             info.appendChild(sizeEl);
 
-            // Eye icon for preview
             const previewBtn = document.createElement('button');
             previewBtn.style.cssText = `
                 width: 32px;
@@ -2384,7 +2381,6 @@ export const DragDropUpload = ({
                 openFileViewer(file, fileName);
             });
 
-            // Remove button
             const removeBtn = document.createElement('button');
             removeBtn.style.cssText = `
                 width: 28px;
@@ -2427,14 +2423,11 @@ export const DragDropUpload = ({
             previewItem.appendChild(previewBtn);
             previewItem.appendChild(removeBtn);
 
-            // Make the whole item clickable (except buttons)
             previewItem.addEventListener('click', (e) => {
-                // Don't trigger if click is on a button
                 if (e.target.closest('button')) return;
                 openFileViewer(file, fileName);
             });
 
-            // Hover effect
             previewItem.addEventListener('mouseenter', () => {
                 previewItem.style.borderColor = '#cbd5e1';
                 previewItem.style.backgroundColor = '#f1f5f9';
@@ -2446,8 +2439,6 @@ export const DragDropUpload = ({
 
             previewContainer.appendChild(previewItem);
         });
-
-        updateFileCount();
     };
 
     // Handle file selection
@@ -2456,9 +2447,7 @@ export const DragDropUpload = ({
         const maxSizeBytes = maxSizeMB * 1024 * 1024;
 
         for (const file of files) {
-            // Check size
             if (file.size > maxSizeBytes) {
-                // Show notification if available
                 if (window.showNotification) {
                     window.showNotification(`File "${file.name}" exceeds ${maxSizeMB}MB limit`, 'error');
                 } else {
@@ -2590,8 +2579,8 @@ export const DragDropUpload = ({
                         }
                     }),
 
-                    // File count badge
-                    $({
+                    // File count badge - HIDE when showPreview is false
+                    showPreview ? $({
                         tag: 'div',
                         style: {
                             marginTop: '8px',
@@ -2616,10 +2605,11 @@ export const DragDropUpload = ({
                                 },
                                 elementHandler: (el) => {
                                     fileCountElement = el;
+                                    updateFileCount();
                                 }
                             })
                         ]
-                    })
+                    }) : null
                 ],
                 event: {
                     type: 'click',
