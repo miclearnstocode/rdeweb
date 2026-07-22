@@ -4176,26 +4176,15 @@ if (isset($_POST['rejectedComments'])){
     $response->center = '';
     $response->documentStatus = '';
     
-    // Log that the endpoint was called
-    error_log("=== rejectedComments endpoint called ===");
-    error_log("POST data: " . print_r($_POST, true));
-    
     $docId = isset($_POST['docId']) ? intval($_POST['docId']) : 0;
-    
-    error_log("docId received: " . $docId);
-    
     if ($docId <= 0) {
         $response->message = 'Invalid document ID';
-        error_log("Invalid docId: " . $docId);
-        echo json_encode($response);
         exit();
     }
     
     try {
         if (!isset($host) || !isset($username) || !isset($pass) || !isset($dbName)) {
-            error_log("Database connection variables not set");
             $response->message = 'Database configuration error';
-            echo json_encode($response);
             exit();
         }
         
@@ -4207,8 +4196,6 @@ if (isset($_POST['rejectedComments'])){
             echo json_encode($response);
             exit();
         }
-        
-        error_log("Database connected successfully");
         
         $getEndorsementQuery = "SELECT endorsementid FROM researchfile WHERE id = ? LIMIT 1";
         $stmt1 = $con->prepare($getEndorsementQuery);
@@ -6269,5 +6256,150 @@ if (isset($_POST['deletePoster'])) {
     ob_clean();
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
+    exit();
+}
+
+// Get poster rejection details
+if (isset($_POST['getPosterRejection'])) {
+    // Clear any previous output
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+    
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->reason = '';
+    $response->date = '';
+    $response->documentTitle = '';
+    $response->eventName = '';
+    $response->author = '';
+    $response->category = '';
+    $response->campus = '';
+    $response->center = '';
+    $response->documentStatus = '';
+    
+    try {
+        $posterId = isset($_POST['posterId']) ? intval($_POST['posterId']) : 0;
+        
+        if ($posterId <= 0) {
+            throw new Exception('Invalid poster ID');
+        }
+        
+        if (!isset($host) || !isset($username) || !isset($pass) || !isset($dbName)) {
+            throw new Exception('Database configuration error');
+        }
+        
+        $con = new mysqli($host, $username, $pass, $dbName);
+        
+        if ($con->connect_error) {
+            throw new Exception('Database connection failed: ' . $con->connect_error);
+        }
+        
+        $query = "SELECT 
+            rd.reason,
+            rd.date,
+            ps.id as poster_id,
+            ps.research_id,
+            ps.status as poster_status,
+            ps.created_at as poster_created_at,
+            rf.title as document_title,
+            rf.author,
+            rf.category,
+            rf.campus,
+            rf.center,
+            rf.event,
+            el.name as event_name
+        FROM rejecteddocs rd
+        LEFT JOIN poster_submissions ps ON rd.docid = ps.id
+        LEFT JOIN researchfile rf ON ps.research_id = rf.id
+        LEFT JOIN event_list el ON rf.event_id = el.id
+        WHERE rd.docid = ? AND rd.type = 'Poster'
+        ORDER BY rd.date DESC
+        LIMIT 1";
+        
+        $stmt = $con->prepare($query);
+        if (!$stmt) {
+            throw new Exception('Prepare failed: ' . $con->error);
+        }
+        
+        $stmt->bind_param("i", $posterId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result && $result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            
+            $response->status = true;
+            $response->message = 'Rejection reason found';
+            $response->reason = $row['reason'] ?? 'No reason provided';
+            $response->date = $row['date'] ?? '';
+            $response->documentTitle = $row['document_title'] ?? 'N/A';
+            $response->eventName = $row['event_name'] ?? $row['event'] ?? 'N/A';
+            $response->author = $row['author'] ?? 'N/A';
+            $response->category = $row['category'] ?? 'N/A';
+            $response->campus = $row['campus'] ?? 'N/A';
+            $response->center = $row['center'] ?? 'N/A';
+            $response->documentStatus = $row['poster_status'] ?? 'rejected';
+            $response->poster_id = $row['poster_id'] ?? null;
+            $response->research_id = $row['research_id'] ?? null;
+            $response->poster_created_at = $row['poster_created_at'] ?? null;
+            
+            error_log("Poster rejection found for ID: " . $posterId);
+        } else {
+            // No rejection found in rejecteddocs
+            $response->status = false;
+            $response->message = 'No rejection record found for this poster';
+            
+            $statusQuery = "SELECT 
+                ps.id,
+                ps.status,
+                ps.created_at,
+                rf.title,
+                rf.author,
+                rf.category,
+                rf.campus,
+                rf.center,
+                rf.event,
+                el.name as event_name
+            FROM poster_submissions ps
+            LEFT JOIN researchfile rf ON ps.research_id = rf.id
+            LEFT JOIN event_list el ON rf.event_id = el.id
+            WHERE ps.id = ?";
+            
+            $statusStmt = $con->prepare($statusQuery);
+            $statusStmt->bind_param("i", $posterId);
+            $statusStmt->execute();
+            $statusResult = $statusStmt->get_result();
+            
+            if ($statusResult && $statusResult->num_rows > 0) {
+                $statusRow = $statusResult->fetch_assoc();
+                if ($statusRow['status'] === 'rejected') {
+                    $response->documentTitle = $statusRow['title'] ?? 'N/A';
+                    $response->eventName = $statusRow['event_name'] ?? $statusRow['event'] ?? 'N/A';
+                    $response->author = $statusRow['author'] ?? 'N/A';
+                    $response->category = $statusRow['category'] ?? 'N/A';
+                    $response->campus = $statusRow['campus'] ?? 'N/A';
+                    $response->center = $statusRow['center'] ?? 'N/A';
+                    $response->documentStatus = 'rejected';
+                    $response->reason = 'Document was rejected but no rejection reason was recorded.';
+                    $response->status = true;
+                }
+            }
+            $statusStmt->close();
+        }
+        
+        $stmt->close();
+        $con->close();
+        
+    } catch (Exception $e) {
+        error_log("getPosterRejection error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+    }
+    
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    ob_end_flush();
     exit();
 }

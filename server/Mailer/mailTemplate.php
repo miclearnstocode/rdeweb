@@ -448,3 +448,64 @@ function CommentNotification($evaluatorName, $eventName, $title, $campus, $autho
     </body>
     </html>";
 }
+
+function RejectedPosterEntry($reason, $title, $paperTrailNo = '') {
+    $subject = "Poster Submission Rejected - " . ($paperTrailNo ? $paperTrailNo . " - " : "") . $title;
+    
+    $body = "
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset='UTF-8'>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+        <title>Poster Submission Rejected</title>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 20px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+            .header { background: #dc3545; color: #fff; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; margin: -30px -30px 20px -30px; }
+            .header h1 { margin: 0; font-size: 24px; }
+            .status-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-weight: bold; background: #dc3545; color: #fff; margin: 10px 0; }
+            .reason-box { background: #f8f9fa; padding: 15px; border-left: 4px solid #dc3545; margin: 20px 0; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; font-size: 12px; color: #777; }
+            .btn { display: inline-block; padding: 10px 20px; background: #dc3545; color: #fff; text-decoration: none; border-radius: 5px; margin-top: 10px; }
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>
+                <h1>Poster Submission Rejected</h1>
+            </div>
+            
+            <div style='text-align: center;'>
+                <span class='status-badge'>REJECTED</span>
+            </div>
+            
+            <h2>Dear Researcher,</h2>
+            
+            <p>We regret to inform you that your poster submission has been rejected.</p>
+            
+            <p><strong>Paper Trail No:</strong> " . ($paperTrailNo ?: 'N/A') . "</p>
+            <p><strong>Title:</strong> " . htmlspecialchars($title) . "</p>
+            
+            <div class='reason-box'>
+                <h3 style='margin-top: 0; color: #dc3545;'>Rejection Reason:</h3>
+                <p style='margin: 0;'>" . nl2br(htmlspecialchars($reason)) . "</p>
+            </div>
+            
+            <p>Please review the feedback provided and submit a revised version. If you have any questions, please contact the RDE office.</p>
+            
+            <div style='text-align: center; margin: 20px 0;'>
+                <a href='/research' class='btn'>Go to Dashboard</a>
+            </div>
+            
+            <div class='footer'>
+                <p>This is an automated message from the Research, Development and Extension System.</p>
+                <p>&copy; " . date('Y') . " RDE System. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    ";
+    
+    return (object) ['subject' => $subject, 'body' => $body];
+}

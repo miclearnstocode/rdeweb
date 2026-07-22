@@ -1,4 +1,5 @@
 import { $, Waiting, ConfirmationAlert, FileViewerModal, CustomModal } from '../../../../lib/lib.js'
+import { createPosterActionButtons } from './posterActions.js'
 
 export const PosterViewModel = ({ onClose }) => {
     let searchInput, tableBody, statusFilter = 'all'
@@ -221,7 +222,7 @@ export const PosterViewModel = ({ onClose }) => {
             }
         })
 
-        const columns = ['Poster', 'Title', 'Author', 'Event', 'Status', 'Submitted']
+        const columns = ['Poster', 'Title', 'Author', 'Event', 'Status', 'Submitted', 'Actions']
 
         columns.forEach(col => {
             headerRow.appendChild($({
@@ -280,7 +281,7 @@ export const PosterViewModel = ({ onClose }) => {
         })
     }
 
-    const createPosterRow = (poster) => {
+    const createPosterRow = (poster, onSuccess) => {
         const row = $({
             tag: 'tr',
             style: {
@@ -446,12 +447,30 @@ export const PosterViewModel = ({ onClose }) => {
             }
         })
 
+        // Actions
+        const actionsCell = $({
+            tag: 'td',
+            style: {
+                padding: '8px 16px',
+                verticalAlign: 'middle',
+                textAlign: 'center'
+            }
+        })
+
+        const actionButtons = createPosterActionButtons(poster, () => {
+            // Refresh the poster list after action
+            const searchTerm = searchInput?.value?.trim() || ''
+            loadPosters(searchTerm, statusFilter)
+        })
+        actionsCell.appendChild(actionButtons)
+
         row.appendChild(posterCell)
         row.appendChild(titleCell)
         row.appendChild(authorCell)
         row.appendChild(eventCell)
         row.appendChild(statusCell)
         row.appendChild(dateCell)
+        row.appendChild(actionsCell)
 
         return row
     }
@@ -510,7 +529,11 @@ export const PosterViewModel = ({ onClose }) => {
 
             if (data.status && data.data && data.data.length > 0) {
                 data.data.forEach(poster => {
-                    const row = createPosterRow(poster)
+                    const row = createPosterRow(poster, () => {
+                        // Refresh after action
+                        const currentSearch = searchInput?.value?.trim() || ''
+                        loadPosters(currentSearch, statusFilter)
+                    })
                     tableBody.appendChild(row)
                 })
             } else {
