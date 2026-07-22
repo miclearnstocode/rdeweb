@@ -5,6 +5,7 @@ import { SymposiumModal } from './userUploadComponent/symposiumModal.js'
 import { ResearchChairSubmissionModal } from './userUploadComponent/researchChairSubmission.js'
 import { PosterSubmissionModal } from './userUploadComponent/posterSubmission.js'
 import { PosterChoiceModal } from './userUploadComponent/posterChoiceModal.js'
+import { ResearchEditModal } from './userUploadComponent/researchEditModal.js';
 
 // View Researches Modal
 const openViewResearchesModal = () => {
@@ -2443,56 +2444,15 @@ export const Research = () => {
         FileViewerModal(fileUrl, displayName, accentColor, { showOpenDrive: true })
     }
 
-    const editDocument = (doc) => {
-        // Extract just the filename from Google Drive URL
-        const getFileNameFromUrl = (url) => {
-            if (!url || url === '—' || url === null) return null;
-            if (url.includes('drive.google.com')) {
-                // Try to extract a meaningful name from the URL
-                try {
-                    const urlObj = new URL(url);
-                    const pathParts = urlObj.pathname.split('/');
-                    // Check for file ID in path
-                    const fileIdMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-                    if (fileIdMatch && fileIdMatch[1]) {
-                        return 'Google Drive File (ID: ' + fileIdMatch[1].substring(0, 8) + '...)';
-                    }
-                } catch (e) {
-                    // Fallback
-                }
-                return 'Google Drive File (kept as is)';
+    const editDocument = async (doc) => {
+        // Open the edit modal
+        ResearchEditModal.open(doc, () => {
+            // Refresh the table after successful edit
+            if (window.refreshDocumentsTable) {
+                window.refreshDocumentsTable();
             }
-            // For local files, get the filename from the URL
-            return url.split('/').pop();
-        }
-
-        formData = {
-            eventName: doc.eventName || '',
-            title: doc.title || '',
-            campus: doc.campus || '',
-            category: doc.category || '',
-            center: doc.center || '',
-            presenter: doc.presenter || '',
-            author: doc.author || '',
-            coAuthors: doc.coAuthors || [],
-            researchFile: null,
-            programFile: null,
-            endorsementFile: null,
-            certificateFile: null,
-            existingResearchFile: doc.researchFile || null,
-            existingResearchFileName: getFileNameFromUrl(doc.researchFile) || 'Research File',
-            existingEndorsementFile: doc.endorsementFile || null,
-            existingEndorsementFileName: getFileNameFromUrl(doc.endorsementFile) || 'Endorsement Letter',
-            existingProgramFile: doc.program_drive_view_url || null,
-            existingProgramFileName: getFileNameFromUrl(doc.program_drive_view_url) || 'Program File',
-            existingCertificateFile: doc.certificate_drive_view_url || null,
-            existingCertificateFileName: getFileNameFromUrl(doc.certificate_drive_view_url) || 'Certificate File',
-            date_started: doc.date_started || '',
-            date_completed: doc.date_completed || ''
-        }
-
-        openUploadModal(true, doc)
-    }
+        });
+    };
 
     const deleteDocument = (doc) => {
         DeleteConfirmModal('Delete Document', `Are you sure you want to delete "${doc.title}"? This action cannot be undone.`).then(async (confirmed) => {
@@ -2559,7 +2519,6 @@ export const Research = () => {
         })
     }
 
-    // Local Files Upload Component
     const LocalFilesUploadField = ({ label, fieldName, isEditMode = false, editData = null }) => {
         let fileInput, fileNameDisplay
 
@@ -2568,9 +2527,12 @@ export const Research = () => {
             style: { marginBottom: '10px' }
         })
 
+        // Update label to show optional for edit mode
+        const labelText = isEditMode ? `${label} (Optional)` : `${label} *`;
+        
         const labelEl = $({
             tag: 'label',
-            text: label,
+            text: labelText,
             style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }
         })
 
@@ -2592,7 +2554,7 @@ export const Research = () => {
         })
 
         uploadArea.appendChild($({ tag: 'i', att: { className: 'fas fa-file-upload' }, style: { fontSize: '40px', color: '#4caf50', marginBottom: '12px', display: 'block' } }))
-        uploadArea.appendChild($({ tag: 'div', text: 'Select multiple PDF files', style: { color: '#1a2a3a', fontSize: '15px', fontWeight: '500' } }))
+        uploadArea.appendChild($({ tag: 'div', text: isEditMode ? 'Select multiple PDF files (optional)' : 'Select multiple PDF files', style: { color: '#1a2a3a', fontSize: '15px', fontWeight: '500' } }))
         uploadArea.appendChild($({ tag: 'div', text: 'Only PDF files are allowed', style: { color: '#666', fontSize: '12px', marginTop: '6px' } }))
 
         fileNameDisplay = $({
@@ -2600,17 +2562,17 @@ export const Research = () => {
             style: { marginTop: '12px', fontSize: '13px', color: '#888', textAlign: 'left' }
         })
 
-        // ===== Display existing file if in edit mode =====
+        // Display existing file if in edit mode
         if (isEditMode && editData) {
             let existingUrl = null;
             let existingName = null;
 
             if (fieldName === 'programFile') {
-                existingUrl = formData.existingProgramFile;
-                existingName = formData.existingProgramFileName || 'Program File';
+                existingUrl = editData.program_drive_view_url || editData.programFile;
+                existingName = 'Program File';
             } else if (fieldName === 'certificateFile') {
-                existingUrl = formData.existingCertificateFile;
-                existingName = formData.existingCertificateFileName || 'Certificate File';
+                existingUrl = editData.certificate_drive_view_url || editData.certificateFile;
+                existingName = 'Certificate File';
             }
 
             if (existingUrl && existingUrl !== '—' && existingUrl !== null && existingUrl !== '' && existingUrl !== 'null') {
@@ -2660,7 +2622,7 @@ export const Research = () => {
                         }),
                         $({
                             tag: 'span',
-                            text: '(Upload new to replace)',
+                            text: '(Optional - Upload new to replace)',
                             style: { color: '#64748b', fontSize: '11px', fontStyle: 'italic' }
                         })
                     ]
@@ -2686,7 +2648,6 @@ export const Research = () => {
                             return
                         }
                         formData[fieldName] = files
-                        // Clear existing display and show new files
                         fileNameDisplay.innerHTML = ''
                         const fileListHtml = files.map(f =>
                             `<div style="margin-bottom: 4px; color: #4caf50;"><i class="fas fa-file-pdf"></i> ${f.name} (${(f.size / 1024).toFixed(1)} KB)</div>`
@@ -2904,7 +2865,7 @@ export const Research = () => {
         })
 
         submitBtn.addEventListener('click', async () => {
-            // Validate required fields
+            // Validate required fields - only for new submissions
             if (!formData.eventName) {
                 alert('Please select an event');
                 return;
@@ -2921,7 +2882,8 @@ export const Research = () => {
                 alert('Please select a category');
                 return;
             }
-            if (!formData.center) {
+            // Center is optional for edits, required for new
+            if (!isEdit && !formData.center) {
                 alert('Please select a center');
                 return;
             }
@@ -2933,35 +2895,47 @@ export const Research = () => {
                 alert('Please enter presenter');
                 return;
             }
-            if (!formData.researchFile) {
+            // Files are optional for edits, required for new
+            if (!isEdit && !formData.researchFile) {
                 alert('Please upload the research file');
                 return;
             }
-            if (!formData.endorsementFile) {
+            if (!isEdit && !formData.endorsementFile) {
                 alert('Please upload the endorsement letter');
                 return;
             }
 
-            // Check for In-House event - require program file
+            // Check for In-House event - require program file only for new submissions
             const isInHouse = formData.eventName && formData.eventName.toLowerCase().includes('in-house');
-            if (isInHouse && (!formData.programFile || formData.programFile.length === 0)) {
+            if (isInHouse && !isEdit && (!formData.programFile || formData.programFile.length === 0)) {
                 alert('Program file is required for In-House Review events');
                 return;
             }
 
             // Create FormData for submission
             const submitFormData = new FormData();
-            submitFormData.append('uploadResearch', 'true');
+            
+            // If editing, send edit flag and IDs
+            if (isEdit) {
+                submitFormData.append('editResearch', 'true');
+                submitFormData.append('docId', formData.docId || editData?.id);
+                submitFormData.append('endorsementId', formData.endorsementId || editData?.endorsement_id);
+            } else {
+                submitFormData.append('uploadResearch', 'true');
+            }
+            
             submitFormData.append('eventType', formData.eventName);
             submitFormData.append('title', formData.title);
             submitFormData.append('author', formData.author);
             submitFormData.append('category', formData.category);
-            submitFormData.append('center', formData.center);
+            if (formData.center) {
+                submitFormData.append('center', formData.center);
+            }
             submitFormData.append('campus', formData.campus);
             submitFormData.append('coAuthor', JSON.stringify(formData.coAuthors));
             submitFormData.append('presenter', formData.presenter);
 
-            // Append files
+            // Append files only if they exist (for edits, only new files will be uploaded)
             if (formData.researchFile) {
                 submitFormData.append('researchDoc', formData.researchFile);
             }
@@ -2969,7 +2943,7 @@ export const Research = () => {
                 submitFormData.append('uploadedFileEndorsement', formData.endorsementFile);
             }
 
-            // For In-House events, append program and certificate files
+            // For In-House events, append program and certificate files if they exist
             if (isInHouse) {
                 if (formData.programFile && formData.programFile.length > 0) {
                     formData.programFile.forEach(file => {
@@ -3007,19 +2981,16 @@ export const Research = () => {
 
                     // Show success message with ConfirmationAlert
                     const successModal = ConfirmationAlert(result.message, () => {
-                        // This callback fires when user clicks OK
                         if (window.refreshDocumentsTable && typeof window.refreshDocumentsTable === 'function') {
                             window.refreshDocumentsTable();
                         } else {
-                            // Fallback: reload the page
                             window.location.reload();
                         }
                     });
                     document.body.appendChild(successModal);
 
-                    // Auto-refresh after 3 seconds even if user doesn't click
+                    // Auto-refresh after 3 seconds
                     setTimeout(() => {
-                        // Remove the modal if it's still there
                         if (successModal && successModal.remove) {
                             try {
                                 successModal.remove();
@@ -3027,17 +2998,13 @@ export const Research = () => {
                                 // Ignore errors
                             }
                         }
-
-                        // Try to refresh the table
                         if (window.refreshDocumentsTable && typeof window.refreshDocumentsTable === 'function') {
                             window.refreshDocumentsTable();
                         } else {
-                            // Fallback: reload the page
                             window.location.reload();
                         }
                     }, 3000);
                 } else {
-                    // Show error without auto-refresh
                     const errorModal = ConfirmationAlert('Submission failed: ' + result.message);
                     document.body.appendChild(errorModal);
                 }
@@ -3881,7 +3848,6 @@ export const Research = () => {
             document.body.appendChild(symposiumModal);
         }
 
-        // FileUploadField
         function FileUploadField({ label, fieldName, isEditMode = false, editData = null }) {
             const container = $({ tag: 'div', style: { marginBottom: '0' } })
             container.appendChild($({
@@ -3934,27 +3900,20 @@ export const Research = () => {
                 tag: 'div', style: { marginTop: '12px', fontSize: '13px', textAlign: 'center', fontWeight: '500' }
             })
 
+            // Only show existing file if we're in edit mode
             if (isEditMode && editData) {
                 let existingUrl = null;
                 let existingName = null;
                 let fileType = 'research';
 
                 if (fieldName === 'researchFile') {
-                    existingUrl = existingFiles.researchFile;
+                    existingUrl = editData.researchFile;
                     existingName = 'Research File';
                     fileType = 'research';
                 } else if (fieldName === 'endorsementFile') {
-                    existingUrl = existingFiles.endorsementFile;
+                    existingUrl = editData.endorsementFile;
                     existingName = 'Endorsement Letter';
                     fileType = 'endorsement';
-                } else if (fieldName === 'programFile') {
-                    existingUrl = existingFiles.programFile;
-                    existingName = 'Program File';
-                    fileType = 'program';
-                } else if (fieldName === 'certificateFile') {
-                    existingUrl = existingFiles.certificateFile;
-                    existingName = 'Certificate File';
-                    fileType = 'certificate';
                 }
 
                 if (existingUrl && existingUrl !== '—' && existingUrl !== null && existingUrl !== '' && existingUrl !== 'null') {
@@ -3983,7 +3942,6 @@ export const Research = () => {
                                 text: `Existing: ${existingName}`,
                                 style: { color: '#1a2a3a', fontSize: '12px', flex: 1 }
                             }),
-                            // ===== REPLACE <a> WITH CLICKABLE ELEMENT THAT CALLS viewFileInModal =====
                             $({
                                 tag: 'span',
                                 style: {
@@ -4007,7 +3965,6 @@ export const Research = () => {
                                     method: (e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        // Use the viewFileInModal function to open in a modal
                                         viewFileInModal(existingUrl, fileType);
                                     },
                                     type2: 'mouseenter',
@@ -4024,7 +3981,7 @@ export const Research = () => {
                             }),
                             $({
                                 tag: 'span',
-                                text: '(Upload new to replace)',
+                                text: '(Optional - Upload new to replace)',
                                 style: { color: '#64748b', fontSize: '11px', fontStyle: 'italic' }
                             })
                         ]

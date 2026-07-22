@@ -3657,6 +3657,598 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
     ob_end_flush();
     exit();
 }
+// Get local in-house data for editing
+if (isset($_POST['getLocalInhouse'])) {
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+    
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->data = null;
+
+    try {
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception("User not logged in");
+        }
+
+        $userId = $_SESSION['userId'];
+        $researchId = isset($_POST['research_id']) ? (int)$_POST['research_id'] : 0;
+
+        if ($researchId <= 0) {
+            throw new Exception("Research ID is required");
+        }
+
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        // Get local in-house data
+        $query = "SELECT 
+            li.id,
+            li.paper_trail_no,
+            li.research_id,
+            li.local_eventname,
+            li.document_title,
+            li.campus,
+            li.category,
+            li.center,
+            li.main_author,
+            li.co_authors,
+            li.program_file_view_url,
+            li.program_file_download_url,
+            li.certificate_file_view_url,
+            li.certificate_file_download_url,
+            li.created_at,
+            li.updated_at
+        FROM local_inhouse li
+        WHERE li.research_id = ?
+        LIMIT 1";
+
+        $stmt = $con->prepare($query);
+        if (!$stmt) {
+            throw new Exception("Prepare failed: " . $con->error);
+        }
+
+        $stmt->bind_param("i", $researchId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result && $result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            
+            $data = new stdClass();
+            $data->id = (int)$row['id'];
+            $data->paper_trail_no = $row['paper_trail_no'] ?? '';
+            $data->research_id = (int)$row['research_id'];
+            $data->local_eventname = $row['local_eventname'] ?? '';
+            $data->document_title = $row['document_title'] ?? '';
+            $data->campus = $row['campus'] ?? '';
+            $data->category = $row['category'] ?? '';
+            $data->center = $row['center'] ?? '';
+            $data->main_author = $row['main_author'] ?? '';
+            
+            // Parse co-authors
+            if (!empty($row['co_authors'])) {
+                $coAuthors = json_decode($row['co_authors'], true);
+                $data->co_authors = is_array($coAuthors) ? $coAuthors : [];
+            } else {
+                $data->co_authors = [];
+            }
+            
+            $data->program_file_view_url = $row['program_file_view_url'] ?? null;
+            $data->program_file_download_url = $row['program_file_download_url'] ?? null;
+            $data->certificate_file_view_url = $row['certificate_file_view_url'] ?? null;
+            $data->certificate_file_download_url = $row['certificate_file_download_url'] ?? null;
+            $data->created_at = $row['created_at'] ?? null;
+            $data->updated_at = $row['updated_at'] ?? null;
+
+            $response->data = $data;
+            $response->status = true;
+            $response->message = 'Local In-House data found';
+        } else {
+            $response->status = false;
+            $response->message = 'No local in-house data found for this research ID';
+        }
+
+        $stmt->close();
+        $con->close();
+
+    } catch (Exception $e) {
+        error_log("getLocalInhouse error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+    }
+
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    header('X-Content-Type-Options: nosniff');
+    echo json_encode($response);
+    ob_end_flush();
+    exit();
+}
+// Edit Research Document (Partial Update)
+if (isset($_POST['editResearch'])) {
+    ob_end_clean();
+    ob_start();
+    error_reporting(E_ALL);
+    ini_set('display_errors', 0);
+    
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+
+    try {
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception("User not logged in");
+        }
+
+        $userId = $_SESSION['userId'];
+        $docId = isset($_POST['docId']) ? (int)$_POST['docId'] : 0;
+        $endorsementId = isset($_POST['endorsementId']) ? (int)$_POST['endorsementId'] : 0;
+
+        if ($docId <= 0) {
+            throw new Exception("Invalid document ID");
+        }
+
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        // Verify ownership
+        $checkQuery = "SELECT id, senderid, endorsementid FROM researchfile WHERE id = ? AND senderid = ?";
+        $checkStmt = $con->prepare($checkQuery);
+        $checkStmt->bind_param("ii", $docId, $userId);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        
+        if ($checkResult->num_rows === 0) {
+            throw new Exception("Document not found or you don't have permission to edit it");
+        }
+        $checkStmt->close();
+
+        // Build update query with only the fields that were provided
+        $updates = [];
+        $params = [];
+        $types = "";
+
+        // Get current data for comparison
+        $currentQuery = "SELECT title, author, presenter, category, center, campus, coauthor FROM researchfile WHERE id = ?";
+        $currentStmt = $con->prepare($currentQuery);
+        $currentStmt->bind_param("i", $docId);
+        $currentStmt->execute();
+        $currentResult = $currentStmt->get_result();
+        $currentData = $currentResult->fetch_assoc();
+        $currentStmt->close();
+
+        // Title - check if changed (trim both for comparison)
+        if (isset($_POST['title']) && trim($_POST['title']) !== trim($currentData['title'])) {
+            $updates[] = "title = ?";
+            $params[] = trim($_POST['title']);
+            $types .= "s";
+            error_log("Title changed from '{$currentData['title']}' to '{$_POST['title']}'");
+        }
+
+        // Author
+        if (isset($_POST['author']) && trim($_POST['author']) !== trim($currentData['author'])) {
+            $updates[] = "author = ?";
+            $params[] = trim($_POST['author']);
+            $types .= "s";
+            error_log("Author changed from '{$currentData['author']}' to '{$_POST['author']}'");
+        }
+
+        // Presenter
+        if (isset($_POST['presenter']) && trim($_POST['presenter']) !== trim($currentData['presenter'])) {
+            $updates[] = "presenter = ?";
+            $params[] = trim($_POST['presenter']);
+            $types .= "s";
+            error_log("Presenter changed from '{$currentData['presenter']}' to '{$_POST['presenter']}'");
+        }
+
+        // Category
+        if (isset($_POST['category']) && trim($_POST['category']) !== trim($currentData['category'])) {
+            $updates[] = "category = ?";
+            $params[] = trim($_POST['category']);
+            $types .= "s";
+            error_log("Category changed from '{$currentData['category']}' to '{$_POST['category']}'");
+        }
+
+        // Center (optional for edits)
+        if (isset($_POST['center']) && trim($_POST['center']) !== trim($currentData['center'])) {
+            $updates[] = "center = ?";
+            $params[] = trim($_POST['center']);
+            $types .= "s";
+            error_log("Center changed from '{$currentData['center']}' to '{$_POST['center']}'");
+        }
+
+        // Campus
+        if (isset($_POST['campus']) && trim($_POST['campus']) !== trim($currentData['campus'])) {
+            $updates[] = "campus = ?";
+            $params[] = trim($_POST['campus']);
+            $types .= "s";
+            error_log("Campus changed from '{$currentData['campus']}' to '{$_POST['campus']}'");
+        }
+
+        // Co-authors
+        if (isset($_POST['coAuthor'])) {
+            $newCoauthor = $_POST['coAuthor'];
+            $oldCoauthor = $currentData['coauthor'];
+            
+            // Normalize for comparison
+            $newCoauthorData = json_decode($newCoauthor, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($newCoauthorData)) {
+                sort($newCoauthorData);
+                $newCoauthorJson = json_encode($newCoauthorData);
+            } else {
+                $newCoauthorJson = $newCoauthor;
+            }
+            
+            if ($newCoauthorJson !== $oldCoauthor) {
+                $updates[] = "coauthor = ?";
+                $params[] = $newCoauthorJson;
+                $types .= "s";
+                error_log("Coauthors changed");
+            }
+        }
+
+        // Handle file uploads
+        $driveService = null;
+        if (class_exists('GoogleDriveService')) {
+            $driveService = new GoogleDriveService();
+        }
+
+        // Get current entry folder ID
+        $folderQuery = "SELECT drive_entry_folder_id, drive_folder_id FROM researchfile WHERE id = ?";
+        $folderStmt = $con->prepare($folderQuery);
+        $folderStmt->bind_param("i", $docId);
+        $folderStmt->execute();
+        $folderResult = $folderStmt->get_result();
+        $folderData = $folderResult->fetch_assoc();
+        $folderStmt->close();
+
+        $entryFolderId = $folderData['drive_entry_folder_id'] ?? $folderData['drive_folder_id'] ?? null;
+
+        // Upload Research File
+        if (isset($_FILES['researchDoc']) && $_FILES['researchDoc']['error'] === UPLOAD_ERR_OK) {
+            $tempPath = $_FILES['researchDoc']['tmp_name'];
+            $fileName = $_FILES['researchDoc']['name'];
+            
+            // Get old file ID to delete
+            $oldFileQuery = "SELECT drive_file_id FROM researchfile WHERE id = ?";
+            $oldFileStmt = $con->prepare($oldFileQuery);
+            $oldFileStmt->bind_param("i", $docId);
+            $oldFileStmt->execute();
+            $oldFileResult = $oldFileStmt->get_result();
+            $oldFileData = $oldFileResult->fetch_assoc();
+            $oldFileId = $oldFileData['drive_file_id'] ?? null;
+            $oldFileStmt->close();
+
+            // Delete old file if exists
+            if ($oldFileId && $driveService) {
+                try {
+                    $driveService->trashFile($oldFileId);
+                    error_log("Deleted old research file: $oldFileId");
+                } catch (Exception $e) {
+                    error_log("Failed to delete old research file: " . $e->getMessage());
+                }
+            }
+
+            // Upload new file
+            if ($driveService && $entryFolderId) {
+                $uploadResult = $driveService->uploadFile($tempPath, $fileName, $entryFolderId);
+                if ($uploadResult['success']) {
+                    $driveService->makeFilePublic($uploadResult['id']);
+                    $newFileId = $uploadResult['id'];
+                    $viewUrl = "https://drive.google.com/file/d/{$newFileId}/preview";
+                    $downloadUrl = "https://drive.google.com/uc?id={$newFileId}&export=download";
+
+                    $updates[] = "drive_file_id = ?";
+                    $params[] = $newFileId;
+                    $types .= "s";
+
+                    $updates[] = "drive_view_url = ?";
+                    $params[] = $viewUrl;
+                    $types .= "s";
+
+                    $updates[] = "drive_download_url = ?";
+                    $params[] = $downloadUrl;
+                    $types .= "s";
+
+                    error_log("Uploaded new research file: $newFileId");
+                } else {
+                    error_log("Failed to upload research file: " . ($uploadResult['error'] ?? 'Unknown error'));
+                }
+            }
+        }
+
+        // Upload Endorsement File
+        if (isset($_FILES['uploadedFileEndorsement']) && $_FILES['uploadedFileEndorsement']['error'] === UPLOAD_ERR_OK) {
+            $tempPath = $_FILES['uploadedFileEndorsement']['tmp_name'];
+            $fileName = $_FILES['uploadedFileEndorsement']['name'];
+
+            // Get old endorsement file ID
+            $oldEndorseQuery = "SELECT drive_file_id FROM endorsement WHERE id = ?";
+            $oldEndorseStmt = $con->prepare($oldEndorseQuery);
+            $oldEndorseStmt->bind_param("i", $endorsementId);
+            $oldEndorseStmt->execute();
+            $oldEndorseResult = $oldEndorseStmt->get_result();
+            $oldEndorseData = $oldEndorseResult->fetch_assoc();
+            $oldEndorseFileId = $oldEndorseData['drive_file_id'] ?? null;
+            $oldEndorseStmt->close();
+
+            // Get center folder for endorsement
+            $centerFolderQuery = "SELECT drive_center_folder_id FROM researchfile WHERE id = ?";
+            $centerFolderStmt = $con->prepare($centerFolderQuery);
+            $centerFolderStmt->bind_param("i", $docId);
+            $centerFolderStmt->execute();
+            $centerFolderResult = $centerFolderStmt->get_result();
+            $centerFolderData = $centerFolderResult->fetch_assoc();
+            $centerFolderId = $centerFolderData['drive_center_folder_id'] ?? null;
+            $centerFolderStmt->close();
+
+            if ($oldEndorseFileId && $driveService) {
+                try {
+                    $driveService->trashFile($oldEndorseFileId);
+                    error_log("Deleted old endorsement file: $oldEndorseFileId");
+                } catch (Exception $e) {
+                    error_log("Failed to delete old endorsement file: " . $e->getMessage());
+                }
+            }
+
+            if ($driveService && $centerFolderId) {
+                $uploadResult = $driveService->uploadFile($tempPath, $fileName, $centerFolderId);
+                if ($uploadResult['success']) {
+                    $driveService->makeFilePublic($uploadResult['id']);
+                    $newFileId = $uploadResult['id'];
+                    $viewUrl = "https://drive.google.com/file/d/{$newFileId}/preview";
+                    $downloadUrl = "https://drive.google.com/uc?id={$newFileId}&export=download";
+
+                    // Update endorsement table
+                    $updateEndorseQuery = "UPDATE endorsement SET 
+                        drive_file_id = ?,
+                        drive_view_url = ?,
+                        drive_download_url = ?
+                    WHERE id = ?";
+                    $updateEndorseStmt = $con->prepare($updateEndorseQuery);
+                    $updateEndorseStmt->bind_param("sssi", $newFileId, $viewUrl, $downloadUrl, $endorsementId);
+                    $updateEndorseStmt->execute();
+                    $updateEndorseStmt->close();
+
+                    error_log("Uploaded new endorsement file: $newFileId");
+                } else {
+                    error_log("Failed to upload endorsement file: " . ($uploadResult['error'] ?? 'Unknown error'));
+                }
+            }
+        }
+
+        // Update Local In-House data if present
+        $isLocalInhouse = isset($_POST['isLocalInhouse']) && $_POST['isLocalInhouse'] == '1';
+        $localInhouseId = isset($_POST['localInhouseId']) ? (int)$_POST['localInhouseId'] : 0;
+
+        if ($isLocalInhouse && $localInhouseId > 0) {
+            $localUpdates = [];
+            $localParams = [];
+            $localTypes = "";
+
+            // Get current local data
+            $localCurrentQuery = "SELECT document_title, campus, category, center, main_author, co_authors FROM local_inhouse WHERE id = ?";
+            $localCurrentStmt = $con->prepare($localCurrentQuery);
+            $localCurrentStmt->bind_param("i", $localInhouseId);
+            $localCurrentStmt->execute();
+            $localCurrentResult = $localCurrentStmt->get_result();
+            $localCurrentData = $localCurrentResult->fetch_assoc();
+            $localCurrentStmt->close();
+
+            // Update local title if changed
+            if (isset($_POST['title']) && trim($_POST['title']) !== trim($localCurrentData['document_title'])) {
+                $localUpdates[] = "document_title = ?";
+                $localParams[] = trim($_POST['title']);
+                $localTypes .= "s";
+            }
+
+            // Update local author if changed
+            if (isset($_POST['author']) && trim($_POST['author']) !== trim($localCurrentData['main_author'])) {
+                $localUpdates[] = "main_author = ?";
+                $localParams[] = trim($_POST['author']);
+                $localTypes .= "s";
+            }
+
+            // Update local campus if changed
+            if (isset($_POST['campus']) && trim($_POST['campus']) !== trim($localCurrentData['campus'])) {
+                $localUpdates[] = "campus = ?";
+                $localParams[] = trim($_POST['campus']);
+                $localTypes .= "s";
+            }
+
+            // Update local category if changed
+            if (isset($_POST['category']) && trim($_POST['category']) !== trim($localCurrentData['category'])) {
+                $localUpdates[] = "category = ?";
+                $localParams[] = trim($_POST['category']);
+                $localTypes .= "s";
+            }
+
+            // Update local center if changed
+            if (isset($_POST['center']) && trim($_POST['center']) !== trim($localCurrentData['center'])) {
+                $localUpdates[] = "center = ?";
+                $localParams[] = trim($_POST['center']);
+                $localTypes .= "s";
+            }
+
+            // Update local co-authors if changed
+            if (isset($_POST['coAuthor'])) {
+                $newCoauthor = $_POST['coAuthor'];
+                if ($newCoauthor !== $localCurrentData['co_authors']) {
+                    $localUpdates[] = "co_authors = ?";
+                    $localParams[] = $newCoauthor;
+                    $localTypes .= "s";
+                }
+            }
+
+            // Handle local program file upload
+            if (isset($_FILES['programFile']) && $_FILES['programFile']['error'] === UPLOAD_ERR_OK) {
+                $tempPath = $_FILES['programFile']['tmp_name'];
+                $fileName = $_FILES['programFile']['name'];
+
+                // Get old program file ID
+                $oldProgramQuery = "SELECT program_event_file_id FROM local_inhouse WHERE id = ?";
+                $oldProgramStmt = $con->prepare($oldProgramQuery);
+                $oldProgramStmt->bind_param("i", $localInhouseId);
+                $oldProgramStmt->execute();
+                $oldProgramResult = $oldProgramStmt->get_result();
+                $oldProgramData = $oldProgramResult->fetch_assoc();
+                $oldProgramFileId = $oldProgramData['program_event_file_id'] ?? null;
+                $oldProgramStmt->close();
+
+                // Get category folder for program file
+                $categoryFolderQuery = "SELECT drive_category_folder_id FROM researchfile WHERE id = ?";
+                $categoryFolderStmt = $con->prepare($categoryFolderQuery);
+                $categoryFolderStmt->bind_param("i", $docId);
+                $categoryFolderStmt->execute();
+                $categoryFolderResult = $categoryFolderStmt->get_result();
+                $categoryFolderData = $categoryFolderResult->fetch_assoc();
+                $categoryFolderId = $categoryFolderData['drive_category_folder_id'] ?? null;
+                $categoryFolderStmt->close();
+
+                if ($oldProgramFileId && $driveService) {
+                    try {
+                        $driveService->trashFile($oldProgramFileId);
+                        error_log("Deleted old program file: $oldProgramFileId");
+                    } catch (Exception $e) {
+                        error_log("Failed to delete old program file: " . $e->getMessage());
+                    }
+                }
+
+                if ($driveService && $categoryFolderId) {
+                    $uploadResult = $driveService->uploadFile($tempPath, $fileName, $categoryFolderId);
+                    if ($uploadResult['success']) {
+                        $driveService->makeFilePublic($uploadResult['id']);
+                        $newFileId = $uploadResult['id'];
+                        $viewUrl = "https://drive.google.com/file/d/{$newFileId}/preview";
+                        $downloadUrl = "https://drive.google.com/uc?id={$newFileId}&export=download";
+
+                        $localUpdates[] = "program_event_file_id = ?";
+                        $localParams[] = $newFileId;
+                        $localTypes .= "s";
+
+                        $localUpdates[] = "program_event_view_url = ?";
+                        $localParams[] = $viewUrl;
+                        $localTypes .= "s";
+
+                        error_log("Uploaded new program file: $newFileId");
+                    }
+                }
+            }
+
+            // Handle local certificate file upload
+            if (isset($_FILES['certificateFile']) && $_FILES['certificateFile']['error'] === UPLOAD_ERR_OK) {
+                $tempPath = $_FILES['certificateFile']['tmp_name'];
+                $fileName = $_FILES['certificateFile']['name'];
+
+                // Get old certificate file ID
+                $oldCertQuery = "SELECT certificate_event_file_id FROM local_inhouse WHERE id = ?";
+                $oldCertStmt = $con->prepare($oldCertQuery);
+                $oldCertStmt->bind_param("i", $localInhouseId);
+                $oldCertStmt->execute();
+                $oldCertResult = $oldCertStmt->get_result();
+                $oldCertData = $oldCertResult->fetch_assoc();
+                $oldCertFileId = $oldCertData['certificate_event_file_id'] ?? null;
+                $oldCertStmt->close();
+
+                if ($oldCertFileId && $driveService) {
+                    try {
+                        $driveService->trashFile($oldCertFileId);
+                        error_log("Deleted old certificate file: $oldCertFileId");
+                    } catch (Exception $e) {
+                        error_log("Failed to delete old certificate file: " . $e->getMessage());
+                    }
+                }
+
+                if ($driveService && $categoryFolderId) {
+                    $uploadResult = $driveService->uploadFile($tempPath, $fileName, $categoryFolderId);
+                    if ($uploadResult['success']) {
+                        $driveService->makeFilePublic($uploadResult['id']);
+                        $newFileId = $uploadResult['id'];
+                        $viewUrl = "https://drive.google.com/file/d/{$newFileId}/preview";
+                        $downloadUrl = "https://drive.google.com/uc?id={$newFileId}&export=download";
+
+                        $localUpdates[] = "certificate_event_file_id = ?";
+                        $localParams[] = $newFileId;
+                        $localTypes .= "s";
+
+                        $localUpdates[] = "certificate_event_view_url = ?";
+                        $localParams[] = $viewUrl;
+                        $localTypes .= "s";
+
+                        error_log("Uploaded new certificate file: $newFileId");
+                    }
+                }
+            }
+
+            // Execute local updates if any
+            if (!empty($localUpdates)) {
+                $localUpdateQuery = "UPDATE local_inhouse SET " . implode(", ", $localUpdates) . " WHERE id = ?";
+                $localParams[] = $localInhouseId;
+                $localTypes .= "i";
+
+                $localStmt = $con->prepare($localUpdateQuery);
+                $bindParams = array_merge([$localTypes], $localParams);
+                $bindParamsRef = [];
+                foreach ($bindParams as $key => $value) {
+                    $bindParamsRef[$key] = &$bindParams[$key];
+                }
+                call_user_func_array([$localStmt, 'bind_param'], $bindParamsRef);
+                $localStmt->execute();
+                $localStmt->close();
+                error_log("Local In-House data updated for ID: $localInhouseId");
+            }
+        }
+
+        // Execute main updates if any
+        if (!empty($updates)) {
+            // Reset status to pending to trigger re-review (only if status is not already pending)
+            $updates[] = "status = 'pending'";
+
+            $updateQuery = "UPDATE researchfile SET " . implode(", ", $updates) . " WHERE id = ?";
+            $params[] = $docId;
+            $types .= "i";
+
+            $stmt = $con->prepare($updateQuery);
+            $bindParams = array_merge([$types], $params);
+            $bindParamsRef = [];
+            foreach ($bindParams as $key => $value) {
+                $bindParamsRef[$key] = &$bindParams[$key];
+            }
+            call_user_func_array([$stmt, 'bind_param'], $bindParamsRef);
+            
+            if ($stmt->execute()) {
+                $response->status = true;
+                $response->message = "Document updated successfully!";
+                error_log("Document updated: $docId by user: $userId. Fields updated: " . implode(", ", $updates));
+            } else {
+                throw new Exception("Failed to update document: " . $stmt->error);
+            }
+            $stmt->close();
+        } else {
+            $response->message = "No changes detected";
+            $response->status = false;
+            error_log("No changes detected for document: $docId");
+        }
+
+        $con->close();
+
+    } catch (Exception $e) {
+        error_log("editResearch error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+    }
+
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
 
 //get research files for events
 if (isset($_POST['researchFile'])) {
