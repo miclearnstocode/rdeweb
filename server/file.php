@@ -151,28 +151,31 @@ if (isset($_POST['getResearchData'])) {
     exit();
 }
 
-// ========== ALTERNATIVE: GET ALL EVENTS WITH RESEARCH FILES ==========
-if (isset($_POST['getAllResearchData'])) {
+if (isset($_POST['getResearchData'])) {
     $response = [];
     
     if ($con) {
-        // Get all events with their research files
+        // Direct join between researchfile and endorsement
         $query = "
             SELECT 
-                el.id as event_id,
-                el.name as event_name,
-                el.date as event_date,
+                r.id as research_id,
+                r.endorsementid,
                 r.title,
                 r.presenter,
                 r.author,
                 r.coauthor,
                 r.file,
-                e.date as endorsement_date
-            FROM `event_list` el
-            LEFT JOIN `endorsement` e ON el.name = e.event
-            LEFT JOIN `researchfile` r ON r.endorsementid = e.id
+                r.status as research_status,
+                e.id as endorsement_id,
+                e.event,
+                e.status as endorsement_status,
+                e.date as endorsement_date,
+                e.date as date
+            FROM `researchfile` r
+            LEFT JOIN `endorsement` e ON r.endorsementid = e.id
             WHERE r.file IS NOT NULL AND r.file != ''
-            ORDER BY el.date DESC, r.title ASC
+            AND e.status = 'accepted'
+            ORDER BY e.date DESC, r.title ASC
         ";
         
         $result = $con->query($query);
@@ -180,7 +183,7 @@ if (isset($_POST['getAllResearchData'])) {
         if ($result) {
             while ($row = $result->fetch_assoc()) {
                 $data = new stdClass();
-                $data->event = $row['event_name'] ?? '-';
+                $data->event = $row['event'] ?? '-';
                 $data->title = $row['title'] ?? '-';
                 $data->presenter = $row['presenter'] ?? '-';
                 $data->author = $row['author'] ?? '-';
@@ -199,7 +202,14 @@ if (isset($_POST['getAllResearchData'])) {
                 }
                 
                 $data->file = $row['file'] ?? null;
-                $data->date = $row['endorsement_date'] ?? $row['event_date'] ?? '-';
+                
+                // Use endorsement date directly
+                if ($row['date'] && $row['date'] !== '0000-00-00 00:00:00') {
+                    $data->date = $row['date'];
+                } else {
+                    $data->date = '-';
+                }
+                
                 $response[] = $data;
             }
         }

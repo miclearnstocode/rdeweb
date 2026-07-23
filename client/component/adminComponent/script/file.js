@@ -662,6 +662,48 @@ const SystemFile = () => {
         }))
     }
 
+    const formatDateTime = (dateTime) => {
+        if (!dateTime || dateTime === '-' || dateTime === '0000-00-00 00:00:00') return '-'
+        
+
+        const parts = dateTime.split(' ')
+        if (parts.length !== 2) return dateTime
+        
+        const dateParts = parts[0].split('-')
+        const timeParts = parts[1].split(':')
+        
+        if (dateParts.length !== 3 || timeParts.length !== 3) return dateTime
+        
+        const year = parseInt(dateParts[0])
+        const month = parseInt(dateParts[1]) - 1 // Month is 0-indexed
+        const day = parseInt(dateParts[2])
+        const hours = parseInt(timeParts[0])
+        const minutes = parseInt(timeParts[1])
+        
+        const date = new Date(year, month, day, hours, minutes)
+        
+        if (isNaN(date.getTime())) return dateTime
+        
+        // Format: "Nov 11, 2022"
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        const monthName = monthNames[date.getMonth()]
+        const dayFormatted = date.getDate()
+        const yearFormatted = date.getFullYear()
+        
+        // Format time: "04:08 PM"
+        let hour = date.getHours()
+        const ampm = hour >= 12 ? 'PM' : 'AM'
+        hour = hour % 12 || 12
+        const minute = String(date.getMinutes()).padStart(2, '0')
+        const timeFormatted = `${hour}:${minute} ${ampm}`
+        
+        return {
+            date: `${monthName} ${dayFormatted}, ${yearFormatted}`,
+            time: timeFormatted,
+            full: `${monthName} ${dayFormatted}, ${yearFormatted} at ${timeFormatted}`
+        }
+    }
+
     const renderTableRows = (data) => {
         tableBody.innerHTML = ''
         
@@ -705,6 +747,15 @@ const SystemFile = () => {
         }
 
         data.forEach((val, index) => {
+            // Format the date
+            let dateDisplay = '-'
+            let timeDisplay = ''
+            if (val.date && val.date !== '-') {
+                const formatted = formatDateTime(val.date)
+                dateDisplay = formatted.date || '-'
+                timeDisplay = formatted.time || ''
+            }
+            
             const row = $({
                 tag: 'div',
                 style: {
@@ -824,7 +875,7 @@ const SystemFile = () => {
                         },
                         text: val.coauthor || '-'
                     }),
-                    // Date - 14% (no wrap)
+                    // Date & Time - 14%
                     $({
                         tag: 'div',
                         style: {
@@ -833,12 +884,34 @@ const SystemFile = () => {
                             fontSize: '0.78vw',
                             color: '#1e293b',
                             fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
-                            whiteSpace: 'nowrap',
                             flexShrink: 0,
                             display: 'flex',
-                            alignItems: 'center'
+                            flexDirection: 'column',
+                            alignItems: 'flex-start',
+                            justifyContent: 'center',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden'
                         },
-                        text: val.date ? val.date.split(' ')[0] : '-'
+                        child: [
+                            $({
+                                tag: 'div',
+                                style: {
+                                    fontWeight: '500',
+                                    fontSize: '0.78vw',
+                                    color: '#1e293b'
+                                },
+                                text: dateDisplay
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    fontSize: '0.8vw',
+                                    color: '#94a3b8',
+                                    marginTop: '0.05rem'
+                                },
+                                text: timeDisplay
+                            })
+                        ]
                     }),
                     // Status - 8% (no wrap)
                     $({
@@ -1213,7 +1286,7 @@ const SystemFile = () => {
                                     display: 'flex',
                                     alignItems: 'center'
                                 },
-                                text: 'Date'
+                                text: 'Date & Time'
                             }),
                             $({
                                 tag: 'div',
