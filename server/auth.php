@@ -56,7 +56,7 @@ if(isset($_SESSION['login'])){
                 
             case 'EXTENSION':
                 ob_clean();
-                header("location:/extension");
+                header("location:/extension-chair");
                 exit();
                 break;
 

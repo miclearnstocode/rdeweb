@@ -87,7 +87,6 @@ if(isset($_POST['auth'])){
                 $statement->close();
             }
             
-            // MODIFIED QUERY - Remove conditions that exclude Research Chairs
             $loginUser = "SELECT 
                 capsu_user.id,
                 capsu_user.username,
@@ -116,32 +115,49 @@ if(isset($_POST['auth'])){
                     
                     if(password_verify($password, $passWord)){
                         $response->status = true;
-                        $response->message = '/user/research/submittedDocs/submittedFiles';
+                        
+                        // Determine redirect based on user type
+                        $redirectUrl = '/user/research/submittedDocs/submittedFiles'; // Default
                         
                         $signature = new stdClass();
                         $signature->url = $signUrl;
                         $signature->scale = $signScale;
                         
-                        // Set session - ALWAYS use CAPSUUSERS for both Center Directors and Research Chairs
-                        $_SESSION['isLog'] = serialize(new Auth(true, 'CAPSUUSERS', $userName, $center, $id, $userType, $emailAdd, $fullName, json_encode($signature)));
+                        // CHECK FOR EXTENSION CHAIR FIRST
+                        if(strpos($userType, 'Extension Chair') !== false || strpos($userType, 'extension chair') !== false) {
+                            $redirectUrl = '/extension-chair';
+                            $_SESSION['isExtensionChair'] = true;
+                            $_SESSION['userType'] = 'EXTENSION'; // Override user type
+                        }
+                        // CHECK FOR RESEARCH CHAIR
+                        else if(strpos($userType, 'Research Chair') !== false || strpos($userType, 'research chair') !== false) {
+                            $redirectUrl = '/user/research/submittedDocs/submittedFiles';
+                            $_SESSION['isResearchChair'] = true;
+                            $_SESSION['userType'] = 'CAPSUUSERS';
+                        }
+                        // CHECK FOR CENTER DIRECTOR
+                        else if(strpos($userType, 'Center Director') !== false || strpos($userType, 'center director') !== false) {
+                            $redirectUrl = '/user/research/submittedDocs/submittedFiles';
+                            $_SESSION['isResearchChair'] = true;
+                            $_SESSION['userType'] = 'CAPSUUSERS';
+                        }
+                        // DEFAULT - CAPSUUSERS (regular researchers)
+                        else {
+                            $redirectUrl = '/user/research/submittedDocs/submittedFiles';
+                            $_SESSION['userType'] = 'CAPSUUSERS';
+                        }
+                        
+                        $response->message = $redirectUrl;
+                        
+                        $_SESSION['isLog'] = serialize(new Auth(true, $_SESSION['userType'], $userName, $center, $id, $userType, $emailAdd, $fullName, json_encode($signature)));
                         $_SESSION['login'] = true;
                         $_SESSION['userId'] = $id;
                         $_SESSION['userName'] = $userName;
-                        $_SESSION['userType'] = 'CAPSUUSERS'; // Always CAPSUUSERS
                         $_SESSION['userFulname'] = $fullName;
                         $_SESSION['userEsign'] = json_encode($signature);
                         $_SESSION['userCenter'] = $center;
                         $_SESSION['userEmail'] = $emailAdd;
                         $_SESSION['userDesignation'] = $userType;
-                        
-                        // CHECK IF RESEARCH CHAIR
-                        if(strpos($userType, 'Research Chair') !== false || strpos($userType, 'research chair') !== false) {
-                            $_SESSION['isResearchChair'] = true;
-                        }
-                        // CHECK IF CENTER DIRECTOR
-                        else if(strpos($userType, 'Center Director') !== false || strpos($userType, 'center director') !== false) {
-                            $_SESSION['isResearchChair'] = true; // Set to true so they also get the same panel
-                        }
                         
                         echo json_encode($response);
                         ob_end_flush();
@@ -156,16 +172,50 @@ if(isset($_POST['auth'])){
                 $statement->close();
             }
             
+            // Check RDE Staff table
+            $rdeLogin = "SELECT id, username, password, email FROM rdestaff WHERE username = ?";
+            if ($rdeStmt = $con->prepare($rdeLogin)) {
+                $rdeStmt->bind_param("s", $usernames);
+                $rdeStmt->execute();
+                $rdeStmt->store_result();
+                
+                if ($rdeStmt->num_rows > 0) {
+                    $rdeStmt->bind_result($rdeId, $rdeUser, $rdePass, $rdeEmail);
+                    $rdeStmt->fetch();
+                    
+                    if (password_verify($password, $rdePass) || $rdePass === $password) {
+                        $response->status = true;
+                        $response->message = '/rdeOffice/dashboard';
+                        
+                        $_SESSION['login'] = true;
+                        $_SESSION['userId'] = $rdeId;
+                        $_SESSION['userName'] = $rdeUser;
+                        $_SESSION['userType'] = 'RDEOFFICE';
+                        $_SESSION['userOffice'] = 'RDE OFFICE';
+                        $_SESSION['userEmail'] = $rdeEmail;
+                        $_SESSION['userDesignation'] = 'RDE Staff';
+                        
+                        echo json_encode($response);
+                        ob_end_flush();
+                        exit();
+                    }
+                }
+                $rdeStmt->close();
+            }
+            
+            // If no user found in any table
             $response->message = 'Invalid credentials. Please check your username and password.';
             echo json_encode($response);
             $con->close();
+            ob_end_flush();
+            exit();
+            
         } else {
             $response->message = 'Failed to connect to database';
             echo json_encode($response);
+            ob_end_flush();
+            exit();
         }
-        
-        ob_end_flush();
-        exit();
     }
 
     if($_POST['auth'] === 'signup'){

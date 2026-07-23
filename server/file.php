@@ -84,7 +84,132 @@ if (isset($_POST['sendFile'])) {
     exit();
 }
 
+if (isset($_POST['getResearchData'])) {
+    $response = [];
+    
+    if ($con) {
+        // Get all events from event_list with their research files
+        $query = "
+            SELECT 
+                el.id as event_id,
+                el.name as event_name,
+                el.date as event_date,
+                r.title,
+                r.presenter,
+                r.author,
+                r.coauthor,
+                r.file,
+                r.status as research_status,
+                e.status as endorsement_status,
+                e.date as endorsement_date
+            FROM `event_list` el
+            LEFT JOIN `endorsement` e ON el.name = e.event
+            LEFT JOIN `researchfile` r ON r.endorsementid = e.id
+            WHERE r.file IS NOT NULL AND r.file != ''
+            AND (
+                e.status = 'accepted' 
+                OR r.status = 'accepted'
+                OR (e.status IS NULL AND r.status IS NULL)
+            )
+            ORDER BY el.date DESC, r.title ASC
+        ";
+        
+        $result = $con->query($query);
+        
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $data = new stdClass();
+                $data->event = $row['event_name'] ?? '-';
+                $data->title = $row['title'] ?? '-';
+                $data->presenter = $row['presenter'] ?? '-';
+                $data->author = $row['author'] ?? '-';
+                
+                // Format co-author (handle JSON array)
+                $coauthor = $row['coauthor'];
+                if ($coauthor) {
+                    $coauthorArray = json_decode($coauthor, true);
+                    if (is_array($coauthorArray)) {
+                        $data->coauthor = implode(', ', $coauthorArray);
+                    } else {
+                        $data->coauthor = $coauthor;
+                    }
+                } else {
+                    $data->coauthor = '-';
+                }
+                
+                $data->file = $row['file'] ?? null;
+                // Use endorsement date if available, otherwise use event date
+                $data->date = $row['endorsement_date'] ?? $row['event_date'] ?? '-';
+                $response[] = $data;
+            }
+        }
+    }
+    
+    ob_clean();
+    echo json_encode($response);
+    ob_end_flush();
+    exit();
+}
 
+// ========== ALTERNATIVE: GET ALL EVENTS WITH RESEARCH FILES ==========
+if (isset($_POST['getAllResearchData'])) {
+    $response = [];
+    
+    if ($con) {
+        // Get all events with their research files
+        $query = "
+            SELECT 
+                el.id as event_id,
+                el.name as event_name,
+                el.date as event_date,
+                r.title,
+                r.presenter,
+                r.author,
+                r.coauthor,
+                r.file,
+                e.date as endorsement_date
+            FROM `event_list` el
+            LEFT JOIN `endorsement` e ON el.name = e.event
+            LEFT JOIN `researchfile` r ON r.endorsementid = e.id
+            WHERE r.file IS NOT NULL AND r.file != ''
+            ORDER BY el.date DESC, r.title ASC
+        ";
+        
+        $result = $con->query($query);
+        
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $data = new stdClass();
+                $data->event = $row['event_name'] ?? '-';
+                $data->title = $row['title'] ?? '-';
+                $data->presenter = $row['presenter'] ?? '-';
+                $data->author = $row['author'] ?? '-';
+                
+                // Format co-author (handle JSON array)
+                $coauthor = $row['coauthor'];
+                if ($coauthor) {
+                    $coauthorArray = json_decode($coauthor, true);
+                    if (is_array($coauthorArray)) {
+                        $data->coauthor = implode(', ', $coauthorArray);
+                    } else {
+                        $data->coauthor = $coauthor;
+                    }
+                } else {
+                    $data->coauthor = '-';
+                }
+                
+                $data->file = $row['file'] ?? null;
+                $data->date = $row['endorsement_date'] ?? $row['event_date'] ?? '-';
+                $response[] = $data;
+            }
+        }
+    }
+    
+    ob_clean();
+    echo json_encode($response);
+    ob_end_flush();
+    exit();
+}
 
 if(isset($_POST['fileSubmit'])){
 

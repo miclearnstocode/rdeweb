@@ -574,10 +574,12 @@ const Communication = () => {
     }))
 }
 
-///=================================================================================================================================
-
 const SystemFile = () => {
     let main
+    let filterSelect
+    let tableBody
+    let allData = []
+    let totalCountEl = null // Reference to the total count element
 
     const viewDoc = ({ fileUrl }) => {
         let mainView
@@ -660,569 +662,647 @@ const SystemFile = () => {
         }))
     }
 
-    const docListView = (id) => {
-        let scrollBody
-
-        const document = (campus, author, category, docId) => {
-            const content = (label, width) => {
-                return ($({
-                    tag: 'div',
-                    style: {
-                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
-                        fontSize: '0.85vw',
-                        color: '#1e293b',
-                        width: width,
-                        height: 'fit-content',
-                        display: 'flex',
-                        paddingTop: '.4rem',
-                        paddingBottom: '.4rem'
-                    },
-                    child: [
-                        $({
-                            tag: 'div',
-                            style: {
-                                margin: 'auto',
-                                textAlign: 'left',
-                                marginLeft: '.5vw'
-                            },
-                            text: label
-                        })
-                    ]
-                }))
-            }
-            return ($({
+    const renderTableRows = (data) => {
+        tableBody.innerHTML = ''
+        
+        // Update total count
+        if (totalCountEl) {
+            totalCountEl.textContent = data.length
+        }
+        
+        if (data.length === 0) {
+            const emptyRow = $({
                 tag: 'div',
                 style: {
                     display: 'flex',
-                    width: '100%',
-                    margin: '.3vh auto',
-                    cursor: 'pointer',
-                    background: '#ffffff',
-                    borderBottom: '1px solid #f1f5f9',
-                    transition: 'all 0.2s ease',
-                    borderRadius: '0.3vw'
-                },
-                att: {
-                    className: 'docsList'
-                },
-                child: [
-                    content(campus, '30%'),
-                    content(author, '40%'),
-                    content(category, '30%')
-                ],
-                event: {
-                    mouseenter: (e) => {
-                        e.currentTarget.style.background = '#f8fafc'
-                    },
-                    mouseleave: (e) => {
-                        e.currentTarget.style.background = '#ffffff'
-                    },
-                    type: 'click',
-                    method: () => {
-                        const req = new Request('/loader')
-                        req.Post([
-                            { name: 'docViewRequest', value: '0' },
-                            { name: 'docId', value: docId }
-                        ])
-                        req.Json()
-                        req.Send().then(data => {
-                            main.appendChild(viewDoc({
-                                fileUrl: data.file
-                            }))
-                        }).catch(err => {
-                            console.log(err)
-                        })
-                    }
-                }
-            }))
-        }
-
-        const scrollList = () => {
-            return ($({
-                tag: 'div',
-                style: {
-                    width: '100%',
-                    height: '86%',
-                    overflowY: 'auto',
-                    padding: '0.5vw',
-                    background: '#ffffff'
-                },
-                elementHandler: (el) => {
-                    scrollBody = el
-                    const req = new Request('/loader')
-                    req.Post([
-                        { name: 'docPerEvent', value: '0' },
-                        { name: 'eventId', value: id }
-                    ])
-                    req.Json()
-                    req.Send().then(data => {
-                        data.forEach(val => {
-                            el.appendChild(document(val.campus, val.author, val.category, val.docid))
-                        })
-                    }).catch(err => {
-                        console.log(err)
-                    })
-                }
-            }))
-        }
-
-        return ($({
-            tag: 'div',
-            style: {
-                height: 'calc(100% - 8vh)',
-                width: '100%',
-                background: '#ffffff'
-            },
-            elementHandler: (el) => {
-                el.appendChild($({
-                    tag: 'div',
-                    style: {
-                        height: 'fit-content',
-                        width: '100%',
-                        display: 'flex',
-                        borderBottom: '1px solid #e2e8f0',
-                        paddingBottom: '0.5vh',
-                        paddingTop: '0.5vh',
-                        background: '#f8fafc'
-                    },
-                    child: [
-                        $({
-                            tag: 'div',
-                            style: {
-                                height: 'fit-content',
-                                padding: '.3rem .6rem',
-                                border: '1px solid #e2e8f0',
-                                display: 'flex',
-                                background: '#ffffff',
-                                marginLeft: '1vw',
-                                marginTop: '0.5vh',
-                                borderRadius: '.5vw'
-                            },
-                            child: [
-                                $({
-                                    tag: 'div',
-                                    att: {
-                                        className: 'fa-solid fa-search'
-                                    },
-                                    style: {
-                                        fontSize: '1vw',
-                                        color: '#94a3b8',
-                                    }
-                                }),
-                                $({
-                                    tag: 'input',
-                                    att: {
-                                        type: 'search',
-                                        placeholder: 'Search documents...'
-                                    },
-                                    style: {
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        outline: 'none',
-                                        width: '20vw',
-                                        fontSize: '0.85vw',
-                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
-                                        marginLeft: '.5vw',
-                                        color: '#1e293b',
-                                    },
-                                    event: {
-                                        type: 'input',
-                                        method: (event) => {
-                                            scrollBody.childNodes.forEach(val => {
-                                                let child = val.innerText.toUpperCase()
-                                                let inputChar = event.target.value.toUpperCase()
-                                                if (child.includes(inputChar)) {
-                                                    val.style.display = 'flex'
-                                                } else {
-                                                    val.style.display = 'none'
-                                                }
-                                                if (event.target.value === '') {
-                                                    val.style.display = 'flex'
-                                                }
-                                            })
-                                        }
-                                    },
-                                    elementHandler: (el) => {
-                                        setTimeout(() => {
-                                            el.focus()
-                                        }, 50)
-                                    }
-                                })
-                            ]
-                        }),
-                    ]
-                }))
-                el.appendChild($({
-                    tag: 'div',
-                    style: {
-                        display: 'flex',
-                        height: '4%',
-                        width: '100%',
-                        borderBottom: '1px solid #e2e8f0',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
-                        fontWeight: '600',
-                        color: '#64748b',
-                        fontSize: '0.75vw',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        background: '#f8fafc',
-                        padding: '0.3vh 0'
-                    },
-                    child: [
-                        $({
-                            tag: 'div',
-                            style: {
-                                width: '30%',
-                                display: 'flex'
-                            },
-                            child: [
-                                $({
-                                    tag: 'div',
-                                    text: 'Campus',
-                                    style: {
-                                        margin: 'auto',
-                                        marginLeft: '.5vw'
-                                    }
-                                })
-                            ]
-                        }),
-                        $({
-                            tag: 'div',
-                            style: {
-                                width: '40%',
-                                display: 'flex'
-                            },
-                            child: [
-                                $({
-                                    tag: 'div',
-                                    text: 'Author',
-                                    style: {
-                                        margin: 'auto',
-                                        marginLeft: '.5vw'
-                                    }
-                                })
-                            ]
-                        }),
-                        $({
-                            tag: 'div',
-                            style: {
-                                width: '30%',
-                                display: 'flex'
-                            },
-                            child: [
-                                $({
-                                    tag: 'div',
-                                    text: 'Category',
-                                    style: {
-                                        margin: 'auto',
-                                        marginLeft: '.5vw'
-                                    }
-                                })
-                            ]
-                        }),
-                    ]
-                }))
-                el.appendChild(scrollList())
-            }
-        }))
-    }
-
-    const fileContent = () => {
-        let inputSearch
-        let bodyContent
-
-        const head = () => {
-            const eventDiv = () => {
-                let dl
-                return ($({
-                    tag: 'div',
-                    style: {
-                        height: 'fit-content',
-                        width: '25vw',
-                        padding: '.2rem',
-                        margin: 'auto',
-                        marginLeft: '.5vw',
-                    },
-                    child: [
-                        $({
-                            tag: 'datalist',
-                            att: {
-                                id: 'eventList'
-                            },
-                            elementHandler: (el) => {
-                                dl = el
-                            }
-                        }),
-                        $({
-                            tag: 'input',
-                            style: {
-                                width: '98%',
-                                backgroundColor: 'transparent',
-                                border: 'none',
-                                outline: 'none',
-                                fontSize: '1vw',
-                                fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
-                                fontWeight: '500',
-                                color: '#1e293b'
-                            },
-                            att: {
-                                type: 'search',
-                                placeholder: 'Search or select event...'
-                            },
-                            elementHandler: (el) => {
-                                inputSearch = el
-                                setTimeout(() => {
-                                    el.focus()
-                                }, 100)
-                                el.appendChild($({
-                                    tag: 'option',
-                                    att: {
-                                        innerText: '- - All Events - -',
-                                        id: '0'
-                                    },
-                                    style: {
-                                        background: '#ffffff'
-                                    }
-                                }))
-                                const req = new Request('/loadUser')
-                                req.Post([
-                                    { name: 'eventRequest', value: '1' }
-                                ])
-                                req.Json()
-                                req.Send().then(data => {
-                                    data.forEach(val => {
-                                        dl.appendChild($({
-                                            tag: 'option',
-                                            att: {
-                                                value: val.name
-                                            },
-                                            style: {
-                                                fontSize: '1vw'
-                                            }
-                                        }))
-                                    })
-                                })
-                                el.setAttribute('list', 'eventList')
-                            },
-                            event: {
-                                type: 'input',
-                                method: (event) => {
-                                    // Filter logic here
-                                }
-                            }
-                        })
-                    ]
-                }))
-            }
-
-            return ($({
-                tag: 'div',
-                style: {
-                    width: 'fit-content',
-                    display: 'flex',
-                    marginLeft: '1vw',
-                    padding: '.4rem .8rem',
-                    marginTop: '0.5vh',
-                    borderRadius: '.5vw',
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0'
-                },
-                att: {
-                    className: 'selectEvent'
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '3rem',
+                    color: '#94a3b8',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                    fontSize: '0.85vw',
+                    height: '100%'
                 },
                 child: [
                     $({
                         tag: 'div',
-                        att: {
-                            className: 'fa-solid fa-search'
-                        },
                         style: {
-                            fontSize: '1.2vw',
-                            margin: 'auto',
-                            marginRight: 'auto',
-                            color: '#3b82f6',
-                            padding: '.2rem',
-                            borderRadius: '.3vw',
-                            cursor: 'pointer'
-                        }
+                            fontSize: '2rem',
+                            marginBottom: '0.5rem',
+                            color: '#cbd5e1'
+                        },
+                        text: '📄'
                     }),
-                    eventDiv()
+                    $({
+                        tag: 'div',
+                        text: 'No accepted entries found'
+                    })
+                ]
+            })
+            tableBody.appendChild(emptyRow)
+            return
+        }
+
+        data.forEach((val, index) => {
+            const row = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    borderBottom: '1px solid #f1f5f9',
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer',
+                    background: index % 2 === 0 ? '#ffffff' : '#fafbfc',
+                    padding: '0.2rem 0',
+                    minHeight: '3rem'
+                },
+                event: {
+                    mouseenter: (e) => {
+                        e.currentTarget.style.background = '#f1f5f9'
+                        e.currentTarget.style.transition = 'all 0.2s ease'
+                    },
+                    mouseleave: (e) => {
+                        e.currentTarget.style.background = index % 2 === 0 ? '#ffffff' : '#fafbfc'
+                        e.currentTarget.style.transition = 'all 0.2s ease'
+                    },
+                    type: 'click',
+                    method: () => {
+                        if (val.file) {
+                            main.appendChild(viewDoc({ fileUrl: val.file }))
+                        }
+                    }
+                },
+                child: [
+                    // Event Name - 16% (with text wrap)
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '16%',
+                            padding: '0.6rem 0.8rem',
+                            fontSize: '0.78vw',
+                            color: '#1e293b',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                            fontWeight: '500',
+                            flexShrink: 0,
+                            wordWrap: 'break-word',
+                            whiteSpace: 'normal',
+                            lineHeight: '1.4',
+                            display: 'flex',
+                            alignItems: 'center'
+                        },
+                        text: val.event || '-'
+                    }),
+                    // Title - 20% (with text wrap)
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '20%',
+                            padding: '0.6rem 0.8rem',
+                            fontSize: '0.78vw',
+                            color: '#1e293b',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                            flexShrink: 0,
+                            wordWrap: 'break-word',
+                            whiteSpace: 'normal',
+                            lineHeight: '1.4',
+                            display: 'flex',
+                            alignItems: 'center'
+                        },
+                        text: val.title || '-'
+                    }),
+                    // Presenter - 14% (no wrap)
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '14%',
+                            padding: '0.6rem 0.8rem',
+                            fontSize: '0.78vw',
+                            color: '#1e293b',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            flexShrink: 0,
+                            display: 'flex',
+                            alignItems: 'center'
+                        },
+                        text: val.presenter || '-'
+                    }),
+                    // Author - 14% (no wrap)
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '14%',
+                            padding: '0.6rem 0.8rem',
+                            fontSize: '0.78vw',
+                            color: '#1e293b',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            flexShrink: 0,
+                            display: 'flex',
+                            alignItems: 'center'
+                        },
+                        text: val.author || '-'
+                    }),
+                    // Co-Author - 14% (with text wrap)
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '14%',
+                            padding: '0.6rem 0.8rem',
+                            fontSize: '0.78vw',
+                            color: '#1e293b',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                            flexShrink: 0,
+                            wordWrap: 'break-word',
+                            whiteSpace: 'normal',
+                            lineHeight: '1.4',
+                            display: 'flex',
+                            alignItems: 'center'
+                        },
+                        text: val.coauthor || '-'
+                    }),
+                    // Date - 14% (no wrap)
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '14%',
+                            padding: '0.6rem 0.8rem',
+                            fontSize: '0.78vw',
+                            color: '#1e293b',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0,
+                            display: 'flex',
+                            alignItems: 'center'
+                        },
+                        text: val.date ? val.date.split(' ')[0] : '-'
+                    }),
+                    // Status - 8% (no wrap)
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '8%',
+                            padding: '0.6rem 0.8rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                style: {
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.3rem',
+                                    padding: '0.2rem 0.6rem',
+                                    background: '#dcfce7',
+                                    color: '#166534',
+                                    borderRadius: '20px',
+                                    fontSize: '0.65vw',
+                                    fontWeight: '600',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    whiteSpace: 'nowrap'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        style: {
+                                            display: 'inline-block',
+                                            width: '6px',
+                                            height: '6px',
+                                            background: '#22c55e',
+                                            borderRadius: '50%',
+                                            animation: 'pulse 2s infinite'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'span',
+                                        text: 'Accepted'
+                                    })
+                                ]
+                            })
+                        ]
+                    })
+                ]
+            })
+            tableBody.appendChild(row)
+        })
+    }
+
+    const filterData = (eventName) => {
+        let filteredData
+        if (eventName === 'All Events') {
+            filteredData = allData
+        } else {
+            filteredData = allData.filter(val => val.event === eventName)
+        }
+        renderTableRows(filteredData)
+    }
+
+    const fileContent = () => {
+        const head = () => {
+            return ($({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '0.8rem 1.5rem',
+                    background: '#ffffff',
+                    borderBottom: '1px solid #e2e8f0',
+                    flexShrink: 0
+                },
+                child: [
+                    // Left side - Filter
+                    $({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.8rem'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                style: {
+                                    fontSize: '0.75vw',
+                                    fontWeight: '600',
+                                    color: '#64748b',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px'
+                                },
+                                text: 'Filter by:'
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.3rem 0.8rem',
+                                    background: '#f8fafc',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '0.4vw'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'div',
+                                        att: {
+                                            className: 'fa-solid fa-filter'
+                                        },
+                                        style: {
+                                            fontSize: '0.8vw',
+                                            color: '#3b82f6'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'select',
+                                        style: {
+                                            background: 'transparent',
+                                            border: 'none',
+                                            outline: 'none',
+                                            fontSize: '0.8vw',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                            color: '#1e293b',
+                                            cursor: 'pointer',
+                                            padding: '0.2rem 0.3rem',
+                                            minWidth: '180px'
+                                        },
+                                        elementHandler: (el) => {
+                                            filterSelect = el
+                                            el.appendChild($({
+                                                tag: 'option',
+                                                text: 'All Events',
+                                                att: {
+                                                    value: 'All Events',
+                                                    selected: true
+                                                },
+                                                style: {
+                                                    background: '#ffffff',
+                                                    color: '#1e293b'
+                                                }
+                                            }))
+                                        },
+                                        event: {
+                                            type: 'change',
+                                            method: (eve) => {
+                                                filterData(eve.target.value)
+                                            }
+                                        }
+                                    })
+                                ]
+                            })
+                        ]
+                    }),
+                    // Right side - Status indicator and count
+                    $({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '1rem'
+                        },
+                        child: [
+                            // Total count
+                            $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.3rem',
+                                    padding: '0.3rem 0.8rem',
+                                    background: '#f1f5f9',
+                                    borderRadius: '0.4vw',
+                                    fontSize: '0.75vw',
+                                    color: '#475569',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        style: {
+                                            fontWeight: '600'
+                                        },
+                                        text: 'Total:'
+                                    }),
+                                    $({
+                                        tag: 'span',
+                                        style: {
+                                            fontWeight: '700',
+                                            color: '#1e293b'
+                                        },
+                                        elementHandler: (el) => {
+                                            totalCountEl = el
+                                            el.textContent = '0'
+                                        }
+                                    })
+                                ]
+                            }),
+                            // All Accepted indicator
+                            $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.3rem 1rem',
+                                    background: '#dcfce7',
+                                    border: '1px solid #86efac',
+                                    borderRadius: '20px'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        style: {
+                                            display: 'inline-block',
+                                            width: '8px',
+                                            height: '8px',
+                                            background: '#22c55e',
+                                            borderRadius: '50%',
+                                            animation: 'pulse 2s infinite'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'span',
+                                        style: {
+                                            fontSize: '0.7vw',
+                                            fontWeight: '600',
+                                            color: '#166534',
+                                            fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.3px'
+                                        },
+                                        text: 'All Accepted ✓'
+                                    })
+                                ]
+                            })
+                        ]
+                    })
                 ]
             }))
         }
 
-        const container = () => {
-            const eventPanel = (eventType, totalDocs, eventId) => {
-                let perListPan
-                let statePer = false
-                let mainBod
-
-                return ($({
-                    tag: 'div',
-                    style: {
-                        height: 'fit-content',
-                        width: '100%',
-                        margin: '0.5vh auto'
-                    },
-                    elementHandler: (el) => {
-                        mainBod = el
-                    },
-                    child: [
-                        $({
-                            tag: 'div',
-                            style: {
-                                width: '100%',
-                                display: 'flex',
-                                padding: '.5rem .8rem',
-                                background: '#f8fafc',
-                                borderRadius: '0.4vw',
-                                borderBottom: '1px solid #e2e8f0',
-                                transition: 'all 0.2s ease',
-                                cursor: 'pointer'
-                            },
-                            att: {
-                                className: 'perList'
-                            },
-                            event: {
-                                mouseenter: (e) => {
-                                    e.currentTarget.style.background = '#f1f5f9'
-                                },
-                                mouseleave: (e) => {
-                                    e.currentTarget.style.background = '#f8fafc'
-                                },
-                                type: 'click',
-                                method: () => {
-                                    statePer = !statePer
-                                    if (statePer) {
-                                        bodyContent.childNodes.forEach(val => {
-                                            val.style.display = 'none'
-                                        })
-                                        mainBod.style.display = 'block'
-                                        perListPan.style.borderTop = '1px solid #e2e8f0'
-                                        perListPan.appendChild(docListView(eventId))
-                                    } else {
-                                        bodyContent.childNodes.forEach(val => {
-                                            val.style.display = 'block'
-                                        })
-                                        perListPan.innerText = ''
-                                        perListPan.style.borderTop = ''
-                                        perListPan.innerHTML = ''
-                                    }
-                                }
-                            },
-                            child: [
-                                $({
-                                    tag: 'div',
-                                    style: {
-                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
-                                        color: '#1e293b',
-                                        fontSize: '0.85vw',
-                                        width: '80%',
-                                        fontWeight: '500'
-                                    },
-                                    text: eventType
-                                }),
-                                $({
-                                    tag: 'div',
-                                    style: {
-                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
-                                        color: '#64748b',
-                                        fontSize: '0.85vw',
-                                        width: '20%',
-                                        textAlign: 'center',
-                                        fontWeight: '600'
-                                    },
-                                    text: totalDocs
-                                })
-                            ]
-                        }),
-                        $({
-                            tag: 'div',
-                            style: {
-                                height: 'fit-content',
-                                width: '100%',
-                            },
-                            elementHandler: (el) => {
-                                perListPan = el
-                            }
-                        })
-                    ],
-                }))
-            }
-
+        const tableContainer = () => {
             return ($({
                 tag: 'div',
                 style: {
                     width: '100%',
-                    height: '90%',
+                    height: 'calc(100% - 60px)',
+                    padding: '0 1rem 0.5rem 1rem',
                     background: '#ffffff',
-                    marginTop: '0.5%',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column'
                 },
                 child: [
+                    // Table Header
                     $({
                         tag: 'div',
                         style: {
-                            height: '4%',
-                            width: '80%',
-                            margin: 'auto',
                             display: 'flex',
-                            paddingTop: '0.5%',
-                            borderBottom: '1px solid #e2e8f0',
-                            background: '#f8fafc'
+                            background: '#f8fafc',
+                            borderBottom: '2px solid #e2e8f0',
+                            padding: '0.6rem 0',
+                            flexShrink: 0,
+                            borderRadius: '0.4vw 0.4vw 0 0',
+                            minHeight: '2.5rem'
                         },
                         child: [
                             $({
                                 tag: 'div',
                                 style: {
-                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    width: '16%',
+                                    padding: '0 0.8rem',
+                                    fontSize: '0.65vw',
+                                    fontWeight: '700',
                                     color: '#64748b',
-                                    fontSize: '0.75vw',
-                                    fontWeight: '600',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.5px',
-                                    width: '80%',
-                                    textIndent: '.5vw'
+                                    flexShrink: 0,
+                                    display: 'flex',
+                                    alignItems: 'center'
                                 },
-                                text: "Event"
+                                text: 'Event Name'
                             }),
                             $({
                                 tag: 'div',
                                 style: {
-                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    width: '20%',
+                                    padding: '0 0.8rem',
+                                    fontSize: '0.65vw',
+                                    fontWeight: '700',
                                     color: '#64748b',
-                                    fontSize: '0.75vw',
-                                    fontWeight: '600',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.5px',
-                                    width: '20%',
-                                    textAlign: 'center'
+                                    flexShrink: 0,
+                                    display: 'flex',
+                                    alignItems: 'center'
                                 },
-                                text: "Total"
+                                text: 'Title'
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '14%',
+                                    padding: '0 0.8rem',
+                                    fontSize: '0.65vw',
+                                    fontWeight: '700',
+                                    color: '#64748b',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px',
+                                    flexShrink: 0,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                },
+                                text: 'Presenter'
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '14%',
+                                    padding: '0 0.8rem',
+                                    fontSize: '0.65vw',
+                                    fontWeight: '700',
+                                    color: '#64748b',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px',
+                                    flexShrink: 0,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                },
+                                text: 'Author'
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '14%',
+                                    padding: '0 0.8rem',
+                                    fontSize: '0.65vw',
+                                    fontWeight: '700',
+                                    color: '#64748b',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px',
+                                    flexShrink: 0,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                },
+                                text: 'Co-Author(s)'
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '14%',
+                                    padding: '0 0.8rem',
+                                    fontSize: '0.65vw',
+                                    fontWeight: '700',
+                                    color: '#64748b',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px',
+                                    flexShrink: 0,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                },
+                                text: 'Date'
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '8%',
+                                    padding: '0 0.8rem',
+                                    fontSize: '0.65vw',
+                                    fontWeight: '700',
+                                    color: '#64748b',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px',
+                                    textAlign: 'center',
+                                    flexShrink: 0,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                },
+                                text: 'Status'
                             })
                         ]
                     }),
+                    // Table Body (scrollable)
                     $({
                         tag: 'div',
                         style: {
-                            height: '93%',
-                            width: '80%',
-                            margin: 'auto',
+                            flex: '1',
                             overflowY: 'auto',
-                            padding: '0.5vw'
+                            background: '#ffffff',
+                            borderRadius: '0 0 0.4vw 0.4vw'
                         },
                         elementHandler: (el) => {
-                            bodyContent = el
-                            const req = new Request('/loader')
+                            tableBody = el
+                            // Fetch data using the correct endpoint
+                            const req = new Request('/filesSend')
                             req.Post([
-                                { name: 'documentRequest', value: '0' }
+                                { name: 'getResearchData', value: '1' }
                             ])
                             req.Json()
                             req.Send().then(data => {
-                                data.forEach(val => {
-                                    el.appendChild(eventPanel(val.event, val.total, val.id))
+                                allData = data
+                                // Populate filter dropdown with unique event names
+                                const uniqueEvents = [...new Set(data.map(val => val.event))].filter(Boolean)
+                                uniqueEvents.forEach(eventName => {
+                                    filterSelect.appendChild($({
+                                        tag: 'option',
+                                        text: eventName,
+                                        att: {
+                                            value: eventName
+                                        },
+                                        style: {
+                                            background: '#ffffff',
+                                            color: '#1e293b'
+                                        }
+                                    }))
                                 })
+                                renderTableRows(data)
                             }).catch(err => {
-                                console.log(err)
+                                console.log('Error fetching research data:', err)
+                                tableBody.innerHTML = ''
+                                const errorDiv = $({
+                                    tag: 'div',
+                                    style: {
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '3rem',
+                                        color: '#ef4444',
+                                        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+                                        fontSize: '0.85vw',
+                                        height: '100%'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                fontSize: '2rem',
+                                                marginBottom: '0.5rem'
+                                            },
+                                            text: '⚠️'
+                                        }),
+                                        $({
+                                            tag: 'div',
+                                            text: 'Error loading data. Please try again.'
+                                        })
+                                    ]
+                                })
+                                tableBody.appendChild(errorDiv)
                             })
                         }
                     })
@@ -1236,11 +1316,13 @@ const SystemFile = () => {
                 margin: 'auto',
                 height: '100%',
                 width: '100%',
-                background: '#ffffff'
+                background: '#ffffff',
+                display: 'flex',
+                flexDirection: 'column'
             },
             child: [
                 head(),
-                container()
+                tableContainer()
             ]
         }))
     }
@@ -1255,11 +1337,50 @@ const SystemFile = () => {
             position: 'relative',
             background: '#ffffff'
         },
-        elementHandler: (el) => {
-            main = el
-        },
         child: [
-            fileContent()
+            $({
+                tag: 'style',
+                text: `
+                    @keyframes pulse {
+                        0% { opacity: 1; transform: scale(1); }
+                        50% { opacity: 0.5; transform: scale(0.9); }
+                        100% { opacity: 1; transform: scale(1); }
+                    }
+                    
+                    /* Custom scrollbar */
+                    ::-webkit-scrollbar {
+                        width: 6px;
+                    }
+                    
+                    ::-webkit-scrollbar-track {
+                        background: #f1f5f9;
+                        border-radius: 10px;
+                    }
+                    
+                    ::-webkit-scrollbar-thumb {
+                        background: #cbd5e1;
+                        border-radius: 10px;
+                    }
+                    
+                    ::-webkit-scrollbar-thumb:hover {
+                        background: #94a3b8;
+                    }
+                `
+            }),
+            $({
+                tag: 'div',
+                style: {
+                    width: '100%',
+                    height: '100%',
+                    position: 'relative'
+                },
+                elementHandler: (el) => {
+                    main = el
+                },
+                child: [
+                    fileContent()
+                ]
+            })
         ]
     }))
 }
