@@ -53,7 +53,7 @@ if (isset($_POST['incomingEndorsement'])) {
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $queries = "SELECT endorsement.id, 
             endorsement.senderid,
-            endorsement.center, 
+            endorsement.center,
             endorsement.file,  
             endorsement.drive_file_id,
             endorsement.drive_view_url,  
@@ -80,43 +80,30 @@ if (isset($_POST['incomingEndorsement'])) {
             $data->researchDocs = [];
 
             $isExtension = ($val['center'] === 'Extension (Extension)');
-            if ($isExtension) {
-                $data->locationType = 'campus';
-            } else {
-                $data->locationType = 'center';
+            $data->locationType = $isExtension ? 'campus' : 'center';
+
+            // Endorsement file - use drive_view_url only
+            $endorsementFileObject = new stdClass();
+            $endorsementFileObject->hasFile = false;
+            
+            if (!empty($val['drive_view_url'])) {
+                $endorsementFileObject->driveViewUrl = $val['drive_view_url'];
+                $endorsementFileObject->viewUrl = $val['drive_view_url'];
+                $endorsementFileObject->fileUrl = $val['drive_view_url'];
+                $endorsementFileObject->driveFileId = $val['drive_file_id'];
+                $endorsementFileObject->driveDownloadUrl = $val['drive_download_url'];
+                $endorsementFileObject->isGoogleDrive = true;
+                $endorsementFileObject->hasFile = true;
+            } elseif (!empty($val['file'])) {
+                // Legacy file fallback
+                $endorsementFileObject->legacyFile = $val['file'];
+                $endorsementFileObject->fileUrl = $val['file'];
+                $endorsementFileObject->viewUrl = $val['file'];
+                $endorsementFileObject->isGoogleDrive = false;
+                $endorsementFileObject->hasFile = true;
             }
 
-            $legacyFile = $val['file'];
-            $driveFileId = $val['drive_file_id'];
-            $driveViewUrl = $val['drive_view_url'];
-            $driveDownloadUrl = $val['drive_download_url'];
-
-            $fileObject = new stdClass();
-            $fileObject->hasFile = false;
-
-            $hasGoogleDrive = !empty($driveFileId) || !empty($driveViewUrl) || !empty($driveDownloadUrl);
-
-            if ($hasGoogleDrive) {
-                $fileObject->fileUrl = !empty($driveDownloadUrl) ? $driveDownloadUrl : (!empty($driveViewUrl) ? $driveViewUrl : '');
-                $fileObject->viewUrl = !empty($driveViewUrl) ? $driveViewUrl : (!empty($driveDownloadUrl) ? $driveDownloadUrl : '');
-                $fileObject->driveFileId = $driveFileId;
-                $fileObject->driveViewUrl = $driveViewUrl;
-                $fileObject->driveDownloadUrl = $driveDownloadUrl;
-                $fileObject->isGoogleDrive = true;
-                $fileObject->hasFile = !empty($driveViewUrl) || !empty($driveDownloadUrl);
-            }
-
-            if (!empty($legacyFile)) {
-                $fileObject->legacyFile = $legacyFile;
-                if (!$hasGoogleDrive) {
-                    $fileObject->fileUrl = $legacyFile;
-                    $fileObject->viewUrl = $legacyFile;
-                    $fileObject->isGoogleDrive = false;
-                    $fileObject->hasFile = true;
-                }
-            }
-
-            $data->file = $fileObject;
+            $data->file = $endorsementFileObject;
 
             $researchQuery = "SELECT 
                 rf.id, 
@@ -134,6 +121,7 @@ if (isset($_POST['incomingEndorsement'])) {
                 rf.program_drive_view_url,
                 rf.certificate_drive_file_id,
                 rf.certificate_drive_view_url,
+                rf.title_certificate_view_url,
                 rf.center,
                 rf.event,  
                 rf.status, 
@@ -143,6 +131,7 @@ if (isset($_POST['incomingEndorsement'])) {
                 rf.paper_trail_no,
                 rf.local_inhouse,
                 rf.symposium_submitted,
+                rm.fund_source,
                 li.program_file_view_url,
                 li.program_file_download_url,
                 li.certificate_file_view_url,
@@ -153,6 +142,7 @@ if (isset($_POST['incomingEndorsement'])) {
                 li.co_authors,
                 li.paper_trail_no as local_paper_trail_no
             FROM researchfile rf
+            LEFT JOIN research_monitoring rm ON rf.id = rm.research_id
             LEFT JOIN local_inhouse li ON rf.id = li.research_id
             WHERE rf.endorsementid = ?";
             
@@ -177,17 +167,17 @@ if (isset($_POST['incomingEndorsement'])) {
                 $research->paper_trail_no = $v['paper_trail_no'];
                 $research->local_inhouse = (int)$v['local_inhouse'];
                 $research->symposium_submitted = (int)$v['symposium_submitted'];
+                $research->fundsource = $v['fund_source'];
+                $research->title_certificate_view_url = $v['title_certificate_view_url']; // ADD TITLE CERTIFICATE URL
                 
                 // ===== TRACE IN-HOUSE SOURCE USING PAPER TRAIL NO =====
                 $research->inhouse_source = null;
                 $research->local_inhouse_data = null;
                 
                 if (!empty($v['paper_trail_no'])) {
-                    // Check if this is a symposium submission
                     $isSymposium = stripos($v['event'], 'Symposium') !== false;
                     
                     if ($isSymposium) {
-                        // FIRST: Check for in-house review with same paper_trail_no in researchfile table
                         $inhouseQuery = "SELECT 
                             rf.id as inhouse_id,
                             rf.title as inhouse_title,
@@ -204,7 +194,7 @@ if (isset($_POST['incomingEndorsement'])) {
                              OR rf.event LIKE '%In House Review%'
                              OR rf.event LIKE '%in-house review%'
                              OR rf.event LIKE '%in house review%')
-                        AND rf.id != ?  -- Exclude the current record
+                        AND rf.id != ?
                         LIMIT 1";
                         
                         $inhouseStmt = $con->prepare($inhouseQuery);
@@ -213,7 +203,6 @@ if (isset($_POST['incomingEndorsement'])) {
                         $inhouseResult = $inhouseStmt->get_result();
                         
                         if ($inhouseRow = $inhouseResult->fetch_assoc()) {
-                            // Found in-house review in researchfile table
                             $research->inhouse_source = new stdClass();
                             $research->inhouse_source->id = $inhouseRow['inhouse_id'];
                             $research->inhouse_source->title = $inhouseRow['inhouse_title'];
@@ -223,16 +212,13 @@ if (isset($_POST['incomingEndorsement'])) {
                             $research->inhouse_source->event_name = $inhouseRow['event_name'];
                             $research->inhouse_source->date_of_presentation = $inhouseRow['date_of_presentation'];
                             $research->inhouse_source->source_type = 'researchfile';
-                            
-                            error_log("Found in-house source in researchfile for paper_trail_no: " . $v['paper_trail_no'] . " - ID: " . $inhouseRow['inhouse_id']);
                         }
                         $inhouseStmt->close();
                     }
                 }
                 
-                // ===== IF NO IN-HOUSE SOURCE FOUND IN researchfile, CHECK local_inhouse =====
+                // ===== IF NO IN-HOUSE SOURCE FOUND, CHECK local_inhouse =====
                 if ($research->inhouse_source === null && $v['local_inhouse'] == 1) {
-                    // This is a local in-house submission, get the local_inhouse record
                     $localSourceQuery = "SELECT 
                         id,
                         document_title,
@@ -264,121 +250,83 @@ if (isset($_POST['incomingEndorsement'])) {
                         $research->local_inhouse_data->paper_trail_no = $localSourceRow['paper_trail_no'];
                         $research->local_inhouse_data->created_at = $localSourceRow['created_at'];
                         $research->local_inhouse_data->source_type = 'local_inhouse';
-                        
-                        error_log("Found local_inhouse data for research_id: " . $v['id']);
                     }
                     $localSourceStmt->close();
                 }
                 
-                if ($isExtension) {
-                    $research->displayLocation = $val['campus'];
-                    $research->locationType = 'campus';
-                } else {
-                    $research->displayLocation = $v['center'];
-                    $research->locationType = 'center';
-                }
+                $research->displayLocation = $isExtension ? $val['campus'] : $v['center'];
+                $research->locationType = $isExtension ? 'campus' : 'center';
 
-                $researchLegacyFile = $v['legacy_file'];
-                $researchDriveViewUrl = $v['drive_view_url'];
-                $researchDriveFileId = $v['drive_file_id'];
-                $researchDriveDownloadUrl = $v['drive_download_url'];
-
+                // RESEARCH FILE - use drive_view_url only
                 $researchFileObject = new stdClass();
                 $researchFileObject->hasFile = false;
-                $hasResearchGoogleDrive = !empty($researchDriveFileId) || !empty($researchDriveViewUrl) || !empty($researchDriveDownloadUrl);
-
-                if ($hasResearchGoogleDrive) {
-                    $researchFileObject->driveViewUrl = $researchDriveViewUrl;
-                    $researchFileObject->driveFileId = $researchDriveFileId;
-                    $researchFileObject->driveDownloadUrl = $researchDriveDownloadUrl;
-                    
-                    $researchFileObject->viewUrl = !empty($researchDriveViewUrl) ? $researchDriveViewUrl : 
-                        (!empty($researchDriveDownloadUrl) ? $researchDriveDownloadUrl : '');
-                    
-                    $researchFileObject->fileUrl = !empty($researchDriveDownloadUrl) ? $researchDriveDownloadUrl : 
-                        (!empty($researchDriveViewUrl) ? $researchDriveViewUrl : '');
-                    
+                
+                if (!empty($v['drive_view_url'])) {
+                    $researchFileObject->driveViewUrl = $v['drive_view_url'];
+                    $researchFileObject->viewUrl = $v['drive_view_url'];
+                    $researchFileObject->fileUrl = $v['drive_view_url'];
+                    $researchFileObject->driveFileId = $v['drive_file_id'];
+                    $researchFileObject->driveDownloadUrl = $v['drive_download_url'];
                     $researchFileObject->isGoogleDrive = true;
-                    $researchFileObject->hasFile = !empty($researchDriveViewUrl) || !empty($researchDriveDownloadUrl);
-                }
-
-                if (!empty($researchLegacyFile) && !$hasResearchGoogleDrive) {
-                    $researchFileObject->legacyFile = $researchLegacyFile;
-                    $researchFileObject->fileUrl = $researchLegacyFile;
-                    $researchFileObject->viewUrl = $researchLegacyFile;
+                    $researchFileObject->hasFile = true;
+                } elseif (!empty($v['legacy_file'])) {
+                    // Legacy file fallback
+                    $researchFileObject->legacyFile = $v['legacy_file'];
+                    $researchFileObject->fileUrl = $v['legacy_file'];
+                    $researchFileObject->viewUrl = $v['legacy_file'];
                     $researchFileObject->isGoogleDrive = false;
                     $researchFileObject->hasFile = true;
                 }
 
-                if (empty($researchFileObject->viewUrl) && empty($researchFileObject->fileUrl)) {
-                    $researchFileObject->hasFile = false;
-                }
-
                 $research->file = $researchFileObject;
 
-                $programFileViewUrl = $v['program_file_view_url'] ?? null;
-                $programFileDownloadUrl = $v['program_file_download_url'] ?? null;
-                
-                if (!empty($programFileViewUrl) || !empty($programFileDownloadUrl)) {
+                // PROGRAM FILE - use program_file_view_url only
+                $programFileObject = null;
+                if (!empty($v['program_file_view_url'])) {
                     $programFileObject = new stdClass();
-                    $programFileObject->viewUrl = $programFileViewUrl;
-                    $programFileObject->downloadUrl = $programFileDownloadUrl;
-                    $programFileObject->hasFile = !empty($programFileViewUrl);
-                    $research->programFile = $programFileObject;
-                    $research->program_drive_view_url = $programFileViewUrl;
-                } else {
-                    $oldProgramUrl = $v['program_drive_view_url'] ?? null;
-                    if (!empty($oldProgramUrl)) {
-                        $programFileObject = new stdClass();
-                        $programFileObject->viewUrl = $oldProgramUrl;
-                        $programFileObject->downloadUrl = $oldProgramUrl;
-                        $programFileObject->hasFile = true;
-                        $research->programFile = $programFileObject;
-                        $research->program_drive_view_url = $oldProgramUrl;
-                    } else {
-                        $research->programFile = null;
-                        $research->program_drive_view_url = null;
-                    }
+                    $programFileObject->viewUrl = $v['program_file_view_url'];
+                    $programFileObject->downloadUrl = $v['program_file_download_url'] ?? $v['program_file_view_url'];
+                    $programFileObject->hasFile = true;
+                } elseif (!empty($v['program_drive_view_url'])) {
+                    // Legacy program file fallback
+                    $programFileObject = new stdClass();
+                    $programFileObject->viewUrl = $v['program_drive_view_url'];
+                    $programFileObject->downloadUrl = $v['program_drive_view_url'];
+                    $programFileObject->hasFile = true;
                 }
+                $research->programFile = $programFileObject;
+                $research->program_drive_view_url = $programFileObject ? $programFileObject->viewUrl : null;
 
-                $certificateFileViewUrl = $v['certificate_file_view_url'] ?? null;
-                $certificateFileDownloadUrl = $v['certificate_file_download_url'] ?? null;
-                $certificateDriveFileId = $v['certificate_drive_file_id'] ?? null;
-                $certificateDriveViewUrl = $v['certificate_drive_view_url'] ?? null;
-                
-                if ($isExtension) {
-                    if (!empty($certificateFileViewUrl) || !empty($certificateFileDownloadUrl)) {
-                        $certificateFileObject = new stdClass();
-                        $certificateFileObject->viewUrl = $certificateFileViewUrl;
-                        $certificateFileObject->downloadUrl = $certificateFileDownloadUrl;
-                        $certificateFileObject->driveFileId = null;
-                        $certificateFileObject->hasFile = !empty($certificateFileViewUrl);
-                        $research->certificateFile = $certificateFileObject;
-                        $research->certificate_drive_file_id = null;
-                        $research->certificate_drive_view_url = $certificateFileViewUrl;
-                    } else {
-                        $research->certificateFile = null;
-                        $research->certificate_drive_file_id = null;
-                        $research->certificate_drive_view_url = null;
-                    }
-                } else {
-                    // Center
-                    if (!empty($certificateDriveFileId) || !empty($certificateDriveViewUrl)) {
-                        $certificateFileObject = new stdClass();
-                        $certificateFileObject->viewUrl = $certificateDriveViewUrl;
-                        $certificateFileObject->downloadUrl = $certificateDriveViewUrl;
-                        $certificateFileObject->driveFileId = $certificateDriveFileId;
-                        $certificateFileObject->hasFile = !empty($certificateDriveViewUrl);
-                        $research->certificateFile = $certificateFileObject;
-                        $research->certificate_drive_file_id = $certificateDriveFileId;
-                        $research->certificate_drive_view_url = $certificateDriveViewUrl;
-                    } else {
-                        $research->certificateFile = null;
-                        $research->certificate_drive_file_id = null;
-                        $research->certificate_drive_view_url = null;
-                    }
+                // CERTIFICATE FILE - use certificate_drive_view_url only
+                $certificateFileObject = null;
+                if (!empty($v['certificate_drive_view_url'])) {
+                    $certificateFileObject = new stdClass();
+                    $certificateFileObject->viewUrl = $v['certificate_drive_view_url'];
+                    $certificateFileObject->downloadUrl = $v['certificate_drive_view_url'];
+                    $certificateFileObject->driveFileId = $v['certificate_drive_file_id'];
+                    $certificateFileObject->hasFile = true;
+                } elseif (!empty($v['certificate_file_view_url'])) {
+                    // Legacy certificate file fallback (from local_inhouse)
+                    $certificateFileObject = new stdClass();
+                    $certificateFileObject->viewUrl = $v['certificate_file_view_url'];
+                    $certificateFileObject->downloadUrl = $v['certificate_file_download_url'] ?? $v['certificate_file_view_url'];
+                    $certificateFileObject->hasFile = true;
                 }
+                $research->certificateFile = $certificateFileObject;
+                $research->certificate_drive_file_id = $certificateFileObject ? $certificateFileObject->driveFileId : null;
+                $research->certificate_drive_view_url = $certificateFileObject ? $certificateFileObject->viewUrl : null;
 
+                // TITLE CERTIFICATE - use title_certificate_view_url only
+                $titleCertificateObject = null;
+                if (!empty($v['title_certificate_view_url'])) {
+                    $titleCertificateObject = new stdClass();
+                    $titleCertificateObject->viewUrl = $v['title_certificate_view_url'];
+                    $titleCertificateObject->downloadUrl = $v['title_certificate_view_url'];
+                    $titleCertificateObject->hasFile = true;
+                }
+                $research->titleCertificateFile = $titleCertificateObject;
+
+                // Local Inhouse Data
                 $research->document_title = $v['document_title'];
                 $research->local_campus = $v['local_campus'];
                 $research->main_author = $v['main_author'];
