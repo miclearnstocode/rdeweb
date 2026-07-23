@@ -1531,18 +1531,33 @@ export const Content = (mainFrame, leftPDiv = null) => {
     }
     
     const ContentComponent = () => {
-        const Report=()=>{
-            const ReportPanel=()=>{
-                let panBo, bodCon, eventTypeName
-                const contain = ({center, total, categories, eventType}) => {
-                    let dropDownState, dropPan
+        const Report = () => {
+            const ReportPanel = () => {
+                let bodCon, eventTypeName
+                
+                const contain = ({ category, total, eventType }) => {
                     return ($({
                         tag: 'div',
                         style: {
                             width: '100%',
                             height: 'fit-content',
-                            marginTop: '.5vh',
-                            marginBottom: '.5vh',
+                            marginTop: '4px',
+                            marginBottom: '4px',
+                            backgroundColor: '#ffffff',
+                            borderRadius: '12px',
+                            border: '1px solid #f0f0f0',
+                            transition: 'all 0.2s ease',
+                            overflow: 'hidden'
+                        },
+                        elementHandler: (el) => {
+                            el.addEventListener('mouseenter', () => {
+                                el.style.borderColor = '#dee2e6';
+                                el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
+                            });
+                            el.addEventListener('mouseleave', () => {
+                                el.style.borderColor = '#f0f0f0';
+                                el.style.boxShadow = 'none';
+                            });
                         },
                         child: [
                             $({
@@ -1551,143 +1566,9 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     display: 'flex',
                                     width: '100%',
                                     height: 'fit-content',
-                                    borderBottom: '1px solid #e9ecef',
-                                    cursor: 'pointer',
-                                    backgroundColor: '#ffffff',
-                                    borderRadius: '0',
-                                    marginBottom: '0',
-                                    transition: 'all 0.2s ease'
-                                },
-                                child: [
-                                    $({
-                                        tag: 'div',
-                                        att: {
-                                            className: dropDownState ? 'fa-solid fa-square-caret-down' : 'fa-solid fa-square-caret-right'
-                                        },
-                                        style: {
-                                            width: '5%',
-                                            textAlign: 'center',
-                                            margin: 'auto',
-                                            fontSize: '1.2vw',
-                                            color: 'deepskyblue',
-                                            padding: '10px 0',
-                                            cursor: 'pointer'
-                                        },
-                                        event: {
-                                            type: 'click',
-                                            method: (eve) => {
-                                                dropPan.innerHTML = ''
-                                                dropDownState = !dropDownState
-                                                
-                                                if (dropDownState) {
-                                                    eve.target.className = 'fa-solid fa-square-caret-down'
-                                                
-                                                    const categoriesDiv = $({
-                                                        tag: 'div',
-                                                        style: {
-                                                            width: '100%',
-                                                            padding: '10px',
-                                                            backgroundColor: '#1a1a1a',
-                                                            borderRadius: '0 0 5px 5px'
-                                                        }
-                                                    })
-                                                    
-                                                    categories.forEach(cat => {
-                                                        categoriesDiv.appendChild(createCategoryRow({
-                                                            category: cat.name,
-                                                            total: cat.total
-                                                        }))
-                                                    })
-                                                    
-                                                    dropPan.appendChild(categoriesDiv)
-                                                } else {
-                                                    eve.target.className = 'fa-solid fa-square-caret-right'
-                                                }
-                                            }
-                                        }
-                                    }),
-                                    $({
-                                        tag: 'div',
-                                        style: {
-                                            width: '45%',
-                                            margin: 'auto',
-                                            fontSize: '1vw',
-                                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                            color: 'deepskyblue',
-                                            fontWeight: 'bold',
-                                            padding: '10px 0'
-                                        },
-                                        text: center
-                                    }),
-                                    $({
-                                        tag: 'div',
-                                        style: {
-                                            width: '50%',
-                                            margin: 'auto',
-                                            fontSize: '1vw',
-                                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                            color: total > 0 ? '#4CAF50' : '#888',
-                                            fontWeight: 'bold',
-                                            padding: '10px 0',
-                                            textAlign: 'center'
-                                        },
-                                        text: total.toString()
-                                    })
-                                ]
-                            }),
-                            $({
-                                tag: 'div',
-                                style: {
-                                    width: '100%',
-                                    marginLeft: '5%'
-                                },
-                                elementHandler: (el) => {
-                                    dropPan = el
-                                    
-                                    if (dropDownState && categories && categories.length > 0) {
-                                        const categoriesDiv = $({
-                                            tag: 'div',
-                                            style: {
-                                                width: '100%',
-                                                padding: '10px',
-                                                backgroundColor: '#1a1a1a',
-                                                borderRadius: '0 0 5px 5px'
-                                            }
-                                        })
-                                        
-                                        categories.forEach(cat => {
-                                            categoriesDiv.appendChild(createCategoryRow({
-                                                category: cat.name,
-                                                total: cat.total
-                                            }))
-                                        })
-                                        
-                                        dropPan.appendChild(categoriesDiv)
-                                    }
-                                }
-                            })
-                        ]
-                    }))
-                }
-                
-                const createCategoryRow = ({category, total}) => {
-                    return ($({
-                        tag: 'div',
-                        style: {
-                            width: '95%',
-                            marginBottom: '4px',
-                            backgroundColor: '#f8f9fa',
-                            borderRadius: '6px',
-                            transition: 'all 0.2s ease'
-                        },
-                        child: [
-                            $({
-                                tag: 'div',
-                                style: {
-                                    display: 'flex',
-                                    width: '100%',
-                                    padding: '8px 0',
-                                    borderBottom: '1px dotted #444'
+                                    padding: '14px 20px',
+                                    alignItems: 'center',
+                                    backgroundColor: '#ffffff'
                                 },
                                 child: [
                                     $({
@@ -1698,34 +1579,34 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                         style: {
                                             width: '5%',
                                             textAlign: 'center',
-                                            fontSize: '0.6vw',
-                                            color: total > 0 ? '#FF9800' : '#666',
-                                            marginLeft: '2%',
-                                            marginTop: '5px'
+                                            fontSize: '10px',
+                                            color: total > 0 ? '#28a745' : '#dee2e6'
                                         }
                                     }),
                                     $({
                                         tag: 'div',
                                         style: {
                                             width: '45%',
-                                            fontSize: '0.95vw',
-                                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                            color: total > 0 ? '#FF9800' : '#777',
-                                            marginLeft: '2%',
-                                            fontWeight: total > 0 ? 'bold' : 'normal'
+                                            margin: 'auto',
+                                            fontSize: '14px',
+                                            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                                            color: '#2c3e50',
+                                            fontWeight: '500',
+                                            padding: '4px 0'
                                         },
                                         text: category
                                     }),
                                     $({
                                         tag: 'div',
                                         style: {
-                                            width: '45%',
-                                            fontSize: '0.95vw',
-                                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                            color: total > 0 ? '#4CAF50' : '#777',
-                                            fontWeight: total > 0 ? 'bold' : 'normal',
-                                            textAlign: 'center',
-                                            paddingRight: '10px'
+                                            width: '50%',
+                                            margin: 'auto',
+                                            fontSize: '14px',
+                                            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                                            color: total > 0 ? '#28a745' : '#adb5bd',
+                                            fontWeight: total > 0 ? '600' : '400',
+                                            padding: '4px 0',
+                                            textAlign: 'center'
                                         },
                                         text: total.toString()
                                     })
@@ -1803,555 +1684,398 @@ export const Content = (mainFrame, leftPDiv = null) => {
                 }
                 
                 const createPrintModal = (eventDetails) => {
-                    const existingModal = document.getElementById('printResearchModal')
-                    if (existingModal && existingModal.remove) {
-                        existingModal.remove()
-                    }
-
-                    let modalOverlayElement = null;
-                    
-                    const modalOverlay = $({
-                        tag: 'div',
-                        att: { id: 'printResearchModal' },
-                        style: {
-                            position: 'fixed',
-                            top: '0',
-                            left: '0',
-                            width: '100%',
-                            height: '100%',
-                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                            backdropFilter: 'blur(4px)',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            zIndex: '1000'
-                        },
-                        elementHandler: (overlay) => {
-                            modalOverlayElement = overlay;
-                            
-                            overlay.addEventListener('click', (e) => {
-                                if (e.target === overlay) {
-                                    if (modalOverlayElement && modalOverlayElement.remove) {
-                                        modalOverlayElement.remove();
-                                    }
+                    const content = () => {
+                        const container = $({
+                            tag: 'div',
+                            style: {
+                                padding: '8px 0'
+                            }
+                        });
+                        
+                        const fields = [
+                            { id: 'dateToBeHeld', label: 'Date to be held:', placeholder: 'e.g., March 2-3, 2026' },
+                            { id: 'venue', label: 'Venue:', placeholder: 'e.g., Roxas City Campus, Fuentes Drive, Roxas City, Capiz' },
+                            { id: 'pptDeadline', label: 'PPT Deadline:', placeholder: 'e.g., March 01, 2026, 3:00 p.m.' },
+                            { id: 'driveLink', label: 'Drive link:', placeholder: 'e.g., https://bit.ly/38thIHR_PPTs' }
+                        ];
+                        
+                        fields.forEach(field => {
+                            const fieldDiv = $({
+                                tag: 'div',
+                                style: {
+                                    marginBottom: '20px',
+                                    width: '100%'
                                 }
                             });
                             
-                            const handleEsc = (e) => {
-                                if (e.key === 'Escape') {
-                                    if (modalOverlayElement && modalOverlayElement.remove) {
-                                        modalOverlayElement.remove();
-                                    }
-                                    document.removeEventListener('keydown', handleEsc);
-                                }
-                            };
-                            document.addEventListener('keydown', handleEsc);
-                        }
-                    });
-                    
-                    const modalContent = $({
-                        tag: 'div',
-                        style: {
-                            backgroundColor: '#ffffff',
-                            borderRadius: '16px',
-                            width: '500px',
-                            maxWidth: '90%',
-                            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
-                            position: 'relative',
-                            overflow: 'hidden'
-                        }
-                    });
-                    
-                    const header = $({
-                        tag: 'div',
-                        style: {
-                            padding: '20px 24px',
-                            borderBottom: '1px solid #e9ecef',
-                            backgroundColor: '#ffffff'
-                        },
-                        child: [
-                            $({
-                                tag: 'div',
+                            const label = $({
+                                tag: 'label',
+                                att: { htmlFor: field.id },
                                 style: {
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between'
+                                    display: 'block',
+                                    marginBottom: '8px',
+                                    color: '#495057',
+                                    fontSize: '14px',
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontWeight: '500'
                                 },
-                                child: [
-                                    $({
-                                        tag: 'h2',
-                                        text: 'Print Research Entry Summary',
-                                        style: {
-                                            margin: '0',
-                                            color: '#1a1a2e',
-                                            fontSize: '18px',
-                                            fontFamily: 'Inter, sans-serif',
-                                            fontWeight: '600'
-                                        }
-                                    }),
-                                    $({
-                                        tag: 'button',
-                                        att: {
-                                            'aria-label': 'Close',
-                                            'title': 'Close'
-                                        },
-                                        style: {
-                                            width: '32px',
-                                            height: '32px',
-                                            backgroundColor: 'transparent',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            transition: 'all 0.2s ease'
-                                        },
-                                        child: [
-                                            $({
-                                                tag: 'span',
-                                                att: {
-                                                    className: 'fa-solid fa-xmark',
-                                                    'aria-hidden': 'true'
-                                                },
-                                                style: {
-                                                    fontSize: '18px',
-                                                    color: '#adb5bd',
-                                                    transition: 'all 0.2s ease'
-                                                }
-                                            })
-                                        ],
-                                        event: {
-                                            type: 'click',
-                                            method: (e) => {
-                                                e.stopPropagation();
-                                                if (modalOverlayElement && modalOverlayElement.remove) {
-                                                    modalOverlayElement.remove();
-                                                }
-                                            }
-                                        },
-                                        mouseenter: (e) => {
-                                            e.target.style.backgroundColor = '#f8f9fa';
-                                            const icon = e.target.querySelector('.fa-xmark');
-                                            if (icon) icon.style.color = '#dc3545';
-                                        },
-                                        mouseleave: (e) => {
-                                            e.target.style.backgroundColor = 'transparent';
-                                            const icon = e.target.querySelector('.fa-xmark');
-                                            if (icon) icon.style.color = '#adb5bd';
-                                        }
-                                    })
-                                ]
-                            })
-                        ]
-                    });
+                                text: field.label
+                            });
+                            fieldDiv.appendChild(label);
+                            
+                            const input = $({
+                                tag: 'input',
+                                att: {
+                                    type: 'text',
+                                    id: field.id,
+                                    placeholder: field.placeholder
+                                },
+                                style: {
+                                    width: '100%',
+                                    padding: '10px 12px',
+                                    border: '1px solid #dee2e6',
+                                    borderRadius: '8px',
+                                    fontSize: '14px',
+                                    fontFamily: 'Inter, sans-serif',
+                                    boxSizing: 'border-box',
+                                    transition: 'all 0.2s ease',
+                                    outline: 'none'
+                                }
+                            });
+                            
+                            input.addEventListener('focus', () => {
+                                input.style.borderColor = '#0d6efd';
+                                input.style.boxShadow = '0 0 0 3px rgba(13,110,253,0.1)';
+                            });
+                            input.addEventListener('blur', () => {
+                                input.style.borderColor = '#dee2e6';
+                                input.style.boxShadow = 'none';
+                            });
+                            
+                            fieldDiv.appendChild(input);
+                            container.appendChild(fieldDiv);
+                        });
+                        
+                        return container;
+                    };
                     
-                    modalContent.appendChild(header);
-                    
-                    const body = $({
-                        tag: 'div',
-                        style: {
-                            padding: '24px',
-                            backgroundColor: '#ffffff'
-                        }
-                    });
-                    
-                    const fields = [
-                        { id: 'dateToBeHeld', label: 'Date to be held:', placeholder: 'e.g., March 2-3, 2026' },
-                        { id: 'venue', label: 'Venue:', placeholder: 'e.g., Roxas City Campus, Fuentes Drive, Roxas City, Capiz' },
-                        { id: 'pptDeadline', label: 'PPT Deadline:', placeholder: 'e.g., March 01, 2026, 3:00 p.m.' },
-                        { id: 'driveLink', label: 'Drive link:', placeholder: 'e.g., https://bit.ly/38thIHR_PPTs' }
-                    ];
-                    
-                    fields.forEach(field => {
-                        const fieldDiv = $({
+                    const footer = ({ closeModal }) => {
+                        return $({
                             tag: 'div',
                             style: {
-                                marginBottom: '20px',
-                                width: '100%'
-                            }
-                        });
-                        
-                        const label = $({
-                            tag: 'label',
-                            att: { htmlFor: field.id },
-                            style: {
-                                display: 'block',
-                                marginBottom: '8px',
-                                color: '#495057',
-                                fontSize: '14px',
-                                fontFamily: 'Inter, sans-serif',
-                                fontWeight: '500'
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                gap: '12px',
+                                padding: '16px 0 0 0',
+                                borderTop: '1px solid #e9ecef',
+                                marginTop: '8px'
                             },
-                            text: field.label
+                            child: [
+                                $({
+                                    tag: 'button',
+                                    text: 'Cancel',
+                                    style: {
+                                        padding: '10px 20px',
+                                        border: '1px solid #dee2e6',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        fontSize: '14px',
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontWeight: '500',
+                                        backgroundColor: '#ffffff',
+                                        color: '#6c757d',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: closeModal
+                                    },
+                                    mouseenter: (e) => {
+                                        e.target.style.backgroundColor = '#f8f9fa';
+                                        e.target.style.borderColor = '#ced4da';
+                                    },
+                                    mouseleave: (e) => {
+                                        e.target.style.backgroundColor = '#ffffff';
+                                        e.target.style.borderColor = '#dee2e6';
+                                    }
+                                }),
+                                $({
+                                    tag: 'button',
+                                    style: {
+                                        padding: '10px 24px',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        fontSize: '14px',
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontWeight: '500',
+                                        backgroundColor: '#0d6efd',
+                                        color: '#ffffff',
+                                        transition: 'all 0.2s ease',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-print' },
+                                            style: { fontSize: '14px' }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            text: 'Print'
+                                        })
+                                    ],
+                                    event: {
+                                        type: 'click',
+                                        method: (e) => {
+                                            const formData = {
+                                                dateToBeHeld: document.getElementById('dateToBeHeld')?.value || '',
+                                                venue: document.getElementById('venue')?.value || '',
+                                                pptDeadline: document.getElementById('pptDeadline')?.value || '',
+                                                driveLink: document.getElementById('driveLink')?.value || ''
+                                            };
+                                            
+                                            if (!formData.dateToBeHeld || !formData.venue || !formData.pptDeadline || !formData.driveLink) {
+                                                alert('Please fill in all fields before printing');
+                                                return;
+                                            }
+                                            
+                                            closeModal();
+                                            printResearchSummary(eventDetails, formData);
+                                        }
+                                    },
+                                    mouseenter: (e) => {
+                                        e.target.style.backgroundColor = '#0b5ed7';
+                                        e.target.style.transform = 'translateY(-1px)';
+                                    },
+                                    mouseleave: (e) => {
+                                        e.target.style.backgroundColor = '#0d6efd';
+                                        e.target.style.transform = 'translateY(0)';
+                                    }
+                                })
+                            ]
                         });
-                        fieldDiv.appendChild(label);
-                        
-                        const input = $({
-                            tag: 'input',
-                            att: {
-                                type: 'text',
-                                id: field.id,
-                                placeholder: field.placeholder
-                            },
-                            style: {
-                                width: '100%',
-                                padding: '10px 12px',
-                                border: '1px solid #dee2e6',
-                                borderRadius: '8px',
-                                fontSize: '14px',
-                                fontFamily: 'Inter, sans-serif',
-                                boxSizing: 'border-box',
-                                transition: 'all 0.2s ease',
-                                outline: 'none'
-                            }
-                        });
-                        
-                        input.addEventListener('focus', () => {
-                            input.style.borderColor = '#0d6efd';
-                            input.style.boxShadow = '0 0 0 3px rgba(13,110,253,0.1)';
-                        });
-                        input.addEventListener('blur', () => {
-                            input.style.borderColor = '#dee2e6';
-                            input.style.boxShadow = 'none';
-                        });
-                        
-                        fieldDiv.appendChild(input);
-                        body.appendChild(fieldDiv);
+                    };
+                    
+                    CustomModal({
+                        title: 'Print Research Entry Summary',
+                        size: 'medium',
+                        content: content,
+                        footer: footer,
+                        showCloseButton: true,
+                        closeOnOverlayClick: true
                     });
-                    
-                    const buttonDiv = $({
-                        tag: 'div',
-                        style: {
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            gap: '12px',
-                            marginTop: '24px'
-                        }
-                    });
-                    
-                    const cancelBtn = $({
-                        tag: 'button',
-                        text: 'Cancel',
-                        style: {
-                            padding: '10px 20px',
-                            border: '1px solid #dee2e6',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontFamily: 'Inter, sans-serif',
-                            fontWeight: '500',
-                            backgroundColor: '#ffffff',
-                            color: '#6c757d',
-                            transition: 'all 0.2s ease'
-                        },
-                        event: {
-                            type: 'click',
-                            method: (e) => {
-                                e.stopPropagation();
-                                if (modalOverlayElement && modalOverlayElement.remove) {
-                                    modalOverlayElement.remove();
-                                }
-                            }
-                        }
-                    });
-                    
-                    cancelBtn.addEventListener('mouseenter', () => {
-                        cancelBtn.style.backgroundColor = '#f8f9fa';
-                        cancelBtn.style.borderColor = '#ced4da';
-                    });
-                    cancelBtn.addEventListener('mouseleave', () => {
-                        cancelBtn.style.backgroundColor = '#ffffff';
-                        cancelBtn.style.borderColor = '#dee2e6';
-                    });
-                    
-                    buttonDiv.appendChild(cancelBtn);
-                    
-                    const printBtn = $({
-                        tag: 'button',
-                        style: {
-                            padding: '10px 24px',
-                            border: 'none',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontFamily: 'Inter, sans-serif',
-                            fontWeight: '500',
-                            backgroundColor: '#0d6efd',
-                            color: '#ffffff',
-                            transition: 'all 0.2s ease',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        },
-                        child: [
-                            $({
-                                tag: 'span',
-                                att: { className: 'fa-solid fa-print' },
-                                style: { fontSize: '14px' }
-                            }),
-                            $({
-                                tag: 'span',
-                                text: 'Print'
-                            })
-                        ],
-                        event: {
-                            type: 'click',
-                            method: (e) => {
-                                e.stopPropagation();
-                                
-                                const formData = {
-                                    dateToBeHeld: document.getElementById('dateToBeHeld')?.value || '',
-                                    venue: document.getElementById('venue')?.value || '',
-                                    pptDeadline: document.getElementById('pptDeadline')?.value || '',
-                                    driveLink: document.getElementById('driveLink')?.value || ''
-                                };
-                                
-                                if (!formData.dateToBeHeld || !formData.venue || !formData.pptDeadline || !formData.driveLink) {
-                                    alert('Please fill in all fields before printing');
-                                    return;
-                                }
-                                
-                                if (modalOverlayElement && modalOverlayElement.remove) {
-                                    modalOverlayElement.remove();
-                                }
-                                
-                                printResearchSummary(eventDetails, formData);
-                            }
-                        }
-                    });
-                    
-                    printBtn.addEventListener('mouseenter', () => {
-                        printBtn.style.backgroundColor = '#0b5ed7';
-                        printBtn.style.transform = 'translateY(-1px)';
-                    });
-                    printBtn.addEventListener('mouseleave', () => {
-                        printBtn.style.backgroundColor = '#0d6efd';
-                        printBtn.style.transform = 'translateY(0)';
-                    });
-                    
-                    buttonDiv.appendChild(printBtn);
-                    body.appendChild(buttonDiv);
-                    modalContent.appendChild(body);
-                    modalOverlay.appendChild(modalContent);
-                    
-                    document.body.appendChild(modalOverlay);
-                    
-                    return modalOverlay;
                 }
                 
                 const createCertificateModal = (eventDetails) => {
-                    const existingModal = document.getElementById('certificateModal');
-                    if (existingModal && existingModal.parentNode) {
-                        existingModal.parentNode.removeChild(existingModal);
-                    }
-                    
-                    const modalOverlay = $({
-                        tag: 'div',
-                        att: { id: 'certificateModal' },
-                        style: {
-                            position: 'fixed',
-                            top: '0',
-                            left: '0',
-                            width: '100%',
-                            height: '100%',
-                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            zIndex: '1000'
-                        }
-                    });
-                    
-                    const modalContent = $({
-                        tag: 'div',
-                        style: {
-                            backgroundColor: '#2a2a2a',
-                            padding: '30px',
-                            borderRadius: '8px',
-                            width: '500px',
-                            maxWidth: '90%',
-                            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
-                            position: 'relative',
-                            zIndex: '1001',
-                            border: '1px solid #FFD700'
-                        }
-                    });
-                    
-                    const header = $({
-                        tag: 'h2',
-                        style: {
-                            margin: '0 0 20px 0',
-                            color: '#FFD700',
-                            fontSize: '22px',
-                            borderBottom: '2px solid #FFD700',
-                            paddingBottom: '10px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px'
-                        },
-                        html: '<span class="fa-solid fa-certificate"></span> Print Certificates'
-                    });
-                    modalContent.appendChild(header);
-                    
-                    const eventInfo = $({
-                        tag: 'div',
-                        style: {
-                            marginBottom: '20px',
-                            padding: '10px',
-                            backgroundColor: '#333',
-                            borderRadius: '5px',
-                            color: '#bbb',
-                            fontSize: '14px',
-                            borderLeft: '3px solid #FFD700'
-                        },
-                        html: `<strong>Event:</strong> ${eventDetails.name}`
-                    });
-                    modalContent.appendChild(eventInfo);
-                    
-                    const fields = [
-                        { id: 'certDateToBeHeld', label: 'Date of Event:', placeholder: 'e.g., March 2-3, 2026' },
-                        { id: 'certVenue', label: 'Venue:', placeholder: 'e.g., CAPSU Conference Room, Roxas City, Capiz' }
-                    ];
-                    
-                    fields.forEach(field => {
-                        const fieldDiv = $({
+                    const content = () => {
+                        const container = $({
                             tag: 'div',
                             style: {
-                                marginBottom: '15px',
-                                width: '100%'
+                                padding: '8px 0'
                             }
                         });
                         
-                        const label = $({
-                            tag: 'label',
-                            att: { htmlFor: field.id },
+                        const eventInfo = $({
+                            tag: 'div',
                             style: {
-                                display: 'block',
-                                marginBottom: '5px',
-                                color: '#FFD700',
+                                marginBottom: '20px',
+                                padding: '12px 16px',
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '8px',
+                                color: '#2c3e50',
                                 fontSize: '14px',
-                                fontWeight: 'bold'
+                                fontFamily: 'Inter, sans-serif',
+                                borderLeft: '3px solid #ffc107'
                             },
-                            text: field.label
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    text: 'Event: ',
+                                    style: { fontWeight: '600' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: eventDetails.name
+                                })
+                            ]
                         });
-                        fieldDiv.appendChild(label);
+                        container.appendChild(eventInfo);
                         
-                        const input = $({
-                            tag: 'input',
-                            att: {
-                                type: 'text',
-                                id: field.id,
-                                placeholder: field.placeholder,
-                                value: field.value || ''
-                            },
-                            style: {
-                                width: '100%',
-                                padding: '8px 12px',
-                                border: '1px solid #555',
-                                borderRadius: '4px',
-                                fontSize: '14px',
-                                boxSizing: 'border-box',
-                                backgroundColor: '#333',
-                                color: '#fff'
-                            }
+                        const fields = [
+                            { id: 'certDateToBeHeld', label: 'Date of Event:', placeholder: 'e.g., March 2-3, 2026' },
+                            { id: 'certVenue', label: 'Venue:', placeholder: 'e.g., CAPSU Conference Room, Roxas City, Capiz' }
+                        ];
+                        
+                        fields.forEach(field => {
+                            const fieldDiv = $({
+                                tag: 'div',
+                                style: {
+                                    marginBottom: '20px',
+                                    width: '100%'
+                                }
+                            });
+                            
+                            const label = $({
+                                tag: 'label',
+                                att: { htmlFor: field.id },
+                                style: {
+                                    display: 'block',
+                                    marginBottom: '8px',
+                                    color: '#495057',
+                                    fontSize: '14px',
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontWeight: '500'
+                                },
+                                text: field.label
+                            });
+                            fieldDiv.appendChild(label);
+                            
+                            const input = $({
+                                tag: 'input',
+                                att: {
+                                    type: 'text',
+                                    id: field.id,
+                                    placeholder: field.placeholder
+                                },
+                                style: {
+                                    width: '100%',
+                                    padding: '10px 12px',
+                                    border: '1px solid #dee2e6',
+                                    borderRadius: '8px',
+                                    fontSize: '14px',
+                                    fontFamily: 'Inter, sans-serif',
+                                    boxSizing: 'border-box',
+                                    transition: 'all 0.2s ease',
+                                    outline: 'none'
+                                }
+                            });
+                            
+                            input.addEventListener('focus', () => {
+                                input.style.borderColor = '#ffc107';
+                                input.style.boxShadow = '0 0 0 3px rgba(255,193,7,0.15)';
+                            });
+                            input.addEventListener('blur', () => {
+                                input.style.borderColor = '#dee2e6';
+                                input.style.boxShadow = 'none';
+                            });
+                            
+                            fieldDiv.appendChild(input);
+                            container.appendChild(fieldDiv);
                         });
-                        fieldDiv.appendChild(input);
-                        modalContent.appendChild(fieldDiv);
-                    });
-                    
-                    const buttonDiv = $({
-                        tag: 'div',
-                        style: {
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            gap: '10px',
-                            marginTop: '20px'
-                        }
-                    });
-                    
-                    const cancelBtn = $({
-                        tag: 'button',
-                        text: 'Cancel',
-                        style: {
-                            padding: '10px 20px',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            backgroundColor: '#444',
-                            color: '#bbb',
-                            transition: 'all 0.3s'
-                        },
-                        event: {
-                            type: 'click',
-                            method: (e) => {
-                                e.stopPropagation();
-                                if (modalOverlay.parentNode) {
-                                    modalOverlay.parentNode.removeChild(modalOverlay);
-                                }
-                            }
-                        }
-                    });
-                    buttonDiv.appendChild(cancelBtn);
-                    
-                    const printBtn = $({
-                        tag: 'button',
-                        style: {
-                            padding: '10px 20px',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontWeight: 'bold',
-                            backgroundColor: '#FFD700',
-                            color: '#2a2a2a',
-                            transition: 'all 0.3s',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                        },
-                        html: '<span class="fa-solid fa-print"></span> Generate Certificates',
-                        event: {
-                            type: 'click',
-                            method: (e) => {
-                                e.stopPropagation();
-                                
-                                const formData = {
-                                    dateToBeHeld: document.getElementById('certDateToBeHeld')?.value || '',
-                                    venue: document.getElementById('certVenue')?.value || ''
-                                };
-                                
-                                if (!formData.dateToBeHeld || !formData.venue) {
-                                    alert('Please fill in all required fields');
-                                    return;
-                                }
-                                
-                                if (modalOverlay.parentNode) {
-                                    modalOverlay.parentNode.removeChild(modalOverlay);
-                                }
-                                
-                                generateCertificates(eventDetails, formData);
-                            }
-                        }
-                    });
-                    buttonDiv.appendChild(printBtn);
-                    modalContent.appendChild(buttonDiv);
-                    modalOverlay.appendChild(modalContent);
-                    
-                    modalOverlay.event = {
-                        type: 'click',
-                        method: (e) => {
-                            if (e.target === modalOverlay) {
-                                if (modalOverlay.parentNode) {
-                                    modalOverlay.parentNode.removeChild(modalOverlay);
-                                }
-                            }
-                        }
+                        
+                        return container;
                     };
                     
-                    return modalOverlay;
-                };
+                    const footer = ({ closeModal }) => {
+                        return $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                gap: '12px',
+                                padding: '16px 0 0 0',
+                                borderTop: '1px solid #e9ecef',
+                                marginTop: '8px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'button',
+                                    text: 'Cancel',
+                                    style: {
+                                        padding: '10px 20px',
+                                        border: '1px solid #dee2e6',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        fontSize: '14px',
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontWeight: '500',
+                                        backgroundColor: '#ffffff',
+                                        color: '#6c757d',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    event: {
+                                        type: 'click',
+                                        method: closeModal
+                                    },
+                                    mouseenter: (e) => {
+                                        e.target.style.backgroundColor = '#f8f9fa';
+                                        e.target.style.borderColor = '#ced4da';
+                                    },
+                                    mouseleave: (e) => {
+                                        e.target.style.backgroundColor = '#ffffff';
+                                        e.target.style.borderColor = '#dee2e6';
+                                    }
+                                }),
+                                $({
+                                    tag: 'button',
+                                    style: {
+                                        padding: '10px 24px',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        fontSize: '14px',
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontWeight: '500',
+                                        backgroundColor: '#ffc107',
+                                        color: '#2c3e50',
+                                        transition: 'all 0.2s ease',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-certificate' },
+                                            style: { fontSize: '14px' }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            text: 'Generate Certificates'
+                                        })
+                                    ],
+                                    event: {
+                                        type: 'click',
+                                        method: (e) => {
+                                            const formData = {
+                                                dateToBeHeld: document.getElementById('certDateToBeHeld')?.value || '',
+                                                venue: document.getElementById('certVenue')?.value || ''
+                                            };
+                                            
+                                            if (!formData.dateToBeHeld || !formData.venue) {
+                                                alert('Please fill in all required fields');
+                                                return;
+                                            }
+                                            
+                                            closeModal();
+                                            generateCertificates(eventDetails, formData);
+                                        }
+                                    },
+                                    mouseenter: (e) => {
+                                        e.target.style.backgroundColor = '#e0a800';
+                                        e.target.style.transform = 'translateY(-1px)';
+                                    },
+                                    mouseleave: (e) => {
+                                        e.target.style.backgroundColor = '#ffc107';
+                                        e.target.style.transform = 'translateY(0)';
+                                    }
+                                })
+                            ]
+                        });
+                    };
+                    
+                    CustomModal({
+                        title: 'Print Presentor Certificates',
+                        size: 'medium',
+                        content: content,
+                        footer: footer,
+                        showCloseButton: true,
+                        closeOnOverlayClick: true
+                    });
+                }
                 
                 const generateCertificates = (eventDetails, formData) => {
                     let loading = Waiting();
@@ -2401,7 +2125,6 @@ export const Content = (mainFrame, leftPDiv = null) => {
                             if (WinPrint.closed) {
                                 clearInterval(checkWindowClosed);
                                 removeLoading();
-                                console.log('Print window closed - loading removed');
                             }
                         }, 500);
                         
@@ -2654,7 +2377,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     type: 'click',
                                     method: (e) => {
                                         e.stopPropagation();
-                                        const modal = createPrintModal(eventDetails);
+                                        createPrintModal(eventDetails);
                                     }
                                 },
                                 mouseenter: (e) => {
@@ -2706,8 +2429,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     type: 'click',
                                     method: (e) => {
                                         e.stopPropagation();
-                                        const certModal = createCertificateModal(eventDetails);
-                                        document.body.appendChild(certModal);
+                                        createCertificateModal(eventDetails);
                                     }
                                 },
                                 mouseenter: (e) => {
@@ -2739,10 +2461,12 @@ export const Content = (mainFrame, leftPDiv = null) => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '16px',
-                            backgroundColor: '#f8f9fa',
-                            padding: '16px 20px',
-                            borderRadius: '12px',
-                            border: '1px solid #e9ecef'
+                            backgroundColor: '#ffffff',
+                            padding: '20px 24px',
+                            borderRadius: '16px',
+                            border: '1px solid #e9ecef',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                            transition: 'all 0.2s ease'
                         },
                         child: [
                             $({
@@ -2751,9 +2475,17 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     className: 'fa-solid fa-calendar-check'
                                 },
                                 style: {
-                                    color: "deepskyblue",
-                                    fontSize: '1.2vw',
-                                    margin: 'auto'
+                                    color: "#0d6efd",
+                                    fontSize: '20px',
+                                    margin: 'auto',
+                                    width: '40px',
+                                    height: '40px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    backgroundColor: '#e7f1ff',
+                                    borderRadius: '12px',
+                                    flexShrink: '0'
                                 }
                             }),
                             $({
@@ -2761,19 +2493,30 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 style: {
                                     backgroundColor: '#ffffff',
                                     border: '1px solid #dee2e6',
-                                    borderRadius: '8px',
+                                    borderRadius: '12px',
                                     width: '100%',
-                                    height: '42px',
+                                    height: '46px',
                                     outline: 'none',
                                     color: '#2c3e50',
-                                    textAlign: 'center',
                                     cursor: 'pointer',
-                                    fontFamily: 'Inter, sans-serif',
+                                    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
                                     fontSize: '14px',
-                                    padding: '0 16px'
+                                    padding: '0 16px',
+                                    transition: 'all 0.2s ease',
+                                    flex: '1'
                                 },
                                 elementHandler: (el) => {
                                     selVal = el
+                                    
+                                    el.addEventListener('focus', () => {
+                                        el.style.borderColor = '#0d6efd';
+                                        el.style.boxShadow = '0 0 0 3px rgba(13,110,253,0.1)';
+                                    });
+                                    el.addEventListener('blur', () => {
+                                        el.style.borderColor = '#dee2e6';
+                                        el.style.boxShadow = 'none';
+                                    });
+                                    
                                     const req = new Request('/eventRequest')
                                     req.Post([
                                         {
@@ -2785,10 +2528,15 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     req.Send().then(data => {
                                         el.appendChild($({
                                             tag: 'option',
-                                            text: '- - Select Event - -',
+                                            text: '📋 Select Event',
                                             att: {
                                                 disabled: true,
                                                 selected: true
+                                            },
+                                            style: {
+                                                backgroundColor: '#ffffff',
+                                                color: '#6c757d',
+                                                fontSize: '14px'
                                             }
                                         }))
                                         data.forEach(val => {
@@ -2799,8 +2547,10 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                     id: val.id
                                                 },
                                                 style: {
-                                                    backgroundColor: '#222',
-                                                    fontSize: '1vw'
+                                                    backgroundColor: '#ffffff',
+                                                    color: '#2c3e50',
+                                                    fontSize: '14px',
+                                                    padding: '8px'
                                                 }
                                             }))
                                         })
@@ -2813,20 +2563,22 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     title: 'Load Event Data'
                                 },
                                 style: {
-                                    padding: '10px 24px',
+                                    padding: '10px 28px',
                                     backgroundColor: '#0d6efd',
                                     color: '#ffffff',
                                     fontSize: '14px',
                                     margin: '0',
-                                    borderRadius: '8px',
+                                    borderRadius: '12px',
                                     cursor: 'pointer',
                                     border: 'none',
-                                    fontFamily: 'Inter, sans-serif',
+                                    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
                                     fontWeight: '500',
                                     transition: 'all 0.2s ease',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '8px'
+                                    gap: '8px',
+                                    whiteSpace: 'nowrap',
+                                    flexShrink: '0'
                                 },
                                 child: [
                                     $({
@@ -2837,6 +2589,10 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                         style: {
                                             fontSize: '14px'
                                         }
+                                    }),
+                                    $({
+                                        tag: 'span',
+                                        text: 'Load Data'
                                     })
                                 ],
                                 event: {
@@ -2857,11 +2613,22 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                             tag: 'div',
                                             style: {
                                                 textAlign: 'center',
-                                                padding: '20px',
-                                                color: '#bbb',
-                                                fontSize: '1.2vw'
+                                                padding: '40px',
+                                                color: '#6c757d',
+                                                fontSize: '14px',
+                                                fontFamily: 'Inter, sans-serif'
                                             },
-                                            text: 'Loading data...'
+                                            child: [
+                                                $({
+                                                    tag: 'span',
+                                                    att: { className: 'fa-solid fa-spinner fa-pulse' },
+                                                    style: { fontSize: '24px', color: '#0d6efd', display: 'block', marginBottom: '12px' }
+                                                }),
+                                                $({
+                                                    tag: 'div',
+                                                    text: 'Loading data...'
+                                                })
+                                            ]
                                         }).outerHTML
                                         
                                         const req = new Request('/entrycount')
@@ -2884,20 +2651,30 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                     tag: 'div',
                                                     style: {
                                                         textAlign: 'center',
-                                                        padding: '20px',
-                                                        color: '#888',
-                                                        fontSize: '1vw'
+                                                        padding: '40px',
+                                                        color: '#6c757d',
+                                                        fontSize: '14px',
+                                                        fontFamily: 'Inter, sans-serif'
                                                     },
-                                                    text: 'No data available for this event'
+                                                    child: [
+                                                        $({
+                                                            tag: 'span',
+                                                            att: { className: 'fa-solid fa-inbox' },
+                                                            style: { fontSize: '32px', color: '#adb5bd', display: 'block', marginBottom: '12px' }
+                                                        }),
+                                                        $({
+                                                            tag: 'div',
+                                                            text: 'No data available for this event'
+                                                        })
+                                                    ]
                                                 }))
                                                 return
                                             }
                                     
-                                            data.forEach(center => {
+                                            data.forEach(category => {
                                                 bodCon.appendChild(contain({
-                                                    center: center.name,
-                                                    total: center.total,
-                                                    categories: center.categories || [],
+                                                    category: category.name,
+                                                    total: category.total,
                                                     eventType: eventType
                                                 }))
                                             })
@@ -2910,14 +2687,35 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                 tag: 'div',
                                                 style: {
                                                     textAlign: 'center',
-                                                    padding: '20px',
-                                                    color: '#ff4444',
-                                                    fontSize: '1vw'
+                                                    padding: '40px',
+                                                    color: '#dc3545',
+                                                    fontSize: '14px',
+                                                    fontFamily: 'Inter, sans-serif'
                                                 },
-                                                text: 'Error loading data. Please try again.'
+                                                child: [
+                                                    $({
+                                                        tag: 'span',
+                                                        att: { className: 'fa-solid fa-circle-exclamation' },
+                                                        style: { fontSize: '32px', color: '#dc3545', display: 'block', marginBottom: '12px' }
+                                                    }),
+                                                    $({
+                                                        tag: 'div',
+                                                        text: 'Error loading data. Please try again.'
+                                                    })
+                                                ]
                                             }))
                                         })
                                     }
+                                },
+                                mouseenter: (e) => {
+                                    e.target.style.backgroundColor = '#0b5ed7';
+                                    e.target.style.transform = 'translateY(-1px)';
+                                    e.target.style.boxShadow = '0 4px 12px rgba(13,110,253,0.3)';
+                                },
+                                mouseleave: (e) => {
+                                    e.target.style.backgroundColor = '#0d6efd';
+                                    e.target.style.transform = 'translateY(0)';
+                                    e.target.style.boxShadow = 'none';
                                 }
                             })
                         ]
@@ -2974,7 +2772,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                             textAlign: 'center'
                                         }
                                     }),
-                                    leb("RESEARCH CENTER"),
+                                    leb("CATEGORY"),
                                     leb("TOTAL ENTRIES"),
                                 ]
                             }),
@@ -2994,186 +2792,24 @@ export const Content = (mainFrame, leftPDiv = null) => {
                     }))
                 }
                 
-                return ($({
+                // Return the panel content WITHOUT header (CustomModal provides the title)
+                return $({
                     tag: 'div',
                     style: {
-                        position: 'fixed',
-                        top: '0',
-                        left: '0',
-                        width: '100%',
-                        height: '100%',
-                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                        backdropFilter: 'blur(4px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 99
-                    },
-                    elementHandler: (overlay) => {
-                        overlay._overlayElement = overlay;
-                        
-                        overlay.addEventListener('click', (e) => {
-                            if (e.target === overlay) {
-                                overlay.remove();
-                            }
-                        });
-                        
-                        const handleEsc = (e) => {
-                            if (e.key === 'Escape') {
-                                overlay.remove();
-                                document.removeEventListener('keydown', handleEsc);
-                            }
-                        };
-                        document.addEventListener('keydown', handleEsc);
-                        
-                        overlay._cleanup = () => {
-                            document.removeEventListener('keydown', handleEsc);
-                        };
+                        padding: '0 4px'
                     },
                     child: [
+                        SelectEvent(),
                         $({
                             tag: 'div',
-                            style: {
-                                width: '90%',
-                                maxWidth: '900px',
-                                height: 'auto',
-                                maxHeight: '80vh',
-                                backgroundColor: '#ffffff',
-                                borderRadius: '16px',
-                                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                overflow: 'hidden'
-                            },
-                            elementHandler: (el) => {
-                                panBo = el;
-                            },
-                            child: [
-                                $({
-                                    tag: 'div',
-                                    style: {
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: '16px 20px',
-                                        borderBottom: '1px solid #e9ecef',
-                                        backgroundColor: '#ffffff'
-                                    },
-                                    child: [
-                                        $({
-                                            tag: 'div',
-                                            style: {
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '10px'
-                                            },
-                                            child: [
-                                                $({
-                                                    tag: 'span',
-                                                    att: { className: 'fa-regular fa-chart-bar' },
-                                                    style: {
-                                                        fontSize: '20px',
-                                                        color: '#0d6efd'
-                                                    }
-                                                }),
-                                                $({
-                                                    tag: 'h3',
-                                                    text: 'Entries Summary By Center',
-                                                    style: {
-                                                        fontFamily: 'Inter, sans-serif',
-                                                        fontSize: '18px',
-                                                        fontWeight: '600',
-                                                        color: '#1a1a2e',
-                                                        margin: '0'
-                                                    }
-                                                })
-                                            ]
-                                        }),
-                                        $({
-                                            tag: 'button',
-                                            att: {
-                                                'aria-label': 'Close modal',
-                                                'title': 'Close'
-                                            },
-                                            style: {
-                                                width: '28px',
-                                                height: '28px',
-                                                backgroundColor: 'transparent',
-                                                border: 'none',
-                                                borderRadius: '6px',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s ease',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center'
-                                            },
-                                            child: [
-                                                $({
-                                                    tag: 'span',
-                                                    att: {
-                                                        className: 'fa-solid fa-xmark',
-                                                        'aria-hidden': 'true'
-                                                    },
-                                                    style: {
-                                                        fontSize: '16px',
-                                                        color: '#adb5bd',
-                                                        transition: 'all 0.2s ease'
-                                                    }
-                                                })
-                                            ],
-                                            event: {
-                                                type: 'click',
-                                                method: () => {
-                                                    const overlayDiv = document.querySelector('#reportModalOverlay');
-                                                    if (overlayDiv) {
-                                                        overlayDiv.remove();
-                                                    } else {
-                                                        let parent = panBo.parentElement;
-                                                        while (parent) {
-                                                            if (parent.style.position === 'fixed') {
-                                                                parent.remove();
-                                                                break;
-                                                            }
-                                                            parent = parent.parentElement;
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            mouseenter: (e) => {
-                                                e.target.style.backgroundColor = '#f8f9fa';
-                                                const icon = e.target.querySelector('.fa-xmark');
-                                                if (icon) icon.style.color = '#dc3545';
-                                            },
-                                            mouseleave: (e) => {
-                                                e.target.style.backgroundColor = 'transparent';
-                                                const icon = e.target.querySelector('.fa-xmark');
-                                                if (icon) icon.style.color = '#adb5bd';
-                                            }
-                                        })
-                                    ]
-                                }),
-                                $({
-                                    tag: 'div',
-                                    style: {
-                                        padding: '20px',
-                                        overflowY: 'auto',
-                                        backgroundColor: '#ffffff'
-                                    },
-                                    child: [
-                                        SelectEvent(),
-                                        $({
-                                            tag: 'div',
-                                            style: { marginTop: '20px' },
-                                            child: [bod()]
-                                        })
-                                    ]
-                                })
-                            ]
+                            style: { marginTop: '20px' },
+                            child: [bod()]
                         })
                     ]
-                }))
+                })
             }
             
+            // Return the button that opens the modal using CustomModal
             return ($({
                 tag: 'div',
                 style: {
@@ -3197,7 +2833,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                     $({
                         tag: 'button',
                         att: {
-                            title: 'View Summary by Center'
+                            title: 'View Summary by Category'
                         },
                         style: {
                             fontSize: '14px',
@@ -3250,13 +2886,13 @@ export const Content = (mainFrame, leftPDiv = null) => {
                         event: {
                             type: 'click',
                             method: () => {
-                                if (leftPDiv && typeof leftPDiv.appendChild === 'function') {
-                                    leftPDiv.appendChild(ReportPanel());
-                                } else if (mainFrame && typeof mainFrame.appendChild === 'function') {
-                                    mainFrame.appendChild(ReportPanel());
-                                } else {
-                                    document.body.appendChild(ReportPanel());
-                                }
+                                CustomModal({
+                                    title: 'Entries Summary By Category',
+                                    size: 'large',
+                                    content: ReportPanel,
+                                    showCloseButton: true,
+                                    closeOnOverlayClick: true
+                                });
                             }
                         },
                         mouseenter: (e) => {

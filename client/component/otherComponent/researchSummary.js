@@ -1,10 +1,7 @@
 import { $ } from "../../lib/lib.js";
 
 export const PrintResearch = ({ eventName, data, formData }) => {
-
-    // A4 at 96dpi: 29.7cm ≈ 1122px, 21cm ≈ 793px
-    // Content area = 29.7cm - 4cm top - 4cm bottom = 21.7cm ≈ 820px
-    const CM = 37.8; // px per cm at 96dpi
+    const CM = 37.8; 
 
     const PAGE_HEIGHT_PX = 29.7 * CM; // ~1122px
     const TOP_PADDING_PX = 4 * CM; // 4cm top padding (matches CSS)
@@ -12,11 +9,9 @@ export const PrintResearch = ({ eventName, data, formData }) => {
     const CONTENT_AREA_PX = PAGE_HEIGHT_PX - 140 // 21.7cm ≈ 820px
     const USABLE_HEIGHT = CONTENT_AREA_PX * 0.99; // 1% safety margin
 
-    // Data is now pre-sorted and pre-formatted from the API
     const centersWithDocs = data?.length > 0
         ? data[0].centers : [];
 
-    // Realistic height estimates based on actual font sizes + margins (at 96dpi)
     const estimateHeight = (element) => {
         if (!element) return 0
 
@@ -66,14 +61,14 @@ export const PrintResearch = ({ eventName, data, formData }) => {
         return 0
     }
 
-    const renderDocument = (doc, categoryName) => {
+    const renderDocument = (doc, categoryName, docNumber) => {
         const authorsText = doc.authors?.length > 0
             ? doc.authors.join(', ')
             : 'No author specified'
 
         return $({
             tag: 'li',
-            att: { className: 'document-item' },
+            att: { className: 'document-item', value: String(docNumber) },
             style: {
                 marginBottom: '12px',
                 fontSize: '11pt',
@@ -128,18 +123,23 @@ export const PrintResearch = ({ eventName, data, formData }) => {
         })
     }
 
-    const renderCenter = (center) => {
-        const categoriesWithDocs = center.categories.filter(cat => cat.docs?.length > 0);
-        if (!categoriesWithDocs.length) return null;
+    const renderCategoryGroup = (category, allDocs) => {
+        // Filter docs for this category
+        const docs = allDocs.filter(doc => doc.category === category);
+        if (!docs.length) return null;
 
         return $({
             tag: 'div',
-            att: { className: 'center-section' },
-            style: { marginBottom: '30px', position: 'relative', zIndex: 2 },
+            att: { className: 'category-section' },
+            style: {
+                marginBottom: '30px',
+                position: 'relative',
+                zIndex: 2
+            },
             child: [
                 $({
                     tag: 'h2',
-                    att: { className: 'center-header' },
+                    att: { className: 'category-header' },
                     style: {
                         fontSize: '14pt',
                         fontWeight: 'bold',
@@ -149,19 +149,48 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                         color: '#000',
                         textTransform: 'uppercase'
                     },
-                    text: center.displayName || center.name // Use displayName if available
+                    text: category
                 }),
-                ...categoriesWithDocs.map(cat => renderCategory(cat))
+                $({
+                    tag: 'ol',
+                    att: { className: 'documents-list', start: '1' },
+                    style: { margin: '5px 0 10px 20px', paddingLeft: '20px' },
+                    child: docs.map((doc, index) => renderDocument(doc, category, index + 1))
+                })
             ]
         })
     }
 
-    // ─── Flat content list ────────────────────────────────────────────────────
     const buildFlatItems = () => {
         const items = []
 
-        // Create a combined header+footer element that includes everything
-        // up to Stephanie and French only
+        // Get all unique categories from all centers
+        const allDocs = [];
+        centersWithDocs.forEach(center => {
+            center.categories.forEach(cat => {
+                cat.docs.forEach(doc => {
+                    allDocs.push({
+                        ...doc,
+                        category: cat.category,
+                        centerName: center.displayName || center.name
+                    });
+                });
+            });
+        });
+
+        // Group by category
+        const categoryGroups = {};
+        allDocs.forEach(doc => {
+            if (!categoryGroups[doc.category]) {
+                categoryGroups[doc.category] = [];
+            }
+            categoryGroups[doc.category].push(doc);
+        });
+
+        // Sort categories alphabetically
+        const sortedCategories = Object.keys(categoryGroups).sort();
+
+        // Create the combined header+footer (Page 1)
         const combinedHeaderFooter = $({
             tag: 'div',
             att: { className: 'combined-header-footer' },
@@ -197,7 +226,6 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                     text: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
                     style: { fontSize: '12pt', fontWeight: 'normal', margin: '0 0 5px 0', color: '#000' }
                 }),
-                // Spacing
                 $({ tag: 'div', style: { height: '20px' } }),
 
                 // Recipients
@@ -217,7 +245,6 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                     tag: 'h2', text: 'This University',
                     style: { fontSize: '12pt', fontWeight: 'normal', margin: '0 0 5px 0', color: '#000' }
                 }),
-                // Spacing
                 $({ tag: 'div', style: { height: '20px' } }),
 
                 // Attention line
@@ -239,7 +266,6 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                         $({ tag: 'span', text: 'Extension Chairs', style: { fontWeight: 'bold' } })
                     ]
                 }),
-                // Spacing
                 $({ tag: 'div', style: { height: '20px' } }),
 
                 // Dear line
@@ -251,7 +277,6 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                         $({ tag: 'span', text: 'Sir/Ma\'am:', style: { fontWeight: 'bold' } })
                     ]
                 }),
-                // Spacing
                 $({ tag: 'div', style: { height: '20px' } }),
 
                 // Greeting
@@ -260,7 +285,6 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                     text: 'Greetings!',
                     style: { fontSize: '12pt', fontWeight: 'normal', margin: '0 0 5px 0', color: '#000' }
                 }),
-                // Spacing
                 $({ tag: 'div', style: { height: '20px' } }),
 
                 // Event description
@@ -285,10 +309,9 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                     ]
                 }),
 
-                // 15px gap after event description
                 $({ tag: 'div', style: { height: '15px' } }),
 
-                // FOOTER CONTENT - Only up to Stephanie and French
+                // FOOTER CONTENT
                 $({
                     tag: 'div',
                     style: {
@@ -322,7 +345,7 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                         $({ tag: 'p', style: { fontSize: '12pt', lineHeight: '1.5', marginBottom: '20px' }, text: 'Thank you.' }),
                         $({ tag: 'p', style: { fontSize: '12pt', lineHeight: '1.5', marginBottom: '30px' }, text: 'Very truly yours,' }),
 
-                        // Signatures row - Only Stephanie and French
+                        // Signatures row
                         $({
                             tag: 'div',
                             style: {
@@ -334,7 +357,6 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                                 printColorAdjust: 'exact'
                             },
                             child: [
-                                // Left signature - Stephanie
                                 $({
                                     tag: 'div',
                                     style: {
@@ -348,8 +370,6 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                                         $({ tag: 'p', style: { fontSize: '11pt', marginTop: '0' }, text: 'University Research Director' })
                                     ]
                                 }),
-
-                                // Right signature - French
                                 $({
                                     tag: 'div',
                                     style: {
@@ -370,16 +390,16 @@ export const PrintResearch = ({ eventName, data, formData }) => {
             ]
         });
 
-        // Add the combined header+footer as a single item (Page 1)
         items.push({
             type: 'combined-header-footer',
             height: 1100,
             element: combinedHeaderFooter
-        })
-        // Add a forced page break BEFORE centers start
+        });
+
+        // Add page break
         items.push({
             type: 'page-break',
-            height: '0',
+            height: 0,
             element: $({
                 tag: 'div',
                 style: {
@@ -389,8 +409,9 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                     padding: '0'
                 }
             })
-        })
-        // Add the "Noted:" section with Jocelyn Legaspi included (Page 2)
+        });
+
+        // Add Noted section (Page 2)
         items.push({
             type: 'noted-section',
             height: 450,
@@ -400,12 +421,11 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                 style: {
                     marginTop: '30px',
                     width: '100%',
-                    pageBreakBefore: 'always', // This ensures it starts on a new page
+                    pageBreakBefore: 'always',
                     WebkitPrintColorAdjust: 'exact',
                     printColorAdjust: 'exact'
                 },
                 child: [
-                    // Jocelyn Legaspi
                     $({
                         tag: 'div',
                         style: {
@@ -419,10 +439,7 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                             $({ tag: 'p', style: { fontSize: '11pt', marginTop: '0' }, text: 'University Extension Director' })
                         ]
                     }),
-
                     $({ tag: 'p', style: { fontSize: '12pt', marginBottom: '30px', marginTop: '20px' }, text: 'Noted:' }),
-
-                    // VP Signature
                     $({
                         tag: 'div',
                         style: {
@@ -435,8 +452,6 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                             $({ tag: 'p', style: { fontSize: '11pt', marginTop: '0' }, text: 'VP for RDE' })
                         ]
                     }),
-
-                    // President Signature
                     $({
                         tag: 'div',
                         style: {
@@ -449,163 +464,152 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                             $({ tag: 'p', style: { fontSize: '11pt', marginTop: '0' }, text: 'SUC President III' })
                         ]
                     }),
-
                     $({ tag: 'p', style: { fontSize: '11pt', fontStyle: 'italic', marginTop: '20px' }, text: 'Cc: RDE' })
                 ]
             })
-        })
+        });
 
+        // Add page break before categories
+        items.push({
+            type: 'page-break',
+            height: 0,
+            element: $({
+                tag: 'div',
+                style: {
+                    pageBreakBefore: 'always',
+                    height: '0',
+                    margin: '0',
+                    padding: '0'
+                }
+            })
+        });
 
-        // Then add all centers AFTER the noted section (will start on Page 3 due to 800px spacing)
-        centersWithDocs.forEach(center => {
-            const categoriesWithDocs = center.categories.filter(cat => cat.docs?.length > 0)
-            if (!categoriesWithDocs.length) return
+        // Now add categories with their documents (Page 3+)
+        let docCounter = 1;
+        sortedCategories.forEach(category => {
+            const docs = categoryGroups[category];
+            if (!docs.length) return;
 
-            let centerDocCounter = 1
-
+            // Category header
             items.push({
-                type: 'center-header',
-                centerName: center.displayName || center.name,
+                type: 'category-header',
+                categoryName: category,
                 height: 54,
                 element: $({
                     tag: 'h2',
-                    att: { className: 'center-header' },
+                    att: { className: 'category-header' },
                     style: {
-                        fontSize: '14pt', fontWeight: 'bold',
-                        margin: '15px 0 10px 0', padding: '5px 0',
-                        borderBottom: '2px solid #000', color: '#000',
+                        fontSize: '14pt',
+                        fontWeight: 'bold',
+                        margin: '15px 0 10px 0',
+                        padding: '5px 0',
+                        borderBottom: '2px solid #000',
+                        color: '#000',
                         textTransform: 'uppercase',
                         WebkitPrintColorAdjust: 'exact',
                         printColorAdjust: 'exact'
                     },
-                    text: center.displayName || center.name
+                    text: category
                 })
-            })
+            });
 
-            categoriesWithDocs.forEach(cat => {
-                cat.docs.forEach((doc, idx) => {
-                    const authorsText = doc.authors?.length > 0
-                        ? doc.authors.join(', ')
-                        : 'No author specified'
+            // Documents for this category
+            docs.forEach((doc) => {
+                const authorsText = doc.authors?.length > 0
+                    ? doc.authors.join(', ')
+                    : 'No author specified';
 
-                    // IMPROVED DYNAMIC CALCULATION
-                    const CHARS_PER_LINE = 95; // More realistic character count per line
-                    const BASE_LINE_HEIGHT = 22; // Slightly reduced base height
-                    const PRESENTER_LINE_PX = 18; // Slightly reduced
-                    const MARGIN_PX = 10;
+                // Height calculation
+                const CHARS_PER_LINE = 95;
+                const BASE_LINE_HEIGHT = 22;
+                const PRESENTER_LINE_PX = 18;
+                const MARGIN_PX = 10;
 
-                    // More accurate line count based on word wrapping
-                    const titleLineText = `${doc.title} by ${authorsText} - ${cat.category}`;
+                const titleLineText = `${doc.title} by ${authorsText} - ${doc.category}`;
+                const words = titleLineText.split(' ');
+                let lineCount = 1;
+                let currentLineLength = 0;
 
-                    // Split into words for better line break estimation
-                    const words = titleLineText.split(' ');
-                    let lineCount = 1;
-                    let currentLineLength = 0;
-
-                    for (const word of words) {
-                        const wordLength = word.length;
-
-                        // Check if adding this word would exceed the line limit
-                        if (currentLineLength + wordLength + 1 > CHARS_PER_LINE) {
-                            // Start a new line
-                            lineCount++;
-                            currentLineLength = wordLength;
-                        } else {
-                            // Add to current line (plus 1 for space)
-                            currentLineLength += wordLength + 1;
-                        }
-
-                        // Handle very long words (like scientific names or long acronyms)
-                        if (wordLength > CHARS_PER_LINE * 0.8) {
-                            // This word itself might need multiple lines
-                            const extraLines = Math.floor(wordLength / CHARS_PER_LINE);
-                            lineCount += extraLines;
-                        }
+                for (const word of words) {
+                    const wordLength = word.length;
+                    if (currentLineLength + wordLength + 1 > CHARS_PER_LINE) {
+                        lineCount++;
+                        currentLineLength = wordLength;
+                    } else {
+                        currentLineLength += wordLength + 1;
                     }
+                    if (wordLength > CHARS_PER_LINE * 0.8) {
+                        const extraLines = Math.floor(wordLength / CHARS_PER_LINE);
+                        lineCount += extraLines;
+                    }
+                }
 
-                    // Adjust for scientific names and special formatting
-                    const hasScientificName = /[A-Z][a-z]+\s+[a-z]+|\([A-Z][a-z]+\.\)|[a-z]+\.?\s+[a-z]+/i.test(doc.title);
-                    const hasLongAuthors = authorsText.length > 60;
-                    const hasManyAuthors = doc.authors?.length > 5;
+                const hasScientificName = /[A-Z][a-z]+\s+[a-z]+|\([A-Z][a-z]+\.\)|[a-z]+\.?\s+[a-z]+/i.test(doc.title);
+                let specialBuffer = 0;
+                if (hasScientificName) specialBuffer += 8;
+                if (doc.authors?.length > 5) specialBuffer += 5;
 
-                    // Add small buffers for special cases
-                    let specialBuffer = 0;
-                    if (hasScientificName) specialBuffer += 8;
-                    if (hasLongAuthors) specialBuffer += 5;
-                    if (hasManyAuthors) specialBuffer += 5;
+                lineCount = Math.max(2, Math.min(5, lineCount));
+                const docHeight = (lineCount * BASE_LINE_HEIGHT) + PRESENTER_LINE_PX + MARGIN_PX + specialBuffer;
+                const finalHeight = Math.min(Math.max(docHeight, 90), 180);
 
-                    // Calculate height - ensure minimum 2 lines for readability
-                    lineCount = Math.max(2, lineCount);
-
-                    // Cap at reasonable maximum (prevents extreme cases)
-                    if (lineCount > 5) lineCount = 5;
-
-                    // Final height calculation
-                    const docHeight = (lineCount * BASE_LINE_HEIGHT) + PRESENTER_LINE_PX + MARGIN_PX + specialBuffer;
-
-                    // Minimum and maximum constraints
-                    const finalHeight = Math.min(Math.max(docHeight, 90), 180);
-
-                    items.push({
-                        type: 'document',
-                        centerName: center.displayName || center.name,
-                        isFirstInCategory: idx === 0,
-                        categoryName: cat.category,
-                        docNumber: centerDocCounter,
-                        height: finalHeight,
-                        element: $({
-                            tag: 'li',
-                            att: {
-                                className: 'document-item',
-                                value: String(centerDocCounter)
-                            },
-                            style: {
-                                marginBottom: '8px', // Reduced further
-                                fontSize: '11pt',
-                                lineHeight: '1.35', // Tighter line height
-                                listStyleType: 'decimal',
-                                WebkitPrintColorAdjust: 'exact',
-                                printColorAdjust: 'exact'
-                            },
-                            child: [
-                                $({
-                                    tag: 'div',
-                                    att: { className: 'doc-title-line' },
-                                    style: {
-                                        fontWeight: 'normal',
-                                        marginBottom: '1px', // Minimal spacing
-                                        WebkitPrintColorAdjust: 'exact',
-                                        printColorAdjust: 'exact'
-                                    },
-                                    child: [
-                                        $({ tag: 'span', html: `${doc.title} by `, style: { fontWeight: 'normal' } }),
-                                        $({ tag: 'span', text: authorsText, style: { fontWeight: 'normal', fontStyle: 'italic' } }),
-                                        $({ tag: 'span', text: ` - ${cat.category}`, style: { fontWeight: 'normal' } }),
-                                    ]
-                                }),
-                                $({
-                                    tag: 'div',
-                                    att: { className: 'doc-presenter-line' },
-                                    style: {
-                                        marginLeft: '20px',
-                                        fontSize: '10pt',
-                                        color: '#555',
-                                        fontStyle: 'italic',
-                                        marginTop: '0px', // No top margin
-                                        WebkitPrintColorAdjust: 'exact',
-                                        printColorAdjust: 'exact'
-                                    },
-                                    text: `Presenter: ${doc.presenter}`
-                                })
-                            ]
-                        })
-                    });
-                    centerDocCounter++;
+                items.push({
+                    type: 'document',
+                    categoryName: doc.category,
+                    docNumber: docCounter,
+                    height: finalHeight,
+                    element: $({
+                        tag: 'li',
+                        att: {
+                            className: 'document-item',
+                            value: String(docCounter)
+                        },
+                        style: {
+                            marginBottom: '8px',
+                            fontSize: '11pt',
+                            lineHeight: '1.35',
+                            listStyleType: 'decimal',
+                            WebkitPrintColorAdjust: 'exact',
+                            printColorAdjust: 'exact'
+                        },
+                        child: [
+                            $({
+                                tag: 'div',
+                                att: { className: 'doc-title-line' },
+                                style: {
+                                    fontWeight: 'normal',
+                                    marginBottom: '1px',
+                                    WebkitPrintColorAdjust: 'exact',
+                                    printColorAdjust: 'exact'
+                                },
+                                child: [
+                                    $({ tag: 'span', html: `${doc.title} by `, style: { fontWeight: 'normal' } }),
+                                    $({ tag: 'span', text: authorsText, style: { fontWeight: 'normal', fontStyle: 'italic' } }),
+                                    $({ tag: 'span', text: ` - ${doc.category}`, style: { fontWeight: 'normal' } }),
+                                ]
+                            }),
+                            $({
+                                tag: 'div',
+                                att: { className: 'doc-presenter-line' },
+                                style: {
+                                    marginLeft: '20px',
+                                    fontSize: '10pt',
+                                    color: '#555',
+                                    fontStyle: 'italic',
+                                    marginTop: '0px',
+                                    WebkitPrintColorAdjust: 'exact',
+                                    printColorAdjust: 'exact'
+                                },
+                                text: `Presenter: ${doc.presenter}`
+                            })
+                        ]
+                    })
                 });
-            })
-        })
+                docCounter++;
+            });
+        });
 
-        return items
+        return items;
     }
 
     // ─── Pagination ───────────────────────────────────────────────────────────
@@ -635,39 +639,28 @@ export const PrintResearch = ({ eventName, data, formData }) => {
         return pages
     }
 
-    // ─── Assemble a page DOM from flat items ──────────────────────────────────
     const buildPageChildren = (flatItems) => {
         const children = []
         let i = 0
         while (i < flatItems.length) {
             const item = flatItems[i]
 
-            // Handle page breaks - they don't render anything, just control pagination
             if (item.type === 'page-break') {
                 i++
                 continue
             }
 
-            // Handle the combined header-footer type
-            if (item.type === 'combined-header-footer') {
+            if (item.type === 'combined-header-footer' || 
+                item.type === 'noted-section' || 
+                item.type === 'title' || 
+                item.type === 'footer' || 
+                item.type === 'spacer') {
                 children.push(item.element)
                 i++
                 continue
             }
 
-            // Handle the noted section
-            if (item.type === 'noted-section') {
-                children.push(item.element)
-                i++
-                continue
-            }
-
-            if (item.type === 'title' || item.type === 'footer' || item.type === 'spacer') {
-                children.push(item.element)
-                i++
-                continue
-            }
-            if (item.type === 'center-header') {
+            if (item.type === 'category-header') {
                 const headerEl = item.element
                 const docElements = []
                 let firstDocNumber = 1
@@ -682,7 +675,7 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                 if (docElements.length > 0) {
                     children.push($({
                         tag: 'div',
-                        att: { className: 'center-section' },
+                        att: { className: 'category-section' },
                         style: {
                             marginBottom: '30px',
                             position: 'relative',
@@ -693,28 +686,18 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                         child: [
                             headerEl,
                             $({
-                                tag: 'div',
-                                att: { className: 'category-section' },
+                                tag: 'ol',
+                                att: {
+                                    className: 'documents-list',
+                                    start: String(firstDocNumber)
+                                },
                                 style: {
-                                    marginLeft: '15px',
-                                    marginBottom: '20px',
+                                    margin: '5px 0 10px 20px',
+                                    paddingLeft: '20px',
                                     WebkitPrintColorAdjust: 'exact',
                                     printColorAdjust: 'exact'
                                 },
-                                child: [$({
-                                    tag: 'ol',
-                                    att: {
-                                        className: 'documents-list',
-                                        start: String(firstDocNumber)
-                                    },
-                                    style: {
-                                        margin: '5px 0 10px 20px',
-                                        paddingLeft: '20px',
-                                        WebkitPrintColorAdjust: 'exact',
-                                        printColorAdjust: 'exact'
-                                    },
-                                    child: docElements
-                                })]
+                                child: docElements
                             })
                         ]
                     }))
@@ -726,7 +709,7 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                 continue
             }
 
-            // Continuation docs
+            // Continuation docs (fallback)
             const docElements = []
             let firstDocNumber = 1
             while (i < flatItems.length && flatItems[i].type === 'document') {

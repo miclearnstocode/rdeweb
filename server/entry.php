@@ -464,68 +464,32 @@ if(isset($_POST['entryCounter'])){
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         
-        // Define category mapping per center - using the EXACT format from researchfile.center
-        $centerCategoryMapping = [
-            "Coconut Research and Development Center (Coco RDC)" => ["Natural / Biological"],
-            "Crop Science Research & Developement Center (CSRDC)" => ["Natural / Biological"],
-            "Extension (Extension)" => ["Extension"],
-            "Fisheries Research & Development Center (FRDC)" => ["Natural / Biological"],
-            "Food and Industrial Technology Research & Development Center (FITRDC)" => ["Food"],
-            "Livestock Research & Development Center (LRDC)" => ["Natural / Biological"],
-            "Machinery and Agricultural Technology Engineering Center (MATEC)" => ["Industrial", "Engineering", "Information Technology", "Development", "Agricultural Machinery"],
-            "Social Science Research & Development Center (SSRDC)" => ["Social Science"]
-        ];
+        // Get all categories from the category table
+        $categoryQuery = "SELECT id, name FROM category ORDER BY name ASC";
+        $categoryResult = $con->query($categoryQuery);
         
-        // Get all centers from the center table
-        $centerQuery = "SELECT id, code, name FROM center ORDER BY name ASC";
-        $centerResult = $con->query($centerQuery);
-        
-        while ($centerRow = $centerResult->fetch_assoc()) {
-            // Construct the center name in the format used by researchfile.center
-            $centerFullName = $centerRow['name'] . " (" . $centerRow['code'] . ")";
+        while ($categoryRow = $categoryResult->fetch_assoc()) {
+            $categoryName = $categoryRow['name'];
             
-            $centerObj = new stdClass();
-            $centerObj->name = $centerFullName;
-            $centerObj->total = 0;
-            $centerObj->categories = [];
+            $catObj = new stdClass();
+            $catObj->name = $categoryName;
+            $catObj->total = 0;
             
-            // Get categories for this center from mapping using the full name
-            $categories = isset($centerCategoryMapping[$centerFullName]) 
-                ? $centerCategoryMapping[$centerFullName] 
-                : [];
+            // Get count for this category for the selected event
+            $countQuery = "SELECT COUNT(*) as total FROM researchfile
+                WHERE researchfile.status = 'accepted' 
+                AND researchfile.event = ? 
+                AND researchfile.category = ?";
             
-            // If no categories defined for this center, use a default
-            if (empty($categories)) {
-                $categories = ["Uncategorized"];
-            }
+            $countStmt = $con->prepare($countQuery);
+            $countStmt->bind_param("ss", $_POST['eventType'], $categoryName);
+            $countStmt->execute();
+            $countResult = $countStmt->get_result();
+            $countRow = $countResult->fetch_assoc();
+            $catObj->total = $countRow['total'] ? (int)$countRow['total'] : 0;
             
-            // For each category, get its count
-            foreach ($categories as $categoryName) {
-                $catObj = new stdClass();
-                $catObj->name = $categoryName;
-                
-                // Get count for this category in this center for the selected event
-                $catQuery = "SELECT COUNT(*) as total FROM researchfile
-                    WHERE researchfile.status = 'accepted' 
-                    AND researchfile.event = ? 
-                    AND researchfile.center = ?
-                    AND researchfile.category = ?";
-                
-                $catStmt = $con->prepare($catQuery);
-                $catStmt->bind_param("sss", $_POST['eventType'], $centerFullName, $categoryName);
-                $catStmt->execute();
-                $catResult = $catStmt->get_result();
-                $catTotal = $catResult->fetch_assoc();
-                $catObj->total = $catTotal['total'] ? (int)$catTotal['total'] : 0;
-                
-                // Add to center total
-                $centerObj->total += $catObj->total;
-                
-                $centerObj->categories[] = $catObj;
-                $catStmt->close();
-            }
-            
-            $response[] = $centerObj;
+            $response[] = $catObj;
+            $countStmt->close();
         }
     }
     
