@@ -88,7 +88,6 @@ if (isset($_POST['getResearchData'])) {
     $response = [];
     
     if ($con) {
-        // Get all events from event_list with their research files
         $query = "
             SELECT 
                 el.id as event_id,
@@ -111,7 +110,7 @@ if (isset($_POST['getResearchData'])) {
                 OR r.status = 'accepted'
                 OR (e.status IS NULL AND r.status IS NULL)
             )
-            ORDER BY el.date DESC, r.title ASC
+            ORDER BY COALESCE(e.date, el.date) ASC, r.title ASC
         ";
         
         $result = $con->query($query);
@@ -151,75 +150,6 @@ if (isset($_POST['getResearchData'])) {
     exit();
 }
 
-if (isset($_POST['getResearchData'])) {
-    $response = [];
-    
-    if ($con) {
-        // Direct join between researchfile and endorsement
-        $query = "
-            SELECT 
-                r.id as research_id,
-                r.endorsementid,
-                r.title,
-                r.presenter,
-                r.author,
-                r.coauthor,
-                r.file,
-                r.status as research_status,
-                e.id as endorsement_id,
-                e.event,
-                e.status as endorsement_status,
-                e.date as endorsement_date,
-                e.date as date
-            FROM `researchfile` r
-            LEFT JOIN `endorsement` e ON r.endorsementid = e.id
-            WHERE r.file IS NOT NULL AND r.file != ''
-            AND e.status = 'accepted'
-            ORDER BY e.date DESC, r.title ASC
-        ";
-        
-        $result = $con->query($query);
-        
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $data = new stdClass();
-                $data->event = $row['event'] ?? '-';
-                $data->title = $row['title'] ?? '-';
-                $data->presenter = $row['presenter'] ?? '-';
-                $data->author = $row['author'] ?? '-';
-                
-                // Format co-author (handle JSON array)
-                $coauthor = $row['coauthor'];
-                if ($coauthor) {
-                    $coauthorArray = json_decode($coauthor, true);
-                    if (is_array($coauthorArray)) {
-                        $data->coauthor = implode(', ', $coauthorArray);
-                    } else {
-                        $data->coauthor = $coauthor;
-                    }
-                } else {
-                    $data->coauthor = '-';
-                }
-                
-                $data->file = $row['file'] ?? null;
-                
-                // Use endorsement date directly
-                if ($row['date'] && $row['date'] !== '0000-00-00 00:00:00') {
-                    $data->date = $row['date'];
-                } else {
-                    $data->date = '-';
-                }
-                
-                $response[] = $data;
-            }
-        }
-    }
-    
-    ob_clean();
-    echo json_encode($response);
-    ob_end_flush();
-    exit();
-}
 
 if(isset($_POST['fileSubmit'])){
 
