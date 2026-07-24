@@ -58,7 +58,6 @@ if (isset($_POST['auth'])) {
             
             $con->set_charset("utf8mb4");
             
-            // Query for RDE Staff - FIXED: Removed userType dependency
             $loginUser = "SELECT 
                 rdestaff.id,
                 rdestaff.username,
@@ -149,5 +148,141 @@ if (isset($_POST['auth'])) {
     }
 }
 
+if (isset($_POST['submitStaff'])) {
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = 'Registration failed';
+    
+    // Get form data
+    $staffEmail = isset($_POST['staffEmail']) ? trim($_POST['staffEmail']) : '';
+    $staffUserName = isset($_POST['staffUserName']) ? trim($_POST['staffUserName']) : '';
+    $staffPassword = isset($_POST['staffPassword']) ? $_POST['staffPassword'] : '';
+    
+    // Validate inputs
+    if (empty($staffEmail) || empty($staffUserName) || empty($staffPassword)) {
+        $response->message = 'All fields are required';
+        echo json_encode($response);
+        ob_end_flush();
+        exit();
+    }
+    
+    // Validate email format
+    if (!filter_var($staffEmail, FILTER_VALIDATE_EMAIL)) {
+        $response->message = 'Invalid email address format';
+        echo json_encode($response);
+        ob_end_flush();
+        exit();
+    }
+    
+    // Validate username (no spaces)
+    if (preg_match('/\s/', $staffUserName)) {
+        $response->message = 'Username cannot contain spaces';
+        echo json_encode($response);
+        ob_end_flush();
+        exit();
+    }
+    
+    // Validate password length
+    if (strlen($staffPassword) < 8) {
+        $response->message = 'Password must be at least 8 characters long';
+        echo json_encode($response);
+        ob_end_flush();
+        exit();
+    }
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        if ($con->connect_error) {
+            $response->message = 'Database connection failed: ' . $con->connect_error;
+            echo json_encode($response);
+            ob_end_flush();
+            exit();
+        }
+        
+        $con->set_charset("utf8mb4");
+        
+        // Check if username already exists
+        $checkStmt = $con->prepare("SELECT id FROM rdestaff WHERE username = ?");
+        if ($checkStmt) {
+            $checkStmt->bind_param("s", $staffUserName);
+            $checkStmt->execute();
+            $checkStmt->store_result();
+            
+            if ($checkStmt->num_rows > 0) {
+                $response->message = 'Username already exists. Please choose a different username.';
+                $checkStmt->close();
+                $con->close();
+                echo json_encode($response);
+                ob_end_flush();
+                exit();
+            }
+            $checkStmt->close();
+        }
+        
+        // Check if email already exists
+        $checkEmailStmt = $con->prepare("SELECT id FROM rdestaff WHERE email = ?");
+        if ($checkEmailStmt) {
+            $checkEmailStmt->bind_param("s", $staffEmail);
+            $checkEmailStmt->execute();
+            $checkEmailStmt->store_result();
+            
+            if ($checkEmailStmt->num_rows > 0) {
+                $response->message = 'Email already registered. Please use a different email.';
+                $checkEmailStmt->close();
+                $con->close();
+                echo json_encode($response);
+                ob_end_flush();
+                exit();
+            }
+            $checkEmailStmt->close();
+        }
+        
+        // Hash the password
+        $hashedPassword = password_hash($staffPassword, PASSWORD_DEFAULT);
+        
+        // Generate ID (timestamp based)
+        $id = round(microtime(true) * 1000);
+        
+        // Insert new RDE Staff
+        $insertStmt = $con->prepare("INSERT INTO rdestaff (id, email, username, password) VALUES (?, ?, ?, ?)");
+        if ($insertStmt) {
+            $insertStmt->bind_param("ssss", $id, $staffEmail, $staffUserName, $hashedPassword);
+            
+            if ($insertStmt->execute()) {
+                $response->status = true;
+                $response->message = 'RDE Staff account successfully registered!';
+                
+                // Optional: Send email notification
+                try {
+                    $mailer = new MailSender();
+                    $mailer->sendStaffRegistrationEmail($staffEmail, $staffUserName);
+                } catch (Exception $e) {
+                    // Log error but don't fail the registration
+                    error_log("Failed to send registration email: " . $e->getMessage());
+                }
+                
+            } else {
+                $response->message = 'Failed to register account: ' . $insertStmt->error;
+                error_log("RDE Staff Registration Error: " . $insertStmt->error);
+            }
+            $insertStmt->close();
+        } else {
+            $response->message = 'Database query preparation failed: ' . $con->error;
+            error_log("RDE Staff Registration - Prepare failed: " . $con->error);
+        }
+        
+        $con->close();
+    } else {
+        $response->message = 'Failed to connect to database';
+    }
+    
+    // Clear any output buffers and send JSON response
+    ob_clean();
+    echo json_encode($response);
+    ob_end_flush();
+    exit();
+}
+
+// Clear any output buffers
+ob_clean();
 ob_end_flush();
 exit();

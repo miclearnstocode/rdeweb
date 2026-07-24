@@ -46,11 +46,11 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                 right: '20px',
                 padding: '12px 24px',
                 borderRadius: '8px',
-                backgroundColor: type === 'error' ? '#e91e63' : '#4caf50',
+                backgroundColor: type === 'error' ? '#e74c3c' : '#2ecc71',
                 color: '#fff',
                 fontSize: '14px',
                 zIndex: '5000',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                 fontFamily: 'Segoe UI, sans-serif'
             }
         })
@@ -111,13 +111,13 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
             totalEl.textContent = totalPercentage.toFixed(2) + '%'
 
             if (totalPercentage === 100) {
-                totalEl.style.color = '#4caf50'
+                totalEl.style.color = '#27ae60'
             } else if (totalPercentage > 100) {
-                totalEl.style.color = '#e91e63'
+                totalEl.style.color = '#e74c3c'
             } else if (totalPercentage >= 80) {
-                totalEl.style.color = '#ff9800'
+                totalEl.style.color = '#f39c12'
             } else {
-                totalEl.style.color = '#ff9800'
+                totalEl.style.color = '#f39c12'
             }
         }
     }
@@ -201,8 +201,8 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     att: { className: 'fa-solid fa-clipboard-list' },
                                     style: {
                                         fontSize: '48px',
-                                        color: '#888',
-                                        opacity: '0.5'
+                                        color: '#ccc',
+                                        opacity: '0.6'
                                     }
                                 }),
                                 $({
@@ -210,7 +210,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     text: 'No Criteria Found',
                                     style: {
                                         fontSize: '18px',
-                                        color: '#aaa',
+                                        color: '#999',
                                         fontWeight: '600'
                                     }
                                 }),
@@ -219,7 +219,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     text: 'Add criteria for each center using the button above',
                                     style: {
                                         fontSize: '13px',
-                                        color: '#666'
+                                        color: '#bbb'
                                     }
                                 })
                             ]
@@ -237,8 +237,8 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
         return $({
             tag: 'tr',
             style: {
-                backgroundColor: '#2d2d2d',
-                borderBottom: '1px solid #444',
+                backgroundColor: '#ffffff',
+                borderBottom: '1px solid #f0f0f0',
                 transition: 'all 0.2s ease'
             },
             child: [
@@ -250,7 +250,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                         padding: '12px',
                         textAlign: 'center',
                         fontSize: '13px',
-                        color: '#888',
+                        color: '#999',
                         width: '50px',
                         fontWeight: '500'
                     }
@@ -262,8 +262,8 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                     style: {
                         padding: '12px 16px',
                         fontSize: '13px',
-                        color: '#fff',
-                        fontWeight: '500',
+                        color: '#2c3e50',
+                        fontWeight: '600',
                         minWidth: '200px'
                     },
                     title: item.name
@@ -275,7 +275,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                     style: {
                         padding: '12px 16px',
                         fontSize: '12px',
-                        color: '#2196f3',
+                        color: '#2980b9',
                         fontWeight: '500',
                         minWidth: '150px'
                     }
@@ -287,8 +287,9 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                     style: {
                         padding: '12px 16px',
                         fontSize: '12px',
-                        color: '#aaa',
-                        minWidth: '80px'
+                        color: '#7f8c8d',
+                        minWidth: '80px',
+                        fontWeight: '500'
                     }
                 }),
                 // Description
@@ -298,7 +299,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                     style: {
                         padding: '12px 16px',
                         fontSize: '12px',
-                        color: '#999',
+                        color: '#7f8c8d',
                         maxWidth: '300px',
                         whiteSpace: 'normal',
                         wordBreak: 'break-word',
@@ -321,14 +322,14 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                backgroundColor: percentage === 100 ? 'rgba(76, 175, 80, 0.15)' :
-                                    percentage >= 50 ? 'rgba(255, 152, 0, 0.15)' :
-                                        'rgba(33, 150, 243, 0.15)',
+                                backgroundColor: percentage === 100 ? 'rgba(46, 204, 113, 0.12)' :
+                                    percentage >= 50 ? 'rgba(243, 156, 18, 0.12)' :
+                                        'rgba(41, 128, 185, 0.12)',
                                 padding: '4px 12px',
                                 borderRadius: '20px',
-                                border: `1px solid ${percentage === 100 ? 'rgba(76, 175, 80, 0.3)' :
-                                    percentage >= 50 ? 'rgba(255, 152, 0, 0.3)' :
-                                        'rgba(33, 150, 243, 0.3)'}`
+                                border: `1px solid ${percentage === 100 ? 'rgba(46, 204, 113, 0.25)' :
+                                    percentage >= 50 ? 'rgba(243, 156, 18, 0.25)' :
+                                        'rgba(41, 128, 185, 0.25)'}`
                             },
                             child: [
                                 $({
@@ -337,8 +338,8 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     style: {
                                         fontSize: '14px',
                                         fontWeight: '700',
-                                        color: percentage === 100 ? '#4caf50' :
-                                            percentage >= 50 ? '#ff9800' : '#2196f3'
+                                        color: percentage === 100 ? '#27ae60' :
+                                            percentage >= 50 ? '#f39c12' : '#2980b9'
                                     }
                                 })
                             ]
@@ -357,8 +358,8 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                             tag: 'div',
                             style: {
                                 width: '100%',
-                                height: '8px',
-                                backgroundColor: '#444',
+                                height: '6px',
+                                backgroundColor: '#ecf0f1',
                                 borderRadius: '4px',
                                 overflow: 'hidden'
                             },
@@ -368,9 +369,9 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     style: {
                                         width: percentage + '%',
                                         height: '100%',
-                                        backgroundColor: percentage === 100 ? '#4caf50' :
-                                            percentage >= 70 ? '#2196f3' :
-                                                percentage >= 40 ? '#ff9800' : '#e91e63',
+                                        backgroundColor: percentage === 100 ? '#2ecc71' :
+                                            percentage >= 70 ? '#3498db' :
+                                                percentage >= 40 ? '#f39c12' : '#e74c3c',
                                         borderRadius: '4px',
                                         transition: 'width 0.3s ease'
                                     }
@@ -400,9 +401,9 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     tag: 'button',
                                     att: { className: 'fa-solid fa-pen-to-square' },
                                     style: {
-                                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                                        border: '1px solid rgba(33, 150, 243, 0.3)',
-                                        color: '#2196f3',
+                                        backgroundColor: 'rgba(52, 152, 219, 0.08)',
+                                        border: '1px solid rgba(52, 152, 219, 0.2)',
+                                        color: '#3498db',
                                         padding: '8px',
                                         borderRadius: '6px',
                                         cursor: 'pointer',
@@ -418,11 +419,11 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     },
                                     elementHandler: (el) => {
                                         el.addEventListener('mouseenter', () => {
-                                            el.style.backgroundColor = 'rgba(33, 150, 243, 0.2)'
+                                            el.style.backgroundColor = 'rgba(52, 152, 219, 0.15)'
                                             el.style.transform = 'scale(1.1)'
                                         })
                                         el.addEventListener('mouseleave', () => {
-                                            el.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'
+                                            el.style.backgroundColor = 'rgba(52, 152, 219, 0.08)'
                                             el.style.transform = 'scale(1)'
                                         })
                                     }
@@ -431,9 +432,9 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     tag: 'button',
                                     att: { className: 'fa-solid fa-trash-can' },
                                     style: {
-                                        backgroundColor: 'rgba(233, 30, 99, 0.1)',
-                                        border: '1px solid rgba(233, 30, 99, 0.3)',
-                                        color: '#e91e63',
+                                        backgroundColor: 'rgba(231, 76, 60, 0.08)',
+                                        border: '1px solid rgba(231, 76, 60, 0.2)',
+                                        color: '#e74c3c',
                                         padding: '8px',
                                         borderRadius: '6px',
                                         cursor: 'pointer',
@@ -449,11 +450,11 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     },
                                     elementHandler: (el) => {
                                         el.addEventListener('mouseenter', () => {
-                                            el.style.backgroundColor = 'rgba(233, 30, 99, 0.2)'
+                                            el.style.backgroundColor = 'rgba(231, 76, 60, 0.15)'
                                             el.style.transform = 'scale(1.1)'
                                         })
                                         el.addEventListener('mouseleave', () => {
-                                            el.style.backgroundColor = 'rgba(233, 30, 99, 0.1)'
+                                            el.style.backgroundColor = 'rgba(231, 76, 60, 0.08)'
                                             el.style.transform = 'scale(1)'
                                         })
                                     }
@@ -465,11 +466,11 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
             ],
             event: {
                 type: 'mouseenter',
-                method: (e) => { e.currentTarget.style.backgroundColor = '#333' }
+                method: (e) => { e.currentTarget.style.backgroundColor = '#fafbfc' }
             },
             event2: {
                 type: 'mouseleave',
-                method: (e) => { e.currentTarget.style.backgroundColor = '#2d2d2d' }
+                method: (e) => { e.currentTarget.style.backgroundColor = '#ffffff' }
             }
         })
     }
@@ -504,7 +505,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                 left: '0',
                 width: '100%',
                 height: '100%',
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                backgroundColor: 'rgba(0, 0, 0, 0.4)',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
@@ -515,14 +516,14 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                 $({
                     tag: 'div',
                     style: {
-                        backgroundColor: '#2d2d2d',
+                        backgroundColor: '#ffffff',
                         borderRadius: '16px',
                         width: '550px',
                         maxWidth: '95%',
                         maxHeight: '90vh',
                         overflow: 'auto',
-                        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
-                        border: '1px solid #444'
+                        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
+                        border: '1px solid #eef2f7'
                     },
                     child: [
                         // Header
@@ -530,7 +531,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                             tag: 'div',
                             style: {
                                 padding: '20px 24px',
-                                borderBottom: '1px solid #444',
+                                borderBottom: '1px solid #eef2f7',
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center'
@@ -540,7 +541,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     tag: 'h2',
                                     text: item ? 'Edit Criteria' : 'Add New Criteria',
                                     style: {
-                                        color: '#fff',
+                                        color: '#2c3e50',
                                         fontSize: '18px',
                                         fontWeight: '600',
                                         margin: '0'
@@ -551,7 +552,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     att: { className: 'fa-solid fa-times' },
                                     style: {
                                         fontSize: '20px',
-                                        color: '#888',
+                                        color: '#bdc3c7',
                                         cursor: 'pointer',
                                         padding: '8px',
                                         borderRadius: '6px',
@@ -560,11 +561,11 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     event: { type: 'click', method: closeModal },
                                     elementHandler: (el) => {
                                         el.addEventListener('mouseenter', () => {
-                                            el.style.color = '#fff'
-                                            el.style.backgroundColor = '#444'
+                                            el.style.color = '#2c3e50'
+                                            el.style.backgroundColor = '#f5f6fa'
                                         })
                                         el.addEventListener('mouseleave', () => {
-                                            el.style.color = '#888'
+                                            el.style.color = '#bdc3c7'
                                             el.style.backgroundColor = 'transparent'
                                         })
                                     }
@@ -587,7 +588,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             style: {
                                                 display: 'block',
                                                 marginBottom: '8px',
-                                                color: '#aaa',
+                                                color: '#7f8c8d',
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
@@ -602,10 +603,10 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             style: {
                                                 width: '100%',
                                                 padding: '12px 16px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #e0e4e8',
                                                 borderRadius: '8px',
-                                                color: '#fff',
+                                                color: '#2c3e50',
                                                 fontSize: '14px',
                                                 outline: 'none',
                                                 transition: 'all 0.2s ease',
@@ -614,11 +615,11 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             elementHandler: (el) => {
                                                 nameInput = el
                                                 el.addEventListener('focus', () => {
-                                                    el.style.borderColor = 'deepskyblue'
-                                                    el.style.boxShadow = '0 0 0 3px rgba(0, 191, 255, 0.1)'
+                                                    el.style.borderColor = '#3498db'
+                                                    el.style.boxShadow = '0 0 0 3px rgba(52, 152, 219, 0.1)'
                                                 })
                                                 el.addEventListener('blur', () => {
-                                                    el.style.borderColor = '#444'
+                                                    el.style.borderColor = '#e0e4e8'
                                                     el.style.boxShadow = 'none'
                                                 })
                                             }
@@ -636,7 +637,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             style: {
                                                 display: 'block',
                                                 marginBottom: '8px',
-                                                color: '#aaa',
+                                                color: '#7f8c8d',
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
@@ -646,10 +647,10 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             style: {
                                                 width: '100%',
                                                 padding: '12px 16px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #e0e4e8',
                                                 borderRadius: '8px',
-                                                color: '#fff',
+                                                color: '#2c3e50',
                                                 fontSize: '14px',
                                                 outline: 'none',
                                                 cursor: 'pointer',
@@ -668,6 +669,14 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                                     }
                                                     el.appendChild(opt)
                                                 })
+                                                el.addEventListener('focus', () => {
+                                                    el.style.borderColor = '#3498db'
+                                                    el.style.boxShadow = '0 0 0 3px rgba(52, 152, 219, 0.1)'
+                                                })
+                                                el.addEventListener('blur', () => {
+                                                    el.style.borderColor = '#e0e4e8'
+                                                    el.style.boxShadow = 'none'
+                                                })
                                             }
                                         })
                                     ]
@@ -683,7 +692,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             style: {
                                                 display: 'block',
                                                 marginBottom: '8px',
-                                                color: '#aaa',
+                                                color: '#7f8c8d',
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
@@ -698,10 +707,10 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             style: {
                                                 width: '100%',
                                                 padding: '12px 16px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #e0e4e8',
                                                 borderRadius: '8px',
-                                                color: '#fff',
+                                                color: '#2c3e50',
                                                 fontSize: '14px',
                                                 outline: 'none',
                                                 resize: 'vertical',
@@ -712,11 +721,11 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             elementHandler: (el) => {
                                                 descInput = el
                                                 el.addEventListener('focus', () => {
-                                                    el.style.borderColor = 'deepskyblue'
-                                                    el.style.boxShadow = '0 0 0 3px rgba(0, 191, 255, 0.1)'
+                                                    el.style.borderColor = '#3498db'
+                                                    el.style.boxShadow = '0 0 0 3px rgba(52, 152, 219, 0.1)'
                                                 })
                                                 el.addEventListener('blur', () => {
-                                                    el.style.borderColor = '#444'
+                                                    el.style.borderColor = '#e0e4e8'
                                                     el.style.boxShadow = 'none'
                                                 })
                                             }
@@ -734,7 +743,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             style: {
                                                 display: 'block',
                                                 marginBottom: '8px',
-                                                color: '#aaa',
+                                                color: '#7f8c8d',
                                                 fontSize: '13px',
                                                 fontWeight: '500'
                                             }
@@ -752,10 +761,10 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             style: {
                                                 width: '100%',
                                                 padding: '12px 16px',
-                                                backgroundColor: '#333',
-                                                border: '1px solid #444',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #e0e4e8',
                                                 borderRadius: '8px',
-                                                color: '#fff',
+                                                color: '#2c3e50',
                                                 fontSize: '14px',
                                                 outline: 'none',
                                                 transition: 'all 0.2s ease',
@@ -764,11 +773,11 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             elementHandler: (el) => {
                                                 percentInput = el
                                                 el.addEventListener('focus', () => {
-                                                    el.style.borderColor = '#ff9800'
-                                                    el.style.boxShadow = '0 0 0 3px rgba(255, 152, 0, 0.1)'
+                                                    el.style.borderColor = '#f39c12'
+                                                    el.style.boxShadow = '0 0 0 3px rgba(243, 156, 18, 0.1)'
                                                 })
                                                 el.addEventListener('blur', () => {
-                                                    el.style.borderColor = '#444'
+                                                    el.style.borderColor = '#e0e4e8'
                                                     el.style.boxShadow = 'none'
                                                 })
                                             }
@@ -790,9 +799,9 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             style: {
                                                 padding: '10px 24px',
                                                 backgroundColor: 'transparent',
-                                                border: '1px solid #444',
+                                                border: '1px solid #e0e4e8',
                                                 borderRadius: '8px',
-                                                color: '#aaa',
+                                                color: '#7f8c8d',
                                                 fontSize: '14px',
                                                 cursor: 'pointer',
                                                 transition: 'all 0.2s ease'
@@ -800,12 +809,12 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             event: { type: 'click', method: closeModal },
                                             elementHandler: (el) => {
                                                 el.addEventListener('mouseenter', () => {
-                                                    el.style.borderColor = '#e91e63'
-                                                    el.style.color = '#e91e63'
+                                                    el.style.borderColor = '#e74c3c'
+                                                    el.style.color = '#e74c3c'
                                                 })
                                                 el.addEventListener('mouseleave', () => {
-                                                    el.style.borderColor = '#444'
-                                                    el.style.color = '#aaa'
+                                                    el.style.borderColor = '#e0e4e8'
+                                                    el.style.color = '#7f8c8d'
                                                 })
                                             }
                                         }),
@@ -814,7 +823,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             text: item ? 'Update Criteria' : 'Add Criteria',
                                             style: {
                                                 padding: '10px 24px',
-                                                backgroundColor: 'deepskyblue',
+                                                backgroundColor: '#3498db',
                                                 border: 'none',
                                                 borderRadius: '8px',
                                                 color: '#fff',
@@ -887,12 +896,12 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                             },
                                             elementHandler: (el) => {
                                                 el.addEventListener('mouseenter', () => {
-                                                    el.style.backgroundColor = '#00bfff'
+                                                    el.style.backgroundColor = '#2980b9'
                                                     el.style.transform = 'translateY(-2px)'
-                                                    el.style.boxShadow = '0 4px 12px rgba(0, 191, 255, 0.3)'
+                                                    el.style.boxShadow = '0 4px 12px rgba(52, 152, 219, 0.3)'
                                                 })
                                                 el.addEventListener('mouseleave', () => {
-                                                    el.style.backgroundColor = 'deepskyblue'
+                                                    el.style.backgroundColor = '#3498db'
                                                     el.style.transform = 'translateY(0)'
                                                     el.style.boxShadow = 'none'
                                                 })
@@ -951,8 +960,8 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
             tag: 'div',
             style: {
                 padding: '16px 24px',
-                borderBottom: '1px solid #444',
-                backgroundColor: '#2d2d2d',
+                borderBottom: '1px solid #eef2f7',
+                backgroundColor: '#ffffff',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -976,14 +985,14 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
-                                color: 'deepskyblue',
+                                color: '#3498db',
                                 textDecoration: 'none',
                                 fontSize: '14px',
                                 fontWeight: '500',
                                 padding: '8px 12px',
                                 borderRadius: '8px',
-                                border: '1px solid rgba(0, 191, 255, 0.3)',
-                                backgroundColor: 'rgba(0, 191, 255, 0.1)',
+                                border: '1px solid rgba(52, 152, 219, 0.2)',
+                                backgroundColor: 'rgba(52, 152, 219, 0.06)',
                                 transition: 'all 0.2s ease'
                             },
                             child: [
@@ -995,10 +1004,10 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                             ],
                             elementHandler: (el) => {
                                 el.addEventListener('mouseenter', () => {
-                                    el.style.backgroundColor = 'rgba(0, 191, 255, 0.2)'
+                                    el.style.backgroundColor = 'rgba(52, 152, 219, 0.12)'
                                 })
                                 el.addEventListener('mouseleave', () => {
-                                    el.style.backgroundColor = 'rgba(0, 191, 255, 0.1)'
+                                    el.style.backgroundColor = 'rgba(52, 152, 219, 0.06)'
                                 })
                             }
                         }),
@@ -1009,7 +1018,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     tag: 'h1',
                                     text: name + ' - In-House Score Criteria',
                                     style: {
-                                        color: '#fff',
+                                        color: '#2c3e50',
                                         fontSize: '20px',
                                         fontWeight: '600',
                                         margin: '0',
@@ -1035,16 +1044,16 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                 alignItems: 'center',
                                 gap: '8px',
                                 padding: '8px 16px',
-                                backgroundColor: '#333',
+                                backgroundColor: '#f8f9fa',
                                 borderRadius: '20px',
-                                border: '1px solid #444'
+                                border: '1px solid #eef2f7'
                             },
                             child: [
                                 $({
                                     tag: 'span',
                                     text: 'Total:',
                                     style: {
-                                        color: '#aaa',
+                                        color: '#7f8c8d',
                                         fontSize: '13px',
                                         fontWeight: '500'
                                     }
@@ -1056,7 +1065,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     style: {
                                         fontSize: '16px',
                                         fontWeight: '700',
-                                        color: '#ff9800'
+                                        color: '#f39c12'
                                     }
                                 })
                             ]
@@ -1073,8 +1082,8 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
             tag: 'div',
             style: {
                 padding: '12px 24px',
-                backgroundColor: '#2d2d2d',
-                borderBottom: '1px solid #444',
+                backgroundColor: '#ffffff',
+                borderBottom: '1px solid #eef2f7',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -1105,7 +1114,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                         left: '12px',
                                         top: '50%',
                                         transform: 'translateY(-50%)',
-                                        color: '#666',
+                                        color: '#bdc3c7',
                                         fontSize: '14px'
                                     }
                                 }),
@@ -1117,11 +1126,11 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                         id: 'search-criteria'
                                     },
                                     style: {
-                                        backgroundColor: '#333',
-                                        border: '1px solid #444',
+                                        backgroundColor: '#f8f9fa',
+                                        border: '1px solid #e0e4e8',
                                         borderRadius: '8px',
                                         padding: '9px 16px 9px 38px',
-                                        color: '#fff',
+                                        color: '#2c3e50',
                                         fontSize: '13px',
                                         width: '250px',
                                         outline: 'none',
@@ -1130,10 +1139,12 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                     elementHandler: (el) => {
                                         searchInput = el
                                         el.addEventListener('focus', () => {
-                                            el.style.borderColor = 'deepskyblue'
+                                            el.style.borderColor = '#3498db'
+                                            el.style.boxShadow = '0 0 0 3px rgba(52, 152, 219, 0.1)'
                                         })
                                         el.addEventListener('blur', () => {
-                                            el.style.borderColor = '#444'
+                                            el.style.borderColor = '#e0e4e8'
+                                            el.style.boxShadow = 'none'
                                         })
                                     },
                                     event: {
@@ -1147,15 +1158,16 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                             tag: 'select',
                             att: { id: 'center-filter' },
                             style: {
-                                backgroundColor: '#333',
-                                border: '1px solid #444',
+                                backgroundColor: '#f8f9fa',
+                                border: '1px solid #e0e4e8',
                                 borderRadius: '8px',
                                 padding: '9px 16px',
-                                color: '#fff',
+                                color: '#2c3e50',
                                 fontSize: '13px',
                                 outline: 'none',
                                 cursor: 'pointer',
-                                minWidth: '200px'
+                                minWidth: '200px',
+                                transition: 'all 0.2s ease'
                             },
                             event: {
                                 type: 'change',
@@ -1174,7 +1186,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                         alignItems: 'center',
                         gap: '8px',
                         padding: '10px 20px',
-                        backgroundColor: 'deepskyblue',
+                        backgroundColor: '#3498db',
                         border: 'none',
                         borderRadius: '8px',
                         color: '#fff',
@@ -1194,12 +1206,12 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                     event: { type: 'click', method: openAddModal },
                     elementHandler: (el) => {
                         el.addEventListener('mouseenter', () => {
-                            el.style.backgroundColor = '#00bfff'
+                            el.style.backgroundColor = '#2980b9'
                             el.style.transform = 'translateY(-2px)'
-                            el.style.boxShadow = '0 4px 12px rgba(0, 191, 255, 0.3)'
+                            el.style.boxShadow = '0 4px 12px rgba(52, 152, 219, 0.3)'
                         })
                         el.addEventListener('mouseleave', () => {
-                            el.style.backgroundColor = 'deepskyblue'
+                            el.style.backgroundColor = '#3498db'
                             el.style.transform = 'translateY(0)'
                             el.style.boxShadow = 'none'
                         })
@@ -1216,7 +1228,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
             style: {
                 flex: '1',
                 overflow: 'auto',
-                backgroundColor: '#2a2a2a'
+                backgroundColor: '#f8f9fa'
             },
             child: [
                 $({
@@ -1238,7 +1250,8 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                 $({
                                     tag: 'tr',
                                     style: {
-                                        backgroundColor: '#333'
+                                        backgroundColor: '#f8f9fa',
+                                        borderBottom: '2px solid #eef2f7'
                                     },
                                     child: [
                                         $({
@@ -1248,10 +1261,10 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                                 padding: '14px 12px',
                                                 fontSize: '11px',
                                                 fontWeight: '600',
-                                                color: '#aaa',
+                                                color: '#95a5a6',
                                                 textTransform: 'uppercase',
                                                 letterSpacing: '0.5px',
-                                                borderBottom: '2px solid #444',
+                                                borderBottom: '2px solid #eef2f7',
                                                 width: '50px',
                                                 textAlign: 'center'
                                             }
@@ -1263,10 +1276,10 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                                 padding: '14px 16px',
                                                 fontSize: '11px',
                                                 fontWeight: '600',
-                                                color: '#aaa',
+                                                color: '#95a5a6',
                                                 textTransform: 'uppercase',
                                                 letterSpacing: '0.5px',
-                                                borderBottom: '2px solid #444',
+                                                borderBottom: '2px solid #eef2f7',
                                                 textAlign: 'left'
                                             }
                                         }),
@@ -1277,10 +1290,10 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                                 padding: '14px 16px',
                                                 fontSize: '11px',
                                                 fontWeight: '600',
-                                                color: '#aaa',
+                                                color: '#95a5a6',
                                                 textTransform: 'uppercase',
                                                 letterSpacing: '0.5px',
-                                                borderBottom: '2px solid #444',
+                                                borderBottom: '2px solid #eef2f7',
                                                 textAlign: 'left'
                                             }
                                         }),
@@ -1291,10 +1304,10 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                                 padding: '14px 16px',
                                                 fontSize: '11px',
                                                 fontWeight: '600',
-                                                color: '#aaa',
+                                                color: '#95a5a6',
                                                 textTransform: 'uppercase',
                                                 letterSpacing: '0.5px',
-                                                borderBottom: '2px solid #444',
+                                                borderBottom: '2px solid #eef2f7',
                                                 textAlign: 'left'
                                             }
                                         }),
@@ -1305,10 +1318,10 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                                 padding: '14px 16px',
                                                 fontSize: '11px',
                                                 fontWeight: '600',
-                                                color: '#aaa',
+                                                color: '#95a5a6',
                                                 textTransform: 'uppercase',
                                                 letterSpacing: '0.5px',
-                                                borderBottom: '2px solid #444',
+                                                borderBottom: '2px solid #eef2f7',
                                                 textAlign: 'left'
                                             }
                                         }),
@@ -1319,10 +1332,10 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                                 padding: '14px 12px',
                                                 fontSize: '11px',
                                                 fontWeight: '600',
-                                                color: '#aaa',
+                                                color: '#95a5a6',
                                                 textTransform: 'uppercase',
                                                 letterSpacing: '0.5px',
-                                                borderBottom: '2px solid #444',
+                                                borderBottom: '2px solid #eef2f7',
                                                 width: '100px',
                                                 textAlign: 'center'
                                             }
@@ -1334,10 +1347,10 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                                 padding: '14px 16px',
                                                 fontSize: '11px',
                                                 fontWeight: '600',
-                                                color: '#aaa',
+                                                color: '#95a5a6',
                                                 textTransform: 'uppercase',
                                                 letterSpacing: '0.5px',
-                                                borderBottom: '2px solid #444',
+                                                borderBottom: '2px solid #eef2f7',
                                                 width: '150px',
                                                 textAlign: 'left'
                                             }
@@ -1349,10 +1362,10 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
                                                 padding: '14px 12px',
                                                 fontSize: '11px',
                                                 fontWeight: '600',
-                                                color: '#aaa',
+                                                color: '#95a5a6',
                                                 textTransform: 'uppercase',
                                                 letterSpacing: '0.5px',
-                                                borderBottom: '2px solid #444',
+                                                borderBottom: '2px solid #eef2f7',
                                                 width: '100px',
                                                 textAlign: 'center'
                                             }
@@ -1379,7 +1392,7 @@ export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
         style: {
             width: '100%',
             height: '100%',
-            backgroundColor: '#2a2a2a',
+            backgroundColor: '#f8f9fa',
             display: 'flex',
             flexDirection: 'column',
             position: 'absolute',
