@@ -459,6 +459,111 @@ function sortContentAlphabetically($data) {
     }, $data);
 }
 
+/**
+ * Helper function to normalize strings for fuzzy matching
+ */
+function normalizeString($string) {
+    // Convert to lowercase
+    $string = strtolower($string);
+    
+    // Remove extra spaces
+    $string = preg_replace('/\s+/', ' ', $string);
+    
+    // Remove special characters but keep letters and numbers
+    $string = preg_replace('/[^a-z0-9\s]/', '', $string);
+    
+    // Trim
+    $string = trim($string);
+    
+    return $string;
+}
+
+/**
+ * Check if two strings are similar using Levenshtein distance
+ * Returns true if similarity is above threshold (80% by default)
+ */
+function isSimilarString($str1, $str2, $threshold = 80) {
+    $str1 = normalizeString($str1);
+    $str2 = normalizeString($str2);
+    
+    // If exactly the same after normalization, they're duplicates
+    if ($str1 === $str2) {
+        return true;
+    }
+    
+    // Calculate Levenshtein distance
+    $distance = levenshtein($str1, $str2);
+    $maxLength = max(strlen($str1), strlen($str2));
+    
+    if ($maxLength === 0) {
+        return true;
+    }
+    
+    // Calculate similarity percentage
+    $similarity = (1 - $distance / $maxLength) * 100;
+    
+    return $similarity >= $threshold;
+}
+
+/**
+ * Normalize author names for fuzzy matching
+ */
+function normalizeAuthorName($name) {
+    // Remove titles
+    $name = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $name);
+    
+    // Remove suffixes
+    $name = preg_replace('/\s*(Ph\.?D\.?|MD|DVM|JD|LLB|LLM|RN|CPA|CMA|CFA|PE|Arch|Ed\.?D\.?|DBA|MPH|MS|MA|MBA|MFT|DrPH|PharmD|PT|OT|ECE|MCS|MAED|EDD)\s*/i', '', $name);
+    
+    // Convert to lowercase
+    $name = strtolower($name);
+    
+    // Remove special characters
+    $name = preg_replace('/[^a-z0-9\s]/', '', $name);
+    
+    // Remove extra spaces
+    $name = preg_replace('/\s+/', ' ', $name);
+    
+    return trim($name);
+}
+
+/**
+ * Check if two sets of authors are similar
+ */
+function areAuthorsSimilar($authors1, $authors2, $threshold = 80) {
+    // Normalize all authors
+    $normalized1 = array_map('normalizeAuthorName', $authors1);
+    $normalized2 = array_map('normalizeAuthorName', $authors2);
+    
+    // Sort them
+    sort($normalized1);
+    sort($normalized2);
+    
+    // If they have different lengths, they might still be similar
+    // Check if one set is a subset of the other (some authors might be missing)
+    if (count($normalized1) != count($normalized2)) {
+        // Find common authors
+        $common = array_intersect($normalized1, $normalized2);
+        $minCount = min(count($normalized1), count($normalized2));
+        $similarity = (count($common) / $minCount) * 100;
+        return $similarity >= $threshold;
+    }
+    
+    // Same length, compare each author
+    $matches = 0;
+    for ($i = 0; $i < count($normalized1); $i++) {
+        if ($normalized1[$i] === $normalized2[$i]) {
+            $matches++;
+        } elseif (isSimilarString($normalized1[$i], $normalized2[$i], 85)) {
+            $matches++;
+        }
+    }
+    
+    $similarity = ($matches / count($normalized1)) * 100;
+    return $similarity >= $threshold;
+}
+
+
 if(isset($_POST['entryCounter'])){
     $response = [];
     
@@ -475,21 +580,78 @@ if(isset($_POST['entryCounter'])){
             $catObj->name = $categoryName;
             $catObj->total = 0;
             
-            // Get count for this category for the selected event
-            $countQuery = "SELECT COUNT(*) as total FROM researchfile
-                WHERE researchfile.status = 'accepted' 
+            // Get all accepted documents for this category and event
+            $query = "SELECT 
+                researchfile.id,
+                researchfile.title,
+                researchfile.final_symposium_title,
+                researchfile.author,
+                researchfile.coauthor,
+                researchfile.presenter,
+                researchfile.category
+            FROM researchfile
+            WHERE researchfile.status = 'accepted' 
                 AND researchfile.event = ? 
-                AND researchfile.category = ?";
+                AND researchfile.category = ?
+            ORDER BY researchfile.title ASC";
             
-            $countStmt = $con->prepare($countQuery);
-            $countStmt->bind_param("ss", $_POST['eventType'], $categoryName);
-            $countStmt->execute();
-            $countResult = $countStmt->get_result();
-            $countRow = $countResult->fetch_assoc();
-            $catObj->total = $countRow['total'] ? (int)$countRow['total'] : 0;
+            $stmt = $con->prepare($query);
+            $stmt->bind_param("ss", $_POST['eventType'], $categoryName);
+            $stmt->execute();
+            $result = $stmt->get_result();
             
+            // Track unique documents using fuzzy matching
+            $processedDocs = [];
+            $uniqueCount = 0;
+            
+            while ($row = $result->fetch_assoc()) {
+                // Format authors
+                $authors = [];
+                if (!empty($row['author'])) {
+                    $authors[] = $row['author'];
+                }
+                
+                if (!empty($row['coauthor'])) {
+                    $coauthors = json_decode($row['coauthor'], true);
+                    if (is_array($coauthors)) {
+                        $authors = array_merge($authors, $coauthors);
+                    }
+                }
+                
+                // Use final_symposium_title if exists, otherwise use title
+                $displayTitle = !empty($row['final_symposium_title']) 
+                    ? $row['final_symposium_title'] 
+                    : $row['title'];
+                
+                // Check if this is a duplicate using fuzzy matching
+                $isDuplicate = false;
+                foreach ($processedDocs as $processed) {
+                    // Check title similarity (80% threshold)
+                    $titleSimilar = isSimilarString($displayTitle, $processed['title'], 80);
+                    
+                    // Check author similarity (70% threshold for authors)
+                    $authorSimilar = areAuthorsSimilar($authors, $processed['authors'], 70);
+                    
+                    // If both title and authors are similar, it's a duplicate
+                    if ($titleSimilar && $authorSimilar) {
+                        $isDuplicate = true;
+                        break;
+                    }
+                }
+                
+                // Only count if not a duplicate
+                if (!$isDuplicate) {
+                    $uniqueCount++;
+                    $processedDocs[] = [
+                        'title' => $displayTitle,
+                        'authors' => $authors
+                    ];
+                }
+            }
+            
+            $catObj->total = $uniqueCount;
             $response[] = $catObj;
-            $countStmt->close();
+            $stmt->close();
         }
     }
     
@@ -792,12 +954,11 @@ if(isset($_POST['printEntry'])){
             $resStmt->execute();
             $researchRes = $resStmt->get_result();
             
-            // Use an associative array to track duplicates
-            // Key: combination of title, author, and coauthor
-            $seenDocuments = [];
+            // Track documents with fuzzy matching
+            $processedDocs = [];
             
             while ($resRow = $researchRes->fetch_assoc()) {
-                // Format author and coauthor for duplicate detection
+                // Format authors
                 $authors = [];
                 if (!empty($resRow['author'])) {
                     $authors[] = $resRow['author'];
@@ -810,38 +971,47 @@ if(isset($_POST['printEntry'])){
                     }
                 }
                 
-                // Sort authors for consistent duplicate detection
-                sort($authors);
-                $authorsKey = implode('|', $authors);
-                
                 // Use final_symposium_title if exists, otherwise use title
                 $displayTitle = !empty($resRow['final_symposium_title']) 
                     ? $resRow['final_symposium_title'] 
                     : $resRow['title'];
                 
-                // Create a unique key for duplicate detection
-                $duplicateKey = md5($displayTitle . '|' . $authorsKey);
+                // Check if this is a duplicate using fuzzy matching
+                $isDuplicate = false;
+                foreach ($processedDocs as $processed) {
+                    // Check title similarity (80% threshold)
+                    $titleSimilar = isSimilarString($displayTitle, $processed['title'], 80);
+                    
+                    // Check author similarity (70% threshold for authors)
+                    $authorSimilar = areAuthorsSimilar($authors, $processed['authors'], 70);
+                    
+                    // If both title and authors are similar, it's a duplicate
+                    if ($titleSimilar && $authorSimilar) {
+                        $isDuplicate = true;
+                        break;
+                    }
+                }
                 
-                // Skip if this document is already seen
-                if (isset($seenDocuments[$duplicateKey])) {
+                // Skip duplicates
+                if ($isDuplicate) {
                     continue;
                 }
                 
-                // Mark as seen
-                $seenDocuments[$duplicateKey] = true;
+                // Store for future duplicate checking
+                $processedDocs[] = [
+                    'title' => $displayTitle,
+                    'authors' => $authors,
+                    'id' => $resRow['id']
+                ];
                 
                 $resData = new stdClass();
                 $resData->id = $resRow['id'];
                 $resData->campus = $resRow['campus'] ?: 'Main Campus';
                 $resData->title = formatDocumentTitle($displayTitle);
-                $resData->original_title = $resRow['title']; // Keep for reference
-                $resData->final_symposium_title = $resRow['final_symposium_title']; // Keep for reference
-                
-                // Format presenter name using helper function
+                $resData->original_title = $resRow['title'];
+                $resData->final_symposium_title = $resRow['final_symposium_title'];
                 $resData->presenter = formatName($resRow['presenter'] ?: 'Not specified');
                 $resData->category = $resRow['category'];
-                
-                // Format all author names
                 $resData->authors = formatAuthors($authors);
                 $cat->docs[] = $resData;
             }
@@ -854,7 +1024,7 @@ if(isset($_POST['printEntry'])){
             }
         }
         
-        $response = [$data]; // Wrap in array to match expected format
+        $response = [$data];
     }
     
     header('Content-Type: application/json');
