@@ -764,7 +764,7 @@ if(isset($_POST['printEntry'])){
         $data = new stdClass();
         $data->event = $eventRow['name'];
         $data->event_id = $eventRow['id'];
-        $data->categories = []; // Changed from centers to categories
+        $data->categories = [];
         
         foreach ($allCategories as $categoryId => $categoryName) {
             $cat = new stdClass();
@@ -776,6 +776,7 @@ if(isset($_POST['printEntry'])){
                 researchfile.id,
                 researchfile.campus,
                 researchfile.title,
+                researchfile.final_symposium_title,
                 researchfile.author,
                 researchfile.coauthor,
                 researchfile.presenter,
@@ -791,17 +792,12 @@ if(isset($_POST['printEntry'])){
             $resStmt->execute();
             $researchRes = $resStmt->get_result();
             
+            // Use an associative array to track duplicates
+            // Key: combination of title, author, and coauthor
+            $seenDocuments = [];
+            
             while ($resRow = $researchRes->fetch_assoc()) {
-                $resData = new stdClass();
-                $resData->id = $resRow['id'];
-                $resData->campus = $resRow['campus'] ?: 'Main Campus';
-                $resData->title = formatDocumentTitle($resRow['title']);
-                
-                // Format presenter name using helper function
-                $resData->presenter = formatName($resRow['presenter'] ?: 'Not specified');
-                $resData->category = $resRow['category'];
-                
-                // Combine author and coauthors and format them
+                // Format author and coauthor for duplicate detection
                 $authors = [];
                 if (!empty($resRow['author'])) {
                     $authors[] = $resRow['author'];
@@ -813,6 +809,37 @@ if(isset($_POST['printEntry'])){
                         $authors = array_merge($authors, $coauthors);
                     }
                 }
+                
+                // Sort authors for consistent duplicate detection
+                sort($authors);
+                $authorsKey = implode('|', $authors);
+                
+                // Use final_symposium_title if exists, otherwise use title
+                $displayTitle = !empty($resRow['final_symposium_title']) 
+                    ? $resRow['final_symposium_title'] 
+                    : $resRow['title'];
+                
+                // Create a unique key for duplicate detection
+                $duplicateKey = md5($displayTitle . '|' . $authorsKey);
+                
+                // Skip if this document is already seen
+                if (isset($seenDocuments[$duplicateKey])) {
+                    continue;
+                }
+                
+                // Mark as seen
+                $seenDocuments[$duplicateKey] = true;
+                
+                $resData = new stdClass();
+                $resData->id = $resRow['id'];
+                $resData->campus = $resRow['campus'] ?: 'Main Campus';
+                $resData->title = formatDocumentTitle($displayTitle);
+                $resData->original_title = $resRow['title']; // Keep for reference
+                $resData->final_symposium_title = $resRow['final_symposium_title']; // Keep for reference
+                
+                // Format presenter name using helper function
+                $resData->presenter = formatName($resRow['presenter'] ?: 'Not specified');
+                $resData->category = $resRow['category'];
                 
                 // Format all author names
                 $resData->authors = formatAuthors($authors);
