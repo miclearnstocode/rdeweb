@@ -1,19 +1,15 @@
 import { $, Request, Waiting } from '../../../../lib/lib.js'
 
-export const AddScoreSheet = ({ id, eventID, name }) => {
+export const AddScoreSheetInHouse = ({ id, eventID, name }) => {
     let mainContainer
     let loadingElement = null
     let tableBody
     let searchInput
     let criteriaData = []
-    let selectedCategory = 'all'
-    let categories = []
+    let selectedCenter = 'all'
+    let centers = []
     let totalPercentage = 0
     let modalElement = null
-
-    // Research category IDs (these share criteria)
-    const RESEARCH_CATEGORY_IDS = [1, 2, 3, 4]
-    const EXTENSION_CATEGORY_ID = 5
 
     // Show loading
     const showLoading = () => {
@@ -66,60 +62,32 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
         }, 3000)
     }
 
-    // Update getCategoryDisplayName to show "Shared" for research
-    const getCategoryDisplayName = (catId, catName) => {
-        if (RESEARCH_CATEGORY_IDS.includes(parseInt(catId))) {
-            return catName + ' (Shared across Research)'
-        }
-        return catName + ' (Extension)'
-    }
-
-    // Update getGroupName
-    const getGroupName = (catId) => {
-        if (RESEARCH_CATEGORY_IDS.includes(parseInt(catId))) {
-            return 'Research'
-        }
-        return 'Extension'
-    }
-
-    // Get categories with group mapping
-    const getCategoriesWithGroups = (categoriesData) => {
-        return categoriesData.map(cat => ({
-            ...cat,
-            group: getGroupName(cat.id),
-            displayName: getCategoryDisplayName(cat.id, cat.name)
-        }))
-    }
-
-    // Fetch categories
-    const fetchCategories = async () => {
+    // Fetch centers
+    const fetchCenters = async () => {
         try {
             const req = new Request('/criteria')
-            req.Post([{ name: 'criteriaList', value: '1' }])
+            req.Post([{ name: 'getCenters', value: '1' }])
             req.Json()
             const data = await req.Send()
-            categories = getCategoriesWithGroups(data || [])
-            updateCategoryFilter()
-            return categories
+            centers = data || []
+            updateCenterFilter()
+            return centers
         } catch (error) {
-            console.error('Error fetching categories:', error)
+            console.error('Error fetching centers:', error)
             return []
         }
     }
 
-    // Update fetchCriteria to handle shared criteria
+    // Fetch criteria for in-house event
     const fetchCriteria = async () => {
         try {
             const req = new Request('/criteria')
             req.Post([
-                { name: 'criteriaListAll', value: '1' },
+                { name: 'criteriaListAllInHouse', value: '1' },
                 { name: 'eventId', value: eventID }
             ])
             req.Json()
             const data = await req.Send()
-            
-            // For research categories (1-4), we want to show criteria from all research categories
-            // This effectively makes them shared
             criteriaData = data || []
             updateTable()
             updateTotalPercentage()
@@ -130,25 +98,10 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
         }
     }
 
-    // Update updateTotalPercentage
+    // Update total percentage
     const updateTotalPercentage = () => {
         totalPercentage = 0
-        
-        let filteredData = criteriaData
-        if (selectedCategory !== 'all') {
-            const categoryId = parseInt(selectedCategory)
-            if (RESEARCH_CATEGORY_IDS.includes(categoryId)) {
-                filteredData = filteredData.filter(item => 
-                    RESEARCH_CATEGORY_IDS.includes(parseInt(item.catId))
-                )
-            } else if (categoryId === EXTENSION_CATEGORY_ID) {
-                filteredData = filteredData.filter(item => 
-                    parseInt(item.catId) === EXTENSION_CATEGORY_ID
-                )
-            }
-        }
-        
-        filteredData.forEach(item => {
+        criteriaData.forEach(item => {
             const percent = parseFloat(item.percentage) || 0
             totalPercentage += percent
         })
@@ -169,62 +122,29 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
         }
     }
 
-    // Update category filter dropdown
-    const updateCategoryFilter = () => {
-        const selectEl = document.getElementById('category-filter')
+    // Update center filter dropdown
+    const updateCenterFilter = () => {
+        const selectEl = document.getElementById('center-filter')
         if (!selectEl) return
 
         selectEl.innerHTML = ''
 
-        // Add "All Categories" option
         const allOption = document.createElement('option')
         allOption.value = 'all'
-        allOption.textContent = 'All Categories'
-        allOption.selected = selectedCategory === 'all'
+        allOption.textContent = 'All Centers'
+        allOption.selected = selectedCenter === 'all'
         selectEl.appendChild(allOption)
 
-        // Add group headers
-        const researchCategories = categories.filter(c => c.group === 'Research')
-        const extensionCategories = categories.filter(c => c.group === 'Extension')
-
-        // Research group
-        if (researchCategories.length > 0) {
-            const groupLabel = document.createElement('option')
-            groupLabel.value = 'group-research'
-            groupLabel.textContent = '── RESEARCH ──'
-            groupLabel.disabled = true
-            groupLabel.style.color = '#666'
-            selectEl.appendChild(groupLabel)
-
-            researchCategories.forEach(cat => {
-                const option = document.createElement('option')
-                option.value = cat.id
-                option.textContent = cat.name
-                option.selected = selectedCategory === cat.id.toString()
-                selectEl.appendChild(option)
-            })
-        }
-
-        // Extension group
-        if (extensionCategories.length > 0) {
-            const groupLabel = document.createElement('option')
-            groupLabel.value = 'group-extension'
-            groupLabel.textContent = '── EXTENSION ──'
-            groupLabel.disabled = true
-            groupLabel.style.color = '#666'
-            selectEl.appendChild(groupLabel)
-
-            extensionCategories.forEach(cat => {
-                const option = document.createElement('option')
-                option.value = cat.id
-                option.textContent = cat.name
-                option.selected = selectedCategory === cat.id.toString()
-                selectEl.appendChild(option)
-            })
-        }
+        centers.forEach(center => {
+            const option = document.createElement('option')
+            option.value = center.id
+            option.textContent = center.name
+            option.selected = selectedCenter === center.id.toString()
+            selectEl.appendChild(option)
+        })
     }
 
-    // Update updateTable to handle shared research criteria
+    // Filter and update table
     const updateTable = () => {
         if (!tableBody) return
 
@@ -232,28 +152,15 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
 
         let filteredData = criteriaData
 
-        // Filter by category
-        if (selectedCategory !== 'all') {
-            const categoryId = parseInt(selectedCategory)
-            if (RESEARCH_CATEGORY_IDS.includes(categoryId)) {
-                // Show ALL research criteria (shared across research categories)
-                filteredData = filteredData.filter(item => 
-                    RESEARCH_CATEGORY_IDS.includes(parseInt(item.catId))
-                )
-            } else if (categoryId === EXTENSION_CATEGORY_ID) {
-                // Show only extension criteria
-                filteredData = filteredData.filter(item => 
-                    parseInt(item.catId) === EXTENSION_CATEGORY_ID
-                )
-            }
+        if (selectedCenter !== 'all') {
+            filteredData = filteredData.filter(item => item.center_id?.toString() === selectedCenter)
         }
 
-        // Filter by search
         const searchTerm = searchInput?.value?.toLowerCase() || ''
         if (searchTerm) {
             filteredData = filteredData.filter(item =>
                 (item.name?.toLowerCase().includes(searchTerm)) ||
-                (item.category_name?.toLowerCase().includes(searchTerm))
+                (item.center_name?.toLowerCase().includes(searchTerm))
             )
         }
 
@@ -309,7 +216,7 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                                 }),
                                 $({
                                     tag: 'div',
-                                    text: 'Add criteria using the button above',
+                                    text: 'Add criteria for each center using the button above',
                                     style: {
                                         fontSize: '13px',
                                         color: '#666'
@@ -323,12 +230,9 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
         })
     }
 
-    // Update createTableRow to show "Shared" label for research
+    // Create table row
     const createTableRow = (item, rowNumber) => {
         const percentage = parseFloat(item.percentage) || 0
-        const group = getGroupName(item.catId)
-        const isShared = RESEARCH_CATEGORY_IDS.includes(parseInt(item.catId))
-        const categoryDisplay = isShared ? 'Research (Shared)' : (item.category_name || '—')
 
         return $({
             tag: 'tr',
@@ -364,28 +268,27 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                     },
                     title: item.name
                 }),
-                // Category - Show "Research (Shared)" or "Extension"
+                // Center
                 $({
                     tag: 'td',
-                    text: categoryDisplay,
+                    text: item.center_name || '—',
                     style: {
                         padding: '12px 16px',
                         fontSize: '12px',
-                        color: isShared ? '#4caf50' : '#ff9800',
+                        color: '#2196f3',
                         fontWeight: '500',
                         minWidth: '150px'
                     }
                 }),
-                // Group (Research/Extension)
+                // Center Code
                 $({
                     tag: 'td',
-                    text: group,
+                    text: item.center_code || '—',
                     style: {
                         padding: '12px 16px',
                         fontSize: '12px',
-                        fontWeight: '600',
-                        color: group === 'Research' ? '#2196f3' : '#ff9800',
-                        minWidth: '100px'
+                        color: '#aaa',
+                        minWidth: '80px'
                     }
                 }),
                 // Description
@@ -476,7 +379,7 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                         })
                     ]
                 }),
-                // Actions (same as before)
+                // Actions
                 $({
                     tag: 'td',
                     style: {
@@ -571,37 +474,12 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
         })
     }
 
-    // Update openAddModal to handle shared research categories
+    // Open add/edit modal
     const openAddModal = () => {
-        if (selectedCategory === 'all') {
-            showNotification('Please select a specific category first', 'error')
+        if (totalPercentage >= 100) {
+            showNotification('Total percentage has reached 100%. Cannot add more criteria.', 'error')
             return
         }
-        
-        const categoryId = parseInt(selectedCategory)
-        let categoryTotal = 0
-        
-        if (RESEARCH_CATEGORY_IDS.includes(categoryId)) {
-            // For research, calculate total across all research categories
-            criteriaData.forEach(item => {
-                if (RESEARCH_CATEGORY_IDS.includes(parseInt(item.catId))) {
-                    categoryTotal += parseFloat(item.percentage) || 0
-                }
-            })
-        } else if (categoryId === EXTENSION_CATEGORY_ID) {
-            // For extension, calculate total only for extension
-            criteriaData.forEach(item => {
-                if (parseInt(item.catId) === EXTENSION_CATEGORY_ID) {
-                    categoryTotal += parseFloat(item.percentage) || 0
-                }
-            })
-        }
-        
-        if (categoryTotal >= 100) {
-            showNotification('This category group has reached 100%. Cannot add more criteria.', 'error')
-            return
-        }
-
         openEditModal(null)
     }
 
@@ -613,10 +491,10 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
             name: item?.name || '',
             description: item?.description || '',
             percentage: item?.percentage || '',
-            categoryId: item?.catId || ''
+            centerId: item?.center_id || ''
         }
 
-        let nameInput, descInput, percentInput, catSelect
+        let nameInput, descInput, percentInput, centerSelect
 
         modalElement = $({
             tag: 'div',
@@ -747,14 +625,14 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                                         })
                                     ]
                                 }),
-                                // Category (with group info)
+                                // Center
                                 $({
                                     tag: 'div',
                                     style: { marginBottom: '20px' },
                                     child: [
                                         $({
                                             tag: 'label',
-                                            text: 'Category',
+                                            text: 'Center',
                                             style: {
                                                 display: 'block',
                                                 marginBottom: '8px',
@@ -779,42 +657,17 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                                                 boxSizing: 'border-box'
                                             },
                                             elementHandler: (el) => {
-                                                catSelect = el
-                                                el.innerHTML = '<option value="">-- Select Category --</option>'
-                                                
-                                                // Group by Research/Extension
-                                                const researchCats = categories.filter(c => c.group === 'Research')
-                                                const extensionCats = categories.filter(c => c.group === 'Extension')
-                                                
-                                                if (researchCats.length > 0) {
-                                                    const optGroup = document.createElement('optgroup')
-                                                    optGroup.label = 'Research'
-                                                    researchCats.forEach(cat => {
-                                                        const opt = document.createElement('option')
-                                                        opt.value = cat.id
-                                                        opt.textContent = cat.name
-                                                        if (cat.id.toString() === formData.categoryId.toString()) {
-                                                            opt.selected = true
-                                                        }
-                                                        optGroup.appendChild(opt)
-                                                    })
-                                                    el.appendChild(optGroup)
-                                                }
-                                                
-                                                if (extensionCats.length > 0) {
-                                                    const optGroup = document.createElement('optgroup')
-                                                    optGroup.label = 'Extension'
-                                                    extensionCats.forEach(cat => {
-                                                        const opt = document.createElement('option')
-                                                        opt.value = cat.id
-                                                        opt.textContent = cat.name
-                                                        if (cat.id.toString() === formData.categoryId.toString()) {
-                                                            opt.selected = true
-                                                        }
-                                                        optGroup.appendChild(opt)
-                                                    })
-                                                    el.appendChild(optGroup)
-                                                }
+                                                centerSelect = el
+                                                el.innerHTML = '<option value="">-- Select Center --</option>'
+                                                centers.forEach(center => {
+                                                    const opt = document.createElement('option')
+                                                    opt.value = center.id
+                                                    opt.textContent = center.name + ' (' + center.code + ')'
+                                                    if (center.id.toString() === formData.centerId.toString()) {
+                                                        opt.selected = true
+                                                    }
+                                                    el.appendChild(opt)
+                                                })
                                             }
                                         })
                                     ]
@@ -922,30 +775,6 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                                         })
                                     ]
                                 }),
-                                // Info note about shared criteria
-                                $({
-                                    tag: 'div',
-                                    style: {
-                                        marginBottom: '16px',
-                                        padding: '12px 16px',
-                                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                                        borderRadius: '8px',
-                                        border: '1px solid rgba(33, 150, 243, 0.2)',
-                                        fontSize: '12px',
-                                        color: '#aaa'
-                                    },
-                                    child: [
-                                        $({
-                                            tag: 'span',
-                                            att: { className: 'fa-solid fa-info-circle' },
-                                            style: { color: '#2196f3', marginRight: '8px' }
-                                        }),
-                                        $({
-                                            tag: 'span',
-                                            text: 'Research categories (Social Science, Natural/Biological, Food, Development) share the same criteria. Extension has its own criteria.'
-                                        })
-                                    ]
-                                }),
                                 // Buttons
                                 $({
                                     tag: 'div',
@@ -1000,9 +829,9 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                                                     const name = nameInput?.value?.trim()
                                                     const description = descInput?.value?.trim()
                                                     const percentage = percentInput?.value
-                                                    const categoryId = catSelect?.value
+                                                    const centerId = centerSelect?.value
 
-                                                    if (!name || !description || !percentage || !categoryId) {
+                                                    if (!name || !description || !percentage || !centerId) {
                                                         showNotification('Please fill in all fields', 'error')
                                                         return
                                                     }
@@ -1013,7 +842,6 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                                                         return
                                                     }
 
-                                                    // Check total
                                                     let availableTotal = 100 - totalPercentage
                                                     if (item) {
                                                         availableTotal += parseFloat(item.percentage || 0)
@@ -1026,10 +854,10 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                                                     showLoading()
 
                                                     const form = new FormData()
-                                                    form.append('addCriteriaV2', '1')
+                                                    form.append('addCriteriaInHouse', '1')
                                                     form.append('eventId', eventID)
                                                     form.append('scoreId', id)
-                                                    form.append('categoryId', categoryId)
+                                                    form.append('centerId', centerId)
                                                     form.append('name[]', name)
                                                     form.append('description[]', description)
                                                     form.append('percentage[]', percentage)
@@ -1179,7 +1007,7 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                             child: [
                                 $({
                                     tag: 'h1',
-                                    text: name + ' - Score Criteria',
+                                    text: name + ' - In-House Score Criteria',
                                     style: {
                                         color: '#fff',
                                         fontSize: '20px',
@@ -1192,7 +1020,6 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                         })
                     ]
                 }),
-                // Total Percentage Badge
                 $({
                     tag: 'div',
                     style: {
@@ -1264,7 +1091,6 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                         flexWrap: 'wrap'
                     },
                     child: [
-                        // Search Input
                         $({
                             tag: 'div',
                             style: {
@@ -1312,18 +1138,14 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                                     },
                                     event: {
                                         type: 'input',
-                                        method: () => {
-                                            updateTable()
-                                            updateTotalPercentage() // Add this
-                                        }
+                                        method: () => updateTable()
                                     }
                                 })
                             ]
                         }),
-                        // Category Filter
                         $({
                             tag: 'select',
-                            att: { id: 'category-filter' },
+                            att: { id: 'center-filter' },
                             style: {
                                 backgroundColor: '#333',
                                 border: '1px solid #444',
@@ -1338,15 +1160,13 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                             event: {
                                 type: 'change',
                                 method: (e) => {
-                                    selectedCategory = e.target.value
+                                    selectedCenter = e.target.value
                                     updateTable()
-                                    updateTotalPercentage() // Add this - FIXES THE ISSUE
                                 }
                             }
                         })
                     ]
                 }),
-                // Add Button
                 $({
                     tag: 'button',
                     style: {
@@ -1407,7 +1227,6 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                         minWidth: '1000px'
                     },
                     child: [
-                        // Table Header
                         $({
                             tag: 'thead',
                             style: {
@@ -1453,7 +1272,7 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                                         }),
                                         $({
                                             tag: 'th',
-                                            text: 'Category',
+                                            text: 'Center',
                                             style: {
                                                 padding: '14px 16px',
                                                 fontSize: '11px',
@@ -1467,7 +1286,7 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                                         }),
                                         $({
                                             tag: 'th',
-                                            text: 'Group',
+                                            text: 'Code',
                                             style: {
                                                 padding: '14px 16px',
                                                 fontSize: '11px',
@@ -1542,7 +1361,6 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
                                 })
                             ]
                         }),
-                        // Table Body
                         $({
                             tag: 'tbody',
                             elementHandler: (el) => {
@@ -1574,7 +1392,7 @@ export const AddScoreSheet = ({ id, eventID, name }) => {
             mainContainer = el
             showLoading()
             try {
-                await fetchCategories()
+                await fetchCenters()
                 await fetchCriteria()
             } catch (error) {
                 console.error('Error initializing:', error)

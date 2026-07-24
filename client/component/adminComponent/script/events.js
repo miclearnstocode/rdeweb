@@ -1047,11 +1047,24 @@ export const Events = () => {
                 const url = base.replace(window.location.origin, '').split('/')
                 if (url[3] === 'scoreBoard') {
                     if (url[4] === eventID) {
-                        mainFrame.appendChild(AddScoreSheet({
-                            id: scoreId,
-                            eventID: eventID,
-                            name: Evename
-                        }))
+                        const isInHouse = Evename.toLowerCase().includes('in-house') || 
+                                        Evename.toLowerCase().includes('inhouse');
+                        
+                        if (isInHouse) {
+                            import('./scoreSheet/scoreSheetInHouse.js').then(module => {
+                                mainFrame.appendChild(module.AddScoreSheetInHouse({
+                                    id: scoreId,
+                                    eventID: eventID,
+                                    name: Evename
+                                }))
+                            })
+                        } else {
+                            mainFrame.appendChild(AddScoreSheet({
+                                id: scoreId,
+                                eventID: eventID,
+                                name: Evename
+                            }))
+                        }
                     }
                 }
             }
