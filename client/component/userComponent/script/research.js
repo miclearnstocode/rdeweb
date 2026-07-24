@@ -4,8 +4,12 @@ import { Print } from "../../otherComponent/comment.js"
 import { SymposiumModal } from './userUploadComponent/symposiumModal.js'
 import { ResearchChairSubmissionModal } from './userUploadComponent/researchChairSubmission.js'
 import { PosterViewModel } from './userUploadComponent/posterViewModal.js'
-import { ResearchEditModal } from './userUploadComponent/researchEditModal.js';
+import { EditSymposiumModal } from './userUploadComponent/editSymposiumModal.js'
 import { PosterSubmissionModal } from './userUploadComponent/posterSubmission.js'
+
+//to be implemented:
+//Local Symposium Program
+//Local In-House Program
 
 // View Researches Modal
 const openViewResearchesModal = () => {
@@ -2445,13 +2449,119 @@ export const Research = () => {
     }
 
     const editDocument = async (doc) => {
-        // Open the edit modal
-        ResearchEditModal.open(doc, () => {
-            // Refresh the table after successful edit
-            if (window.refreshDocumentsTable) {
-                window.refreshDocumentsTable();
+        // Check if this is a symposium document
+        const isSymposium = doc.eventName && doc.eventName.toLowerCase().includes('symposium');
+        const isInHouse = doc.eventName && (
+            doc.eventName.toLowerCase().includes('in-house') ||
+            doc.eventName.toLowerCase().includes('in house')
+        );
+        
+        // Check if this is a local in-house document
+        const isLocalInhouse = doc.local_inhouse == 1;
+        
+        // Map document data for the edit modal
+        const existingData = {
+            id: doc.id,
+            paper_trail_no: doc.paper_trail_no || '',
+            docId: doc.id,
+            endorsement_id: doc.endorsement_id,
+            paper_trail_no: doc.paper_trail_no,
+            title: doc.title || '',
+            original_title: doc.original_title || '',
+            author: doc.author || '',
+            presenter: doc.presenter || '',
+            category: doc.category || '',
+            center: doc.center || '',
+            campus: doc.campus || '',
+            coAuthors: doc.coAuthors || [],
+            status: doc.status || 'pending',
+            date_started: doc.date_started || '',
+            date_completed: doc.date_completed || '',
+            researchFile: doc.researchFile || doc.drive_view_url || null,
+            endorsementFile: doc.endorsementFile || null,
+            programFile: doc.programFile || doc.program_drive_view_url || null,
+            certificateFile: doc.certificateFile || doc.certificate_drive_view_url || null,
+            title_certificate_view_url: doc.title_certificate_view_url || null,
+            drive_file_id: doc.drive_file_id || null,
+            drive_view_url: doc.drive_view_url || null,
+            program_drive_view_url: doc.program_drive_view_url || null,
+            certificate_drive_view_url: doc.certificate_drive_view_url || null,
+            eventName: doc.eventName || '',
+            event_id: doc.event_id,
+            local_inhouse: doc.local_inhouse || 0,
+            local_eventname: doc.local_eventname || null,
+            local_program_file_view_url: doc.local_program_file_view_url || null,
+            local_certificate_file_view_url: doc.local_certificate_file_view_url || null,
+            title_changed: doc.title_changed || 0,
+            final_symposium_title: doc.final_symposium_title || '',
+            presentation_type: doc.presentation_type || (isLocalInhouse ? 'local' : 'university'),
+        };
+
+        // For symposium documents with title change
+        if (isSymposium) {
+            if (doc.final_symposium_title && doc.title_changed == 1) {
+                existingData.final_symposium_title = doc.final_symposium_title;
+                existingData.title_changed = 1;
             }
-        });
+        }
+
+        // For local in-house documents, get the local_inhouse data
+        if (isLocalInhouse) {
+            try {
+                const form = new FormData();
+                form.append('getLocalInhouse', 'true');
+                form.append('research_id', doc.id);
+
+                const response = await fetch('/uploadFacultyDocs', {
+                    method: 'POST',
+                    body: form
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status && data.data) {
+                        existingData.local_eventname = data.data.local_eventname || '';
+                        existingData.local_title = data.data.document_title || doc.original_title || '';
+                        existingData.local_campus = data.data.campus || doc.campus || '';
+                        existingData.local_category = data.data.category || doc.category || '';
+                        existingData.local_center = data.data.center || doc.center || '';
+                        existingData.local_author = data.data.main_author || doc.author || '';
+                        existingData.local_coAuthors = data.data.co_authors || doc.coAuthors || [];
+                        existingData.local_inhouse_id = data.data.id || null;
+                        existingData.local_program_file_view_url = data.data.program_file_view_url || null;
+                        existingData.local_certificate_file_view_url = data.data.certificate_file_view_url || null;
+                    }
+                }
+            } catch (e) {
+                console.error('Error fetching local in-house data:', e);
+            }
+        }
+
+        // Open the appropriate edit modal
+        if (isSymposium) {
+            // Use EditSymposiumModal for symposium documents
+            const editModal = EditSymposiumModal({
+                eventName: doc.eventName || '',
+                eventId: doc.event_id || null,
+                existingData: existingData,
+                onSuccess: () => {
+                    if (window.refreshDocumentsTable) {
+                        window.refreshDocumentsTable();
+                    }
+                },
+                onClose: () => {
+                    // Optional: handle modal close
+                }
+            });
+            document.body.appendChild(editModal);
+        } else {
+            // Use the regular ResearchEditModal for other documents
+            ResearchEditModal.open(existingData, () => {
+                if (window.refreshDocumentsTable) {
+                    window.refreshDocumentsTable();
+                }
+            });
+        }
     };
 
     const deleteDocument = (doc) => {
@@ -2865,61 +2975,100 @@ export const Research = () => {
         })
 
         submitBtn.addEventListener('click', async () => {
-            // Validate required fields - only for new submissions
-            if (!formData.eventName) {
-                alert('Please select an event');
-                return;
-            }
-            if (!formData.title) {
-                alert('Please enter a research/extension title');
-                return;
-            }
-            if (!formData.campus) {
-                alert('Please select a campus');
-                return;
-            }
-            if (!formData.category) {
-                alert('Please select a category');
-                return;
-            }
-            // Center is optional for edits, required for new
-            if (!isEdit && !formData.center) {
-                alert('Please select a center');
-                return;
-            }
-            if (!formData.author) {
-                alert('Please enter main author');
-                return;
-            }
-            if (!formData.presenter) {
-                alert('Please enter presenter');
-                return;
-            }
-            // Files are optional for edits, required for new
-            if (!isEdit && !formData.researchFile) {
-                alert('Please upload the research file');
-                return;
-            }
-            if (!isEdit && !formData.endorsementFile) {
-                alert('Please upload the endorsement letter');
-                return;
+            // Check if this is edit mode
+            const isEditMode = isEdit || (editData && editData.id);
+            
+            // Validate required fields - ONLY for new submissions
+            if (!isEditMode) {
+                if (!formData.eventName) {
+                    alert('Please select an event');
+                    return;
+                }
+                if (!formData.title) {
+                    alert('Please enter a research/extension title');
+                    return;
+                }
+                if (!formData.campus) {
+                    alert('Please select a campus');
+                    return;
+                }
+                if (!formData.category) {
+                    alert('Please select a category');
+                    return;
+                }
+                if (!formData.center) {
+                    alert('Please select a center');
+                    return;
+                }
+                if (!formData.author) {
+                    alert('Please enter main author');
+                    return;
+                }
+                if (!formData.presenter) {
+                    alert('Please enter presenter');
+                    return;
+                }
+                if (!formData.researchFile) {
+                    alert('Please upload the research file');
+                    return;
+                }
+                if (!formData.endorsementFile) {
+                    alert('Please upload the endorsement letter');
+                    return;
+                }
+
+                // Check for In-House event - require program file only for new submissions
+                const isInHouse = formData.eventName && formData.eventName.toLowerCase().includes('in-house');
+                if (isInHouse && (!formData.programFile || formData.programFile.length === 0)) {
+                    alert('Program file is required for In-House Review events');
+                    return;
+                }
             }
 
-            // Check for In-House event - require program file only for new submissions
-            const isInHouse = formData.eventName && formData.eventName.toLowerCase().includes('in-house');
-            if (isInHouse && !isEdit && (!formData.programFile || formData.programFile.length === 0)) {
-                alert('Program file is required for In-House Review events');
-                return;
+            // For edit mode, check if at least one field or file has been changed
+            if (isEditMode) {
+                let hasChanges = false;
+                
+                // Check if any text fields have changed
+                const fieldsToCheck = ['title', 'author', 'presenter', 'category', 'center', 'campus'];
+                fieldsToCheck.forEach(field => {
+                    if (formData[field] && editData[field] && formData[field] !== editData[field]) {
+                        hasChanges = true;
+                    }
+                });
+                
+                // Check if co-authors have changed
+                if (JSON.stringify(formData.coAuthors) !== JSON.stringify(editData.coAuthors || [])) {
+                    hasChanges = true;
+                }
+                
+                // Check if any files have been uploaded
+                if (formData.researchFile || formData.endorsementFile || 
+                    (formData.programFile && formData.programFile.length > 0) ||
+                    (formData.certificateFile && formData.certificateFile.length > 0)) {
+                    hasChanges = true;
+                }
+                
+                if (!hasChanges) {
+                    alert('No changes detected. Please update at least one field or upload a new file.');
+                    return;
+                }
             }
 
             // Create FormData for submission
             const submitFormData = new FormData();
             
             // If editing, send edit flag and IDs
-            if (isEdit) {
+            if (isEditMode) {
                 submitFormData.append('editResearch', 'true');
-                submitFormData.append('docId', formData.docId || editData?.id);
+                submitFormData.append('docId', formData.docId || editData?.id || editData?.docId);
                 submitFormData.append('endorsementId', formData.endorsementId || editData?.endorsement_id);
+                
+                // Check if this is a local in-house document
+                if (editData?.local_inhouse == 1 || formData.local_inhouse == 1) {
+                    submitFormData.append('isLocalInhouse', '1');
+                    submitFormData.append('localInhouseId', formData.localInhouseId || editData?.local_inhouse_id || '');
+                }
             } else {
                 submitFormData.append('uploadResearch', 'true');
             }
@@ -2944,6 +3093,7 @@ export const Research = () => {
             }
 
             // For In-House events, append program and certificate files if they exist
+            const isInHouse = formData.eventName && formData.eventName.toLowerCase().includes('in-house');
             if (isInHouse) {
                 if (formData.programFile && formData.programFile.length > 0) {
                     formData.programFile.forEach(file => {
@@ -2957,9 +3107,9 @@ export const Research = () => {
                 }
             }
 
-            const loading = Waiting()
+            const loading = Waiting();
             if (loading && typeof loading === 'object' && loading.nodeType) {
-                document.body.appendChild(loading)
+                document.body.appendChild(loading);
             }
 
             try {
@@ -2972,7 +3122,7 @@ export const Research = () => {
 
                 // Remove loading
                 if (loading && loading.remove) {
-                    loading.remove()
+                    loading.remove();
                 }
 
                 if (result.status) {
@@ -2980,7 +3130,7 @@ export const Research = () => {
                     modal.remove();
 
                     // Show success message with ConfirmationAlert
-                    const successModal = ConfirmationAlert(result.message, () => {
+                    const successModal = ConfirmationAlert(result.message || 'Document updated successfully!', () => {
                         if (window.refreshDocumentsTable && typeof window.refreshDocumentsTable === 'function') {
                             window.refreshDocumentsTable();
                         } else {
@@ -3005,7 +3155,7 @@ export const Research = () => {
                         }
                     }, 3000);
                 } else {
-                    const errorModal = ConfirmationAlert('Submission failed: ' + result.message);
+                    const errorModal = ConfirmationAlert('Submission failed: ' + (result.message || 'Unknown error'));
                     document.body.appendChild(errorModal);
                 }
             } catch (error) {
@@ -3078,7 +3228,6 @@ export const Research = () => {
                             const isGraduate = selectedEventName && selectedEventName.toLowerCase().includes('graduate')
 
                             if (isPosterOnly && !isEdit) {
-                                // Close the current modal if open
                                 if (uploadModal) {
                                     uploadModal.remove()
                                 }
@@ -4799,7 +4948,9 @@ export const Research = () => {
                                     // Build document object
                                     const documentObj = {
                                         id: researchDoc.docId,
+                                        paper_trail_no: researchDoc.paper_trail_no || '',
                                         eventName: endorsement.eventType || '—',
+                                        event_id: researchDoc.event_id || null,
                                         title: displayTitle,
                                         original_title: originalTitle,
                                         final_symposium_title: finalSymposiumTitle,
