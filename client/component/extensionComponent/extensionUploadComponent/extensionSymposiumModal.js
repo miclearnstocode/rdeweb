@@ -1594,6 +1594,7 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     ConfirmationAlert('Please upload the Certificate File', () => { })
                     return false
                 }
+                
             } else if (formData.presentation_type === 'university') {
                 if (!formData.selected_inhouse_id) {
                     ConfirmationAlert('Please search and select an accepted University In-House Review', () => { })
@@ -2794,6 +2795,10 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
         let loading = Waiting()
         document.body.appendChild(loading)
 
+        // Variable to store the submission result
+        let submissionSuccess = false
+        let result = null
+
         try {
             // ===== FOR LOCAL PRESENTATION TYPE =====
             if (formData.presentation_type === 'local') {
@@ -2801,9 +2806,6 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                 if (!formData.local_program) throw new Error('Program file is required')
                 if (!formData.local_certificateFile) throw new Error('Certificate file is required')
 
-                const researchTitle = formData.title_changed ? formData.new_title : formData.local_title
-
-                // Use uploadSymposium endpoint for ALL symposium submissions
                 const symposiumFormData = new FormData()
                 symposiumFormData.append('uploadSymposium', 'true')
                 symposiumFormData.append('eventType', eventName)
@@ -2867,23 +2869,13 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     throw new Error(`Server error: ${response.status}`)
                 }
 
-                const result = await response.json()
+                result = await response.json()
 
                 if (!result.status) {
                     throw new Error(result.message || 'Symposium submission failed')
                 }
 
-                if (loading && loading.remove) loading.remove()
-
-                // Close the current modal
-                if (modalContainer) modalContainer.remove()
-
-                // Show success message
-                ConfirmationAlert('Paper successfully submitted! Paper status is currently pending', () => {
-                    if (onSuccess) onSuccess()
-                })
-
-                return
+                submissionSuccess = true
 
             } else if (formData.presentation_type === 'university') {
                 // ===== FOR UNIVERSITY PRESENTATION TYPE =====
@@ -2950,29 +2942,45 @@ export const SymposiumModal = ({ eventName, eventId, onClose, onSuccess, embedde
                     throw new Error(`Server error: ${response.status}`)
                 }
 
-                const result = await response.json()
+                result = await response.json()
 
                 if (!result.status) {
                     throw new Error(result.message || 'Symposium submission failed')
                 }
 
+                submissionSuccess = true
                 console.log('University Symposium submission successful')
             }
 
+            // ===== HANDLE SUCCESS =====
+            // Remove loading indicator
             if (loading && loading.remove) loading.remove()
 
-            // Close the current modal and notify success
-            if (modalContainer) modalContainer.remove()
+            // Close the current modal FIRST (so user sees the modal close)
+            if (modalContainer && modalContainer.remove) {
+                modalContainer.remove()
+            }
 
-            ConfirmationAlert('Paper and Local Proposal have been successfully uploaded!', () => {
-                if (onSuccess) onSuccess()
-            })
+            // Show success message with a delay to ensure modal is closed
+            setTimeout(() => {
+                const successMessage = formData.presentation_type === 'local' 
+                    ? 'Paper successfully submitted! Paper status is currently pending'
+                    : 'Paper and Local Proposal have been successfully uploaded!'
+                
+                ConfirmationAlert(successMessage, () => {
+                    if (onSuccess) onSuccess()
+                })
+            }, 200)
 
         } catch (error) {
+            // ===== HANDLE ERROR =====
+            // Remove loading indicator
             if (loading && loading.remove) loading.remove()
+            
             console.error('Submission error:', error)
 
-            // Show error modal
+            // Keep the modal open but show error
+            // Don't close the modal on error so user can retry
             ConfirmationAlert({
                 title: 'Submission Failed',
                 message: error.message || 'An error occurred during submission. Please try again.',

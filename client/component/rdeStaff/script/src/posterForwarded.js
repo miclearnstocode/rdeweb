@@ -4,7 +4,6 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
     let posterBody, serch, currentPage = 1, totalPages = 1, totalItems = 0
     const itemsPerPage = 10
 
-
     const searchInput = (value) => {
         currentPage = 1
         loadPosters(value.target.value.trim(), currentPage)
@@ -70,7 +69,7 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
                                     att: {
                                         type: 'text',
                                         className: 'searchInput',
-                                        placeholder: 'Search by title, author, or event...'
+                                        placeholder: 'Search by title, author, or paper trail...'
                                     },
                                     event: {
                                         type: 'input',
@@ -166,32 +165,21 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
             })
         }
 
-        const getStatusBadge = (status) => {
-            const styles = {
-                pending: { bg: '#FFF3E0', text: '#E65100', label: 'Pending', icon: 'fa-clock' },
-                accepted: { bg: '#E8F5E9', text: '#2E7D32', label: 'Accepted', icon: 'fa-check-circle' },
-                rejected: { bg: '#FFEBEE', text: '#C62828', label: 'Rejected', icon: 'fa-times-circle' }
+        const formatCoauthors = (coauthorStr) => {
+            if (!coauthorStr) return null
+            
+            try {
+                const parsed = JSON.parse(coauthorStr)
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    return parsed.join(', ')
+                }
+                return coauthorStr
+            } catch (e) {
+                if (coauthorStr.includes(',')) {
+                    return coauthorStr.split(',').map(name => name.trim()).join(', ')
+                }
+                return coauthorStr
             }
-            const config = styles[status] || styles.pending
-
-            return $({
-                tag: 'span',
-                style: {
-                    backgroundColor: config.bg,
-                    color: config.text,
-                    padding: '4px 12px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: '500',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                },
-                child: [
-                    $({ tag: 'i', att: { className: `fas ${config.icon}` }, style: { fontSize: '11px' } }),
-                    $({ tag: 'span', text: config.label })
-                ]
-            })
         }
 
         const openPosterViewer = () => {
@@ -212,6 +200,8 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
                 })
             }
         }
+
+        const formattedCoauthors = formatCoauthors(poster.coauthor)
 
         return $({
             tag: 'div',
@@ -303,7 +293,7 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
                                     }
                                 }),
 
-                                // Author and Event row
+                                // Author, Co-author, Presenter row
                                 $({
                                     tag: 'div',
                                     style: {
@@ -314,6 +304,7 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
                                         marginBottom: '12px'
                                     },
                                     child: [
+                                        // Author
                                         $({
                                             tag: 'div',
                                             style: {
@@ -326,7 +317,8 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
                                                 $({ tag: 'span', text: poster.author || 'Unknown', style: { fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#495057' } })
                                             ]
                                         }),
-                                        $({
+                                        // Co-author - formatted without brackets
+                                        formattedCoauthors ? $({
                                             tag: 'div',
                                             style: {
                                                 display: 'flex',
@@ -334,10 +326,31 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
                                                 gap: '6px'
                                             },
                                             child: [
-                                                $({ tag: 'span', att: { className: 'fa-regular fa-calendar' }, style: { fontSize: '12px', color: '#6c757d' } }),
-                                                $({ tag: 'span', text: poster.event_name || poster.event || 'N/A', style: { fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#495057' } })
+                                                $({ tag: 'span', att: { className: 'fa-solid fa-users' }, style: { fontSize: '12px', color: '#6c757d' } }),
+                                                $({ 
+                                                    tag: 'span', 
+                                                    text: `Coauthor: ${formattedCoauthors}`, 
+                                                    style: { 
+                                                        fontFamily: 'Inter, sans-serif', 
+                                                        fontSize: '13px', 
+                                                        color: '#495057' 
+                                                    } 
+                                                })
                                             ]
-                                        }),
+                                        }) : null,
+                                        // Presenter
+                                        poster.presenter ? $({
+                                            tag: 'div',
+                                            style: {
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px'
+                                            },
+                                            child: [
+                                                $({ tag: 'span', att: { className: 'fa-solid fa-microphone' }, style: { fontSize: '12px', color: '#6c757d' } }),
+                                                $({ tag: 'span', text: `Presenter: ${poster.presenter}`, style: { fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#495057' } })
+                                            ]
+                                        }) : null,
                                         // Paper Trail No
                                         poster.paper_trail_no ? $({
                                             tag: 'div',
@@ -348,13 +361,13 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
                                             },
                                             child: [
                                                 $({ tag: 'span', att: { className: 'fa-solid fa-hashtag' }, style: { fontSize: '12px', color: '#6c757d' } }),
-                                                $({ tag: 'span', text: poster.paper_trail_no, style: { fontFamily: 'monospace', fontSize: '12px', color: '#1976D2' } })
+                                                $({ tag: 'span', text: `Paper Trail: ${poster.paper_trail_no}`, style: { fontFamily: 'monospace', fontSize: '12px', color: '#1976D2' } })
                                             ]
                                         }) : null
                                     ]
                                 }),
 
-                                // Tags and Status
+                                // Tags and Event
                                 $({
                                     tag: 'div',
                                     style: {
@@ -404,12 +417,31 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
                                                 color: '#28a745'
                                             }
                                         }) : null,
+                                        poster.event_name || poster.event ? $({
+                                            tag: 'span',
+                                            text: poster.event_name || poster.event,
+                                            style: {
+                                                padding: '4px 10px',
+                                                backgroundColor: '#fef3e2',
+                                                borderRadius: '20px',
+                                                fontFamily: 'Inter, sans-serif',
+                                                fontSize: '11px',
+                                                fontWeight: '500',
+                                                color: '#e65100'
+                                            }
+                                        }) : null,
                                         $({
-                                            tag: 'div',
-                                            style: { marginLeft: 'auto' },
-                                            child: [
-                                                getStatusBadge(poster.status || 'pending')
-                                            ]
+                                            tag: 'span',
+                                            text: `Submitted: ${formatDate(poster.created_at)}`,
+                                            style: {
+                                                padding: '4px 10px',
+                                                backgroundColor: '#f3f4f6',
+                                                borderRadius: '20px',
+                                                fontFamily: 'Inter, sans-serif',
+                                                fontSize: '11px',
+                                                fontWeight: '500',
+                                                color: '#6b7280'
+                                            }
                                         })
                                     ]
                                 }),
@@ -458,43 +490,6 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
                                                 e.target.style.backgroundColor = '#ffffff'
                                                 e.target.style.borderColor = '#E91E63'
                                             }
-                                        }),
-                                        // View Comments Button
-                                        $({
-                                            tag: 'button',
-                                            style: {
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '6px',
-                                                padding: '6px 14px',
-                                                backgroundColor: '#ffffff',
-                                                border: '1px solid #0d6efd',
-                                                borderRadius: '8px',
-                                                cursor: 'pointer',
-                                                fontFamily: 'Inter, sans-serif',
-                                                fontSize: '12px',
-                                                fontWeight: '500',
-                                                color: '#0d6efd',
-                                                transition: 'all 0.2s ease'
-                                            },
-                                            child: [
-                                                $({ tag: 'span', att: { className: 'fa-regular fa-comment' }, style: { fontSize: '12px' } }),
-                                                $({ tag: 'span', text: 'Comments' })
-                                            ],
-                                            event: {
-                                                type: 'click',
-                                                method: () => {
-                                                    viewPosterComments(poster)
-                                                }
-                                            },
-                                            mouseenter: (e) => {
-                                                e.target.style.backgroundColor = '#e7f1ff'
-                                                e.target.style.borderColor = '#0d6efd'
-                                            },
-                                            mouseleave: (e) => {
-                                                e.target.style.backgroundColor = '#ffffff'
-                                                e.target.style.borderColor = '#0d6efd'
-                                            }
                                         })
                                     ]
                                 })
@@ -503,155 +498,6 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
                     ]
                 })
             ]
-        })
-    }
-
-    const viewPosterComments = (poster) => {
-        // Show a modal with poster information and comments placeholder
-        const modalContent = () => {
-            const container = $({
-                tag: 'div',
-                style: {
-                    padding: '20px'
-                }
-            })
-
-            container.appendChild($({
-                tag: 'div',
-                style: {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '16px'
-                },
-                child: [
-                    $({
-                        tag: 'div',
-                        style: {
-                            display: 'grid',
-                            gridTemplateColumns: '1fr 1fr',
-                            gap: '12px'
-                        },
-                        child: [
-                            $({
-                                tag: 'div',
-                                child: [
-                                    $({ tag: 'div', text: 'Paper Trail No', style: { fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '500' } }),
-                                    $({ tag: 'div', text: poster.paper_trail_no || 'N/A', style: { fontSize: '14px', color: '#1a2a3a', fontWeight: '500', fontFamily: 'monospace' } })
-                                ]
-                            }),
-                            $({
-                                tag: 'div',
-                                child: [
-                                    $({ tag: 'div', text: 'Status', style: { fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '500' } }),
-                                    $({ tag: 'span', text: poster.status || 'pending', style: { fontSize: '14px', color: poster.status === 'accepted' ? '#2E7D32' : poster.status === 'rejected' ? '#C62828' : '#E65100', fontWeight: '500', textTransform: 'capitalize' } })
-                                ]
-                            }),
-                            $({
-                                tag: 'div',
-                                child: [
-                                    $({ tag: 'div', text: 'Title', style: { fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '500' } }),
-                                    $({ tag: 'div', text: poster.title || 'N/A', style: { fontSize: '14px', color: '#1a2a3a', fontWeight: '500' } })
-                                ]
-                            }),
-                            $({
-                                tag: 'div',
-                                child: [
-                                    $({ tag: 'div', text: 'Author', style: { fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '500' } }),
-                                    $({ tag: 'div', text: poster.author || 'N/A', style: { fontSize: '14px', color: '#1a2a3a', fontWeight: '500' } })
-                                ]
-                            }),
-                            $({
-                                tag: 'div',
-                                child: [
-                                    $({ tag: 'div', text: 'Event', style: { fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '500' } }),
-                                    $({ tag: 'div', text: poster.event_name || poster.event || 'N/A', style: { fontSize: '14px', color: '#1a2a3a', fontWeight: '500' } })
-                                ]
-                            }),
-                            $({
-                                tag: 'div',
-                                child: [
-                                    $({ tag: 'div', text: 'Submitted', style: { fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: '500' } }),
-                                    $({ tag: 'div', text: poster.created_at ? new Date(poster.created_at).toLocaleDateString() : 'N/A', style: { fontSize: '14px', color: '#1a2a3a', fontWeight: '500' } })
-                                ]
-                            })
-                        ]
-                    }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            padding: '16px',
-                            backgroundColor: '#f8fafc',
-                            borderRadius: '8px',
-                            border: '1px solid #e8ecf0',
-                            textAlign: 'center'
-                        },
-                        child: [
-                            $({
-                                tag: 'i',
-                                att: { className: 'fas fa-comment-dots' },
-                                style: { fontSize: '24px', color: '#94a3b8', display: 'block', marginBottom: '8px' }
-                            }),
-                            $({
-                                tag: 'div',
-                                text: 'Comments feature coming soon for posters.',
-                                style: { color: '#64748b', fontSize: '14px' }
-                            })
-                        ]
-                    })
-                ]
-            }))
-
-            return container
-        }
-
-        const modalFooter = ({ closeModal }) => {
-            return $({
-                tag: 'div',
-                style: {
-                    display: 'flex',
-                    gap: '12px',
-                    justifyContent: 'flex-end',
-                    width: '100%'
-                },
-                child: [
-                    $({
-                        tag: 'button',
-                        text: 'Close',
-                        style: {
-                            padding: '10px 28px',
-                            backgroundColor: '#f8fafc',
-                            border: '1px solid #e8ecf0',
-                            borderRadius: '10px',
-                            color: '#475569',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            transition: 'all 0.2s ease'
-                        },
-                        event: {
-                            type: 'click',
-                            method: closeModal,
-                            mouseenter: (e) => {
-                                e.target.style.backgroundColor = '#f1f5f9'
-                                e.target.style.borderColor = '#cbd5e1'
-                            },
-                            mouseleave: (e) => {
-                                e.target.style.backgroundColor = '#f8fafc'
-                                e.target.style.borderColor = '#e8ecf0'
-                            }
-                        }
-                    })
-                ]
-            })
-        }
-
-        CustomModal({
-            title: 'Poster Details',
-            content: modalContent,
-            footer: modalFooter,
-            size: 'medium',
-            closeOnOverlayClick: true,
-            showCloseButton: true
         })
     }
 
@@ -683,7 +529,7 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
         posterBody.appendChild(loadingRow)
 
         const form = new FormData()
-        form.append('getAcceptedPosters', 'true')
+        form.append('getAllPosters', 'true')
         if (searchTerm) {
             form.append('search', searchTerm)
         }
@@ -695,20 +541,16 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
             body: form
         })
         .then(async res => {
-            // Check if response is ok
             if (!res.ok) {
                 throw new Error(`HTTP error! status: ${res.status}`)
             }
             
-            // Get the response text first
             const text = await res.text()
             
-            // Check if response is empty
             if (!text || text.trim() === '') {
                 throw new Error('Empty response from server')
             }
             
-            // Try to parse JSON
             try {
                 return JSON.parse(text)
             } catch (e) {
@@ -719,7 +561,6 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
         .then(data => {
             posterBody.innerHTML = ''
 
-            // Check if data is valid
             if (!data) {
                 throw new Error('No data received from server')
             }
@@ -734,22 +575,15 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
                     posterBody.appendChild(card)
                 })
 
-                // Add pagination
                 if (totalPages > 1) {
                     posterBody.appendChild(createPagination(page, totalPages, searchTerm))
                 }
 
-                // Update item count
                 const countEl = document.querySelector('.poster-count')
                 if (countEl) {
                     countEl.textContent = `Showing ${data.data.length} of ${totalItems} posters`
                 }
             } else {
-                // Check if there's an error message from the server
-                if (data.message) {
-                    console.warn('Server message:', data.message)
-                }
-                
                 const emptyRow = $({
                     tag: 'div',
                     style: {
@@ -765,21 +599,14 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
                         }),
                         $({
                             tag: 'div',
-                            text: searchTerm ? 'No posters match your search' : 'No accepted posters found',
+                            text: searchTerm ? 'No posters match your search' : 'No submitted posters found',
                             style: { fontSize: '16px', color: '#64748b', fontWeight: '500' }
                         }),
                         $({
                             tag: 'div',
-                            text: searchTerm ? 'Try adjusting your search terms' : 'Accepted posters will appear here',
+                            text: searchTerm ? 'Try adjusting your search terms' : 'Submitted posters will appear here',
                             style: { fontSize: '13px', color: '#94a3b8', marginTop: '4px' }
-                        }),
-                        ...(data.message ? [
-                            $({
-                                tag: 'div',
-                                text: data.message,
-                                style: { fontSize: '12px', color: '#94a3b8', marginTop: '8px', fontStyle: 'italic' }
-                            })
-                        ] : [])
+                        })
                     ]
                 })
                 posterBody.appendChild(emptyRow)
@@ -865,7 +692,6 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
             }
         })
 
-        // Previous button
         const prevBtn = $({
             tag: 'button',
             text: '‹',
@@ -897,7 +723,6 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
 
         container.appendChild(prevBtn)
 
-        // Page numbers
         const startPage = Math.max(1, currentPage - 2)
         const endPage = Math.min(totalPages, currentPage + 2)
 
@@ -930,7 +755,6 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
             container.appendChild(lastBtn)
         }
 
-        // Next button
         const nextBtn = $({
             tag: 'button',
             text: '›',
@@ -962,7 +786,6 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
 
         container.appendChild(nextBtn)
 
-        // Page info
         container.appendChild($({
             tag: 'span',
             text: `Page ${currentPage} of ${totalPages}`,
@@ -1027,7 +850,6 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
         })
     }
 
-    // Refresh function to be called from parent
     const refreshPosters = (searchTerm = '', page = 1) => {
         loadPosters(searchTerm, page)
     }
@@ -1075,7 +897,7 @@ export const PosterForwarded = (mainFrame, leftPDiv = null) => {
                             }),
                             $({
                                 tag: 'span',
-                                text: 'Accepted Posters',
+                                text: 'Submitted Posters',
                                 style: {
                                     fontFamily: 'Inter, sans-serif',
                                     fontSize: '14px',

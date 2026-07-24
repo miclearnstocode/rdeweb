@@ -2,6 +2,9 @@ import { $, ConfirmationAlert, Waiting, DeleteConfirmModal, FileViewerModal, Cus
 import { handleResubmit } from './supportComponents/resubmit.js'
 import { Print } from "./../otherComponent/comment.js"
 import { SymposiumModal } from './extensionUploadComponent/extensionSymposiumModal.js'
+import { PosterViewModel } from './extensionUploadComponent/posterViewModal.js'
+import { ResearchEditModal } from './extensionUploadComponent/extensionEditModal.js';
+import { PosterSubmissionModal } from './extensionUploadComponent/posterSubmission.js'
 
 // View Extension Modal
 const openViewExtensionModal = () => {
@@ -2614,17 +2617,14 @@ export const Extension = () => {
             endorsementFile: null,
             certificateFile: null,
             existingResearchFile: isEdit ? (editData?.existingResearchFile || null) : null,
-            existingProgramFile: isEdit ? (editData?.existingProgramFile || null) : null,
             existingEndorsementFile: isEdit ? (editData?.existingEndorsementFile || null) : null,
+            existingProgramFile: isEdit ? (editData?.existingProgramFile || null) : null,
             existingCertificateFile: isEdit ? (editData?.existingCertificateFile || null) : null,
-            existingTitleCertificateFile: isEdit ? (editData?.existingTitleCertificateFile || null) : null,
             existingResearchUrl: isEdit ? (editData?.existingResearchUrl || null) : null,
-            existingProgramUrl: isEdit ? (editData?.existingProgramUrl || null) : null,
             existingEndorsementUrl: isEdit ? (editData?.existingEndorsementUrl || null) : null,
+            existingProgramUrl: isEdit ? (editData?.existingProgramUrl || null) : null,
             existingCertificateUrl: isEdit ? (editData?.existingCertificateUrl || null) : null,
-            existingTitleCertificateUrl: isEdit ? (editData?.existingTitleCertificateUrl || null) : null,
             researchFileId: isEdit ? (editData?.researchFileId || null) : null,
-            programFileId: isEdit ? (editData?.programFileId || null) : null,
             endorsementFileId: isEdit ? (editData?.endorsementFileId || null) : null,
             researchId: isEdit ? (editData?.researchId || null) : null,
             endorsementId: isEdit ? (editData?.endorsementId || null) : null,
@@ -2635,6 +2635,7 @@ export const Extension = () => {
             date_started: isEdit ? (editData?.date_started || '') : '',
             date_completed: isEdit ? (editData?.date_completed || '') : ''
         }
+
         const modal = $({
             tag: 'div',
             style: {
@@ -2650,7 +2651,6 @@ export const Extension = () => {
                 zIndex: 101,
                 backdropFilter: 'blur(5px)',
                 transition: 'all 0.3s ease'
-
             },
             elementHandler: (el) => { uploadModal = el }
         })
@@ -2671,7 +2671,6 @@ export const Extension = () => {
                 transition: 'all 0.3s ease'
             }
         })
-
 
         // Header
         const header = $({
@@ -2847,7 +2846,6 @@ export const Extension = () => {
             }
 
             // ===== FILE VALIDATION - DIFFERENT FOR NEW VS EDIT =====
-
             if (!isEdit) {
                 // NEW SUBMISSION: All files are required
                 if (!formData.researchFile) {
@@ -2876,8 +2874,6 @@ export const Extension = () => {
                 }
             } else {
                 // EDIT MODE: Only validate that we have AT LEAST ONE file (new or existing) for each required type
-
-                // Check if we have a research file (either new upload or existing)
                 const hasResearch = formData.researchFile || formData.existingResearchUrl;
                 if (!hasResearch) {
                     AlertModal({
@@ -2887,7 +2883,6 @@ export const Extension = () => {
                     return;
                 }
 
-                // Check if we have an endorsement file (either new upload or existing)
                 const hasEndorsement = formData.endorsementFile || formData.existingEndorsementUrl;
                 if (!hasEndorsement) {
                     AlertModal({
@@ -2897,7 +2892,6 @@ export const Extension = () => {
                     return;
                 }
 
-                // For In-House events, check program file
                 const isInHouse = formData.eventName && formData.eventName.toLowerCase().includes('in-house');
                 if (isInHouse) {
                     const hasProgram = (formData.programFile && formData.programFile.length > 0) || formData.existingProgramUrl;
@@ -2914,7 +2908,6 @@ export const Extension = () => {
             // Create FormData for submission
             const submitFormData = new FormData();
 
-            // Determine if this is an edit or new submission
             if (isEdit && formData.researchId) {
                 submitFormData.append('updateResearch', 'true');
                 submitFormData.append('researchId', formData.researchId);
@@ -2934,10 +2927,8 @@ export const Extension = () => {
 
             // ===== HANDLE RESEARCH FILE =====
             if (formData.researchFile) {
-                // New file uploaded - replace
                 submitFormData.append('researchDoc', formData.researchFile);
             } else if (isEdit && formData.existingResearchUrl) {
-                // Keep existing file - send the URL so server knows to keep it
                 submitFormData.append('keepResearch', 'true');
                 submitFormData.append('existingResearchUrl', formData.existingResearchUrl);
                 if (formData.researchFileId) {
@@ -2947,10 +2938,8 @@ export const Extension = () => {
 
             // ===== HANDLE ENDORSEMENT FILE =====
             if (formData.endorsementFile) {
-                // New file uploaded - replace
                 submitFormData.append('uploadedFileEndorsement', formData.endorsementFile);
             } else if (isEdit && formData.existingEndorsementUrl) {
-                // Keep existing file
                 submitFormData.append('keepEndorsement', 'true');
                 submitFormData.append('existingEndorsementUrl', formData.existingEndorsementUrl);
                 if (formData.endorsementFileId) {
@@ -2970,7 +2959,6 @@ export const Extension = () => {
                     submitFormData.append('existingProgramUrl', formData.existingProgramUrl);
                 }
 
-                // Handle Certificate File (for In-House)
                 if (formData.certificateFile && formData.certificateFile.length > 0) {
                     formData.certificateFile.forEach(file => {
                         submitFormData.append('certificateFile', file);
@@ -2989,7 +2977,6 @@ export const Extension = () => {
                 submitFormData.append('existingTitleCertificateUrl', formData.existingTitleCertificateUrl);
             }
 
-            // Title change info
             if (formData.title_changed) {
                 submitFormData.append('title_changed', '1');
                 if (formData.final_symposium_title) {
@@ -2997,7 +2984,6 @@ export const Extension = () => {
                 }
             }
 
-            // Show loading
             const loading = Waiting();
             document.body.appendChild(loading);
 
@@ -3038,6 +3024,7 @@ export const Extension = () => {
                 });
             }
         });
+
         footer.appendChild(cancelBtn)
         footer.appendChild(submitBtn)
 
@@ -3056,20 +3043,13 @@ export const Extension = () => {
                 style: { padding: '28px' }
             })
 
-            // Two column layout
-            const twoColumnLayout = $({
-                tag: 'div',
-                style: {
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '20px',
-                    marginBottom: '20px'
-                }
-            })
-
-            // Event selection
-            const eventField = $({ tag: 'div', style: { marginBottom: '10px' } })
-            eventField.appendChild($({ tag: 'label', text: 'Event Name *', style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } }))
+            // ===== EVENT SELECTION (ALWAYS VISIBLE) =====
+            const eventField = $({ tag: 'div', style: { marginBottom: '20px' } })
+            eventField.appendChild($({
+                tag: 'label',
+                text: 'Event Name *',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
+            }))
             eventSelect = $({
                 tag: 'select',
                 style: {
@@ -3100,12 +3080,27 @@ export const Extension = () => {
                             const selectedOption = e.target.options[e.target.selectedIndex]
                             const selectedEventId = selectedOption ? selectedOption.getAttribute('id') : null
 
-                            // Check if selected event is In-House Review
                             const isInHouse = selectedEventName && selectedEventName.toLowerCase().includes('in-house')
-
-                            // Check if selected event is Symposium
                             const isSymposium = selectedEventName && selectedEventName.toLowerCase().includes('symposium')
+                            const isPosterOnly = selectedEventName && selectedEventName.toLowerCase().includes('(poster only)')
 
+                            // ===== POSTER ONLY =====
+                            if (isPosterOnly && !isEdit) {
+                                if (uploadModal) {
+                                    uploadModal.remove()
+                                }
+                                const posterModal = PosterSubmissionModal({
+                                    onSuccess: () => {
+                                        if (window.refreshDocumentsTable) {
+                                            window.refreshDocumentsTable()
+                                        }
+                                    }
+                                })
+                                document.body.appendChild(posterModal.element || posterModal)
+                                return
+                            }
+
+                            // ===== SYMPOSIUM =====
                             if (isSymposium && !isEdit && !symposiumModalActive) {
                                 // Animate out normal form
                                 normalFormContent.style.opacity = '0'
@@ -3114,7 +3109,7 @@ export const Extension = () => {
                                 setTimeout(() => {
                                     normalFormContent.style.display = 'none'
 
-                                    // Create and show Symposium modal inside the container
+                                    // Show Symposium modal inside the container
                                     showSymposiumInContainer(selectedEventName, selectedEventId)
 
                                     symposiumPlaceholder.style.display = 'block'
@@ -3136,9 +3131,29 @@ export const Extension = () => {
                                 return
                             }
 
+                            // ===== IN-HOUSE OR REGULAR =====
                             formData.eventName = selectedEventName
                             formData.eventId = selectedEventId
 
+                            // Show the rest of the form when an event is selected
+                            if (selectedEventName && selectedEventName !== '-- Select Event Name --') {
+                                twoColumnLayout.style.display = 'grid'
+                                twoColumnLayout.style.opacity = '0'
+                                twoColumnLayout.style.transform = 'translateY(10px)'
+
+                                fileSection.style.display = 'block'
+                                fileSection.style.opacity = '0'
+                                fileSection.style.transform = 'translateY(10px)'
+
+                                setTimeout(() => {
+                                    twoColumnLayout.style.opacity = '1'
+                                    twoColumnLayout.style.transform = 'translateY(0)'
+                                    fileSection.style.opacity = '1'
+                                    fileSection.style.transform = 'translateY(0)'
+                                }, 50)
+                            }
+
+                            // Show/hide Local Files section for In-House events
                             if (localFilesSection) {
                                 localFilesSection.style.display = isInHouse ? 'block' : 'none'
                             }
@@ -3192,9 +3207,26 @@ export const Extension = () => {
             })
             eventField.appendChild(eventSelect)
 
+            // ===== TWO COLUMN LAYOUT (Initially hidden until event is selected) =====
+            const twoColumnLayout = $({
+                tag: 'div',
+                style: {
+                    display: 'none',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '20px',
+                    marginBottom: '20px',
+                    opacity: '0',
+                    transition: 'all 0.3s ease'
+                }
+            })
+
             // Title field
             const titleField = $({ tag: 'div', style: { marginBottom: '0' } })
-            titleField.appendChild($({ tag: 'label', text: 'Extension Title *', style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } }))
+            titleField.appendChild($({
+                tag: 'label',
+                text: 'Extension Title *',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
+            }))
             titleInput = $({
                 tag: 'input',
                 att: { type: 'text', placeholder: 'extension title', value: isEdit ? capitalizeFirstLetter(editData?.title || '') : '' },
@@ -3229,8 +3261,13 @@ export const Extension = () => {
             })
             titleField.appendChild(titleInput)
 
+            // Campus field
             const campusField = $({ tag: 'div', style: { marginBottom: '0' } })
-            campusField.appendChild($({ tag: 'label', text: 'Campus *', style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } }))
+            campusField.appendChild($({
+                tag: 'label',
+                text: 'Campus *',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
+            }))
             campusSelect = $({
                 tag: 'select',
                 style: {
@@ -3259,7 +3296,8 @@ export const Extension = () => {
                 },
                 elementHandler: (el) => {
                     const campuses = ['Roxas City Main', 'Sigma', 'Dayao', 'Dumarao', 'Burias', 'Mambusao', 'Pontevedra', 'Pilar', 'Tapaz']
-                    el.appendChild($({ tag: 'option', text: '-- Select Campus --', att: { value: '', disabled: true, selected: true }, style: { color: '#94a3b8' } }))
+                    const defaultOption = $({ tag: 'option', text: '-- Select Campus --', att: { value: '', disabled: true, selected: true }, style: { color: '#94a3b8' } })
+                    el.appendChild(defaultOption)
                     campuses.forEach(campus => {
                         el.appendChild($({ tag: 'option', text: campus, att: { value: campus }, style: { color: '#1a2a3a' } }))
                     })
@@ -3268,9 +3306,13 @@ export const Extension = () => {
             })
             campusField.appendChild(campusSelect)
 
-            // Category field - static text
+            // Category field - Fixed to Extension
             const categoryField = $({ tag: 'div', style: { marginBottom: '0' } })
-            categoryField.appendChild($({ tag: 'label', text: 'Category *', style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } }))
+            categoryField.appendChild($({
+                tag: 'label',
+                text: 'Category *',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
+            }))
 
             const categoryContainer = $({
                 tag: 'div',
@@ -3298,12 +3340,6 @@ export const Extension = () => {
             })
 
             categoryContainer.appendChild(categoryText)
-            categoryContainer.appendChild($({
-                tag: 'i',
-                att: { className: 'fas fa-tag' },
-                style: { color: '#4caf50', fontSize: '14px' }
-            }))
-
             categoryField.appendChild(categoryContainer)
             categoryField.appendChild(categoryHidden)
 
@@ -3311,7 +3347,11 @@ export const Extension = () => {
 
             // Author field
             const authorField = $({ tag: 'div', style: { marginBottom: '0' } })
-            authorField.appendChild($({ tag: 'label', text: 'Main Author *', style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } }))
+            authorField.appendChild($({
+                tag: 'label',
+                text: 'Main Author *',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
+            }))
             authorInput = $({
                 tag: 'input',
                 att: { type: 'text', placeholder: 'Enter main author name', value: isEdit ? capitalizeFirstLetter(editData?.author || '') : '' },
@@ -3346,12 +3386,88 @@ export const Extension = () => {
             })
             authorField.appendChild(authorInput)
 
-            // Presenter field
+            // Presenter field with warning
             const presenterField = $({ tag: 'div', style: { marginBottom: '0' } })
-            presenterField.appendChild($({ tag: 'label', text: 'Presenter *', style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } }))
+
+            const labelWrapper = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '8px'
+                }
+            })
+
+            const presenterLabel = $({
+                tag: 'label',
+                text: 'Presenter *',
+                style: {
+                    display: 'block',
+                    color: '#475569',
+                    fontSize: '13px',
+                    fontWeight: '600'
+                }
+            })
+            labelWrapper.appendChild(presenterLabel)
+
+            const warningIcon = $({
+                tag: 'i',
+                att: {
+                    className: 'fas fa-exclamation-triangle',
+                    title: 'The presenter name will be printed on the certificate and cannot be changed after submission.'
+                },
+                style: {
+                    color: '#FF9800',
+                    fontSize: '14px',
+                    cursor: 'help'
+                }
+            })
+            labelWrapper.appendChild(warningIcon)
+            presenterField.appendChild(labelWrapper)
+
+            const warningMessage = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '8px',
+                    backgroundColor: '#FFF8E1',
+                    borderLeft: '3px solid #FF9800',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    marginBottom: '10px'
+                },
+                child: [
+                    $({
+                        tag: 'i',
+                        att: { className: 'fas fa-info-circle' },
+                        style: {
+                            color: '#FF9800',
+                            fontSize: '13px',
+                            marginTop: '1px'
+                        }
+                    }),
+                    $({
+                        tag: 'span',
+                        text: 'The presenter name will appear on the certificate and cannot be changed after submission.',
+                        style: {
+                            color: '#795548',
+                            fontSize: '12px',
+                            lineHeight: '1.4'
+                        }
+                    })
+                ]
+            })
+            presenterField.appendChild(warningMessage)
+
             presenterInput = $({
                 tag: 'input',
-                att: { type: 'text', placeholder: 'Enter presenter name', value: isEdit ? capitalizeFirstLetter(editData?.presenter || '') : '' },
+                att: {
+                    type: 'text',
+                    placeholder: 'Enter presenter name',
+                    value: isEdit ? capitalizeFirstLetter(editData?.presenter || '') : ''
+                },
                 style: {
                     width: '100%',
                     padding: '10px 12px',
@@ -3385,7 +3501,11 @@ export const Extension = () => {
 
             // Co-authors field
             const coAuthorField = $({ tag: 'div', style: { marginBottom: '0' } })
-            coAuthorField.appendChild($({ tag: 'label', text: 'Co-Authors', style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' } }))
+            coAuthorField.appendChild($({
+                tag: 'label',
+                text: 'Co-Authors',
+                style: { display: 'block', color: '#475569', marginBottom: '8px', fontSize: '13px', fontWeight: '600' }
+            }))
 
             const coAuthorInputGroup = $({
                 tag: 'div',
@@ -3509,26 +3629,36 @@ export const Extension = () => {
             coAuthorField.appendChild(coAuthorInputGroup)
             coAuthorField.appendChild(coAuthorList)
 
+            // Add all fields to two column layout
             twoColumnLayout.appendChild(titleField)
             twoColumnLayout.appendChild(campusField)
             twoColumnLayout.appendChild(categoryField)
             twoColumnLayout.appendChild(authorField)
             twoColumnLayout.appendChild(presenterField)
             twoColumnLayout.appendChild(coAuthorField)
+
+            // Build the form - Add event field first, then twoColumnLayout
             formBody.appendChild(eventField)
             formBody.appendChild(twoColumnLayout)
 
-            // File upload sections
+            // ===== FILE UPLOAD SECTION (Initially hidden) =====
             const fileSection = $({
                 tag: 'div',
                 style: {
                     marginTop: '20px',
                     paddingTop: '20px',
-                    borderTop: '1px solid #e8ecf0'
+                    borderTop: '1px solid #e8ecf0',
+                    display: 'none',
+                    opacity: '0',
+                    transition: 'all 0.3s ease'
                 }
             })
 
-            fileSection.appendChild($({ tag: 'h4', text: 'Attachments', style: { color: '#1a2a3a', marginBottom: '16px', fontSize: '16px', fontWeight: '600' } }))
+            fileSection.appendChild($({
+                tag: 'h4',
+                text: 'Attachments',
+                style: { color: '#1a2a3a', marginBottom: '16px', fontSize: '16px', fontWeight: '600' }
+            }))
 
             const fileGrid = $({
                 tag: 'div',
@@ -3539,13 +3669,12 @@ export const Extension = () => {
                 }
             })
 
-            // ✅ FIX: Files are NOT required when editing - only for new submissions
             fileGrid.appendChild(FileUploadField({
                 label: 'Extension Entry File',
                 fieldName: 'researchFile',
                 existingFile: isEdit ? formData.existingResearchFile : null,
                 existingUrl: isEdit ? formData.existingResearchUrl : null,
-                required: false  // Never show required for edit
+                required: false
             }))
 
             fileGrid.appendChild(FileUploadField({
@@ -3553,12 +3682,12 @@ export const Extension = () => {
                 fieldName: 'endorsementFile',
                 existingFile: isEdit ? formData.existingEndorsementFile : null,
                 existingUrl: isEdit ? formData.existingEndorsementUrl : null,
-                required: false  // Never show required for edit
+                required: false
             }))
 
             fileSection.appendChild(fileGrid)
 
-            // Dynamic Program File section for In-House only
+            // ===== LOCAL FILES SECTION (for In-House events) =====
             localFilesSection = $({
                 tag: 'div',
                 style: {
@@ -3570,7 +3699,11 @@ export const Extension = () => {
                     display: 'none'
                 }
             })
-            localFilesTitle = $({ tag: 'h4', text: 'Local Files', style: { color: '#1976D2', marginBottom: '16px', fontSize: '16px', fontWeight: '600' } })
+            localFilesTitle = $({
+                tag: 'h4',
+                text: 'Local Files',
+                style: { color: '#1976D2', marginBottom: '16px', fontSize: '16px', fontWeight: '600' }
+            })
             localFilesSection.appendChild(localFilesTitle)
 
             const localFieldsGrid = $({
@@ -3602,43 +3735,22 @@ export const Extension = () => {
 
             container.appendChild(formBody)
 
-            return container
-        }
+            // If editing, show the form
+            if (isEdit && editData?.eventName) {
+                twoColumnLayout.style.display = 'grid'
+                twoColumnLayout.style.opacity = '1'
+                fileSection.style.display = 'block'
+                fileSection.style.opacity = '1'
+                formBody.style.display = 'block'
 
-        function showSymposiumInContainer(eventName, eventId) {
-            // Store current modal for cleanup
-            const currentModal = modal;
-
-            // Close the current modal
-            currentModal.remove();
-
-            // Create the SymposiumModal - pass both eventName and eventId
-            const symposiumElement = SymposiumModal({
-                eventName: eventName,
-                eventId: eventId,
-                onSuccess: () => {
-                    // Refresh the table or handle success
-                    if (window.refreshDocumentsTable) {
-                        window.refreshDocumentsTable();
-                    }
-                },
-                onClose: () => {
-                    symposiumModalActive = false;
-                    isSymposiumMode = false;
-                    // Re-show the normal form if needed
+                // Show local files if in-house
+                const isInHouse = editData.eventName && editData.eventName.toLowerCase().includes('in-house')
+                if (isInHouse && localFilesSection) {
+                    localFilesSection.style.display = 'block'
                 }
-            });
-
-            // If it's a DOM element, append it
-            if (symposiumElement && typeof symposiumElement === 'object' && symposiumElement.tagName) {
-                document.body.appendChild(symposiumElement);
-            } else {
-                console.error('SymposiumModal did not return a valid DOM element');
-                AlertModal({
-                    title: 'Error',
-                    message: 'Could not open Symposium modal. Please try again.'
-                });
             }
+
+            return container
         }
 
         function FileUploadField({ label, fieldName, existingFile = null, existingUrl = null, required = false }) {
@@ -3678,7 +3790,6 @@ export const Extension = () => {
                 }
             })
 
-            // Icon based on existing file
             const iconColor = existingFile ? '#4caf50' : '#1976D2';
             const iconClass = existingFile ? 'fa-check-circle' : 'fa-cloud-upload-alt';
 
@@ -3744,11 +3855,9 @@ export const Extension = () => {
                             formData[fieldName] = file
                             fileNameDisplay.innerText = `✓ Selected: ${file.name} (will replace existing)`
 
-                            // Update upload area styling
                             uploadArea.style.borderColor = '#1976D2';
                             uploadArea.style.backgroundColor = '#e3f2fd';
 
-                            // Update icon
                             const icon = uploadArea.querySelector('i');
                             if (icon) {
                                 icon.className = 'fas fa-file-upload';
@@ -3763,12 +3872,44 @@ export const Extension = () => {
             container.appendChild(fileNameDisplay)
             container.appendChild(fileInput)
 
-            // Return a reference to the file input for clearing
-            container._fileInput = fileInput;
-            container._fileNameDisplay = fileNameDisplay;
-            container._uploadArea = uploadArea;
-
             return container
+        }
+
+        function showSymposiumInContainer(eventName, eventId) {
+            const currentModal = modal;
+            currentModal.remove();
+
+            const symposiumElement = SymposiumModal({
+                eventName: eventName,
+                eventId: eventId,
+                onSuccess: () => {
+                    if (window.refreshDocumentsTable) {
+                        window.refreshDocumentsTable();
+                    }
+                },
+                onClose: () => {
+                    symposiumModalActive = false;
+                    isSymposiumMode = false;
+                }
+            });
+
+            if (symposiumElement && typeof symposiumElement === 'object' && symposiumElement.tagName) {
+                document.body.appendChild(symposiumElement);
+            } else {
+                console.error('SymposiumModal did not return a valid DOM element');
+                AlertModal({
+                    title: 'Error',
+                    message: 'Could not open Symposium modal. Please try again.'
+                });
+            }
+        }
+
+        function capitalizeFirstLetter(str) {
+            if (!str) return str;
+            return str.split(' ').map(word => {
+                if (word.length === 0) return word;
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            }).join(' ');
         }
     }
 
@@ -3821,6 +3962,60 @@ export const Extension = () => {
             style: {
                 display: 'flex',
                 gap: '12px'
+            }
+        })
+
+        const posterBtn = $({
+            tag: 'button',
+            style: {
+                backgroundColor: '#ffffff',
+                border: '1px solid #e8ecf0',
+                borderRadius: '12px',
+                padding: '12px 28px',
+                color: '#1a2a3a',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                transition: 'all 0.25s ease',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+            },
+            child: [
+                $({
+                    tag: 'i',
+                    att: { className: 'fas fa-image' },
+                    style: { color: '#E91E63', fontSize: '16px' }
+                }),
+                $({ tag: 'span', text: 'Submitted Poster', style: { fontWeight: '600' } })
+            ],
+            event: {
+                type: 'click',
+                method: () => {
+                    const choiceModal = PosterViewModel({
+                        onSuccess: () => {
+                            if (window.refreshDocumentsTable) {
+                                window.refreshDocumentsTable()
+                            }
+                        }
+                    })
+                    document.body.appendChild(choiceModal.element || choiceModal)
+                },
+                type2: 'mouseenter',
+                method2: (e) => {
+                    e.currentTarget.style.backgroundColor = '#f8fafc';
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.08)';
+                },
+                type3: 'mouseleave',
+                method3: (e) => {
+                    e.currentTarget.style.backgroundColor = '#ffffff';
+                    e.currentTarget.style.borderColor = '#e8ecf0';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04)';
+                }
             }
         })
 
@@ -3904,6 +4099,7 @@ export const Extension = () => {
             }
         })
 
+        buttonGroup.appendChild(posterBtn)
         buttonGroup.appendChild(uploadBtn)
         buttonGroup.appendChild(viewResearchesBtn)
         header.appendChild(titleSection)
