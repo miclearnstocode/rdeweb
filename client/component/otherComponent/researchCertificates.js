@@ -4,7 +4,7 @@ window.renderCertificates = function(container, certificatesData, eventInfo) {
         return
     }
     
-    if (!certificatesData || !Array.isArray(certificatesData)) {
+    if (!certificatesData || typeof certificatesData !== 'object') {
         container.innerHTML = '<div style="color: red; padding: 20px;">Invalid certificate data</div>'
         return
     }
@@ -15,12 +15,8 @@ window.renderCertificates = function(container, certificatesData, eventInfo) {
     // Background image path
     const backgroundImagePath = '/client/images/certBackground.png'
     
-    // Sort certificates by center and category for organization
-    const sortedData = [...certificatesData].sort((a, b) => {
-        if (a.center !== b.center) return (a.center || '').localeCompare(b.center || '')
-        if (a.category !== b.category) return (a.category || '').localeCompare(b.category || '')
-        return (a.title || '').localeCompare(b.title || '')
-    })
+    // Group by category - data is already grouped from server
+    const categories = Object.keys(certificatesData).sort()
     
     // page styles to ensure landscape and proper printing
     const style = document.createElement('style')
@@ -74,9 +70,37 @@ window.renderCertificates = function(container, certificatesData, eventInfo) {
             box-sizing: border-box;
             padding: 20px;
         }
-        /* For screen viewing */
+        /* Category separator page */
+        .category-separator {
+            position: relative;
+            width: 29.7cm;
+            height: 21cm;
+            page-break-after: always;
+            page-break-inside: avoid;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            border: 3px solid #FFD700;
+            border-radius: 10px;
+        }
+        .category-separator h1 {
+            font-size: 48px;
+            color: #2c3e50;
+            font-family: 'Times New Roman', serif;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            margin-bottom: 20px;
+        }
+        .category-separator .subtitle {
+            font-size: 24px;
+            color: #666;
+            font-family: 'Times New Roman', serif;
+        }
         @media screen {
-            .certificate-page {
+            .certificate-page, .category-separator {
                 box-shadow: 0 0 10px rgba(0,0,0,0.3);
                 margin: 20px auto;
                 border: 1px solid #ccc;
@@ -85,82 +109,102 @@ window.renderCertificates = function(container, certificatesData, eventInfo) {
     `
     document.head.appendChild(style)
     
-    // Create a certificate for each presenter
-    sortedData.forEach((item) => {
-        // Create certificate container
-        const certDiv = document.createElement('div')
-        certDiv.className = 'certificate-page'
+    // Create certificates by category
+    categories.forEach((category) => {
+        const items = certificatesData[category]
+        if (!items || !Array.isArray(items) || items.length === 0) return
         
-        // Background image
-        const background = document.createElement('div')
-        background.className = 'certificate-background'
+        // Sort items by title within category
+        const sortedItems = [...items].sort((a, b) => {
+            return (a.title || '').localeCompare(b.title || '')
+        })
         
-        const bgImg = document.createElement('img')
-        bgImg.src = backgroundImagePath;
-        bgImg.alt = 'Certificate Background'
-        bgImg.onerror = function() {
-            // Fallback if background image not found
-            this.style.display = 'none';
-            background.style.backgroundColor = '#f5f5f5'
-            background.style.backgroundImage = 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)'
-            background.style.border = '2px solid #FFD700'
-        }
-        background.appendChild(bgImg);
-        
-        // Content overlay - ONLY the dynamic text that changes per certificate
-        const content = document.createElement('div')
-        content.className = 'certificate-content'
-        
-        // Format researchers list
-        const researchers = item.researchers && Array.isArray(item.researchers) 
-            ? item.researchers.join(', ') 
-            : (item.researchers || '')
-        
-        // Certificate content - ONLY the dynamic parts, header and president are in background
-        content.innerHTML = `
-            <div style="width: 80%; margin: 150px auto 0 auto; text-align: center;">
-                <!-- Presenter Name -->
-                <div style="font-size: 42px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; text-shadow: 2px 2px 3px rgba(255,255,255,0.8);">
-                    ${item.presenter || 'Not specified'}
-                </div>
-                
-                <div style="font-size: 16px; color: #333; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
-                    PRESENTER
-                </div>
-                
-                <!-- Research Title -->
-                <div style="font-size: 22px; font-weight: bold; color: #2c3e50; max-width: 80%; margin-left: auto; margin-right: auto; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
-                    ${item.title}
-                </div>
-                
-                <!-- Category -->
-                <div style="font-size: 18px; color: #333; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
-                    ${item.category} Category
-                </div>
-                
-                <!-- Researchers -->
-                <div style="font-size: 16px; color: #666; font-style: italic; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
-                    ${researchers}
-                </div>
-                
-                <div style="font-size: 16px; color: #666; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
-                    RESEARCHERS
-                </div>
-                
-                <!-- Event Details -->
-                <div style="font-size: 20px; font-weight: bold; color: #333; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
-                    ${eventInfo.event}
-                </div>
-                
-                <div style="font-size: 16px; color: #666; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
-                    ${eventInfo.date || ''} at ${eventInfo.venue || ''}
-                </div>
-                
-            </div>
+        // Add category separator page
+        const separator = document.createElement('div')
+        separator.className = 'category-separator'
+        separator.innerHTML = `
+            <h1>${category}</h1>
+            <div class="subtitle">Category</div>
         `
+        container.appendChild(separator)
         
-        certDiv.appendChild(background);
-        certDiv.appendChild(content);
-        container.appendChild(certDiv);
+        // Create certificate for each item in this category
+        sortedItems.forEach((item) => {
+            // Create certificate container
+            const certDiv = document.createElement('div')
+            certDiv.className = 'certificate-page'
+            
+            // Background image
+            const background = document.createElement('div')
+            background.className = 'certificate-background'
+            
+            const bgImg = document.createElement('img')
+            bgImg.src = backgroundImagePath;
+            bgImg.alt = 'Certificate Background'
+            bgImg.onerror = function() {
+                // Fallback if background image not found
+                this.style.display = 'none';
+                background.style.backgroundColor = '#f5f5f5'
+                background.style.backgroundImage = 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)'
+                background.style.border = '2px solid #FFD700'
+            }
+            background.appendChild(bgImg);
+            
+            // Content overlay - ONLY the dynamic text that changes per certificate
+            const content = document.createElement('div')
+            content.className = 'certificate-content'
+            
+            // Format researchers list
+            const researchers = item.researchers && Array.isArray(item.researchers) 
+                ? item.researchers.join(', ') 
+                : (item.researchers || '')
+            
+            // Certificate content - ONLY the dynamic parts, header and president are in background
+            content.innerHTML = `
+                <div style="width: 80%; margin: 150px auto 0 auto; text-align: center;">
+                    <!-- Presenter Name -->
+                    <div style="font-size: 42px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; text-shadow: 2px 2px 3px rgba(255,255,255,0.8);">
+                        ${item.presenter || 'Not specified'}
+                    </div>
+                    
+                    <div style="font-size: 16px; color: #333; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                        PRESENTER
+                    </div>
+                    
+                    <!-- Research Title -->
+                    <div style="font-size: 22px; font-weight: bold; color: #2c3e50; max-width: 80%; margin-left: auto; margin-right: auto; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                        ${item.title}
+                    </div>
+                    
+                    <!-- Category -->
+                    <div style="font-size: 18px; color: #333; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                        ${item.category} Category
+                    </div>
+                    
+                    <!-- Researchers -->
+                    <div style="font-size: 16px; color: #666; font-style: italic; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                        ${researchers}
+                    </div>
+                    
+                    <div style="font-size: 16px; color: #666; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                        RESEARCHERS
+                    </div>
+                    
+                    <!-- Event Details -->
+                    <div style="font-size: 20px; font-weight: bold; color: #333; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                        ${eventInfo.event}
+                    </div>
+                    
+                    <div style="font-size: 16px; color: #666; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                        ${eventInfo.date || ''} at ${eventInfo.venue || ''}
+                    </div>
+                    
+                </div>
+            `
+            
+            certDiv.appendChild(background);
+            certDiv.appendChild(content);
+            container.appendChild(certDiv);
+        })
     })
 }

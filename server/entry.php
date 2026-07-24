@@ -848,12 +848,11 @@ if(isset($_POST['getCertificates'])) {
                     researchfile.category,
                     researchfile.presenter,
                     researchfile.author,
-                    researchfile.coauthor,
-                    researchfile.center
+                    researchfile.coauthor
                   FROM researchfile
                   WHERE researchfile.status = 'accepted' 
                     AND researchfile.event = ?
-                  ORDER BY researchfile.center, researchfile.category, researchfile.title";
+                  ORDER BY researchfile.category, researchfile.title";
         
         $stmt = $con->prepare($query);
         $stmt->bind_param("s", $eventName);
@@ -890,15 +889,24 @@ if(isset($_POST['getCertificates'])) {
             }
             
             $certItem->researchers = $researchers;
-            $certItem->center = $row['center'];
             
             $certificateData[] = $certItem;
+        }
+        
+        // Group by category
+        $groupedData = [];
+        foreach ($certificateData as $item) {
+            $category = $item->category;
+            if (!isset($groupedData[$category])) {
+                $groupedData[$category] = [];
+            }
+            $groupedData[$category][] = $item;
         }
         
         $response = [
             'status' => 'success',
             'event' => $eventName,
-            'data' => $certificateData,
+            'data' => $groupedData,
             'count' => count($certificateData)
         ];
         
