@@ -172,6 +172,12 @@ export const getCenterCodes = () => {
 }
 
 export const Waiting = () => {
+    // Check if a loading overlay already exists
+    const existingLoader = document.querySelector('.mainLoaderBase');
+    if (existingLoader) {
+        return existingLoader;
+    }
+
     return ($({
         tag: 'div',
         externalStyle: '/client/lib/loaderStyleLib.css',
@@ -181,7 +187,7 @@ export const Waiting = () => {
         child: [
             $({
                 tag: 'div',
-                stt: {
+                att: {
                     id: 'loading-wrapper'
                 },
                 child: [
