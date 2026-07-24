@@ -751,114 +751,83 @@ if(isset($_POST['printEntry'])){
             return;
         }
         
+        // Get all categories from category table
+        $categoryQuery = "SELECT id, name FROM category ORDER BY name ASC";
+        $categoryResult = $con->query($categoryQuery);
+        
+        $allCategories = [];
+        while ($catRow = $categoryResult->fetch_assoc()) {
+            $allCategories[$catRow['id']] = $catRow['name'];
+        }
+        
+        // Build response with categories as top-level
         $data = new stdClass();
         $data->event = $eventRow['name'];
         $data->event_id = $eventRow['id'];
-        $data->centers = [];
+        $data->categories = []; // Changed from centers to categories
         
-        // Get all centers from center table
-        $centerQuery = "SELECT id, code, name FROM center ORDER BY name ASC";
-        $centerResult = $con->query($centerQuery);
-        
-        // Define category mapping per center - using the EXACT format from researchfile.center
-        $centerCategoryMapping = [
-            "Coconut Research and Development Center (Coco RDC)" => ["Natural / Biological"],
-            "Crop Science Research & Developement Center (CSRDC)" => ["Natural / Biological"],
-            "Extension (Extension)" => ["Extension"],
-            "Fisheries Research & Development Center (FRDC)" => ["Natural / Biological"],
-            "Food and Industrial Technology Research & Development Center (FITRDC)" => ["Food"],
-            "Livestock Research & Development Center (LRDC)" => ["Natural / Biological"],
-            "Machinery and Agricultural Technology Engineering Center (MATEC)" => ["Industrial", "Engineering", "Information Technology", "Development", "Agricultural Machinery"],
-            "Social Science Research & Development Center (SSRDC)" => ["Social Science"]
-        ];
-        
-        while ($centerRow = $centerResult->fetch_assoc()) {
-            // Construct the full center name with code in parentheses
-            $centerFullName = $centerRow['name'] . " (" . $centerRow['code'] . ")";
+        foreach ($allCategories as $categoryId => $categoryName) {
+            $cat = new stdClass();
+            $cat->category = $categoryName;
+            $cat->docs = [];
             
-            $center = new stdClass();
-            $center->id = $centerRow['id'];
-            $center->code = $centerRow['code'];
-            $center->name = $centerFullName; // Use the full name with code
-            $center->categories = [];
+            // Get research documents for this category
+            $resQuery = "SELECT 
+                researchfile.id,
+                researchfile.campus,
+                researchfile.title,
+                researchfile.author,
+                researchfile.coauthor,
+                researchfile.presenter,
+                researchfile.category
+            FROM researchfile
+            WHERE researchfile.category = ? 
+                AND researchfile.status = 'accepted' 
+                AND researchfile.event = ?
+            ORDER BY researchfile.title ASC";
             
-            // Get categories for this center based on mapping using the full name
-            $centerCategories = isset($centerCategoryMapping[$centerFullName]) 
-                ? $centerCategoryMapping[$centerFullName] 
-                : [];
+            $resStmt = $con->prepare($resQuery);
+            $resStmt->bind_param("ss", $categoryName, $eventName);
+            $resStmt->execute();
+            $researchRes = $resStmt->get_result();
             
-            foreach ($centerCategories as $categoryName) {
-                $cat = new stdClass();
-                $cat->category = $categoryName;
-                $cat->docs = [];
+            while ($resRow = $researchRes->fetch_assoc()) {
+                $resData = new stdClass();
+                $resData->id = $resRow['id'];
+                $resData->campus = $resRow['campus'] ?: 'Main Campus';
+                $resData->title = formatDocumentTitle($resRow['title']);
                 
-                // Get research documents for this category and center
-                $resQuery = "SELECT 
-                    researchfile.id,
-                    researchfile.campus,
-                    researchfile.title,
-                    researchfile.author,
-                    researchfile.coauthor,
-                    researchfile.presenter,
-                    researchfile.category
-                FROM researchfile
-                WHERE researchfile.category = ? 
-                    AND researchfile.center = ?
-                    AND researchfile.status = 'accepted' 
-                    AND researchfile.event = ?";
+                // Format presenter name using helper function
+                $resData->presenter = formatName($resRow['presenter'] ?: 'Not specified');
+                $resData->category = $resRow['category'];
                 
-                $resStmt = $con->prepare($resQuery);
-                $resStmt->bind_param("sss", $categoryName, $centerFullName, $eventName);
-                $resStmt->execute();
-                $researchRes = $resStmt->get_result();
-                
-                while ($resRow = $researchRes->fetch_assoc()) {
-                    $resData = new stdClass();
-                    $resData->id = $resRow['id'];
-                    $resData->campus = $resRow['campus'] ?: 'Main Campus';
-                    $resData->title = formatDocumentTitle($resRow['title']);
-                    
-                    // Format presenter name using helper function
-                    $resData->presenter = formatName($resRow['presenter'] ?: 'Not specified');
-                    $resData->category = $resRow['category'];
-                    
-                    // Combine author and coauthors and format them
-                    $authors = [];
-                    if (!empty($resRow['author'])) {
-                        $authors[] = $resRow['author'];
-                    }
-                    
-                    if (!empty($resRow['coauthor'])) {
-                        $coauthors = json_decode($resRow['coauthor'], true);
-                        if (is_array($coauthors)) {
-                            $authors = array_merge($authors, $coauthors);
-                        }
-                    }
-                    
-                    // Format all author names
-                    $resData->authors = formatAuthors($authors);
-                    $cat->docs[] = $resData;
+                // Combine author and coauthors and format them
+                $authors = [];
+                if (!empty($resRow['author'])) {
+                    $authors[] = $resRow['author'];
                 }
                 
-                $resStmt->close();
-                
-                // Only add category if it has documents
-                if (count($cat->docs) > 0) {
-                    $center->categories[] = $cat;
+                if (!empty($resRow['coauthor'])) {
+                    $coauthors = json_decode($resRow['coauthor'], true);
+                    if (is_array($coauthors)) {
+                        $authors = array_merge($authors, $coauthors);
+                    }
                 }
+                
+                // Format all author names
+                $resData->authors = formatAuthors($authors);
+                $cat->docs[] = $resData;
             }
             
-            // Only add center if it has categories with documents
-            if (count($center->categories) > 0) {
-                $data->centers[] = $center;
+            $resStmt->close();
+            
+            // Only add category if it has documents
+            if (count($cat->docs) > 0) {
+                $data->categories[] = $cat;
             }
         }
         
-        // Apply sorting to the data before sending
-        $sortedData = sortContentAlphabetically([$data]);
-        $response = $sortedData;
-        
-        $eventStmt->close();
+        $response = [$data]; // Wrap in array to match expected format
     }
     
     header('Content-Type: application/json');

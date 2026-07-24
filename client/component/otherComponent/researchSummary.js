@@ -9,8 +9,7 @@ export const PrintResearch = ({ eventName, data, formData }) => {
     const CONTENT_AREA_PX = PAGE_HEIGHT_PX - 140 // 21.7cm ≈ 820px
     const USABLE_HEIGHT = CONTENT_AREA_PX * 0.99; // 1% safety margin
 
-    const centersWithDocs = data?.length > 0
-        ? data[0].centers : [];
+    const categoriesData = data?.length > 0 ? data[0].categories : [];
 
     const estimateHeight = (element) => {
         if (!element) return 0
@@ -61,7 +60,7 @@ export const PrintResearch = ({ eventName, data, formData }) => {
         return 0
     }
 
-    const renderDocument = (doc, categoryName, docNumber) => {
+    const renderDocument = (doc, docNumber) => {
         const authorsText = doc.authors?.length > 0
             ? doc.authors.join(', ')
             : 'No author specified'
@@ -84,7 +83,7 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                     child: [
                         $({ tag: 'span', text: `${doc.title} by `, style: { fontWeight: 'normal' } }),
                         $({ tag: 'span', text: authorsText, style: { fontWeight: 'normal', fontStyle: 'italic' } }),
-                        $({ tag: 'span', text: ` - ${categoryName}`, style: { fontWeight: 'normal' } }),
+                        $({ tag: 'span', text: ` - ${doc.category}`, style: { fontWeight: 'normal' } }),
                     ]
                 }),
                 $({
@@ -164,21 +163,18 @@ export const PrintResearch = ({ eventName, data, formData }) => {
     const buildFlatItems = () => {
         const items = []
 
-        // Get all unique categories from all centers
+        // Get all documents from categories
         const allDocs = [];
-        centersWithDocs.forEach(center => {
-            center.categories.forEach(cat => {
-                cat.docs.forEach(doc => {
-                    allDocs.push({
-                        ...doc,
-                        category: cat.category,
-                        centerName: center.displayName || center.name
-                    });
+        categoriesData.forEach(category => {
+            category.docs.forEach(doc => {
+                allDocs.push({
+                    ...doc,
+                    category: category.category
                 });
             });
         });
 
-        // Group by category
+        // Group by category (already grouped from backend, but ensure it's sorted)
         const categoryGroups = {};
         allDocs.forEach(doc => {
             if (!categoryGroups[doc.category]) {
