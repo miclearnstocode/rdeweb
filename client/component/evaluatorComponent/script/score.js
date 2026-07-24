@@ -249,16 +249,19 @@ export const ScoreBoard = ({ resId, eventId, center, categoryId, userType }) => 
                                                 ]);
                                                 req.Json();
                                                 req.Send().then(data => {
-                                                    data.forEach((val) => {
-                                                        for (let x = 0; x < dataArray.length; x++) {
-                                                            if (val.criteria_id === dataArray[x].criteriaId) {
-                                                                dataArray[x].score = val.score;
+                                                    // Check if data is an array
+                                                    if (Array.isArray(data)) {
+                                                        data.forEach((val) => {
+                                                            for (let x = 0; x < dataArray.length; x++) {
+                                                                if (val.criteria_id === dataArray[x].criteriaId) {
+                                                                    dataArray[x].score = val.score;
+                                                                }
                                                             }
-                                                        }
-                                                        setTimeout(() => {
-                                                            el.value = val.score * 1;
-                                                        }, 100);
-                                                    });
+                                                            setTimeout(() => {
+                                                                el.value = val.score * 1;
+                                                            }, 100);
+                                                        });
+                                                    }
                                                 }).catch(err => {
                                                     console.log(err);
                                                 });
@@ -313,23 +316,42 @@ export const ScoreBoard = ({ resId, eventId, center, categoryId, userType }) => 
                         method: 'post',
                         body: form
                     });
+                    
+                    // Check if response is ok
+                    if (!res.ok) {
+                        throw new Error(`HTTP error! status: ${res.status}`);
+                    }
+                    
                     const data = await res.json();
+                    
+                    // Check if data is an array and has items
+                    if (Array.isArray(data) && data.length > 0) {
+                        data.forEach(val => {
+                            dataArray.push({
+                                criteriaId: val.criteria_id,
+                                name: val.name,
+                                description: val.description,
+                                score: 0
+                            });
 
-                    data.forEach(val => {
-                        dataArray.push({
-                            criteriaId: val.criteria_id,
-                            name: val.name,
-                            description: val.description,
-                            score: 0
+                            el.appendChild(PerCritScore({
+                                name: val.name,
+                                description: val.description,
+                                percentage: val.percentage,
+                                crit_id: val.criteria_id,
+                            }));
                         });
-
-                        el.appendChild(PerCritScore({
-                            name: val.name,
-                            description: val.description,
-                            percentage: val.percentage,
-                            crit_id: val.criteria_id,
-                        }));
-                    });
+                    } else if (Array.isArray(data) && data.length === 0) {
+                        // No criteria found
+                        el.innerHTML = '<div style="color: #64748b; padding: 40px 20px; text-align: center; font-family: system-ui; font-size: 14px;">No criteria available for this document.</div>';
+                    } else if (data.error) {
+                        // Server returned an error
+                        el.innerHTML = `<div style="color: #ef4444; padding: 20px; text-align: center; font-family: system-ui;">${data.error}</div>`;
+                    } else {
+                        // Unexpected response format
+                        console.error('Unexpected response format:', data);
+                        el.innerHTML = '<div style="color: #ef4444; padding: 20px; text-align: center; font-family: system-ui;">Error loading criteria. Please refresh.</div>';
+                    }
                 } catch (error) {
                     console.error('Error loading score criteria:', error);
                     el.innerHTML = '<div style="color: #ef4444; padding: 20px; text-align: center; font-family: system-ui;">Error loading criteria. Please refresh.</div>';
