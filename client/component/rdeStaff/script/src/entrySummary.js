@@ -1637,6 +1637,10 @@ export const Content = (mainFrame, leftPDiv = null) => {
                         event: {
                             type: 'click',
                             method: () => {
+                                // Show loading indicator
+                                let loading = Waiting();
+                                document.body.appendChild(loading);
+                                
                                 const req = new Request('/entrycount')
                                 req.Post([
                                     {
@@ -1650,18 +1654,72 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 ])
                                 req.Json();
                                 req.Send().then(data => {
+                                    // Remove loading
+                                    if (loading && loading.parentNode) {
+                                        loading.parentNode.removeChild(loading);
+                                    }
+                                    
+                                    // Check if this is a symposium event
+                                    const isSymposium = eventDetails.name && 
+                                        eventDetails.name.toLowerCase().includes('symposium');
+                                    
                                     let WinPrint = window.open('', '_blank', 'width=1200,height=800,toolbar=0,scrollbars=1,status=0');
+                                    
+                                    if (!WinPrint) {
+                                        alert('Popup blocked! Please allow popups for this site.');
+                                        return;
+                                    }
+                                    
+                                    // Determine the title based on event type
+                                    const summaryTitle = isSymposium 
+                                        ? `Symposium Summary - ${eventDetails.name}`
+                                        : `Research Summary - ${eventDetails.name}`;
+                                    
+                                    // Get the PrintSummary component with event type detection
+                                    const summaryHTML = PrintSummary(data, eventDetails.name);
                                     
                                     WinPrint.document.write(`
                                         <!DOCTYPE html>
                                         <html>
                                         <head>
-                                            <title>Research Summary - ${eventDetails.name}</title>
+                                            <title>${summaryTitle}</title>
                                             <link rel="stylesheet" href="/client/component/otherComponent/style/review.css">
+                                            <style>
+                                                /* Print styles */
+                                                @page {
+                                                    size: A4;
+                                                    margin: 0;
+                                                }
+                                                body {
+                                                    margin: 0;
+                                                    padding: 0;
+                                                    -webkit-print-color-adjust: exact !important;
+                                                    print-color-adjust: exact !important;
+                                                }
+                                                .print-summary-container {
+                                                    width: 100%;
+                                                    min-height: 100vh;
+                                                }
+                                                /* Ensure table borders print properly */
+                                                .summary-table td,
+                                                .summary-table th {
+                                                    border-color: #000 !important;
+                                                }
+                                                /* Ensure background colors print */
+                                                .summary-table th {
+                                                    -webkit-print-color-adjust: exact !important;
+                                                    print-color-adjust: exact !important;
+                                                }
+                                                /* Ensure the background image prints */
+                                                .print-header-bg {
+                                                    -webkit-print-color-adjust: exact !important;
+                                                    print-color-adjust: exact !important;
+                                                }
+                                            </style>
                                         </head>
                                         <body>
                                             <div class="print-summary-container">
-                                                ${PrintSummary(data, eventDetails.name).innerHTML}
+                                                ${summaryHTML.innerHTML}
                                             </div>
                                         </body>
                                         </html>
@@ -1671,14 +1729,30 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     
                                     WinPrint.onload = function() {
                                         setTimeout(() => {
-                                            WinPrint.focus()
-                                            WinPrint.print()
-                                        }, 500)
-                                    }
+                                            WinPrint.focus();
+                                            WinPrint.print();
+                                        }, 800);
+                                    };
+                                    
                                 }).catch(error => {
+                                    // Remove loading on error
+                                    if (loading && loading.parentNode) {
+                                        loading.parentNode.removeChild(loading);
+                                    }
+                                    console.error('Error loading summary data:', error);
                                     alert('Error loading summary data. Please try again.');
-                                })
+                                });
                             }
+                        },
+                        mouseenter: (e) => {
+                            e.target.style.backgroundColor = '#e7f1ff';
+                            e.target.style.transform = 'translateY(-2px)';
+                            e.target.style.boxShadow = '0 4px 12px rgba(13,110,253,0.15)';
+                        },
+                        mouseleave: (e) => {
+                            e.target.style.backgroundColor = '#f8f9fa';
+                            e.target.style.transform = 'translateY(0)';
+                            e.target.style.boxShadow = 'none';
                         }
                     }))
                 }

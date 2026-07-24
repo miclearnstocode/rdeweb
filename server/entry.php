@@ -759,27 +759,14 @@ if(isset($_POST['printSum'])) {
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         
-        // First, get all centers from the center table
-        $centerQuery = "SELECT id, code, name FROM center ORDER BY name ASC";
-        $centerResult = $con->query($centerQuery);
-        
-        $centers = [];
-        while ($centerRow = $centerResult->fetch_assoc()) {
-            $centers[] = [
-                'id' => $centerRow['id'],
-                'code' => $centerRow['code'],
-                'name' => $centerRow['name']
-            ];
-        }
-        
-        // Define category mapping per center (based on your centerCategoryMapping)
+        // Define category mapping per center
         $centerCategoryMapping = [
             "Crop Science Research & Developement Center (CSRDC)" => ["Natural / Biological"],
             "Livestock Research & Development Center (LRDC)" => ["Natural / Biological"],
             "Fisheries Research & Development Center (FRDC)" => ["Natural / Biological"],
             "Food and Industrial Technology Research & Development Center (FITRDC)" => ["Food"],
             "Social Science Research & Development Center (SSRDC)" => ["Social Science"],
-            "Machinery and Agricultural Technology Engineering Center (MATEC)" => ["Industrial", "Engineering", "Information Technology", "Development", "Agricultural Machinery"],
+            "Machinery and Agricultural Technology Engineering Center (MATEC)" => ["Development"],
             "Coconut Research and Development Center (Coco RDC)" => ["Natural / Biological"],
             "Extension (Extension)" => ["Extension"]
         ];
@@ -793,7 +780,7 @@ if(isset($_POST['printSum'])) {
                 }
             }
         }
-        sort($allCategories); // Sort alphabetically
+        sort($allCategories);
         
         // Get accepted research files for the specified event
         $query = "SELECT 
@@ -802,7 +789,10 @@ if(isset($_POST['printSum'])) {
                     researchfile.category,
                     researchfile.campus,
                     researchfile.title,
+                    researchfile.final_symposium_title,
                     researchfile.author,
+                    researchfile.coauthor,
+                    researchfile.presenter,
                     endorsement.event
                   FROM researchfile
                   LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
@@ -814,64 +804,222 @@ if(isset($_POST['printSum'])) {
         $statement->execute();
         $result = $statement->get_result();
         
-        // Group by center
-        $centerData = [];
-        while ($row = $result->fetch_assoc()) {
-            $centerName = $row['center'];
-            $campus = $row['campus'] ?: 'Main Campus';
-            $category = $row['category'];
-            
-            if (!isset($centerData[$centerName])) {
-                $centerData[$centerName] = [
-                    'center' => $centerName,
+        // Check if this is a symposium event
+        $isSymposiumEvent = strpos(strtolower($_POST['eventName']), 'symposium') !== false;
+        
+        if ($isSymposiumEvent) {
+            // ===== SYMPOSIUM VIEW - Group by Category =====
+            // Initialize data structure for each category
+            $categoryData = [];
+            foreach ($allCategories as $cat) {
+                $categoryData[$cat] = [
+                    'category' => $cat,
                     'campuses' => []
                 ];
             }
             
-            if (!isset($centerData[$centerName]['campuses'][$campus])) {
-                $centerData[$centerName]['campuses'][$campus] = [
-                    'campus' => $campus,
-                    'categories' => []
-                ];
-                
-                // Initialize all categories with 0
-                foreach ($allCategories as $cat) {
-                    $centerData[$centerName]['campuses'][$campus]['categories'][$cat] = 0;
+            // Get all campuses
+            $campuses = ['Roxas City Main', 'Dayao', 'Pontevedra', 'Pilar', 'Dumarao', 'Burias', 'Mambusao', 'Tapaz', 'Sigma', 'Central Office'];
+            
+            // Initialize all campuses with 0 for each category
+            foreach ($categoryData as &$catData) {
+                foreach ($campuses as $campus) {
+                    $catData['campuses'][$campus] = 0;
                 }
             }
             
-            // Increment the count for this category
-            if (isset($centerData[$centerName]['campuses'][$campus]['categories'][$category])) {
-                $centerData[$centerName]['campuses'][$campus]['categories'][$category]++;
-            }
-        }
-        
-        // Format response for frontend
-        foreach ($centerData as $centerName => $centerInfo) {
-            $centerObj = new stdClass();
-            $centerObj->center = $centerName;
-            $centerObj->campuses = [];
+            // Track unique documents globally for symposium
+            $processedDocs = [];
             
-            foreach ($centerInfo['campuses'] as $campusName => $campusInfo) {
-                $campusObj = new stdClass();
-                $campusObj->campus = $campusName;
-                $campusObj->categories = [];
+            while ($row = $result->fetch_assoc()) {
+                // Format authors
+                $authors = [];
+                if (!empty($row['author'])) {
+                    $authors[] = $row['author'];
+                }
+                if (!empty($row['coauthor'])) {
+                    $coauthors = json_decode($row['coauthor'], true);
+                    if (is_array($coauthors)) {
+                        $authors = array_merge($authors, $coauthors);
+                    }
+                }
                 
-                foreach ($campusInfo['categories'] as $catName => $count) {
+                // Use final_symposium_title if exists
+                $displayTitle = !empty($row['final_symposium_title']) 
+                    ? $row['final_symposium_title'] 
+                    : $row['title'];
+                
+                $category = $row['category'];
+                $campus = $row['campus'] ?: 'Main Campus';
+                
+                // Check for duplicates using fuzzy matching (same as entryCounter)
+                $isDuplicate = false;
+                foreach ($processedDocs as $processed) {
+                    // Check title similarity (80% threshold)
+                    $titleSimilar = isSimilarString($displayTitle, $processed['title'], 80);
+                    
+                    // Check author similarity (70% threshold for authors)
+                    $authorSimilar = areAuthorsSimilar($authors, $processed['authors'], 70);
+                    
+                    // If both title and authors are similar, it's a duplicate
+                    if ($titleSimilar && $authorSimilar) {
+                        $isDuplicate = true;
+                        break;
+                    }
+                }
+                
+                // Only count if not a duplicate
+                if (!$isDuplicate) {
+                    // Store for future duplicate checking
+                    $processedDocs[] = [
+                        'title' => $displayTitle,
+                        'authors' => $authors
+                    ];
+                    
+                    // Increment count for this category and campus
+                    if (isset($categoryData[$category]['campuses'][$campus])) {
+                        $categoryData[$category]['campuses'][$campus]++;
+                    }
+                }
+            }
+            
+            // Format response for symposium view
+            foreach ($categoryData as $categoryName => $catData) {
+                $centerObj = new stdClass();
+                $centerObj->center = $categoryName; // Use category name as "center" for symposium
+                $centerObj->campuses = [];
+                
+                foreach ($catData['campuses'] as $campusName => $count) {
+                    $campusObj = new stdClass();
+                    $campusObj->campus = $campusName;
+                    $campusObj->categories = [];
+                    
+                    // For symposium, we just need the total per category per campus
                     $catObj = new stdClass();
-                    $catObj->name = $catName;
+                    $catObj->name = $categoryName;
                     $catObj->total = $count;
                     $campusObj->categories[] = $catObj;
+                    
+                    $centerObj->campuses[] = $campusObj;
                 }
                 
-                $centerObj->campuses[] = $campusObj;
+                $response[] = $centerObj;
             }
             
-            $response[] = $centerObj;
+        } else {
+            // ===== IN-HOUSE VIEW - Group by Center =====
+            $centerData = [];
+            $processedDocs = []; // Track processed documents per center and campus
+            
+            while ($row = $result->fetch_assoc()) {
+                $centerName = $row['center'];
+                $campus = $row['campus'] ?: 'Main Campus';
+                $category = $row['category'];
+                
+                // Format authors
+                $authors = [];
+                if (!empty($row['author'])) {
+                    $authors[] = $row['author'];
+                }
+                if (!empty($row['coauthor'])) {
+                    $coauthors = json_decode($row['coauthor'], true);
+                    if (is_array($coauthors)) {
+                        $authors = array_merge($authors, $coauthors);
+                    }
+                }
+                
+                // Use final_symposium_title if exists
+                $displayTitle = !empty($row['final_symposium_title']) 
+                    ? $row['final_symposium_title'] 
+                    : $row['title'];
+                
+                // Initialize center data if not exists
+                if (!isset($centerData[$centerName])) {
+                    $centerData[$centerName] = [
+                        'center' => $centerName,
+                        'campuses' => []
+                    ];
+                    $processedDocs[$centerName] = [];
+                }
+                
+                // Initialize campus data if not exists
+                if (!isset($centerData[$centerName]['campuses'][$campus])) {
+                    $centerData[$centerName]['campuses'][$campus] = [
+                        'campus' => $campus,
+                        'categories' => []
+                    ];
+                    
+                    // Initialize all categories with 0
+                    foreach ($allCategories as $cat) {
+                        $centerData[$centerName]['campuses'][$campus]['categories'][$cat] = 0;
+                    }
+                    
+                    $processedDocs[$centerName][$campus] = [];
+                }
+                
+                // Check for duplicates using fuzzy matching (same as entryCounter)
+                $isDuplicate = false;
+                foreach ($processedDocs[$centerName][$campus] as $processed) {
+                    // Check title similarity (80% threshold)
+                    $titleSimilar = isSimilarString($displayTitle, $processed['title'], 80);
+                    
+                    // Check author similarity (70% threshold for authors)
+                    $authorSimilar = areAuthorsSimilar($authors, $processed['authors'], 70);
+                    
+                    // If both title and authors are similar, it's a duplicate
+                    if ($titleSimilar && $authorSimilar) {
+                        $isDuplicate = true;
+                        break;
+                    }
+                }
+                
+                // Only count if not a duplicate
+                if (!$isDuplicate) {
+                    // Store for future duplicate checking
+                    $processedDocs[$centerName][$campus][] = [
+                        'title' => $displayTitle,
+                        'authors' => $authors
+                    ];
+                    
+                    // Increment the count for this category
+                    if (isset($centerData[$centerName]['campuses'][$campus]['categories'][$category])) {
+                        $centerData[$centerName]['campuses'][$campus]['categories'][$category]++;
+                    }
+                }
+            }
+            
+            // Format response for in-house view
+            foreach ($centerData as $centerName => $centerInfo) {
+                $centerObj = new stdClass();
+                $centerObj->center = $centerName;
+                $centerObj->campuses = [];
+                
+                foreach ($centerInfo['campuses'] as $campusName => $campusInfo) {
+                    $campusObj = new stdClass();
+                    $campusObj->campus = $campusName;
+                    $campusObj->categories = [];
+                    
+                    foreach ($campusInfo['categories'] as $catName => $count) {
+                        // Only include categories with count > 0
+                        if ($count > 0) {
+                            $catObj = new stdClass();
+                            $catObj->name = $catName;
+                            $catObj->total = $count;
+                            $campusObj->categories[] = $catObj;
+                        }
+                    }
+                    
+                    $centerObj->campuses[] = $campusObj;
+                }
+                
+                $response[] = $centerObj;
+            }
         }
     }
     
+    header('Content-Type: application/json');
     echo json_encode($response);
+    exit();
 }
 
 if(isset($_POST['entryView'])){
