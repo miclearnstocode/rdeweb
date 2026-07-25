@@ -4992,14 +4992,77 @@ if (isset($_POST['researchReviewed'])) {
 
             $con->query("SET SESSION sql_mode = ''");
 
-            $queryEndorsement = "SELECT * FROM endorsement WHERE senderid = ? ORDER BY date DESC";
+            // ============================================================
+            // STEP 1: Get the logged-in user's account details
+            // ============================================================
+            $userQuery = "SELECT usertype, campus, center FROM account_detail WHERE id = ?";
+            $userStmt = $con->prepare($userQuery);
+            $userStmt->bind_param("i", $userId);
+            $userStmt->execute();
+            $userResult = $userStmt->get_result();
+            $userData = $userResult->fetch_assoc();
+            $userStmt->close();
+
+            if (!$userData) {
+                throw new Exception("User account not found");
+            }
+
+            $userType = $userData['usertype'] ?? '';
+            $userCampus = $userData['campus'] ?? '';
+            $userCenter = $userData['center'] ?? '';
+
+            // Determine if user is a Research Chair or Extension Chair
+            $isResearchChair = strpos(strtolower($userType), 'research chair') !== false;
+            $isExtensionChair = strpos(strtolower($userType), 'extension chair') !== false;
+            $isCenterDirector = strpos(strtolower($userType), 'center director') !== false;
+
+            // ============================================================
+            // STEP 2: Build the query based on user type
+            // ============================================================
+            
+            $campusFilter = '';
+            $centerFilter = '';
+            $senderFilter = '';
+            
+            if ($isResearchChair || $isExtensionChair) {
+                // Research/Extension Chair - show papers from their campus
+                if (!empty($userCampus)) {
+                    $campusFilter = "AND e.campus = '" . $con->real_escape_string($userCampus) . "'";
+                } else {
+                    // Fallback: if no campus set, show nothing
+                    $campusFilter = "AND 1=0";
+                }
+            } elseif ($isCenterDirector) {
+                // Center Director - show all papers (no filter)
+                if (!empty($userCenter)) {
+                    $centerFilter = "AND rf.center = '" . $con->real_escape_string($userCenter) . "'";
+                }
+            } else {
+                // Regular faculty - show only their own papers
+                $senderFilter = "AND e.senderid = " . (int)$userId;
+            }
+
+            // ============================================================
+            // STEP 3: Get ALL endorsements (not just the user's own)
+            // ============================================================
+            $queryEndorsement = "SELECT * FROM endorsement e 
+                                 WHERE 1=1 
+                                 $campusFilter 
+                                 $senderFilter 
+                                 ORDER BY e.date DESC";
+            
             $endorseStmt = $con->prepare($queryEndorsement);
             if (!$endorseStmt) {
                 throw new Exception("Prepare failed: " . $con->error);
             }
-            $endorseStmt->bind_param("i", $userId);
             $endorseStmt->execute();
             $endorseResult = $endorseStmt->get_result();
+
+            // ============================================================
+            // STEP 4: Collect all research documents for duplicate detection
+            // ============================================================
+            $allResearchDocs = [];
+            $endorsementMap = [];
 
             while ($val = $endorseResult->fetch_assoc()) {
                 $endorsement = new stdClass();
@@ -5011,10 +5074,14 @@ if (isset($_POST['researchReviewed'])) {
                 $endorsement->status = $val['status'] ?? '';
                 $endorsement->id = $val['id'] ?? 0;
                 $endorsement->type = 'faculty';
+                $endorsement->campus = $val['campus'] ?? '';
+                $endorsement->center = $val['center'] ?? '';
+                $endorsement->senderid = $val['senderid'] ?? 0;
                 $endorsement->ResearchDocs = [];
                 $enID = $val['id'];
 
-                $queryResearch = "SELECT 
+                // Get research files for this endorsement
+                $researchQuery = "SELECT 
                     rf.paper_trail_no,
                     rf.author,
                     rf.coauthor,
@@ -5036,7 +5103,7 @@ if (isset($_POST['researchReviewed'])) {
                     rf.revision_status,
                     rf.revision_count,
                     rf.event_id,
-                    rf.status as original_status,
+                    rf.status as research_status,
                     rf.local_inhouse,
                     el.date_of_presentation,
                     el.name as event_name,
@@ -5046,14 +5113,14 @@ if (isset($_POST['researchReviewed'])) {
                 FROM researchfile rf
                 LEFT JOIN event_list el ON rf.event_id = el.id
                 LEFT JOIN local_inhouse li ON rf.id = li.research_id
-                WHERE rf.senderid = ? AND rf.endorsementid = ?
+                WHERE rf.endorsementid = ?
                 ORDER BY rf.id DESC";
 
-                $researchStmt = $con->prepare($queryResearch);
+                $researchStmt = $con->prepare($researchQuery);
                 if (!$researchStmt) {
                     throw new Exception("Research query prepare failed: " . $con->error);
                 }
-                $researchStmt->bind_param("ii", $userId, $enID);
+                $researchStmt->bind_param("i", $enID);
                 $researchStmt->execute();
                 $researchResult = $researchStmt->get_result();
 
@@ -5091,35 +5158,69 @@ if (isset($_POST['researchReviewed'])) {
                     $researchDocs->revision_count = $res['revision_count'] ?? 0;
                     $researchDocs->event_id = $res['event_id'] ?? null;
                     $researchDocs->date_of_presentation = $res['date_of_presentation'] ?? null;
-                    $researchDocs->original_status = $res['original_status'] ?? 'pending';
+                    $researchDocs->research_status = $res['research_status'] ?? null;
                     $researchDocs->event_name = $res['event_name'] ?? '';
                     $researchDocs->local_inhouse = $res['local_inhouse'] ?? 0;
                     $researchDocs->local_program_file_view_url = $res['local_program_file_view_url'] ?? null;
                     $researchDocs->local_certificate_file_view_url = $res['local_certificate_file_view_url'] ?? null;
                     $researchDocs->local_eventname = $res['local_eventname'] ?? null;
+                    $researchDocs->endorsement_id = $enID;
+                    $researchDocs->endorsement_status = $val['status'] ?? null;
                     
-                    // Determine the display status for faculty papers
-                    $currentDate = date('Y-m-d H:i:s');
-                    $presentationDate = $res['date_of_presentation'] ?? null;
-                    $originalStatus = $res['original_status'] ?? 'pending';
-                    $revisionStatus = $res['revision_status'] ?? null;
-
-                    if ($originalStatus === 'rejected') {
+                    // Determine status
+                    $researchStatus = $res['research_status'] ?? null;
+                    $endorsementStatus = $val['status'] ?? null;
+                    
+                    $researchStatusLower = strtolower($researchStatus ?? '');
+                    $endorsementStatusLower = strtolower($endorsementStatus ?? '');
+                    
+                    $displayStatus = 'pending';
+                    
+                    if (($researchStatus === null || $researchStatusLower === 'accepted') && $endorsementStatusLower === 'accepted') {
+                        $displayStatus = 'accepted';
+                    } elseif (($researchStatus === null || $researchStatusLower === 'rejected') && $endorsementStatusLower === 'rejected') {
                         $displayStatus = 'rejected';
-                    } elseif ($presentationDate === null) {
-                        $displayStatus = $originalStatus;
-                    } elseif ($presentationDate < $currentDate) {
-                        $displayStatus = !empty($revisionStatus) ? $revisionStatus : 'revision_pending';
+                    } elseif ($researchStatusLower === 'revision_pending') {
+                        $displayStatus = 'revision_pending';
+                    } elseif (($researchStatus === null || $researchStatusLower === 'pending') && 
+                              ($endorsementStatus === null || $endorsementStatusLower === 'pending' || $endorsementStatusLower === '')) {
+                        $displayStatus = 'pending';
                     } else {
-                        $displayStatus = $originalStatus;
+                        $displayStatus = 'pending';
                     }
-
+                    
                     $researchDocs->status = $displayStatus;
-                    $endorsement->ResearchDocs[] = $researchDocs;
+                    
+                    // Store for duplicate detection
+                    $allResearchDocs[] = $researchDocs;
+                    $endorsementMap[$enID][] = $researchDocs;
                 }
+                
+                $endorsement->ResearchDocs = $endorsementMap[$enID] ?? [];
                 if (count($endorsement->ResearchDocs) > 0) {
                     $response->list[] = $endorsement;
                 }
+            }
+
+            // ============================================================
+            // STEP 5: Apply Fuzzy Duplicate Detection
+            // ============================================================
+            $response->list = applyFuzzyDuplicateDetection($response->list);
+
+            // ============================================================
+            // STEP 6: Get Student Papers (with campus filter for chairs)
+            // ============================================================
+            $studentCampusFilter = '';
+            $studentSenderFilter = '';
+            
+            if ($isResearchChair || $isExtensionChair) {
+                if (!empty($userCampus)) {
+                    $studentCampusFilter = "AND srp.campus = '" . $con->real_escape_string($userCampus) . "'";
+                } else {
+                    $studentCampusFilter = "AND 1=0";
+                }
+            } elseif (!$isCenterDirector) {
+                $studentSenderFilter = "AND srp.senderid = " . (int)$userId;
             }
 
             $queryStudentPapers = "SELECT 
@@ -5145,22 +5246,21 @@ if (isset($_POST['researchReviewed'])) {
                 el.date_of_presentation
             FROM student_research_papers srp
             LEFT JOIN event_list el ON srp.event_id = el.id
-            WHERE srp.senderid = ?
+            WHERE 1=1
+            $studentCampusFilter
+            $studentSenderFilter
             ORDER BY srp.created_at DESC";
 
             $studentStmt = $con->prepare($queryStudentPapers);
             if (!$studentStmt) {
                 throw new Exception("Student papers query prepare failed: " . $con->error);
             }
-            $studentStmt->bind_param("i", $userId);
             $studentStmt->execute();
             $studentResult = $studentStmt->get_result();
 
             while ($row = $studentResult->fetch_assoc()) {
-                // Determine event name
                 $eventName = !empty($row['event_name']) ? $row['event_name'] : ($row['event'] ?? 'Uncategorized');
 
-                // Create a single endorsement entry for each student paper
                 $studentEndorsement = new stdClass();
                 $studentEndorsement->type = 'student';
                 $studentEndorsement->id = $row['id'] ?? 0;
@@ -5170,9 +5270,10 @@ if (isset($_POST['researchReviewed'])) {
                 $studentEndorsement->endorsementFile = $row['endorsement_file_view_url'] ?? null;
                 $studentEndorsement->drive_file_id = null;
                 $studentEndorsement->drive_download_url = null;
+                $studentEndorsement->campus = $row['campus'] ?? '';
+                $studentEndorsement->senderid = $row['senderid'] ?? 0;
                 $studentEndorsement->ResearchDocs = [];
 
-                // Create the research document entry
                 $researchDoc = new stdClass();
                 $researchDoc->docId = $row['id'] ?? 0;
                 $researchDoc->author = $row['author'] ?? '';
@@ -5190,8 +5291,6 @@ if (isset($_POST['researchReviewed'])) {
                 $researchDoc->date_completed = $row['date_completed'] ?? null;
                 $researchDoc->date_of_presentation = $row['date_of_presentation'] ?? null;
                 $researchDoc->type = 'student';
-                
-                // Set both research and endorsement file URLs
                 $researchDoc->researchFile = $row['research_file_view_url'] ?? null;
                 $researchDoc->endorsementFile = $row['endorsement_file_view_url'] ?? null;
                 
@@ -5204,6 +5303,9 @@ if (isset($_POST['researchReviewed'])) {
         } else {
             throw new Exception("Database connection failed");
         }
+        
+        $response->user_type = $userType;
+        $response->user_campus = $userCampus;
         
     } catch (Exception $e) {
         error_log("researchReviewed error: " . $e->getMessage());
@@ -5218,6 +5320,136 @@ if (isset($_POST['researchReviewed'])) {
     echo json_encode($response);
     ob_end_flush();
     exit();
+}
+
+function applyFuzzyDuplicateDetection($endorsementList) {
+    if (empty($endorsementList)) {
+        return $endorsementList;
+    }
+
+    $processedEndorsements = [];
+    $duplicateTracker = [];
+
+    foreach ($endorsementList as $endorsement) {
+        $uniqueDocs = [];
+        $docTracker = [];
+
+        foreach ($endorsement->ResearchDocs as $doc) {
+            $eventName = strtolower($doc->event_name ?? $endorsement->eventType ?? '');
+            $title = strtolower(trim($doc->title ?? ''));
+            $author = strtolower(trim($doc->author ?? ''));
+            $coauthor = strtolower(trim($doc->coauthor ?? ''));
+            
+            // Determine event type (symposium or in-house)
+            $isSymposium = strpos($eventName, 'symposium') !== false;
+            $isInHouse = strpos($eventName, 'in-house') !== false || strpos($eventName, 'in house') !== false;
+            
+            // Create a key for duplicate detection
+            $eventKey = $isSymposium ? 'symposium' : ($isInHouse ? 'inhouse' : 'other');
+            
+            // Combine author and coauthor for comparison
+            $authorString = $author;
+            if (!empty($coauthor) && $coauthor !== '[]' && $coauthor !== 'null') {
+                // Parse coauthors if it's a JSON array
+                $coauthors = json_decode($coauthor, true);
+                if (is_array($coauthors) && !empty($coauthors)) {
+                    $authorString .= ' ' . implode(' ', array_map('strtolower', $coauthors));
+                } else {
+                    $authorString .= ' ' . $coauthor;
+                }
+            }
+            
+            // Normalize strings for comparison (remove extra spaces, punctuation)
+            $normalizedTitle = normalizeString($title);
+            $normalizedAuthor = normalizeString($authorString);
+            
+            // Check if this is a duplicate
+            $isDuplicate = false;
+            $duplicateKey = null;
+            
+            foreach ($docTracker as $key => $existingDoc) {
+                $existingTitle = normalizeString(strtolower(trim($existingDoc->title ?? '')));
+                $existingAuthor = normalizeString(strtolower(trim(($existingDoc->author ?? '') . ' ' . ($existingDoc->coauthor ?? ''))));
+                
+                // Calculate similarity scores using Levenshtein distance
+                $titleSimilarity = 0;
+                $authorSimilarity = 0;
+                
+                if (!empty($normalizedTitle) && !empty($existingTitle)) {
+                    $titleSimilarity = levenshtein($normalizedTitle, $existingTitle);
+                    $maxLen = max(strlen($normalizedTitle), strlen($existingTitle));
+                    if ($maxLen > 0) {
+                        $titleSimilarity = 1 - ($titleSimilarity / $maxLen);
+                    }
+                }
+                
+                if (!empty($normalizedAuthor) && !empty($existingAuthor)) {
+                    $authorSimilarity = levenshtein($normalizedAuthor, $existingAuthor);
+                    $maxLen = max(strlen($normalizedAuthor), strlen($existingAuthor));
+                    if ($maxLen > 0) {
+                        $authorSimilarity = 1 - ($authorSimilarity / $maxLen);
+                    }
+                }
+                
+                // If title and author are very similar (>= 85%), consider it a duplicate
+                if ($titleSimilarity >= 0.85 && $authorSimilarity >= 0.85) {
+                    $isDuplicate = true;
+                    $duplicateKey = $key;
+                    break;
+                }
+            }
+            
+            if ($isDuplicate && $duplicateKey !== null) {
+                // Merge with existing document (keep the one with higher status priority)
+                $existing = $docTracker[$duplicateKey];
+                
+                // Status priority: accepted > revision_pending > pending > rejected
+                $statusPriority = ['accepted' => 4, 'revision_pending' => 3, 'pending' => 2, 'rejected' => 1];
+                $existingPriority = $statusPriority[$existing->status] ?? 0;
+                $newPriority = $statusPriority[$doc->status] ?? 0;
+                
+                if ($newPriority > $existingPriority) {
+                    // Replace with the higher priority document
+                    $docTracker[$duplicateKey] = $doc;
+                }
+                // If same priority, keep the first one
+            } else {
+                // Not a duplicate, add to tracker
+                $docTracker[] = $doc;
+            }
+        }
+        
+        // Convert tracker back to array
+        $endorsement->ResearchDocs = $docTracker;
+        $processedEndorsements[] = $endorsement;
+    }
+    
+    return $processedEndorsements;
+}
+
+
+function normalizeString($str) {
+    if (empty($str)) {
+        return '';
+    }
+    
+    // Convert to lowercase
+    $str = strtolower($str);
+    
+    // Remove punctuation and special characters
+    $str = preg_replace('/[^\w\s]/', ' ', $str);
+    
+    // Remove extra whitespace
+    $str = preg_replace('/\s+/', ' ', $str);
+    
+    // Remove common words that don't help with matching
+    $commonWords = ['the', 'of', 'and', 'for', 'with', 'on', 'at', 'to', 'in', 'by', 'from', 'an', 'a'];
+    $words = explode(' ', $str);
+    $words = array_filter($words, function($word) use ($commonWords) {
+        return !in_array($word, $commonWords) && strlen($word) > 2;
+    });
+    
+    return trim(implode(' ', $words));
 }
 
 if (isset($_POST['commentRequest'])) {

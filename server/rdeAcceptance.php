@@ -1193,8 +1193,7 @@ if (isset($_POST['rejectPoster'])) {
     exit();
 }
 
-// Get accepted posters with pagination
-if (isset($_POST['getAcceptedPosters'])) {
+if (isset($_POST['getAllPosters'])) {
     // Clear any previous output
     while (ob_get_level()) ob_end_clean();
     ob_start();
@@ -1213,14 +1212,13 @@ if (isset($_POST['getAcceptedPosters'])) {
             throw new Exception("Database connection failed: " . $con->connect_error);
         }
         
-        // Build base query
+        // Build base query - get all posters with their associated research data
         $baseQuery = "SELECT 
             ps.id,
             ps.research_id,
             ps.paper_trail_no,
             ps.sender_id,
             ps.event_id,
-            ps.status,
             ps.poster_drive_file_id,
             ps.poster_drive_view_url,
             ps.poster_drive_download_url,
@@ -1230,6 +1228,7 @@ if (isset($_POST['getAcceptedPosters'])) {
             rf.title,
             rf.author,
             rf.coauthor,
+            rf.presenter,
             rf.category,
             rf.campus,
             rf.center,
@@ -1242,13 +1241,15 @@ if (isset($_POST['getAcceptedPosters'])) {
         LEFT JOIN researchfile rf ON ps.research_id = rf.id
         LEFT JOIN event_list el ON rf.event_id = el.id
         LEFT JOIN account_detail ON ps.sender_id = account_detail.id
-        WHERE ps.status = 'accepted'";
+        WHERE 1=1";
         
         // Add search filter
         if (!empty($searchTerm)) {
             $searchPattern = '%' . $con->real_escape_string($searchTerm) . '%';
             $baseQuery .= " AND (rf.title LIKE '$searchPattern' 
                                OR rf.author LIKE '$searchPattern' 
+                               OR rf.coauthor LIKE '$searchPattern'
+                               OR rf.presenter LIKE '$searchPattern'
                                OR el.name LIKE '$searchPattern'
                                OR ps.paper_trail_no LIKE '$searchPattern')";
         }
@@ -1274,10 +1275,10 @@ if (isset($_POST['getAcceptedPosters'])) {
                 $poster->paper_trail_no = $row['paper_trail_no'];
                 $poster->sender_id = $row['sender_id'];
                 $poster->event_id = $row['event_id'];
-                $poster->status = $row['status'];
                 $poster->title = $row['title'];
                 $poster->author = $row['author'];
                 $poster->coauthor = $row['coauthor'];
+                $poster->presenter = $row['presenter'];
                 $poster->category = $row['category'];
                 $poster->campus = $row['campus'];
                 $poster->center = $row['center'];
@@ -1306,7 +1307,7 @@ if (isset($_POST['getAcceptedPosters'])) {
         $con->close();
         
     } catch (Exception $e) {
-        error_log("getAcceptedPosters error: " . $e->getMessage());
+        error_log("getAllPosters error: " . $e->getMessage());
         $response['status'] = false;
         $response['message'] = $e->getMessage();
     }
