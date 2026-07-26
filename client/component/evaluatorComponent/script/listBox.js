@@ -466,7 +466,7 @@ export const Box = (getBody) => {
 
             form.append('event', evalData.eventId || '');
 
-            const res = await fetch('/uploadResearchFile', { method: 'POST', body: form });
+            const res = await fetch('/evaluatorReg', { method: 'POST', body: form });
             const data = await res.json();
 
             allData = data.list || [];

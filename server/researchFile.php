@@ -51,6 +51,97 @@ require_once __DIR__ . '/Mailer/mailTemplate.php';
 require_once __DIR__ . '/Mailer/MailSender.php';
 date_default_timezone_set('Asia/Manila');
 
+function normalizeString($string) {
+    // Convert to lowercase
+    $string = strtolower($string);
+    
+    // Remove extra spaces
+    $string = preg_replace('/\s+/', ' ', $string);
+    
+    // Remove special characters but keep letters and numbers
+    $string = preg_replace('/[^a-z0-9\s]/', '', $string);
+    
+    // Trim
+    $string = trim($string);
+    
+    return $string;
+}
+
+function isSimilarString($str1, $str2, $threshold = 80) {
+    $str1 = normalizeString($str1);
+    $str2 = normalizeString($str2);
+    
+    // If exactly the same after normalization, they're duplicates
+    if ($str1 === $str2) {
+        return true;
+    }
+    
+    // Calculate Levenshtein distance
+    $distance = levenshtein($str1, $str2);
+    $maxLength = max(strlen($str1), strlen($str2));
+    
+    if ($maxLength === 0) {
+        return true;
+    }
+    
+    // Calculate similarity percentage
+    $similarity = (1 - $distance / $maxLength) * 100;
+    
+    return $similarity >= $threshold;
+}
+
+function normalizeAuthorName($name) {
+    // Remove titles
+    $name = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $name);
+    
+    // Remove suffixes
+    $name = preg_replace('/\s*(Ph\.?D\.?|MD|DVM|JD|LLB|LLM|RN|CPA|CMA|CFA|PE|Arch|Ed\.?D\.?|DBA|MPH|MS|MA|MBA|MFT|DrPH|PharmD|PT|OT|ECE|MCS|MAED|EDD)\s*/i', '', $name);
+    
+    // Convert to lowercase
+    $name = strtolower($name);
+    
+    // Remove special characters
+    $name = preg_replace('/[^a-z0-9\s]/', '', $name);
+    
+    // Remove extra spaces
+    $name = preg_replace('/\s+/', ' ', $name);
+    
+    return trim($name);
+}
+
+function areAuthorsSimilar($authors1, $authors2, $threshold = 80) {
+    // Normalize all authors
+    $normalized1 = array_map('normalizeAuthorName', $authors1);
+    $normalized2 = array_map('normalizeAuthorName', $authors2);
+    
+    // Sort them
+    sort($normalized1);
+    sort($normalized2);
+    
+    // If they have different lengths, they might still be similar
+    // Check if one set is a subset of the other (some authors might be missing)
+    if (count($normalized1) != count($normalized2)) {
+        // Find common authors
+        $common = array_intersect($normalized1, $normalized2);
+        $minCount = min(count($normalized1), count($normalized2));
+        $similarity = (count($common) / $minCount) * 100;
+        return $similarity >= $threshold;
+    }
+    
+    // Same length, compare each author
+    $matches = 0;
+    for ($i = 0; $i < count($normalized1); $i++) {
+        if ($normalized1[$i] === $normalized2[$i]) {
+            $matches++;
+        } elseif (isSimilarString($normalized1[$i], $normalized2[$i], 85)) {
+            $matches++;
+        }
+    }
+    
+    $similarity = ($matches / count($normalized1)) * 100;
+    return $similarity >= $threshold;
+}
+
 // this is for evaluator
 if (isset($_POST['researchSubmit'])) {
     $response = new stdClass();
@@ -75,6 +166,9 @@ if (isset($_POST['researchSubmit'])) {
         error_log("Category IDs: " . print_r($categoryIds, true));
         error_log("Event ID: $eventId");
 
+        // Build query based on user type
+        $papers = [];
+        
         if ($userType === 'category' && !empty($categoryIds)) {
             $categoryNames = [];
             $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
@@ -181,6 +275,9 @@ if (isset($_POST['researchSubmit'])) {
         $stm->execute();
         $resultRes = $stm->get_result();
 
+        // Store all papers in an array first
+        $allPapers = [];
+        
         while ($val = $resultRes->fetch_assoc()) {
             $data = new stdClass();
             $data->status = NULL;
@@ -264,7 +361,6 @@ if (isset($_POST['researchSubmit'])) {
                 $data->hasComment = ($v['has_comment_content'] == 1);
             }
 
-
             $scoreQuery = "SELECT 
                 COUNT(*) as score_count,
                 CASE 
@@ -283,11 +379,153 @@ if (isset($_POST['researchSubmit'])) {
                 $data->hasScore = ($scoreRow['has_score_content'] == 1);
             }
 
-            $response->list[] = $data;
+            $allPapers[] = $data;
         }
 
+        // --- BEGIN DUPLICATE DETECTION ---
+        $uniquePapers = [];
+        $duplicateGroups = [];
+        
+        // Helper function to get all authors from a paper
+        $getAllAuthors = function($paper) {
+            $authors = [];
+            
+            if (!empty($paper->author)) {
+                $cleanedAuthor = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $paper->author);
+                $authorList = array_map('trim', explode(',', $cleanedAuthor));
+                $authors = array_merge($authors, $authorList);
+            }
+            
+            if (!empty($paper->presenter)) {
+                $cleanedPresenter = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $paper->presenter);
+                $authors[] = trim($cleanedPresenter);
+            }
+            
+            if (!empty($paper->coauthor)) {
+                $coauthorData = $paper->coauthor;
+                if (is_string($coauthorData)) {
+                    // Try to parse JSON
+                    if (strpos($coauthorData, '[') === 0) {
+                        $coauthorArray = json_decode($coauthorData, true);
+                        if (is_array($coauthorArray)) {
+                            foreach ($coauthorArray as $coauthor) {
+                                $cleaned = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $coauthor);
+                                $authors[] = trim($cleaned);
+                            }
+                        }
+                    } else {
+                        $coauthorList = array_map('trim', explode(',', $coauthorData));
+                        $authors = array_merge($authors, $coauthorList);
+                    }
+                } else if (is_array($coauthorData)) {
+                    foreach ($coauthorData as $coauthor) {
+                        $cleaned = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $coauthor);
+                        $authors[] = trim($cleaned);
+                    }
+                }
+            }
+            
+            // Remove duplicates and empty values
+            $authors = array_filter($authors);
+            $authors = array_unique($authors);
+            
+            return $authors;
+        };
+        
+        // First pass: Group by title similarity and author similarity
+        foreach ($allPapers as $index => $paper) {
+            $isDuplicate = false;
+            $duplicateGroupId = null;
+            $duplicateReason = '';
+            
+            // Check against existing unique papers
+            foreach ($uniquePapers as $key => $uniquePaper) {
+                // Check if title is similar
+                $titleSimilar = isSimilarString($paper->title, $uniquePaper->title, 75);
+                
+                if ($titleSimilar) {
+                    // Get all authors for both papers
+                    $authors1 = $getAllAuthors($paper);
+                    $authors2 = $getAllAuthors($uniquePaper);
+                    
+                    // Check if authors are similar
+                    if (areAuthorsSimilar($authors1, $authors2, 70)) {
+                        $isDuplicate = true;
+                        $duplicateGroupId = $key;
+                        $duplicateReason = 'Same title and authors';
+                        break;
+                    }
+                }
+            }
+            
+            if ($isDuplicate && $duplicateGroupId !== null) {
+                // This is a duplicate - add to duplicate group
+                if (!isset($duplicateGroups[$duplicateGroupId])) {
+                    $duplicateGroups[$duplicateGroupId] = [
+                        'original' => $uniquePapers[$duplicateGroupId],
+                        'duplicates' => []
+                    ];
+                }
+                // Mark as duplicate
+                $paper->isDuplicate = true;
+                $paper->duplicateOf = $uniquePapers[$duplicateGroupId]->id;
+                $paper->duplicateReason = $duplicateReason;
+                $duplicateGroups[$duplicateGroupId]['duplicates'][] = $paper;
+            } else {
+                // This is a unique paper
+                $paper->isDuplicate = false;
+                $paper->duplicateOf = null;
+                $paper->duplicateReason = '';
+                $uniquePapers[] = $paper;
+            }
+        }
+        
+        // Mark unique papers with duplicate info
+        foreach ($uniquePapers as &$paper) {
+            $paper->duplicateCount = 0;
+            $paper->hasDuplicates = false;
+            
+            // Check if this paper has duplicates
+            foreach ($duplicateGroups as $group) {
+                if ($group['original']->id === $paper->id) {
+                    $paper->hasDuplicates = true;
+                    $paper->duplicateCount = count($group['duplicates']);
+                    break;
+                }
+            }
+        }
+        
+        // Log duplicate info for debugging
+        $totalPapers = count($allPapers);
+        $totalUnique = count($uniquePapers);
+        $totalDuplicates = $totalPapers - $totalUnique;
+        
+        error_log("=== DUPLICATE DETECTION RESULTS (researchSubmit) ===");
+        error_log("Total papers found: $totalPapers");
+        error_log("Unique papers: $totalUnique");
+        error_log("Duplicate papers removed: $totalDuplicates");
+        error_log("Duplicate groups: " . count($duplicateGroups));
+        
+        // Log each duplicate group
+        foreach ($duplicateGroups as $groupId => $group) {
+            $originalTitle = $group['original']->title;
+            $originalId = $group['original']->id;
+            $dupCount = count($group['duplicates']);
+            $dupIds = array_map(function($d) { return $d->id; }, $group['duplicates']);
+            error_log("Group $groupId: Original ID $originalId '$originalTitle' has $dupCount duplicate(s): " . implode(', ', $dupIds));
+        }
+        
+        // --- END DUPLICATE DETECTION ---
+        
+        // Only return unique papers
+        $response->list = $uniquePapers;
+        $response->totalUnique = $totalUnique;
+        $response->totalDuplicateCount = $totalDuplicates;
+        $response->hasDuplicates = count($duplicateGroups) > 0;
+        $response->duplicateGroups = $duplicateGroups;
+
         $count = count($response->list);
-        error_log("Found $count research files for user type: $userType");
+        error_log("Found $count unique research files for user type: $userType");
     }
     echo json_encode($response);
 }

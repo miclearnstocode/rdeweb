@@ -27,6 +27,97 @@ function logExecutionTime($functionName) {
     error_log("[Time Debug] $functionName - Execution time so far: {$executionTime}ms");
 }
 
+function normalizeString($string) {
+    // Convert to lowercase
+    $string = strtolower($string);
+    
+    // Remove extra spaces
+    $string = preg_replace('/\s+/', ' ', $string);
+    
+    // Remove special characters but keep letters and numbers
+    $string = preg_replace('/[^a-z0-9\s]/', '', $string);
+    
+    // Trim
+    $string = trim($string);
+    
+    return $string;
+}
+
+function isSimilarString($str1, $str2, $threshold = 80) {
+    $str1 = normalizeString($str1);
+    $str2 = normalizeString($str2);
+    
+    // If exactly the same after normalization, they're duplicates
+    if ($str1 === $str2) {
+        return true;
+    }
+    
+    // Calculate Levenshtein distance
+    $distance = levenshtein($str1, $str2);
+    $maxLength = max(strlen($str1), strlen($str2));
+    
+    if ($maxLength === 0) {
+        return true;
+    }
+    
+    // Calculate similarity percentage
+    $similarity = (1 - $distance / $maxLength) * 100;
+    
+    return $similarity >= $threshold;
+}
+
+function normalizeAuthorName($name) {
+    // Remove titles
+    $name = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $name);
+    
+    // Remove suffixes
+    $name = preg_replace('/\s*(Ph\.?D\.?|MD|DVM|JD|LLB|LLM|RN|CPA|CMA|CFA|PE|Arch|Ed\.?D\.?|DBA|MPH|MS|MA|MBA|MFT|DrPH|PharmD|PT|OT|ECE|MCS|MAED|EDD)\s*/i', '', $name);
+    
+    // Convert to lowercase
+    $name = strtolower($name);
+    
+    // Remove special characters
+    $name = preg_replace('/[^a-z0-9\s]/', '', $name);
+    
+    // Remove extra spaces
+    $name = preg_replace('/\s+/', ' ', $name);
+    
+    return trim($name);
+}
+
+function areAuthorsSimilar($authors1, $authors2, $threshold = 80) {
+    // Normalize all authors
+    $normalized1 = array_map('normalizeAuthorName', $authors1);
+    $normalized2 = array_map('normalizeAuthorName', $authors2);
+    
+    // Sort them
+    sort($normalized1);
+    sort($normalized2);
+    
+    // If they have different lengths, they might still be similar
+    // Check if one set is a subset of the other (some authors might be missing)
+    if (count($normalized1) != count($normalized2)) {
+        // Find common authors
+        $common = array_intersect($normalized1, $normalized2);
+        $minCount = min(count($normalized1), count($normalized2));
+        $similarity = (count($common) / $minCount) * 100;
+        return $similarity >= $threshold;
+    }
+    
+    // Same length, compare each author
+    $matches = 0;
+    for ($i = 0; $i < count($normalized1); $i++) {
+        if ($normalized1[$i] === $normalized2[$i]) {
+            $matches++;
+        } elseif (isSimilarString($normalized1[$i], $normalized2[$i], 85)) {
+            $matches++;
+        }
+    }
+    
+    $similarity = ($matches / count($normalized1)) * 100;
+    return $similarity >= $threshold;
+}
+
 logMemoryUsage('Script Start');
 logExecutionTime('Script Start');
 
@@ -159,7 +250,7 @@ if (isset($_POST['evaluatorRegister'])) {
                 
                 $con->commit();
                 $response->status = true;
-                $response->message = 'Save successfully..!';
+                $response->message = 'Evaluator Account is Registered Successfully';
                 $response->evaluatorId = $evaluatorId;
                 $response->categoriesAdded = count($categories);
             } else {
@@ -456,92 +547,316 @@ if (isset($_POST['getCategories'])) {
     ob_end_flush();
     exit();
 }
-
+//return the list of paper to be comment and score
 if (isset($_POST['evalLeb'])) {
     logMemoryUsage('evalLeb - Start');
     logExecutionTime('evalLeb');
     
     $res = new stdClass();
+    $res->status = true;
+    $res->message = '';
+    $res->papers = [];
+    $res->duplicateGroups = [];
+    $res->totalUnique = 0;
+    $res->totalDuplicateCount = 0;
+    $res->hasDuplicates = false;
     
-    // Get event info
-    $res->event = $_SESSION['eventTYpe'] ?? '';
-    $res->eventId = $_SESSION['eventId'] ?? '';
-    $res->userName = $_SESSION['userName'] ?? '';
-    $res->userFullname = $_SESSION['userFulname'] ?? '';
-    
-    // Get evaluator's center info
-    $centerId = $_SESSION['centerId'] ?? '';
-    $userId = $_SESSION['userId'] ?? '';
-    
-    // Get categories from database for this evaluator
-    $categories = [];
-    $categoryNames = [];
-    $categoryIds = [];
-    
-    if (!empty($userId) && $con = new mysqli($host, $username, $pass, $dbName)) {
-        $categoryQuery = "SELECT c.id, c.name 
-                         FROM evaluator_categories ec 
-                         JOIN category c ON ec.category_id = c.id 
-                         WHERE ec.evaluator_id = ?";
-        $catStmt = $con->prepare($categoryQuery);
-        $catStmt->bind_param("i", $userId);
-        $catStmt->execute();
-        $catResult = $catStmt->get_result();
+    try {
+        // Get event info
+        $res->event = $_SESSION['eventTYpe'] ?? '';
+        $res->eventId = $_SESSION['eventId'] ?? '';
+        $res->userName = $_SESSION['userName'] ?? '';
+        $res->userFullname = $_SESSION['userFulname'] ?? '';
         
-        while ($catRow = $catResult->fetch_assoc()) {
-            $categories[] = $catRow;
-            $categoryIds[] = $catRow['id'];
-            $categoryNames[] = $catRow['name'];
-        }
-        $catStmt->close();
-        $con->close();
-    }
-    
-    // Determine user type
-    if (!empty($centerId)) {
-        // Center-based evaluator
-        $res->userType = 'center';
-        $res->centerId = $centerId;
-        $res->categoryIds = [];
-        $res->categories = [];
-        $res->displayCenter = '';
+        // Get evaluator's center info
+        $centerId = $_SESSION['centerId'] ?? '';
+        $userId = $_SESSION['userId'] ?? '';
         
-        // Fetch center details
-        if ($con = new mysqli($host, $username, $pass, $dbName)) {
-            $query = "SELECT name, code FROM center WHERE id = ?";
-            $stmt = $con->prepare($query);
-            $stmt->bind_param("s", $centerId);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            if ($row = $result->fetch_assoc()) {
-                $res->displayCenter = $row['name'] . " (" . $row['code'] . ")";
-                $res->centerName = $row['name'];
-                $res->centerCode = $row['code'];
-                $res->filterCenter = $row['name'] . " (" . $row['code'] . ")";
+        // Get categories from database for this evaluator
+        $categories = [];
+        $categoryNames = [];
+        $categoryIds = [];
+        
+        if (!empty($userId)) {
+            $con = new mysqli($host, $username, $pass, $dbName);
+            if ($con->connect_error) {
+                throw new Exception("Database connection failed: " . $con->connect_error);
             }
-            $stmt->close();
+            
+            $categoryQuery = "SELECT c.id, c.name 
+                             FROM evaluator_categories ec 
+                             JOIN category c ON ec.category_id = c.id 
+                             WHERE ec.evaluator_id = ?";
+            $catStmt = $con->prepare($categoryQuery);
+            if ($catStmt) {
+                $catStmt->bind_param("i", $userId);
+                $catStmt->execute();
+                $catResult = $catStmt->get_result();
+                
+                while ($catRow = $catResult->fetch_assoc()) {
+                    $categories[] = $catRow;
+                    $categoryIds[] = (int)$catRow['id'];
+                    $categoryNames[] = $catRow['name'];
+                }
+                $catStmt->close();
+            }
             $con->close();
         }
-    } else if (!empty($categories)) {
-        // Category-based evaluator
-        $res->userType = 'category';
-        $res->categoryIds = $categoryIds;
-        $res->categories = $categories;
-        $res->centerId = null;
         
-        // Create dynamic display string from categories
-        $res->displayCenter = 'Category: ' . implode(', ', $categoryNames);
-        $res->filterCenter = 'Category: ' . implode(', ', $categoryNames);
-        $res->categoryNames = $categoryNames;
-    } else {
-        // Fallback - no access
-        $res->userType = 'none';
-        $res->centerId = null;
-        $res->categoryIds = [];
-        $res->categories = [];
-        $res->displayCenter = 'No Access';
-        $res->filterCenter = 'No Access';
+        // Determine user type
+        if (!empty($centerId)) {
+            // Center-based evaluator
+            $res->userType = 'center';
+            $res->centerId = $centerId;
+            $res->categoryIds = [];
+            $res->categories = [];
+            $res->displayCenter = '';
+            
+            // Fetch center details
+            $con = new mysqli($host, $username, $pass, $dbName);
+            if (!$con->connect_error) {
+                $query = "SELECT name, code FROM center WHERE id = ?";
+                $stmt = $con->prepare($query);
+                if ($stmt) {
+                    $stmt->bind_param("s", $centerId);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    
+                    if ($row = $result->fetch_assoc()) {
+                        $res->displayCenter = $row['name'] . " (" . $row['code'] . ")";
+                        $res->centerName = $row['name'];
+                        $res->centerCode = $row['code'];
+                        $res->filterCenter = $row['name'] . " (" . $row['code'] . ")";
+                    }
+                    $stmt->close();
+                }
+                $con->close();
+            }
+        } else if (!empty($categories)) {
+            // Category-based evaluator
+            $res->userType = 'category';
+            $res->categoryIds = $categoryIds;
+            $res->categories = $categories;
+            $res->centerId = null;
+            
+            // Create dynamic display string from categories
+            $res->displayCenter = 'Category: ' . implode(', ', $categoryNames);
+            $res->filterCenter = 'Category: ' . implode(', ', $categoryNames);
+            $res->categoryNames = $categoryNames;
+        } else {
+            // Fallback - no access
+            $res->userType = 'none';
+            $res->centerId = null;
+            $res->categoryIds = [];
+            $res->categories = [];
+            $res->displayCenter = 'No Access';
+            $res->filterCenter = 'No Access';
+            $res->papers = [];
+            
+            logMemoryUsage('evalLeb - No access');
+            ob_clean();
+            echo json_encode($res);
+            ob_end_flush();
+            exit();
+        }
+
+        // Fetch the list of papers
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+        
+        // Build query based on user type
+        $whereConditions = [];
+        $params = [];
+        $types = "";
+        
+        if ($res->userType === 'center' && !empty($centerId)) {
+            $whereConditions[] = "rf.center = ?";
+            $params[] = $centerId;
+            $types .= "s";
+        } else if ($res->userType === 'category' && !empty($categoryIds)) {
+            $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
+            $whereConditions[] = "rf.category_id IN ($placeholders)";
+            foreach ($categoryIds as $catId) {
+                $params[] = $catId;
+                $types .= "i";
+            }
+        } else {
+            // No valid user type
+            $res->papers = [];
+            logMemoryUsage('evalLeb - No valid user type');
+            ob_clean();
+            echo json_encode($res);
+            ob_end_flush();
+            exit();
+        }
+        
+        // Add event filter
+        if (!empty($res->eventId)) {
+            $whereConditions[] = "rf.event_id = ?";
+            $params[] = $res->eventId;
+            $types .= "s";
+        }
+        
+        $whereClause = !empty($whereConditions) ? "WHERE " . implode(" AND ", $whereConditions) : "";
+        
+        // Query to get all papers with their data
+        $query = "SELECT 
+                    rf.id,
+                    rf.title,
+                    rf.abstract,
+                    rf.intro,
+                    rf.objective,
+                    rf.methodology,
+                    rf.results,
+                    rf.recommendation,
+                    rf.literature,
+                    rf.other,
+                    rf.author,
+                    rf.presenter,
+                    rf.coauthor,
+                    rf.center,
+                    rf.event_id,
+                    rf.category_id,
+                    rf.status,
+                    c.name as category_name
+                FROM research_file rf
+                LEFT JOIN category c ON rf.category_id = c.id
+                $whereClause
+                ORDER BY rf.id ASC";
+        
+        // Add evaluator_id for subqueries - prepend to params
+        array_unshift($params, $userId);
+        $types = "i" . $types;
+        
+        $stmt = $con->prepare($query);
+        if (!$stmt) {
+            throw new Exception("Failed to prepare query: " . $con->error);
+        }
+        
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+        
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $papers = [];
+        while ($row = $result->fetch_assoc()) {
+            $papers[] = $row;
+        }
+        $stmt->close();
+        $con->close();
+        
+        // Perform duplicate detection
+        $uniquePapers = [];
+        $duplicateGroups = [];
+        
+        // Helper function to get all authors from a paper
+        $getAllAuthors = function($paper) {
+            $authors = [];
+            
+            if (!empty($paper['author'])) {
+                $authorList = array_map('trim', explode(',', $paper['author']));
+                $authors = array_merge($authors, $authorList);
+            }
+            
+            if (!empty($paper['presenter'])) {
+                $authors[] = trim($paper['presenter']);
+            }
+            
+            if (!empty($paper['coauthor'])) {
+                if (is_string($paper['coauthor'])) {
+                    $coauthors = array_map('trim', explode(',', $paper['coauthor']));
+                    $authors = array_merge($authors, $coauthors);
+                } else if (is_array($paper['coauthor'])) {
+                    $authors = array_merge($authors, $paper['coauthor']);
+                }
+            }
+            
+            // Remove duplicates and empty values
+            $authors = array_filter($authors);
+            $authors = array_unique($authors);
+            
+            return $authors;
+        };
+        
+        foreach ($papers as $index => $paper) {
+            $isDuplicate = false;
+            $duplicateGroupId = null;
+            
+            // Check against existing unique papers
+            foreach ($uniquePapers as $key => $uniquePaper) {
+                // Check if title is similar
+                $titleSimilar = isSimilarString($paper['title'], $uniquePaper['title'], 75);
+                
+                if ($titleSimilar) {
+                    // Get all authors for both papers
+                    $authors1 = $getAllAuthors($paper);
+                    $authors2 = $getAllAuthors($uniquePaper);
+                    
+                    // Check if authors are similar
+                    if (areAuthorsSimilar($authors1, $authors2, 70)) {
+                        $isDuplicate = true;
+                        $duplicateGroupId = $key;
+                        break;
+                    }
+                }
+            }
+            
+            if ($isDuplicate && $duplicateGroupId !== null) {
+                // This is a duplicate
+                if (!isset($duplicateGroups[$duplicateGroupId])) {
+                    $duplicateGroups[$duplicateGroupId] = [
+                        'original' => $uniquePapers[$duplicateGroupId],
+                        'duplicates' => []
+                    ];
+                }
+                $duplicateGroups[$duplicateGroupId]['duplicates'][] = $paper;
+            } else {
+                // This is a unique paper
+                $uniquePapers[] = $paper;
+            }
+        }
+        
+        // Mark duplicates in the unique papers
+        foreach ($uniquePapers as &$paper) {
+            $paper['isDuplicate'] = false;
+            $paper['duplicateCount'] = 0;
+            $paper['hasDuplicates'] = false;
+            
+            // Check if this paper has duplicates
+            foreach ($duplicateGroups as $group) {
+                if ($group['original']['id'] === $paper['id']) {
+                    $paper['hasDuplicates'] = true;
+                    $paper['duplicateCount'] = count($group['duplicates']);
+                    break;
+                }
+            }
+        }
+        
+        // Add duplicate metadata to the response
+        $res->papers = $uniquePapers;
+        $res->duplicateGroups = $duplicateGroups;
+        $res->totalUnique = count($uniquePapers);
+        $res->totalDuplicateCount = count($papers) - count($uniquePapers);
+        $res->hasDuplicates = count($duplicateGroups) > 0;
+        $res->message = 'Successfully loaded ' . count($uniquePapers) . ' unique papers';
+        
+        logMemoryUsage('evalLeb - After duplicate detection');
+        logExecutionTime('evalLeb - After duplicate detection');
+        
+    } catch (Exception $e) {
+        $res->status = false;
+        $res->message = $e->getMessage();
+        $res->papers = [];
+        $res->duplicateGroups = [];
+        $res->totalUnique = 0;
+        $res->totalDuplicateCount = 0;
+        $res->hasDuplicates = false;
+        error_log("evalLeb Error: " . $e->getMessage());
+        error_log("evalLeb Stack trace: " . $e->getTraceAsString());
     }
 
     logMemoryUsage('evalLeb - End');
@@ -550,6 +865,7 @@ if (isset($_POST['evalLeb'])) {
     ob_end_flush();
     exit();
 }
+
 
 if (isset($_POST['resetEvaluatorPassword'])) {
     logMemoryUsage('resetEvaluatorPassword - Start');
