@@ -167,7 +167,7 @@ if (isset($_POST['researchSubmit'])) {
         error_log("Event ID: $eventId");
 
         // Build query based on user type
-        $papers = [];
+        $allPapers = [];
         
         if ($userType === 'category' && !empty($categoryIds)) {
             $categoryNames = [];
@@ -201,10 +201,12 @@ if (isset($_POST['researchSubmit'])) {
                 rf.drive_view_url,
                 rf.file as local_file,
                 rf.title as research_title,
+                rf.final_symposium_title,
                 rf.event,
                 rf.event_id,      
                 rf.category,
                 rf.center as center_name,
+                rf.campus,
                 endorsement.center,
                 event_list.id as eventId,
                 category.id as catId,
@@ -213,12 +215,12 @@ if (isset($_POST['researchSubmit'])) {
             LEFT JOIN endorsement ON endorsement.id = rf.endorsementid
             LEFT JOIN event_list ON rf.event_id = event_list.id
             LEFT JOIN category ON rf.category = category.name
-            WHERE endorsement.status = ? 
+            WHERE (rf.status = 'accepted' OR endorsement.status = 'accepted')
             AND rf.event_id = ?
             AND rf.category IN ($catPlaceholders)";
             
-            $params = array_merge(['accepted', $eventId], $categoryNames);
-            $types = "si" . str_repeat('s', count($categoryNames));
+            $params = array_merge([$eventId], $categoryNames);
+            $types = "i" . str_repeat('s', count($categoryNames));
             
             $stm = $con->prepare($sqlQueries);
             $stm->bind_param($types, ...$params);
@@ -245,10 +247,12 @@ if (isset($_POST['researchSubmit'])) {
                 rf.drive_view_url,
                 rf.file as local_file,
                 rf.title as research_title,
+                rf.final_symposium_title,
                 rf.event,
                 rf.event_id,      
                 rf.category,
                 rf.center as center_name,
+                rf.campus,
                 endorsement.center,
                 event_list.id as eventId,
                 category.id as catId,
@@ -257,52 +261,157 @@ if (isset($_POST['researchSubmit'])) {
             LEFT JOIN endorsement ON endorsement.id = rf.endorsementid
             LEFT JOIN event_list ON rf.event_id = event_list.id
             LEFT JOIN category ON rf.category = category.name
-            WHERE endorsement.status = ? 
+            WHERE (rf.status = 'accepted' OR endorsement.status = 'accepted')
             AND (rf.center = ? OR rf.center LIKE ? OR UPPER(rf.center) = UPPER(?) OR rf.center LIKE ?)
             AND rf.event_id = ?";  
 
             $stm = $con->prepare($sqlQueries);
-            $stat = 'accepted';
 
             $centerExact = $dbCenterName;
             $centerLike = "%$dbCenterName%";
             $centerUpper = strtoupper($center);
             $centerLikeUpper = "%" . strtoupper($dbCenterName) . "%";
 
-            $stm->bind_param("sssssi", $stat, $centerExact, $centerLike, $centerUpper, $centerLikeUpper, $eventId);
+            $stm->bind_param("sssssi", $centerExact, $centerLike, $centerUpper, $centerLikeUpper, $eventId);
         }
 
         $stm->execute();
         $resultRes = $stm->get_result();
 
-        // Store all papers in an array first
-        $allPapers = [];
-        
+        // Store all papers in an array first - USING rf.id FROM DATABASE
         while ($val = $resultRes->fetch_assoc()) {
+            $allPapers[] = $val;
+        }
+
+        // --- DUPLICATE DETECTION ---
+        $uniquePapers = [];
+        $duplicateGroups = [];
+        
+        // Helper function to get all authors from a paper
+        $getAllAuthors = function($paper) {
+            $authors = [];
+            
+            if (!empty($paper['author'])) {
+                $cleanedAuthor = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $paper['author']);
+                $authorList = array_map('trim', explode(',', $cleanedAuthor));
+                $authors = array_merge($authors, $authorList);
+            }
+            
+            if (!empty($paper['presenter'])) {
+                $cleanedPresenter = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $paper['presenter']);
+                $authors[] = trim($cleanedPresenter);
+            }
+            
+            if (!empty($paper['coauthor'])) {
+                $coauthorData = $paper['coauthor'];
+                if (is_string($coauthorData)) {
+                    if (strpos($coauthorData, '[') === 0) {
+                        $coauthorArray = json_decode($coauthorData, true);
+                        if (is_array($coauthorArray)) {
+                            foreach ($coauthorArray as $coauthor) {
+                                $cleaned = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $coauthor);
+                                $authors[] = trim($cleaned);
+                            }
+                        }
+                    } else {
+                        $coauthorList = array_map('trim', explode(',', $coauthorData));
+                        $authors = array_merge($authors, $coauthorList);
+                    }
+                } else if (is_array($coauthorData)) {
+                    foreach ($coauthorData as $coauthor) {
+                        $cleaned = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $coauthor);
+                        $authors[] = trim($cleaned);
+                    }
+                }
+            }
+            
+            $authors = array_filter($authors);
+            $authors = array_unique($authors);
+            return $authors;
+        };
+        
+        // First pass: Group by title similarity and author similarity
+        foreach ($allPapers as $paper) {
+            $displayTitle = !empty($paper['final_symposium_title']) 
+                ? $paper['final_symposium_title'] 
+                : $paper['research_title'];
+            
+            $isDuplicate = false;
+            $duplicateGroupId = null;
+            
+            // Check against existing unique papers
+            foreach ($uniquePapers as $key => $uniquePaper) {
+                $uniqueDisplayTitle = !empty($uniquePaper['final_symposium_title']) 
+                    ? $uniquePaper['final_symposium_title'] 
+                    : $uniquePaper['research_title'];
+                
+                // Check if title is similar
+                $titleSimilar = isSimilarString($displayTitle, $uniqueDisplayTitle, 75);
+                
+                if ($titleSimilar) {
+                    // Get all authors for both papers
+                    $authors1 = $getAllAuthors($paper);
+                    $authors2 = $getAllAuthors($uniquePaper);
+                    
+                    // Check if authors are similar
+                    if (areAuthorsSimilar($authors1, $authors2, 70)) {
+                        $isDuplicate = true;
+                        $duplicateGroupId = $key;
+                        break;
+                    }
+                }
+            }
+            
+            if ($isDuplicate && $duplicateGroupId !== null) {
+                // This is a duplicate - add to duplicate group
+                if (!isset($duplicateGroups[$duplicateGroupId])) {
+                    $duplicateGroups[$duplicateGroupId] = [
+                        'original' => $uniquePapers[$duplicateGroupId],
+                        'duplicates' => []
+                    ];
+                }
+                $duplicateGroups[$duplicateGroupId]['duplicates'][] = $paper;
+            } else {
+                // This is a unique paper
+                $uniquePapers[] = $paper;
+            }
+        }
+        
+        // --- Build response with duplicate information ---
+        $processedPapers = [];
+        
+        // Process unique papers and their duplicates
+        foreach ($uniquePapers as $index => $paper) {
             $data = new stdClass();
             $data->status = NULL;
-            $data->id = $val['id'];
-            $data->author = $val['author'];
-            $data->presenter = $val['presenter'];
-            $data->coauthor = $val['coauthor'];
-            $data->category = $val['category'];
-            $data->category_id = $val['catId'];
-            $data->category_name = $val['category_name'];
-            $data->center = $val['center'] ?? $val['center_name'] ?? '';
+            $data->id = (int)$paper['id'];
+            $data->author = $paper['author'];
+            $data->presenter = $paper['presenter'];
+            $data->coauthor = $paper['coauthor'];
+            $data->category = $paper['category'];
+            $data->category_id = $paper['catId'];
+            $data->category_name = $paper['category_name'];
+            $data->center = $paper['center'] ?? $paper['center_name'] ?? '';
+            $data->campus = $paper['campus'] ?? '';
             
-            if (!empty($val['drive_view_url'])) {
-                $data->file = $val['drive_view_url']; 
+            if (!empty($paper['drive_view_url'])) {
+                $data->file = $paper['drive_view_url']; 
                 $data->file_type = 'drive';
+                $data->drive_view_url = $paper['drive_view_url'];
+                $data->local_file = $paper['local_file'];
             } else {
-                $data->file = $val['local_file'];
+                $data->file = $paper['local_file'];
                 $data->file_type = 'local';
+                $data->local_file = $paper['local_file'];
+                $data->drive_view_url = null;
             }
 
-            $data->title = $val['research_title'];
-            $data->event = $val['event'];
-            $data->campus = $val['campus'] ?? '';
-            $data->eventId = $val['eventId'];
-            $data->catId = $val['catId'];
+            $data->title = !empty($paper['final_symposium_title']) ? $paper['final_symposium_title'] : $paper['research_title'];
+            $data->original_title = $paper['research_title'];
+            $data->final_symposium_title = $paper['final_symposium_title'];
+            $data->event = $paper['event'];
+            $data->eventId = $paper['eventId'];
+            $data->catId = $paper['catId'];
 
             $data->comment_title = '';
             $data->intro = '';
@@ -317,6 +426,7 @@ if (isset($_POST['researchSubmit'])) {
             $data->hasComment = false;
             $data->hasScore = false;
 
+            // Check for comments
             $comquery = "SELECT 
                 comments.title as comment_title, 
                 comments.intro,
@@ -343,24 +453,28 @@ if (isset($_POST['researchSubmit'])) {
             FROM comments WHERE comments.resid = ? AND comments.evalid = ? AND comments.eventType = ?";
 
             $statement = $con->prepare($comquery);
-            $statement->bind_param('sss', $val['id'], $evalId, $val['event']);
-            $statement->execute();
-            $res = $statement->get_result();
+            if ($statement) {
+                $statement->bind_param('sss', $paper['id'], $evalId, $paper['event']);
+                $statement->execute();
+                $res = $statement->get_result();
 
-            while ($v = $res->fetch_assoc()) {
-                $data->status = 'updated';
-                $data->comment_title = $v['comment_title'];
-                $data->intro = $v['intro'];
-                $data->abstract = $v['abstract'];
-                $data->objective = $v['objective'];
-                $data->methodology = $v['methodology'];
-                $data->results = $v['results'];
-                $data->recommendation = $v['recommendation'];
-                $data->literature = $v['literature'];
-                $data->other = $v['other'];
-                $data->hasComment = ($v['has_comment_content'] == 1);
+                while ($v = $res->fetch_assoc()) {
+                    $data->status = 'updated';
+                    $data->comment_title = $v['comment_title'];
+                    $data->intro = $v['intro'];
+                    $data->abstract = $v['abstract'];
+                    $data->objective = $v['objective'];
+                    $data->methodology = $v['methodology'];
+                    $data->results = $v['results'];
+                    $data->recommendation = $v['recommendation'];
+                    $data->literature = $v['literature'];
+                    $data->other = $v['other'];
+                    $data->hasComment = ($v['has_comment_content'] == 1);
+                }
+                $statement->close();
             }
 
+            // Check for scores
             $scoreQuery = "SELECT 
                 COUNT(*) as score_count,
                 CASE 
@@ -371,163 +485,147 @@ if (isset($_POST['researchSubmit'])) {
             WHERE doc_id = ? AND eval_id = ?";
 
             $scoreStmt = $con->prepare($scoreQuery);
-            $scoreStmt->bind_param('ss', $val['id'], $evalId);
-            $scoreStmt->execute();
-            $scoreResult = $scoreStmt->get_result();
+            if ($scoreStmt) {
+                $scoreStmt->bind_param('ss', $paper['id'], $evalId);
+                $scoreStmt->execute();
+                $scoreResult = $scoreStmt->get_result();
 
-            if ($scoreRow = $scoreResult->fetch_assoc()) {
-                $data->hasScore = ($scoreRow['has_score_content'] == 1);
+                if ($scoreRow = $scoreResult->fetch_assoc()) {
+                    $data->hasScore = ($scoreRow['has_score_content'] == 1);
+                }
+                $scoreStmt->close();
             }
 
-            $allPapers[] = $data;
-        }
-
-        // --- BEGIN DUPLICATE DETECTION ---
-        $uniquePapers = [];
-        $duplicateGroups = [];
-        
-        // Helper function to get all authors from a paper
-        $getAllAuthors = function($paper) {
-            $authors = [];
-            
-            if (!empty($paper->author)) {
-                $cleanedAuthor = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $paper->author);
-                $authorList = array_map('trim', explode(',', $cleanedAuthor));
-                $authors = array_merge($authors, $authorList);
-            }
-            
-            if (!empty($paper->presenter)) {
-                $cleanedPresenter = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $paper->presenter);
-                $authors[] = trim($cleanedPresenter);
-            }
-            
-            if (!empty($paper->coauthor)) {
-                $coauthorData = $paper->coauthor;
-                if (is_string($coauthorData)) {
-                    // Try to parse JSON
-                    if (strpos($coauthorData, '[') === 0) {
-                        $coauthorArray = json_decode($coauthorData, true);
-                        if (is_array($coauthorArray)) {
-                            foreach ($coauthorArray as $coauthor) {
-                                $cleaned = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $coauthor);
-                                $authors[] = trim($cleaned);
-                            }
-                        }
-                    } else {
-                        $coauthorList = array_map('trim', explode(',', $coauthorData));
-                        $authors = array_merge($authors, $coauthorList);
-                    }
-                } else if (is_array($coauthorData)) {
-                    foreach ($coauthorData as $coauthor) {
-                        $cleaned = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $coauthor);
-                        $authors[] = trim($cleaned);
-                    }
-                }
-            }
-            
-            // Remove duplicates and empty values
-            $authors = array_filter($authors);
-            $authors = array_unique($authors);
-            
-            return $authors;
-        };
-        
-        // First pass: Group by title similarity and author similarity
-        foreach ($allPapers as $index => $paper) {
-            $isDuplicate = false;
-            $duplicateGroupId = null;
-            $duplicateReason = '';
-            
-            // Check against existing unique papers
-            foreach ($uniquePapers as $key => $uniquePaper) {
-                // Check if title is similar
-                $titleSimilar = isSimilarString($paper->title, $uniquePaper->title, 75);
-                
-                if ($titleSimilar) {
-                    // Get all authors for both papers
-                    $authors1 = $getAllAuthors($paper);
-                    $authors2 = $getAllAuthors($uniquePaper);
-                    
-                    // Check if authors are similar
-                    if (areAuthorsSimilar($authors1, $authors2, 70)) {
-                        $isDuplicate = true;
-                        $duplicateGroupId = $key;
-                        $duplicateReason = 'Same title and authors';
-                        break;
-                    }
-                }
-            }
-            
-            if ($isDuplicate && $duplicateGroupId !== null) {
-                // This is a duplicate - add to duplicate group
-                if (!isset($duplicateGroups[$duplicateGroupId])) {
-                    $duplicateGroups[$duplicateGroupId] = [
-                        'original' => $uniquePapers[$duplicateGroupId],
-                        'duplicates' => []
-                    ];
-                }
-                // Mark as duplicate
-                $paper->isDuplicate = true;
-                $paper->duplicateOf = $uniquePapers[$duplicateGroupId]->id;
-                $paper->duplicateReason = $duplicateReason;
-                $duplicateGroups[$duplicateGroupId]['duplicates'][] = $paper;
+            // Add duplicate information
+            if (isset($duplicateGroups[$index])) {
+                $data->isDuplicate = false; // This is the original
+                $data->hasDuplicates = true;
+                $data->duplicateCount = count($duplicateGroups[$index]['duplicates']);
+                $data->duplicateIds = array_column($duplicateGroups[$index]['duplicates'], 'id');
+                $data->duplicateGroup = $duplicateGroups[$index];
             } else {
-                // This is a unique paper
-                $paper->isDuplicate = false;
-                $paper->duplicateOf = null;
-                $paper->duplicateReason = '';
-                $uniquePapers[] = $paper;
+                $data->isDuplicate = false;
+                $data->hasDuplicates = false;
+                $data->duplicateCount = 0;
+                $data->duplicateIds = [];
+                $data->duplicateGroup = null;
             }
+
+            $processedPapers[] = $data;
         }
         
-        // Mark unique papers with duplicate info
-        foreach ($uniquePapers as &$paper) {
-            $paper->duplicateCount = 0;
-            $paper->hasDuplicates = false;
-            
-            // Check if this paper has duplicates
-            foreach ($duplicateGroups as $group) {
-                if ($group['original']->id === $paper->id) {
-                    $paper->hasDuplicates = true;
-                    $paper->duplicateCount = count($group['duplicates']);
-                    break;
+        // Mark duplicate papers that are not originals
+        foreach ($duplicateGroups as $group) {
+            foreach ($group['duplicates'] as $dupPaper) {
+                $dupData = new stdClass();
+                $dupData->status = NULL;
+                $dupData->id = (int)$dupPaper['id'];
+                $dupData->author = $dupPaper['author'];
+                $dupData->presenter = $dupPaper['presenter'];
+                $dupData->coauthor = $dupPaper['coauthor'];
+                $dupData->category = $dupPaper['category'];
+                $dupData->category_id = $dupPaper['catId'];
+                $dupData->category_name = $dupPaper['category_name'];
+                $dupData->center = $dupPaper['center'] ?? $dupPaper['center_name'] ?? '';
+                $dupData->campus = $dupPaper['campus'] ?? '';
+                
+                if (!empty($dupPaper['drive_view_url'])) {
+                    $dupData->file = $dupPaper['drive_view_url']; 
+                    $dupData->file_type = 'drive';
+                    $dupData->drive_view_url = $dupPaper['drive_view_url'];
+                    $dupData->local_file = $dupPaper['local_file'];
+                } else {
+                    $dupData->file = $dupPaper['local_file'];
+                    $dupData->file_type = 'local';
+                    $dupData->local_file = $dupPaper['local_file'];
+                    $dupData->drive_view_url = null;
                 }
+
+                $dupData->title = !empty($dupPaper['final_symposium_title']) ? $dupPaper['final_symposium_title'] : $dupPaper['research_title'];
+                $dupData->original_title = $dupPaper['research_title'];
+                $dupData->final_symposium_title = $dupPaper['final_symposium_title'];
+                $dupData->event = $dupPaper['event'];
+                $dupData->eventId = $dupPaper['eventId'];
+                $dupData->catId = $dupPaper['catId'];
+                $dupData->comment_title = '';
+                $dupData->intro = '';
+                $dupData->abstract = '';
+                $dupData->objective = '';
+                $dupData->methodology = '';
+                $dupData->results = '';
+                $dupData->recommendation = '';
+                $dupData->literature = '';
+                $dupData->other = '';
+                $dupData->hasComment = false;
+                $dupData->hasScore = false;
+                $dupData->isDuplicate = true;
+                $dupData->hasDuplicates = false;
+                $dupData->duplicateCount = 0;
+                $dupData->duplicateIds = [];
+                $dupData->duplicateGroup = null;
+                $dupData->originalId = (int)$group['original']['id'];
+                
+                $processedPapers[] = $dupData;
             }
         }
         
-        // Log duplicate info for debugging
-        $totalPapers = count($allPapers);
-        $totalUnique = count($uniquePapers);
-        $totalDuplicates = $totalPapers - $totalUnique;
-        
-        error_log("=== DUPLICATE DETECTION RESULTS (researchSubmit) ===");
-        error_log("Total papers found: $totalPapers");
-        error_log("Unique papers: $totalUnique");
-        error_log("Duplicate papers removed: $totalDuplicates");
-        error_log("Duplicate groups: " . count($duplicateGroups));
-        
-        // Log each duplicate group
-        foreach ($duplicateGroups as $groupId => $group) {
-            $originalTitle = $group['original']->title;
-            $originalId = $group['original']->id;
-            $dupCount = count($group['duplicates']);
-            $dupIds = array_map(function($d) { return $d->id; }, $group['duplicates']);
-            error_log("Group $groupId: Original ID $originalId '$originalTitle' has $dupCount duplicate(s): " . implode(', ', $dupIds));
+        // Log the IDs being returned
+        error_log("=== PAPERS RETURNED WITH DUPLICATE DETECTION ===");
+        foreach ($processedPapers as $paper) {
+            error_log("ID: " . $paper->id . ", Title: " . $paper->title . ", IsDuplicate: " . ($paper->isDuplicate ? 'true' : 'false') . ", OriginalId: " . ($paper->originalId ?? 'N/A'));
         }
+        error_log("Total papers: " . count($processedPapers) . " (Unique: " . count($uniquePapers) . ", Duplicates: " . (count($allPapers) - count($uniquePapers)) . ")");
+        error_log("==============================================");
         
-        // --- END DUPLICATE DETECTION ---
-        
-        // Only return unique papers
-        $response->list = $uniquePapers;
-        $response->totalUnique = $totalUnique;
-        $response->totalDuplicateCount = $totalDuplicates;
+        // Return ALL papers with their ORIGINAL rf.id
+        $response->list = $processedPapers;
+        $response->totalUnique = count($uniquePapers);
+        $response->totalDuplicateCount = count($allPapers) - count($uniquePapers);
         $response->hasDuplicates = count($duplicateGroups) > 0;
         $response->duplicateGroups = $duplicateGroups;
 
         $count = count($response->list);
-        error_log("Found $count unique research files for user type: $userType");
+        error_log("Found $count research files for user type: $userType");
     }
     echo json_encode($response);
+}
+
+if (isset($_POST['getDocTitle'])) {
+    $response = new stdClass();
+    $response->status = false;
+    $response->title = '';
+    $response->message = '';
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $docId = $_POST['docId'];
+        // Query to get both titles - no status check needed
+        $query = "SELECT title, final_symposium_title FROM researchfile WHERE id = ?";
+        $stmt = $con->prepare($query);
+        $stmt->bind_param("s", $docId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            $response->status = true;
+            // Prioritize final_symposium_title, fallback to title
+            $response->title = !empty($row['final_symposium_title']) 
+                ? $row['final_symposium_title'] 
+                : $row['title'];
+            // Also return the original title for reference
+            $response->original_title = $row['title'];
+            $response->final_symposium_title = $row['final_symposium_title'];
+        } else {
+            $response->message = 'Document not found with ID: ' . $docId;
+        }
+        $stmt->close();
+        $con->close();
+    } else {
+        $response->message = 'Database connection failed';
+    }
+    
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit();
 }
 
 //comments update
@@ -550,19 +648,47 @@ if (isset($_POST['updateReview'])) {
 
         error_log("evalId: $evalId, docsId: $docsId");
 
+        // Verify the document exists and get its details
+        if (empty($docsId)) {
+            $response->message = "Document ID is required";
+            error_log("ERROR: Document ID is empty");
+            echo json_encode($response);
+            exit();
+        }
+
         // Get the event ID and event name from the research file
         $eventId = 0;
         $eventType = '';
+        $researchTitle = '';
+        $finalSymposiumTitle = '';
+        
         if ($docsId) {
-            $eventQuery = $con->prepare("SELECT rf.event_id, el.name as event_name FROM researchfile rf LEFT JOIN event_list el ON el.id = rf.event_id WHERE rf.id = ?");
+            $eventQuery = $con->prepare("SELECT rf.event_id, rf.title, rf.final_symposium_title, el.name as event_name FROM researchfile rf LEFT JOIN event_list el ON el.id = rf.event_id WHERE rf.id = ?");
+            if (!$eventQuery) {
+                $response->message = "Database error: " . $con->error;
+                error_log("Failed to prepare event query: " . $con->error);
+                echo json_encode($response);
+                exit();
+            }
             $eventQuery->bind_param("s", $docsId);
             $eventQuery->execute();
             $eventResult = $eventQuery->get_result();
             $eventRow = $eventResult->fetch_assoc();
+            
+            if (!$eventRow) {
+                $response->message = "Document not found with ID: $docsId";
+                error_log("ERROR: Document not found with ID: $docsId");
+                echo json_encode($response);
+                exit();
+            }
+            
             $eventId = $eventRow['event_id'] ?? $_SESSION['eventId'] ?? 0;
             $eventType = $eventRow['event_name'] ?? $_SESSION['eventTYpe'] ?? '';
+            $researchTitle = $eventRow['title'] ?? '';
+            $finalSymposiumTitle = $eventRow['final_symposium_title'] ?? '';
+            
             $eventQuery->close();
-            error_log("eventId: $eventId, eventType: $eventType");
+            error_log("eventId: $eventId, eventType: $eventType, title: $researchTitle, finalTitle: $finalSymposiumTitle");
         }
 
         $title = $_POST['title'] ?? '';
@@ -577,11 +703,12 @@ if (isset($_POST['updateReview'])) {
 
         error_log("Comment data - title: '$title', intro: '$intro', abstract: '$abstract'");
 
-        // Get document details for email
+        // Get document details for email - use the original document ID
         $docInfo = [];
         if ($docsId) {
             $documentDetails = $con->prepare("SELECT 
                 researchfile.title, 
+                researchfile.final_symposium_title,
                 researchfile.author, 
                 researchfile.event_id,
                 event_list.name as event_name,
@@ -596,28 +723,36 @@ if (isset($_POST['updateReview'])) {
             LEFT JOIN event_list ON researchfile.event_id = event_list.id
             WHERE researchfile.id = ?");
 
-            $documentDetails->bind_param("s", $docsId);
-            $documentDetails->execute();
-            $docResult = $documentDetails->get_result();
-            $docInfo = $docResult->fetch_assoc();
-            $documentDetails->close();
+            if ($documentDetails) {
+                $documentDetails->bind_param("s", $docsId);
+                $documentDetails->execute();
+                $docResult = $documentDetails->get_result();
+                $docInfo = $docResult->fetch_assoc();
+                $documentDetails->close();
+            }
         }
 
         // Check if comments exist for this evaluator and document
         $found = false;
         if ($docsId && $evalId) {
             $checkQuery = $con->prepare("SELECT COUNT(*) as count FROM comments WHERE evalid = ? AND resid = ?");
-            $checkQuery->bind_param("ss", $evalId, $docsId);
-            $checkQuery->execute();
-            $checkResult = $checkQuery->get_result();
-            $row = $checkResult->fetch_assoc();
-            $found = ($row['count'] > 0);
-            $checkQuery->close();
-            error_log("Comments exist: " . ($found ? 'yes' : 'no'));
+            if ($checkQuery) {
+                $checkQuery->bind_param("ss", $evalId, $docsId);
+                $checkQuery->execute();
+                $checkResult = $checkQuery->get_result();
+                $row = $checkResult->fetch_assoc();
+                $found = ($row['count'] > 0);
+                $checkQuery->close();
+                error_log("Comments exist: " . ($found ? 'yes' : 'no'));
+            }
         }
 
+        // Use the title from the database (final_symposium_title if available) for display
+        $displayTitle = !empty($finalSymposiumTitle) ? $finalSymposiumTitle : $researchTitle;
+        error_log("Display title for document: $displayTitle");
+
         if ($found) {
-            // Update existing comments
+            // Update existing comments - use the correct document ID
             $comQ = "UPDATE comments SET 
                 comments.title = ?,
                 comments.intro = ?,
@@ -636,6 +771,13 @@ if (isset($_POST['updateReview'])) {
             error_log("UPDATE Query: " . $comQ);
 
             $statement = $con->prepare($comQ);
+            if (!$statement) {
+                $response->message = "Failed to prepare update query: " . $con->error;
+                error_log("Failed to prepare update query: " . $con->error);
+                echo json_encode($response);
+                exit();
+            }
+            
             $statement->bind_param(
                 "ssssssssssss",
                 $title,
@@ -664,6 +806,8 @@ if (isset($_POST['updateReview'])) {
 
                 // Send email notification
                 if (!empty($docInfo)) {
+                    // Use the display title for email
+                    $docInfo['display_title'] = $displayTitle;
                     $response->emailStatus = sendCommentEmail($con, $evalName, $docInfo, [
                         'title' => $title,
                         'intro' => $intro,
@@ -683,7 +827,7 @@ if (isset($_POST['updateReview'])) {
             }
             $statement->close();
         } else {
-            // Insert new comments
+            // Insert new comments - use the correct document ID
             $comQuery = "INSERT INTO comments (
                 resid,
                 evalid,
@@ -704,6 +848,13 @@ if (isset($_POST['updateReview'])) {
             error_log("INSERT Query: " . $comQuery);
 
             $statementQ = $con->prepare($comQuery);
+            if (!$statementQ) {
+                $response->message = "Failed to prepare insert query: " . $con->error;
+                error_log("Failed to prepare insert query: " . $con->error);
+                echo json_encode($response);
+                exit();
+            }
+            
             $statementQ->bind_param(
                 "sssssssssssss",
                 $docsId,
@@ -732,6 +883,8 @@ if (isset($_POST['updateReview'])) {
 
                 // Send email notification
                 if (!empty($docInfo)) {
+                    // Use the display title for email
+                    $docInfo['display_title'] = $displayTitle;
                     $response->emailStatus = sendCommentEmail($con, $evalName, $docInfo, [
                         'title' => $title,
                         'intro' => $intro,
@@ -766,6 +919,12 @@ if (isset($_POST['updateReview'])) {
 
 function sendCommentEmail($con, $evaluatorName, $docInfo, $comments, $docsId, $evalId, $rdeEmail, $emailPassword)
 {
+    // Use the display title (final_symposium_title if available)
+    $displayTitle = !empty($docInfo['display_title']) 
+        ? $docInfo['display_title'] 
+        : (!empty($docInfo['final_symposium_title']) 
+            ? $docInfo['final_symposium_title'] 
+            : $docInfo['title'] ?? 'Research Document');
 
     if (empty($docInfo) || empty($docInfo['email'])) {
         return "Could not send email: No author email found.";
@@ -805,11 +964,11 @@ function sendCommentEmail($con, $evaluatorName, $docInfo, $comments, $docsId, $e
     $to->name = $docInfo['fullName'] ?? $docInfo['author'];
     $to->email = $docInfo['email'];
 
-    // Generate email content - use event_name from the joined query
+    // Generate email content - use display title
     $emailContent = CommentNotification(
         $evaluatorName,
         $docInfo['event_name'] ?? 'Research Event',
-        $docInfo['title'],
+        $displayTitle, // Use the display title
         $docInfo['center'] ?? $docInfo['endorsement_center'],
         $docInfo['author'],
         $cleanedComments,
@@ -1880,10 +2039,12 @@ if (isset($_POST['researchDocsNew'])) {
                 endorsement.event,
                 endorsement.date,
                 endorsement.status,
-                researchfile.endorsementid
+                researchfile.endorsementid,
+                researchfile.final_symposium_title,
+                researchfile.status as rf_status
             FROM researchfile
-            LEFT JOIN endorsement ON endorsement.id=researchfile.endorsementid
-            WHERE endorsement.status='accepted'";
+            LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+            WHERE endorsement.status = 'accepted' OR researchfile.status = 'accepted' OR researchfile.status IS NULL";
 
         foreach ($con->query($query) as $val) {
             $data = new stdClass();
@@ -1891,6 +2052,8 @@ if (isset($_POST['researchDocsNew'])) {
             $data->senderid = $val['senderid'];
             $data->author = $val['author'];
             $data->title = $val['title'];
+            $data->final_symposium_title = $val['final_symposium_title'];
+            $data->rf_status = $val['rf_status'];
 
             // For backward compatibility with existing frontend
             // Use Google Drive URL if available, otherwise local file
@@ -1911,7 +2074,7 @@ if (isset($_POST['researchDocsNew'])) {
             $data->program_drive_view_url = $val['program_drive_view_url'];
             $data->program_drive_file_id = $val['program_drive_file_id'];
             $data->center = $val['center'];
-            $data->status = $val['status'];
+            $data->endorsement_status = $val['status'];
             $data->category = $val['category'];
             $data->campus = $val['campus'];
             $data->event = $val['event'];
@@ -1922,7 +2085,104 @@ if (isset($_POST['researchDocsNew'])) {
     }
     echo json_encode($response);
 }
+if (isset($_POST['viewDocReq'])) {
+    $response = new stdClass();
+    $response->status = false;
+    $response->data = '';
+    $response->file_type = '';
+    $response->drive_file_id = '';
+    $response->drive_view_url = '';
+    $response->drive_download_url = '';
+    $response->local_file = '';
+    $response->message = '';
 
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        // Get both drive_view_url and local file
+        // Use the same logic as researchDocsNew - check both statuses
+        $query = "SELECT 
+            researchfile.drive_view_url,
+            researchfile.drive_file_id,
+            researchfile.drive_download_url,
+            researchfile.drive_folder_id,
+            researchfile.drive_event_folder_id,
+            researchfile.drive_center_folder_id,
+            researchfile.file as local_file,
+            researchfile.status as rf_status,
+            endorsement.status as endorsement_status,
+            researchfile.title,
+            researchfile.final_symposium_title
+        FROM researchfile 
+        LEFT JOIN endorsement ON endorsement.id = researchfile.endorsementid
+        WHERE researchfile.id = ? 
+        AND (researchfile.status = 'accepted' OR endorsement.status = 'accepted' OR researchfile.status IS NULL)
+        LIMIT 1";
+
+        $docId = $_POST['docId'];
+        $statement = $con->prepare($query);
+        
+        if (!$statement) {
+            $response->message = 'Failed to prepare query: ' . $con->error;
+            echo json_encode($response);
+            exit();
+        }
+        
+        $statement->bind_param('s', $docId);
+        $statement->execute();
+        $res = $statement->get_result();
+
+        if ($res->num_rows === 0) {
+            $response->message = 'Document not found or not accepted. (Document ID: ' . $docId . ')';
+            $response->status = false;
+            echo json_encode($response);
+            exit();
+        }
+
+        while ($val = $res->fetch_assoc()) {
+            // Determine which file to use - prioritize drive_view_url if available
+            if (!empty($val['drive_view_url'])) {
+                $response->data = $val['drive_view_url'];
+                $response->file_type = 'drive';
+                $response->drive_view_url = $val['drive_view_url'];
+                $response->drive_file_id = $val['drive_file_id'];
+                $response->drive_download_url = $val['drive_download_url'];
+                $response->local_file = $val['local_file'];
+            } else if (!empty($val['local_file'])) {
+                // Use local file path
+                $response->data = $val['local_file'];
+                $response->file_type = 'local';
+                $response->local_file = $val['local_file'];
+                $response->drive_view_url = null;
+                $response->drive_file_id = null;
+                $response->drive_download_url = null;
+                error_log("viewDocReq - Local file found: " . $val['local_file']);
+            } else {
+                $response->data = '';
+                $response->file_type = 'none';
+                $response->message = 'No file available for this document.';
+            }
+            
+            $response->drive_folder_id = $val['drive_folder_id'] ?? null;
+            $response->drive_event_folder_id = $val['drive_event_folder_id'] ?? null;
+            $response->drive_center_folder_id = $val['drive_center_folder_id'] ?? null;
+            $response->status = true;
+            $response->rf_status = $val['rf_status'];
+            $response->endorsement_status = $val['endorsement_status'];
+            $response->title = $val['title'];
+            $response->final_symposium_title = $val['final_symposium_title'];
+            
+            // Log the response for debugging
+            error_log("viewDocReq - Response data: " . print_r($response, true));
+        }
+        $statement->close();
+    } else {
+        $response->message = 'Database connection failed: ' . $con->connect_error;
+        $response->status = false;
+    }
+    
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit();
+}
 if (isset($_POST['grantDeleteResearchRequest'])) {
     $response = new stdClass();
     $response->message = "";
@@ -2045,48 +2305,6 @@ if (isset($_POST['fileReqRes'])) {
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
     exit();
-}
-
-if (isset($_POST['viewDocReq'])) {
-    $response = new stdClass();
-    $response->status = false;
-    $response->data = '';
-    $response->drive_file_id = '';
-    $response->drive_view_url = '';
-    $response->drive_download_url = '';
-
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        // UPDATED QUERY for Google Drive
-        $query = "SELECT 
-            researchfile.drive_view_url as file,
-            researchfile.drive_file_id,
-            researchfile.drive_view_url,
-            researchfile.drive_download_url,
-            researchfile.drive_folder_id,
-            researchfile.drive_event_folder_id,
-            researchfile.drive_center_folder_id
-        FROM researchfile WHERE researchfile.id=? LIMIT 1";
-
-        $docId = $_POST['docId'];
-        $statement = $con->prepare($query);
-        $statement->bind_param('s', $docId);
-        $statement->execute();
-        $res = $statement->get_result();
-
-        while ($val = $res->fetch_assoc()) {
-            $response->data = $val['file']; // Google Drive URL
-            $response->drive_file_id = $val['drive_file_id'];
-            $response->drive_view_url = $val['drive_view_url'];
-            $response->drive_download_url = $val['drive_download_url'];
-            $response->drive_folder_id = $val['drive_folder_id'];
-            $response->drive_event_folder_id = $val['drive_event_folder_id'];
-            $response->drive_center_folder_id = $val['drive_center_folder_id'];
-            $response->status = true;
-        }
-    } else {
-        $response->message = $con->error;
-    }
-    echo json_encode($response);
 }
 
 if (isset($_POST['resetComments'])) {

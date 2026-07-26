@@ -525,6 +525,12 @@ export const EntryList = ({
         event: {
             type: 'click',
             method: () => {
+                const existingContainer = document.getElementById('entry-view-container');
+                if (existingContainer) {
+                    existingContainer.remove();
+                }
+                // Remove any existing modals
+                document.querySelectorAll('.custom-modal-overlay').forEach(el => el.remove());
                 window.location.assign('/evaluator/viewdocs/' + docId)
             }
         }

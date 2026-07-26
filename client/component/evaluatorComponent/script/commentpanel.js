@@ -25,7 +25,7 @@ export const CommentBoard = ({ title, docId, closeState }) => {
         literature: '',
         other: ''
     };
-
+    let documentTitle = title || 'Loading...';
     closeState({ base: baseData, raw: data });
 
     // Comment sections configuration
@@ -169,6 +169,32 @@ export const CommentBoard = ({ title, docId, closeState }) => {
     });
     container.appendChild(header);
 
+    const fetchDocumentTitle = async (docId) => {
+        try {
+            const form = new FormData();
+            form.append('getDocTitle', '1');
+            form.append('docId', docId);
+            
+            const response = await fetch('/uploadResearchFile', {
+                method: 'POST',
+                body: form
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            if (data.status && data.title) {
+                return data.title;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching document title:', error);
+            return null;
+        }
+    };
+
     // Title card
     const titleCard = $({
         tag: 'div',
@@ -210,11 +236,24 @@ export const CommentBoard = ({ title, docId, closeState }) => {
                     fontWeight: '500',
                     lineHeight: '1.5',
                 },
-                text: `"${title}"`
+                text: documentTitle || 'Untitled Document'
             })
         ]
     });
     container.appendChild(titleCard);
+
+    // After the component is created, fetch the title if not provided
+    if (!title || title === 'Untitled Document') {
+        fetchDocumentTitle(docId).then(fetchedTitle => {
+            if (fetchedTitle) {
+                // Update the title card
+                const titleDiv = container.querySelector('.title-card-text');
+                if (titleDiv) {
+                    titleDiv.textContent = fetchedTitle;
+                }
+            }
+        });
+    }
 
     // Main content area with sidebar and editor
     const mainContent = $({

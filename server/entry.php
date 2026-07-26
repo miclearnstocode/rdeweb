@@ -1022,7 +1022,6 @@ if(isset($_POST['printEntry'])){
         
         // ============================================================
         // STEP 1: Get ALL accepted documents with GLOBAL duplicate detection
-        // EXACTLY like entryCounter
         // ============================================================
         $query = "SELECT 
                     researchfile.id,
@@ -1050,7 +1049,7 @@ if(isset($_POST['printEntry'])){
         $result = $stmt->get_result();
         
         // ============================================================
-        // STEP 2: Process with GLOBAL duplicate detection (same as entryCounter)
+        // STEP 2: Process with GLOBAL duplicate detection
         // ============================================================
         $globalProcessedDocs = [];
         $uniqueDocs = [];
@@ -1073,16 +1072,12 @@ if(isset($_POST['printEntry'])){
                 ? $row['final_symposium_title'] 
                 : $row['title'];
             
-            // Check for GLOBAL duplicates using fuzzy matching (same as entryCounter)
+            // Check for GLOBAL duplicates
             $isDuplicate = false;
             foreach ($globalProcessedDocs as $processed) {
-                // Check title similarity (80% threshold)
                 $titleSimilar = isSimilarString($displayTitle, $processed['title'], 80);
-                
-                // Check author similarity (70% threshold for authors)
                 $authorSimilar = areAuthorsSimilar($authors, $processed['authors'], 70);
                 
-                // If both title and authors are similar, it's a duplicate
                 if ($titleSimilar && $authorSimilar) {
                     $isDuplicate = true;
                     break;
@@ -1096,14 +1091,18 @@ if(isset($_POST['printEntry'])){
                     'authors' => $authors
                 ];
                 
-                // Store the unique document with its metadata
+                // ============================================================
+                // FIXED: Only set presenter if it exists, otherwise leave as empty string
+                // ============================================================
+                $presenter = trim($row['presenter'] ?? '');
+                
                 $uniqueDocs[] = [
                     'id' => $row['id'],
                     'campus' => $row['campus'] ?: 'Main Campus',
                     'title' => $displayTitle,
                     'original_title' => $row['title'],
                     'final_symposium_title' => $row['final_symposium_title'],
-                    'presenter' => $row['presenter'] ?: 'Not specified',
+                    'presenter' => $presenter, // Keep as empty string if not set
                     'category' => $row['category'],
                     'authors' => $authors
                 ];
@@ -1144,7 +1143,10 @@ if(isset($_POST['printEntry'])){
                 $resData->title = formatDocumentTitle($doc['title']);
                 $resData->original_title = $doc['original_title'];
                 $resData->final_symposium_title = $doc['final_symposium_title'];
-                $resData->presenter = formatName($doc['presenter']);
+                // ============================================================
+                // FIXED: Pass presenter as is (empty string if not set)
+                // ============================================================
+                $resData->presenter = $doc['presenter'];
                 $resData->category = $doc['category'];
                 $resData->authors = formatAuthors($doc['authors']);
                 $cat->docs[] = $resData;

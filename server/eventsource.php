@@ -583,7 +583,6 @@ if (isset($_POST['requestEventRDE'])) {
 }
 
 // Collect Entries for Evaluators
-// Collect Entries for Evaluators
 if(isset($_POST['collectEntries'])){
     $count = 0;
     $response = new stdClass();
@@ -771,7 +770,7 @@ if(isset($_POST['collectEntries'])){
             }
         }
         
-        // --- BEGIN DUPLICATE DETECTION ---
+        // --- DUPLICATE DETECTION ---
         $uniquePapers = [];
         $duplicateGroups = [];
         
@@ -793,7 +792,6 @@ if(isset($_POST['collectEntries'])){
             if (!empty($paper['coauthor'])) {
                 $coauthorData = $paper['coauthor'];
                 if (is_string($coauthorData)) {
-                    // Try to parse JSON
                     if (strpos($coauthorData, '[') === 0) {
                         $coauthorArray = json_decode($coauthorData, true);
                         if (is_array($coauthorArray)) {
@@ -814,23 +812,19 @@ if(isset($_POST['collectEntries'])){
                 }
             }
             
-            // Remove duplicates and empty values
             $authors = array_filter($authors);
             $authors = array_unique($authors);
-            
             return $authors;
         };
         
         // First pass: Group by title similarity and author similarity
-        foreach ($allPapers as $index => $paper) {
-            $isDuplicate = false;
-            $duplicateGroupId = null;
-            $duplicateReason = '';
-            
-            // Use final_symposium_title if exists, otherwise use title
+        foreach ($allPapers as $paper) {
             $displayTitle = !empty($paper['final_symposium_title']) 
                 ? $paper['final_symposium_title'] 
                 : $paper['title'];
+            
+            $isDuplicate = false;
+            $duplicateGroupId = null;
             
             // Check against existing unique papers
             foreach ($uniquePapers as $key => $uniquePaper) {
@@ -850,7 +844,6 @@ if(isset($_POST['collectEntries'])){
                     if (areAuthorsSimilar($authors1, $authors2, 70)) {
                         $isDuplicate = true;
                         $duplicateGroupId = $key;
-                        $duplicateReason = 'Same title and authors';
                         break;
                     }
                 }
@@ -864,32 +857,14 @@ if(isset($_POST['collectEntries'])){
                         'duplicates' => []
                     ];
                 }
-                // Mark as duplicate
-                $paper['isDuplicate'] = true;
-                $paper['duplicateOf'] = $uniquePapers[$duplicateGroupId]['id'];
-                $paper['duplicateReason'] = $duplicateReason;
                 $duplicateGroups[$duplicateGroupId]['duplicates'][] = $paper;
             } else {
                 // This is a unique paper
-                $paper['isDuplicate'] = false;
-                $paper['duplicateOf'] = null;
-                $paper['duplicateReason'] = '';
                 $uniquePapers[] = $paper;
             }
         }
         
-        // Log duplicate info for debugging
-        $totalPapers = count($allPapers);
-        $totalUnique = count($uniquePapers);
-        $totalDuplicates = $totalPapers - $totalUnique;
-        
-        error_log("=== DUPLICATE DETECTION RESULTS (collectEntries) ===");
-        error_log("Total papers found: $totalPapers");
-        error_log("Unique papers: $totalUnique");
-        error_log("Duplicate papers removed: $totalDuplicates");
-        error_log("Duplicate groups: " . count($duplicateGroups));
-        
-        // Now count unique papers by category
+        // Count unique papers by category
         $categoryCounts = [];
         foreach ($uniquePapers as $paper) {
             $categoryName = $paper['category'] ?? 'Uncategorized';
@@ -909,10 +884,12 @@ if(isset($_POST['collectEntries'])){
                 $categoryCounts[$categoryName] = [
                     'id' => $catId,
                     'name' => $categoryName,
-                    'count' => 0
+                    'count' => 0,
+                    'paperIds' => []
                 ];
             }
             $categoryCounts[$categoryName]['count']++;
+            $categoryCounts[$categoryName]['paperIds'][] = $paper['id'];
         }
         
         // Convert to response format
@@ -921,17 +898,30 @@ if(isset($_POST['collectEntries'])){
                 $response->categoryCounts[$catData['id']] = [
                     'id' => $catData['id'],
                     'name' => $catData['name'],
-                    'count' => $catData['count']
+                    'count' => $catData['count'],
+                    'paperIds' => $catData['paperIds']
                 ];
             }
         }
         
         // Set the total count (only unique papers)
+        $totalPapers = count($allPapers);
+        $totalUnique = count($uniquePapers);
+        $totalDuplicates = $totalPapers - $totalUnique;
+        
+        error_log("=== DUPLICATE DETECTION RESULTS (collectEntries) ===");
+        error_log("Total papers found: $totalPapers");
+        error_log("Unique papers: $totalUnique");
+        error_log("Duplicate papers removed: $totalDuplicates");
+        error_log("Duplicate groups: " . count($duplicateGroups));
+        
         $response->count = $totalUnique;
         $response->totalUnique = $totalUnique;
         $response->totalDuplicateCount = $totalDuplicates;
         $response->hasDuplicates = count($duplicateGroups) > 0;
         $response->duplicateGroups = $duplicateGroups;
+        $response->allPapers = $allPapers; // Keep original for reference
+        $response->uniquePapers = $uniquePapers; // Keep unique for reference
         
         $con->close();
     }

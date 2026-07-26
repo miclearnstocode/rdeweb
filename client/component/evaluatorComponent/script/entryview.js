@@ -1,13 +1,64 @@
-import { $, baseCheck, Request } from '../../../lib/lib.js'
+import { $, baseCheck, Request, CustomModal, Toast } from '../../../lib/lib.js'
 import { ScoreBoard } from "./score.js";
 import { CommentBoard } from "./commentpanel.js";
 
+// Global container for EntryView to prevent multiple instances
+let entryViewContainer = null;
+let activeModalInstance = null;
+
 export const EntryView = ({ docId, title, eventId, centerId, categoryId, userType }) => {
     let mainPanel, sidePanelScore, sidePanelComment
+    let docTitle = title || 'Loading...';
+    let currentFileData = null;
+    let closeState = null;
+    let fileData = null;
     const panelState = {
         comment: false,
         score: false
     }
+
+    // Clean up previous instance if it exists
+    const cleanup = () => {
+        if (activeModalInstance && activeModalInstance.closeModal) {
+            activeModalInstance.closeModal();
+            activeModalInstance = null;
+        }
+        if (entryViewContainer) {
+            const existingContainer = document.getElementById('entry-view-container');
+            if (existingContainer) {
+                existingContainer.remove();
+            }
+            entryViewContainer = null;
+        }
+        document.querySelectorAll('.custom-modal-overlay').forEach(el => el.remove());
+    };
+
+    // Fetch document title from server - prioritizes final_symposium_title
+    const fetchDocTitle = async (docId) => {
+        try {
+            const form = new FormData();
+            form.append('getDocTitle', '1');
+            form.append('docId', docId);
+            
+            const response = await fetch('/uploadResearchFile', {
+                method: 'POST',
+                body: form
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            if (data.status && data.title) {
+                return data.title;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching document title:', error);
+            return null;
+        }
+    };
 
     function ChangePanel({ name }) {
         if (name === 'comment') {
@@ -47,20 +98,288 @@ export const EntryView = ({ docId, title, eventId, centerId, categoryId, userTyp
             }
         }
     }
-    let closeState
+    
     const CloseState = ({ base, raw }) => {
         closeState = { base, raw }
     }
-    const MainPanel = (fileUrl) => {
-        const isGoogleDrive = fileUrl.includes('drive.google.com');
-        let embedUrl = fileUrl;
-        if (isGoogleDrive) {
-            if (fileUrl.includes('/file/d/')) {
-                const match = fileUrl.match(/\/file\/d\/([^\/]+)/);
-                if (match && match[1]) {
-                    embedUrl = `https://drive.google.com/file/d/${match[1]}/preview`;
+
+    // Show error modal
+    const showErrorModal = (errorMessage) => {
+        cleanup();
+        
+        const errorContent = $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '40px 20px',
+                textAlign: 'center'
+            },
+            child: [
+                $({
+                    tag: 'div',
+                    style: {
+                        fontSize: '64px',
+                        marginBottom: '20px',
+                        color: '#ef4444'
+                    },
+                    text: '⚠️'
+                }),
+                $({
+                    tag: 'h3',
+                    style: {
+                        color: '#0f172a',
+                        marginBottom: '12px',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        fontSize: '20px'
+                    },
+                    text: 'Error Loading Entry'
+                }),
+                $({
+                    tag: 'p',
+                    style: {
+                        color: '#64748b',
+                        fontSize: '14px',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        marginBottom: '8px',
+                        maxWidth: '500px',
+                        lineHeight: '1.6'
+                    },
+                    text: errorMessage || 'An error occurred while loading this entry. Please try refreshing the page.'
+                }),
+                $({
+                    tag: 'p',
+                    style: {
+                        color: '#94a3b8',
+                        fontSize: '13px',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        marginTop: '8px'
+                    },
+                    text: 'Document ID: ' + docId
+                })
+            ]
+        });
+
+        activeModalInstance = CustomModal({
+            title: 'Error',
+            content: errorContent,
+            size: 'medium',
+            closeOnOverlayClick: false,
+            footer: ({ closeModal }) => {
+                return $({
+                    tag: 'div',
+                    style: { display: 'flex', gap: '12px', justifyContent: 'center' },
+                    child: [
+                        $({
+                            tag: 'button',
+                            text: 'Try Again',
+                            style: {
+                                padding: '8px 24px',
+                                backgroundColor: '#3b82f6',
+                                border: 'none',
+                                borderRadius: '8px',
+                                color: '#fff',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease'
+                            },
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    closeModal();
+                                    activeModalInstance = null;
+                                    window.location.reload();
+                                }
+                            }
+                        }),
+                        $({
+                            tag: 'button',
+                            text: 'Go Back',
+                            style: {
+                                padding: '8px 24px',
+                                backgroundColor: '#ef4444',
+                                border: 'none',
+                                borderRadius: '8px',
+                                color: '#fff',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease'
+                            },
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    closeModal();
+                                    activeModalInstance = null;
+                                    window.location.replace('/evaluator');
+                                }
+                            }
+                        })
+                    ]
+                });
+            }
+        });
+    };
+
+    const MainPanel = (fileData) => {
+        // Store file data for reference
+        fileData = fileData;
+        
+        // Get the file path
+        const file = fileData.data || fileData.local_file || '';
+        const isGoogleDrive = file && (file.includes('drive.google.com') || file.includes('/d/'));
+        const isPDF = file && file.toLowerCase().includes('.pdf');
+        
+        let displayContent;
+
+        // If there's a file, display it directly
+        if (file) {
+            let cleanFile = file;
+            
+            // For Google Drive files - extract embed URL
+            if (isGoogleDrive) {
+                let fileId = null;
+                const patterns = [
+                    /\/d\/([a-zA-Z0-9_-]+)/,
+                    /id=([a-zA-Z0-9_-]+)/,
+                    /open\?id=([a-zA-Z0-9_-]+)/,
+                    /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                    /([a-zA-Z0-9_-]{25,})/
+                ];
+                
+                for (let pattern of patterns) {
+                    const match = file.match(pattern);
+                    if (match && match[1]) {
+                        fileId = match[1];
+                        break;
+                    }
+                }
+                
+                if (!fileId && file.includes('drive.google.com')) {
+                    const urlParts = file.split('/');
+                    for (let i = 0; i < urlParts.length; i++) {
+                        if (urlParts[i] === 'd' && urlParts[i + 1]) {
+                            fileId = urlParts[i + 1];
+                            break;
+                        }
+                    }
+                }
+                
+                if (fileId) {
+                    fileId = fileId.split('?')[0].split('&')[0];
+                    const embedUrl = `https://drive.google.com/file/d/${fileId}/preview?rm=minimal`;
+                    cleanFile = embedUrl;
+                }
+            } else {
+                // For local files - clean the path
+                cleanFile = file.replace(/\.\.\//g, '');
+                if (!cleanFile.startsWith('/') && !cleanFile.startsWith('http')) {
+                    cleanFile = '/' + cleanFile;
                 }
             }
+            
+            // Display the file directly using iframe or embed
+            displayContent = $({
+                tag: 'iframe',
+                att: {
+                    src: cleanFile,
+                    frameborder: '0',
+                    allowfullscreen: 'true'
+                },
+                style: {
+                    width: '100%',
+                    height: '100%',
+                    border: 'none',
+                    borderRadius: '8px',
+                    backgroundColor: '#f8fafc'
+                },
+                elementHandler: (el) => {
+                    mainPanel = el;
+                    console.log('File URL:', cleanFile);
+                    
+                    // Handle load error
+                    el.onerror = function() {
+                        console.error('Failed to load file:', cleanFile);
+                        // Try using embed as fallback
+                        const parent = this.parentNode;
+                        const embed = document.createElement('embed');
+                        embed.src = cleanFile;
+                        embed.type = 'application/pdf';
+                        embed.style.cssText = 'width:100%;height:100%;border:none;border-radius:8px;';
+                        parent.replaceChild(embed, this);
+                        mainPanel = embed;
+                        
+                        embed.onerror = () => {
+                            embed.innerHTML = `
+                                <div style="
+                                    display: flex;
+                                    flex-direction: column;
+                                    align-items: center;
+                                    justify-content: center;
+                                    height: 100%;
+                                    text-align: center;
+                                    padding: 40px;
+                                    background: #f8fafc;
+                                ">
+                                    <span class="fa-solid fa-file-pdf" style="font-size: 64px; color: #dc3545; margin-bottom: 16px;"></span>
+                                    <h3 style="font-family: Inter, sans-serif; color: #1a1a2e; margin-bottom: 8px;">Unable to load document</h3>
+                                    <p style="font-family: Inter, sans-serif; color: #6c757d; margin-bottom: 16px;">The document could not be loaded.</p>
+                                    <a href="${cleanFile}" target="_blank" style="padding: 10px 20px; background: #0d6efd; color: white; text-decoration: none; border-radius: 8px;">Download Document</a>
+                                </div>
+                            `;
+                        };
+                    };
+                }
+            });
+        } 
+        // No file available
+        else {
+            displayContent = $({
+                tag: 'div',
+                style: {
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '8px',
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            fontSize: '64px',
+                            marginBottom: '16px',
+                            color: '#cbd5e1'
+                        },
+                        text: '📭'
+                    }),
+                    $({
+                        tag: 'h3',
+                        style: {
+                            color: '#475569',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        },
+                        text: 'No File Available'
+                    }),
+                    $({
+                        tag: 'p',
+                        style: {
+                            color: '#94a3b8',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        },
+                        text: 'This document does not have an associated file.'
+                    })
+                ],
+                elementHandler: (el) => {
+                    mainPanel = el
+                }
+            });
         }
 
         return ($({
@@ -79,22 +398,7 @@ export const EntryView = ({ docId, title, eventId, centerId, categoryId, userTyp
                 zIndex: '20'
             },
             child: [
-                $({
-                    tag: 'embed',
-                    att: {
-                        src: embedUrl,
-                        type: 'application/pdf',
-                    },
-                    style: {
-                        margin: 'auto',
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: '8px',
-                    },
-                    elementHandler: (el) => {
-                        mainPanel = el
-                    }
-                }),
+                displayContent,
                 $({
                     tag: 'div',
                     att: {
@@ -123,7 +427,7 @@ export const EntryView = ({ docId, title, eventId, centerId, categoryId, userTyp
                     },
                     child: [
                         CommentBoard({
-                            title: title,
+                            title: docTitle,
                             docId: docId,
                             closeState: CloseState
                         })
@@ -188,10 +492,11 @@ export const EntryView = ({ docId, title, eventId, centerId, categoryId, userTyp
 
             closeContainer.addEventListener('click', () => {
                 let saveState = true;
-                if (baseCheck(closeState.base, closeState.raw)) {
+                if (closeState && baseCheck(closeState.base, closeState.raw)) {
                     saveState = confirm("Do you want to exit without saving your data?")
                 }
                 if (saveState) {
+                    cleanup();
                     window.location.replace('/evaluator')
                 }
             });
@@ -398,42 +703,66 @@ export const EntryView = ({ docId, title, eventId, centerId, categoryId, userTyp
         return container;
     }
 
+    // Main render function - cleanup and create new instance
+    const renderEntryView = (el) => {
+        cleanup();
+        
+        const req = new Request('/uploadResearchFile')
+        req.Post([
+            {
+                name: 'viewDocReq',
+                value: '1'
+            },
+            {
+                name: 'docId',
+                value: docId
+            }
+        ])
+        req.Json()
+        req.Send().then(data => {
+            if (data.status && data.data) {
+                // Store file data
+                fileData = data;
+                fileData.docId = docId;
+                
+                fetchDocTitle(docId).then(fetchedTitle => {
+                    if (fetchedTitle) {
+                        docTitle = fetchedTitle;
+                    }
+                    el.appendChild(MainPanel(data))
+                    el.appendChild(SideTools())
+                });
+            } else {
+                const errorMsg = data.message || 'Document not found or no file available.';
+                showErrorModal(errorMsg + ' (Document ID: ' + docId + ')');
+            }
+        }).catch(err => {
+            console.error('Error loading entry view:', err)
+            const errorMsg = err.message || 'Network error or server connection failed.';
+            showErrorModal(errorMsg + ' (Document ID: ' + docId + ')');
+        })
+    };
+
+    // Return a single container with cleanup on unmount
     return ($({
         tag: 'div',
+        att: { id: 'entry-view-container' },
         style: {
             width: '100%',
             height: '100%',
-            position: 'absolute',
+            position: 'fixed',
             top: '0',
             left: '0',
             display: 'flex',
-            backgroundColor: '#f1f5f9',
-            overflowY: 'hidden'
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(4px)',
+            zIndex: '1000',
+            alignItems: 'center',
+            justifyContent: 'center'
         },
         elementHandler: (el) => {
-            const req = new Request('/uploadResearchFile')
-            req.Post([
-                {
-                    name: 'viewDocReq',
-                    value: '1'
-                },
-                {
-                    name: 'docId',
-                    value: docId
-                }
-            ])
-            req.Json()
-            req.Send().then(data => {
-                if (data.status && data.data) {
-                    el.appendChild(MainPanel(data.data))
-                    el.appendChild(SideTools())
-                } else {
-                    window.location.replace('/evaluator')
-                }
-            }).catch(err => {
-                console.error('Error loading entry view:', err)
-                el.innerHTML = '<div style="color:#ef4444;padding:20px;text-align:center;font-family:system-ui;">Error loading entry. Please refresh the page.</div>'
-            })
-        },
+            entryViewContainer = el;
+            renderEntryView(el);
+        }
     }))
 }

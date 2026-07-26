@@ -12,81 +12,6 @@ $con = new mysqli($host, $username, $pass, $dbName);
 
 header('Content-Type: application/json; charset=utf-8');
 
-if(isset($_POST['commentRequest..'])){
-    $filter=$_POST['eventType'];
-    $category=$_POST['category'];
-    $query=" SELECT
-        comments.intro,
-        comments.abstract,
-        comments.objective,
-        comments.methodology,
-        comments.results,
-        comments.recommendation,
-        comments.literature,
-        comments.other,
-        comments.isCommented,
-        evaluator.fullname,
-        researchfile.category
-        FROM comments
-        LEFT JOIN evaluator
-        ON evaluator.id=comments.evalid
-        LEFT JOIN researchfile
-        ON researchfile.id=comments.resid
-        WHERE researchfile.category=? AND comments.eventType=?";
-
-    $query2="SELECT
-        comments.intro,
-        comments.abstract,
-        comments.objective,
-        comments.methodology,
-        comments.results,
-        comments.recommendation,
-        comments.literature,
-        comments.other,
-        comments.isCommented,
-        evaluator.fullname,
-        researchfile.category
-        FROM comments
-        LEFT JOIN evaluator
-        ON evaluator.id=comments.evalid
-        LEFT JOIN researchfile
-        ON researchfile.id=comments.resid
-        WHERE comments.eventType=?";
-
-    //In-house Review
-    $response=[];
-    $result="";
-    if($con){
-        $statement='';
-        if($category==='Print All Category'){
-            $statement=$con->prepare($query2);
-            $statement->bind_param("s",$filter);
-        }else{
-            $statement=$con->prepare($query);
-            $statement->bind_param("ss",$category,$filter);
-        }
-        $statement->execute();
-        $result=$statement->get_result();
-        while ($val=$result->fetch_assoc()){
-            $data=new stdClass();
-            $data->intro = $val['intro'] ?? '';
-            $data->abstract = $val['abstract'] ?? '';
-            $data->objective = $val['objective'] ?? '';
-            $data->methodology = $val['methodology'] ?? '';
-            $data->results = $val['results'] ?? '';
-            $data->recommendation = $val['recommendation'] ?? '';
-            $data->literature = $val['literature'] ?? '';
-            $data->other = $val['other'] ?? '';
-            $data->isCommented = $val['isCommented'] ?? 0;
-            $data->fullname = $val['fullname'] ?? '';
-            $data->category = $val['category'] ?? '';
-            $response[]=$data;
-        }
-    }
-    echo json_encode($response);
-    exit();
-}
-
 if(isset($_POST['commentRequest'])){
     $docId = $_POST['docId'] ?? '';
     
@@ -153,7 +78,6 @@ if(isset($_POST['commentRequest'])){
     exit();
 }
 
-// FIXED: reqCommentIndiv2 handler - returns HTML content as-is
 if(isset($_POST['reqCommentIndiv2'])){
     $response = new stdClass();
     $response->name = '';
