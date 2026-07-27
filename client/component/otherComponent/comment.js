@@ -127,8 +127,7 @@ export const headerFooter = ({ content }) => {
     }))
 }
 
-export const Print = ({ title, category, campus, date, author, review, getHandler, all }) => {
-    console.log('Print function received campus:', campus);
+export const Print = ({ title, review, category, campus, center,date, author, coauthor, presenter,paper_trail_no,all, getHandler }) => {
     const details = () => {
         const tdData = ({ data, width }) => {
             const getme = (el) => {

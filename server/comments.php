@@ -12,65 +12,146 @@ $con = new mysqli($host, $username, $pass, $dbName);
 
 header('Content-Type: application/json; charset=utf-8');
 
-if(isset($_POST['commentRequest'])){
-    $docId = $_POST['docId'] ?? '';
+if(isset($_POST['getCategories'])){
+    $response = [];
     
-    if (empty($docId)) {
-        echo json_encode(['error' => 'Document ID is required']);
+    if($con){
+        $query = "SELECT id, name FROM category ORDER BY name";
+        $result = $con->query($query);
+        
+        if($result){
+            while($row = $result->fetch_assoc()){
+                $response[] = [
+                    'id' => $row['id'],
+                    'name' => $row['name']
+                ];
+            }
+            $result->free();
+        }
+    }
+    
+    echo json_encode($response);
+    exit();
+}
+
+if(isset($_POST['commentRequest'])){
+    $eventType = $_POST['eventType'] ?? '';
+    $categoryId = $_POST['categoryId'] ?? '';
+    $categoryName = $_POST['categoryName'] ?? '';
+    
+    // If no event selected, return error
+    if (empty($eventType) || $eventType === '-- Select Event type --') {
+        echo json_encode(['error' => 'Please select an event']);
         exit();
     }
     
     $response = [];
     
     if($con){
-        $query = "SELECT
-            comments.intro,
-            comments.abstract,
-            comments.objective,
-            comments.methodology,
-            comments.results,
-            comments.recommendation,
-            comments.literature,
-            comments.other,
-            comments.isCommented,
-            evaluator.fullname,
-            researchfile.category,
-            researchfile.title,
-            researchfile.author,
-            researchfile.campus
-        FROM comments
-        LEFT JOIN evaluator ON evaluator.id = comments.evalid
-        LEFT JOIN researchfile ON researchfile.id = comments.resid
-        WHERE comments.resid = ?";
+        // Build the query - join comments with researchfile and category
+        $query = "SELECT 
+            c.resid,
+            c.evalid,
+            c.intro,
+            c.abstract,
+            c.objective,
+            c.methodology,
+            c.results,
+            c.recommendation,
+            c.literature,
+            c.other,
+            c.isCommented,
+            c.date,
+            e.fullname as evaluator_name,
+            r.category,
+            r.center,
+            r.campus,
+            r.title,
+            r.author,
+            r.coauthor,
+            r.presenter,
+            r.event,
+            r.file,
+            r.drive_view_url,
+            r.paper_trail_no,
+            r.final_symposium_title,
+            cat.id as category_id,
+            cat.name as category_name
+        FROM comments c
+        LEFT JOIN evaluator e ON e.id = c.evalid
+        LEFT JOIN researchfile r ON r.id = c.resid
+        LEFT JOIN category cat ON cat.name = r.category
+        WHERE r.event = ?";
+        
+        $params = [$eventType];
+        $types = "s";
+        
+        // Add category filter if not "Print All Category" and categoryId is provided
+        if (!empty($categoryId) && $categoryId !== 'Print All Category' && $categoryId !== '-- Select Category --') {
+            $query .= " AND cat.id = ?";
+            $params[] = $categoryId;
+            $types .= "s";
+        }
+        
+        $query .= " ORDER BY r.title, c.date DESC";
         
         $statement = $con->prepare($query);
         if ($statement) {
-            $statement->bind_param("s", $docId);
+            $statement->bind_param($types, ...$params);
             $statement->execute();
             $result = $statement->get_result();
             
-            $commentsList = [];
-            while ($val = $result->fetch_assoc()){
-                $data = new stdClass();
-                $data->intro = $val['intro'] ?? '';
-                $data->abstract = $val['abstract'] ?? '';
-                $data->objective = $val['objective'] ?? '';
-                $data->methodology = $val['methodology'] ?? '';
-                $data->results = $val['results'] ?? '';
-                $data->recommendation = $val['recommendation'] ?? '';
-                $data->literature = $val['literature'] ?? '';
-                $data->other = $val['other'] ?? '';
-                $data->isCommented = $val['isCommented'] ?? 0;
-                $data->fullname = $val['fullname'] ?? 'Unknown Evaluator';
-                $data->category = $val['category'] ?? '';
-                $data->title = $val['title'] ?? '';
-                $data->author = $val['author'] ?? '';
-                $data->campus = $val['campus'] ?? '';
-                $commentsList[] = $data;
+            // Group comments by research file ID
+            $groupedComments = [];
+            while ($val = $result->fetch_assoc()) {
+                $resid = $val['resid'];
+                
+                if (!isset($groupedComments[$resid])) {
+                    $groupedComments[$resid] = [
+                        'resid' => $val['resid'],
+                        'title' => $val['final_symposium_title'] ?? $val['title'] ?? 'Untitled',
+                        'category' => $val['category_name'] ?? $val['category'] ?? '',
+                        'category_id' => $val['category_id'] ?? '',
+                        'center' => $val['center'] ?? '',
+                        'campus' => $val['campus'] ?? '',
+                        'author' => $val['author'] ?? '',
+                        'coauthor' => $val['coauthor'] ?? '',
+                        'presenter' => $val['presenter'] ?? '',
+                        'event' => $val['event'] ?? '',
+                        'file' => $val['file'] ?? '',
+                        'drive_view_url' => $val['drive_view_url'] ?? '',
+                        'paper_trail_no' => $val['paper_trail_no'] ?? '',
+                        'comments' => []
+                    ];
+                }
+                
+                // Add comment if it exists
+                $comment = [];
+                if (!empty($val['intro'])) $comment['intro'] = $val['intro'];
+                if (!empty($val['abstract'])) $comment['abstract'] = $val['abstract'];
+                if (!empty($val['objective'])) $comment['objective'] = $val['objective'];
+                if (!empty($val['methodology'])) $comment['methodology'] = $val['methodology'];
+                if (!empty($val['results'])) $comment['results'] = $val['results'];
+                if (!empty($val['recommendation'])) $comment['recommendation'] = $val['recommendation'];
+                if (!empty($val['literature'])) $comment['literature'] = $val['literature'];
+                if (!empty($val['other'])) $comment['other'] = $val['other'];
+                $comment['evaluator_name'] = $val['evaluator_name'] ?? 'Unknown Evaluator';
+                $comment['date'] = $val['date'] ?? '';
+                
+                if (count($comment) > 2) {
+                    $groupedComments[$resid]['comments'][] = $comment;
+                }
             }
             
-            $response = $commentsList;
+            // Convert to array and filter out documents with no comments
+            $response = array_values(array_filter($groupedComments, function($doc) {
+                return !empty($doc['comments']);
+            }));
+            
             $statement->close();
+        } else {
+            echo json_encode(['error' => 'Database query failed: ' . $con->error]);
+            exit();
         }
     }
     
