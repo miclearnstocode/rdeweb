@@ -1590,7 +1590,6 @@ export const Extension = () => {
             }
         };
 
-        // Check if document is rejected first - IMPROVED error handling
         const checkDocumentStatus = async () => {
             try {
                 const form = new FormData();

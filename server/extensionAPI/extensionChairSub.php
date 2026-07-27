@@ -2725,6 +2725,7 @@ if (isset($_POST['searchInhouseTitles'])) {
     echo json_encode($response);
     exit();
 }
+
 if (isset($_POST['getAcceptedInhouseReviews'])) {
     $response = new stdClass();
     $response->status = false;
@@ -2733,9 +2734,7 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
 
     try {
         if ($con = new mysqli($host, $username, $pass, $dbName)) {
-            $userId = $_SESSION['userId'] ?? 0;
-
-            //rf.senderid = ? this keep the return data per center or per campus
+            // Remove senderid filter - get ALL accepted in-house reviews
             $query = "SELECT 
                         rf.id,
                         rf.title,
@@ -2754,12 +2753,10 @@ if (isset($_POST['getAcceptedInhouseReviews'])) {
                       WHERE (rf.event LIKE '%In-House Review%' 
                              OR rf.event LIKE '%in house review%'
                              OR rf.event LIKE '%In House Review%')
-                      AND rf.senderid = ? 
                       AND e.status = 'accepted' 
                       ORDER BY el.date DESC, rf.id DESC";
 
             $stmt = $con->prepare($query);
-            $stmt->bind_param("i", $userId);
             $stmt->execute();
             $result = $stmt->get_result();
 
@@ -2996,130 +2993,253 @@ if (isset($_POST['researchFile'])) {
 
 //displayed the data in the center table
 if (isset($_POST['researchReviewed'])) {
+    // Clean any previous output
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+    
     $response = new stdClass();
     $response->list = [];
+    $response->status = true;
+    $response->message = '';
 
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $userId = $_SESSION['userId'] ?? 0;
-
-        // Get endorsements - using prepared statement
-        $queryEndorsement = "SELECT 
-                                id, drive_view_url, drive_file_id, drive_download_url, 
-                                event, date, status 
-                            FROM `endorsement` WHERE `senderid` = ?";
-        
-        $stmt = $con->prepare($queryEndorsement);
-        $stmt->bind_param("i", $userId);
-        $stmt->execute();
-        $endorsementResult = $stmt->get_result();
-
-        while ($val = $endorsementResult->fetch_assoc()) {
-            $endorsement = new stdClass();
-            $endorsement->endorsementFile = $val['drive_view_url'];
-            $endorsement->drive_file_id = $val['drive_file_id'] ?? null;
-            $endorsement->drive_download_url = $val['drive_download_url'] ?? null;
-            $endorsement->eventType = $val['event'];
-            $endorsement->date = $val['date'];
-            $endorsement->status = $val['status'];
-            $endorsement->id = $val['id'];
-            $endorsement->ResearchDocs = [];
-            $enID = $val['id'];
-
-            // Query research files - using prepared statement
-            $queryResearch = "SELECT 
-                rf.author,
-                rf.coauthor,
-                rf.presenter,
-                rf.title,
-                rf.final_symposium_title,
-                rf.campus,
-                rf.category,
-                rf.date_started,
-                rf.date_completed,
-                rf.id as docId,
-                rf.drive_view_url as file,
-                rf.program_drive_view_url,
-                rf.certificate_drive_view_url,
-                rf.title_certificate_view_url,
-                rf.revision_status,
-                rf.revision_count,
-                rf.title_changed,
-                rf.event_id,
-                rf.status as original_status,
-                rf.local_inhouse,
-                el.date_of_presentation,
-                el.name as event_name,
-                li.program_file_view_url as local_program_file_view_url,
-                li.certificate_file_view_url as local_certificate_file_view_url
-            FROM `researchfile` rf
-            LEFT JOIN `event_list` el ON rf.event_id = el.id
-            LEFT JOIN `local_inhouse` li ON rf.id = li.research_id
-            WHERE rf.senderid = ? AND rf.endorsementid = ?";
-
-            $researchStmt = $con->prepare($queryResearch);
-            $researchStmt->bind_param("ii", $userId, $enID);
-            $researchStmt->execute();
-            $researchResult = $researchStmt->get_result();
-
-            while ($res = $researchResult->fetch_assoc()) {
-                $researchDocs = new stdClass();
-                $researchDocs->author = $res['author'];
-                $researchDocs->coauthor = $res['coauthor'];
-                $researchDocs->presenter = $res['presenter'];
-                $researchDocs->title = $res['title'];
-                $researchDocs->final_symposium_title = $res['final_symposium_title'];
-                $researchDocs->campus = $res['campus'];
-                $researchDocs->category = $res['category'];
-                $researchDocs->date_started = $res['date_started'];
-                $researchDocs->date_completed = $res['date_completed'];
-                $researchDocs->docId = $res['docId'];
-                $researchDocs->researchFile = $res['file'];
-                $researchDocs->program_drive_view_url = $res['program_drive_view_url'];
-                $researchDocs->certificate_drive_view_url = $res['certificate_drive_view_url'];
-                $researchDocs->title_certificate_view_url = $res['title_certificate_view_url'] ?? null;
-                $researchDocs->revision_status = $res['revision_status'];
-                $researchDocs->revision_count = $res['revision_count'];
-                $researchDocs->title_changed = $res['title_changed'];
-                $researchDocs->event_id = $res['event_id'];
-                $researchDocs->date_of_presentation = $res['date_of_presentation'];
-                $researchDocs->original_status = $res['original_status'];
-                $researchDocs->event_name = $res['event_name'];
-                $researchDocs->local_inhouse = $res['local_inhouse'];
-                $researchDocs->local_program_file_view_url = $res['local_program_file_view_url'];
-                $researchDocs->local_certificate_file_view_url = $res['local_certificate_file_view_url'];
-
-                $currentDate = date('Y-m-d H:i:s');
-                $presentationDate = $res['date_of_presentation'] ?? null;
-                $originalStatus = $res['original_status'] ?? 'pending';
-                $revisionStatus = $res['revision_status'] ?? null;
-
-                // Determine the display status based on business rules
-                if ($originalStatus === 'rejected') {
-                    $displayStatus = 'rejected';
-                } elseif ($presentationDate === null) {
-                    $displayStatus = $originalStatus;
-                } elseif ($presentationDate < $currentDate) {
-                    $displayStatus = !empty($revisionStatus) ? $revisionStatus : 'revision_pending';
-                } else {
-                    $displayStatus = $originalStatus;
-                }
-
-                $researchDocs->status = $displayStatus;
-                $endorsement->ResearchDocs[] = $researchDocs;
-            }
-            $researchStmt->close();
-            
-            // Only add endorsement if it has ResearchDocs
-            if (count($endorsement->ResearchDocs) > 0) {
-                $response->list[] = $endorsement;
-            }
+    try {
+        // Check if user is logged in
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception("User not logged in");
         }
-        $stmt->close();
-        $con->close();
+        
+        $userId = $_SESSION['userId'];
+        
+        if ($con = new mysqli($host, $username, $pass, $dbName)) {
+            if ($con->connect_error) {
+                throw new Exception("Database connection failed: " . $con->connect_error);
+            }
+
+            $con->query("SET SESSION sql_mode = ''");
+
+            $queryEndorsement = "SELECT * FROM endorsement WHERE senderid = ? ORDER BY date DESC";
+            $endorseStmt = $con->prepare($queryEndorsement);
+            if (!$endorseStmt) {
+                throw new Exception("Prepare failed: " . $con->error);
+            }
+            $endorseStmt->bind_param("i", $userId);
+            $endorseStmt->execute();
+            $endorseResult = $endorseStmt->get_result();
+
+            while ($val = $endorseResult->fetch_assoc()) {
+                $endorsement = new stdClass();
+                $endorsement->endorsementFile = $val['drive_view_url'] ?? null;
+                $endorsement->drive_file_id = $val['drive_file_id'] ?? null;
+                $endorsement->drive_download_url = $val['drive_download_url'] ?? null;
+                $endorsement->eventType = $val['event'] ?? '';
+                $endorsement->date = $val['date'] ?? '';
+                $endorsement->status = $val['status'] ?? '';
+                $endorsement->id = $val['id'] ?? 0;
+                $endorsement->type = 'faculty';
+                $endorsement->ResearchDocs = [];
+                $enID = $val['id'];
+
+                $queryResearch = "SELECT 
+                    rf.author,
+                    rf.coauthor,
+                    rf.presenter,
+                    rf.title,
+                    rf.final_symposium_title,
+                    rf.title_changed,
+                    rf.center,
+                    rf.campus,
+                    rf.date_started,
+                    rf.date_completed,
+                    rf.id as docId,
+                    rf.category,
+                    rf.drive_view_url as file,
+                    rf.drive_file_id,
+                    rf.program_drive_view_url,
+                    rf.certificate_drive_view_url,
+                    rf.title_certificate_view_url,
+                    rf.revision_status,
+                    rf.revision_count,
+                    rf.event_id,
+                    rf.status as original_status,
+                    rf.local_inhouse,
+                    el.date_of_presentation,
+                    el.name as event_name,
+                    li.program_file_view_url as local_program_file_view_url,
+                    li.certificate_file_view_url as local_certificate_file_view_url,
+                    li.local_eventname as local_eventname
+                FROM researchfile rf
+                LEFT JOIN event_list el ON rf.event_id = el.id
+                LEFT JOIN local_inhouse li ON rf.id = li.research_id
+                WHERE rf.senderid = ? AND rf.endorsementid = ?
+                ORDER BY rf.id DESC";
+
+                $researchStmt = $con->prepare($queryResearch);
+                if (!$researchStmt) {
+                    throw new Exception("Research query prepare failed: " . $con->error);
+                }
+                $researchStmt->bind_param("ii", $userId, $enID);
+                $researchStmt->execute();
+                $researchResult = $researchStmt->get_result();
+
+                while ($res = $researchResult->fetch_assoc()) {
+                    $researchDocs = new stdClass();
+                    $researchDocs->author = $res['author'] ?? '';
+                    $researchDocs->coauthor = $res['coauthor'] ?? '';
+                    $researchDocs->presenter = $res['presenter'] ?? '';
+                    $researchDocs->type = 'faculty';
+                    
+                    // Title display logic
+                    $researchDocs->title_changed = (int)($res['title_changed'] ?? 0);
+                    $researchDocs->original_title = $res['title'] ?? '';
+                    $researchDocs->final_symposium_title = $res['final_symposium_title'] ?? null;
+                    
+                    if (!empty($res['final_symposium_title']) && $researchDocs->title_changed == 1) {
+                        $researchDocs->title = $res['final_symposium_title'];
+                    } else {
+                        $researchDocs->title = $res['title'] ?? '';
+                    }
+                    
+                    $researchDocs->center = $res['center'] ?? '';
+                    $researchDocs->campus = $res['campus'] ?? '';
+                    $researchDocs->date_started = $res['date_started'] ?? null;
+                    $researchDocs->date_completed = $res['date_completed'] ?? null;
+                    $researchDocs->docId = $res['docId'] ?? 0;
+                    $researchDocs->category = $res['category'] ?? '';
+                    $researchDocs->researchFile = $res['file'] ?? null;
+                    $researchDocs->drive_file_id = $res['drive_file_id'] ?? null;
+                    $researchDocs->program_drive_view_url = $res['program_drive_view_url'] ?? null;
+                    $researchDocs->certificate_drive_view_url = $res['certificate_drive_view_url'] ?? null;
+                    $researchDocs->title_certificate_view_url = $res['title_certificate_view_url'] ?? null;
+                    $researchDocs->revision_status = $res['revision_status'] ?? null;
+                    $researchDocs->revision_count = $res['revision_count'] ?? 0;
+                    $researchDocs->event_id = $res['event_id'] ?? null;
+                    $researchDocs->date_of_presentation = $res['date_of_presentation'] ?? null;
+                    $researchDocs->original_status = $res['original_status'] ?? 'pending';
+                    $researchDocs->event_name = $res['event_name'] ?? '';
+                    $researchDocs->local_inhouse = $res['local_inhouse'] ?? 0;
+                    $researchDocs->local_program_file_view_url = $res['local_program_file_view_url'] ?? null;
+                    $researchDocs->local_certificate_file_view_url = $res['local_certificate_file_view_url'] ?? null;
+                    $researchDocs->local_eventname = $res['local_eventname'] ?? null;
+                    
+                    // Determine the display status for faculty papers
+                    $currentDate = date('Y-m-d H:i:s');
+                    $presentationDate = $res['date_of_presentation'] ?? null;
+                    $originalStatus = $res['original_status'] ?? 'pending';
+                    $revisionStatus = $res['revision_status'] ?? null;
+
+                    if ($originalStatus === 'rejected') {
+                        $displayStatus = 'rejected';
+                    } elseif ($presentationDate === null) {
+                        $displayStatus = $originalStatus;
+                    } elseif ($presentationDate < $currentDate) {
+                        $displayStatus = !empty($revisionStatus) ? $revisionStatus : 'revision_pending';
+                    } else {
+                        $displayStatus = $originalStatus;
+                    }
+
+                    $researchDocs->status = $displayStatus;
+                    $endorsement->ResearchDocs[] = $researchDocs;
+                }
+                if (count($endorsement->ResearchDocs) > 0) {
+                    $response->list[] = $endorsement;
+                }
+            }
+
+            $queryStudentPapers = "SELECT 
+                srp.id,
+                srp.senderid,
+                srp.event_id,
+                srp.author,
+                srp.coauthor,
+                srp.presenter,
+                srp.date_started,
+                srp.date_completed,
+                srp.title,
+                srp.event,
+                srp.status,
+                srp.paper_type,
+                srp.category,
+                srp.campus,
+                srp.research_file_view_url,
+                srp.endorsement_file_view_url,
+                srp.created_at,
+                srp.updated_at,
+                el.name as event_name,
+                el.date_of_presentation
+            FROM student_research_papers srp
+            LEFT JOIN event_list el ON srp.event_id = el.id
+            WHERE srp.senderid = ?
+            ORDER BY srp.created_at DESC";
+
+            $studentStmt = $con->prepare($queryStudentPapers);
+            if (!$studentStmt) {
+                throw new Exception("Student papers query prepare failed: " . $con->error);
+            }
+            $studentStmt->bind_param("i", $userId);
+            $studentStmt->execute();
+            $studentResult = $studentStmt->get_result();
+
+            while ($row = $studentResult->fetch_assoc()) {
+                // Determine event name
+                $eventName = !empty($row['event_name']) ? $row['event_name'] : ($row['event'] ?? 'Uncategorized');
+
+                // Create a single endorsement entry for each student paper
+                $studentEndorsement = new stdClass();
+                $studentEndorsement->type = 'student';
+                $studentEndorsement->id = $row['id'] ?? 0;
+                $studentEndorsement->eventType = $eventName;
+                $studentEndorsement->date = $row['created_at'] ?? date('Y-m-d H:i:s');
+                $studentEndorsement->status = $row['status'] ?? 'pending';
+                $studentEndorsement->endorsementFile = $row['endorsement_file_view_url'] ?? null;
+                $studentEndorsement->drive_file_id = null;
+                $studentEndorsement->drive_download_url = null;
+                $studentEndorsement->ResearchDocs = [];
+
+                // Create the research document entry
+                $researchDoc = new stdClass();
+                $researchDoc->docId = $row['id'] ?? 0;
+                $researchDoc->author = $row['author'] ?? '';
+                $researchDoc->coauthor = $row['coauthor'] ?? '';
+                $researchDoc->presenter = $row['presenter'] ?? '';
+                $researchDoc->title = $row['title'] ?? '';
+                $researchDoc->category = $row['category'] ?? '';
+                $researchDoc->campus = $row['campus'] ?? '';
+                $researchDoc->status = $row['status'] ?? 'pending';
+                $researchDoc->paper_type = $row['paper_type'] ?? 'undergraduate';
+                $researchDoc->event = $row['event'] ?? '';
+                $researchDoc->event_name = $eventName;
+                $researchDoc->event_id = $row['event_id'] ?? null;
+                $researchDoc->date_started = $row['date_started'] ?? null;
+                $researchDoc->date_completed = $row['date_completed'] ?? null;
+                $researchDoc->date_of_presentation = $row['date_of_presentation'] ?? null;
+                $researchDoc->type = 'student';
+                
+                // Set both research and endorsement file URLs
+                $researchDoc->researchFile = $row['research_file_view_url'] ?? null;
+                $researchDoc->endorsementFile = $row['endorsement_file_view_url'] ?? null;
+                
+                $studentEndorsement->ResearchDocs[] = $researchDoc;
+                $response->list[] = $studentEndorsement;
+            }
+
+            $con->close();
+            
+        } else {
+            throw new Exception("Database connection failed");
+        }
+        
+    } catch (Exception $e) {
+        error_log("researchReviewed error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+        $response->list = [];
     }
 
+    ob_clean();
     header('Content-Type: application/json; charset=utf-8');
+    header('X-Content-Type-Options: nosniff');
     echo json_encode($response);
+    ob_end_flush();
     exit();
 }
 
@@ -3183,26 +3303,15 @@ if (isset($_POST['rejectedComments'])){
     $response->center = '';
     $response->documentStatus = '';
     
-    // Log that the endpoint was called
-    error_log("=== rejectedComments endpoint called ===");
-    error_log("POST data: " . print_r($_POST, true));
-    
     $docId = isset($_POST['docId']) ? intval($_POST['docId']) : 0;
-    
-    error_log("docId received: " . $docId);
-    
     if ($docId <= 0) {
         $response->message = 'Invalid document ID';
-        error_log("Invalid docId: " . $docId);
-        echo json_encode($response);
         exit();
     }
     
     try {
         if (!isset($host) || !isset($username) || !isset($pass) || !isset($dbName)) {
-            error_log("Database connection variables not set");
             $response->message = 'Database configuration error';
-            echo json_encode($response);
             exit();
         }
         
@@ -3214,8 +3323,6 @@ if (isset($_POST['rejectedComments'])){
             echo json_encode($response);
             exit();
         }
-        
-        error_log("Database connected successfully");
         
         $getEndorsementQuery = "SELECT endorsementid FROM researchfile WHERE id = ? LIMIT 1";
         $stmt1 = $con->prepare($getEndorsementQuery);
@@ -4721,6 +4828,916 @@ if (isset($_POST['updateResearch'])) {
         $response->status = false;
     }
     
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+// Search accepted papers for poster submission
+if (isset($_POST['searchAcceptedPapers'])) {
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->data = [];
+
+    try {
+        $searchTerm = isset($_POST['searchTerm']) ? trim($_POST['searchTerm']) : '';
+
+        if (empty($searchTerm) || strlen($searchTerm) < 2) {
+            throw new Exception("Please enter at least 2 characters to search");
+        }
+
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        $searchPattern = '%' . $con->real_escape_string($searchTerm) . '%';
+
+        // ===== SEARCH FACULTY RESEARCH PAPERS =====
+        // Removed senderid filter - get ALL accepted symposium papers
+        $query = "SELECT DISTINCT 
+                    rf.id,
+                    rf.title,
+                    rf.author,
+                    rf.coauthor,
+                    rf.center,
+                    rf.campus,
+                    rf.category,
+                    rf.paper_trail_no,
+                    rf.event,
+                    rf.event_id,
+                    el.name as event_name,
+                    rf.status,
+                    rf.poster_submitted,
+                    e.status as endorsement_status
+                  FROM researchfile rf
+                  LEFT JOIN event_list el ON rf.event_id = el.id
+                  LEFT JOIN endorsement e ON rf.endorsementid = e.id
+                  WHERE rf.status = 'accepted'
+                  AND (rf.event LIKE '%Symposium%' 
+                       OR el.name LIKE '%Symposium%'
+                       OR rf.event LIKE '%symposium%')
+                  AND rf.poster_submitted = 0
+                  AND (rf.title LIKE ? 
+                       OR rf.author LIKE ? 
+                       OR rf.paper_trail_no LIKE ?
+                       OR rf.id = ?)
+                  ORDER BY rf.id DESC
+                  LIMIT 50";
+
+        $stmt = $con->prepare($query);
+        if (!$stmt) {
+            throw new Exception("Prepare failed: " . $con->error);
+        }
+
+        $idSearch = (int)$searchTerm;
+        $stmt->bind_param("sssi", $searchPattern, $searchPattern, $searchPattern, $idSearch);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        while ($row = $result->fetch_assoc()) {
+            $paper = new stdClass();
+            $paper->id = (int)$row['id'];
+            $paper->title = $row['title'] ?? '';
+            $paper->author = $row['author'] ?? '';
+            $paper->coauthors = [];
+            $paper->center = $row['center'] ?? '';
+            $paper->campus = $row['campus'] ?? '';
+            $paper->category = $row['category'] ?? '';
+            $paper->paper_trail_no = $row['paper_trail_no'] ?? '';
+            $paper->event = $row['event'] ?? '';
+            $paper->event_id = $row['event_id'] ? (int)$row['event_id'] : null;
+            $paper->event_name = $row['event_name'] ?? $row['event'] ?? '';
+            $paper->status = $row['status'] ?? '';
+            $paper->poster_submitted = (int)($row['poster_submitted'] ?? 0);
+
+            // Parse coauthors
+            if (!empty($row['coauthor'])) {
+                $coauthors = json_decode($row['coauthor'], true);
+                $paper->coauthors = is_array($coauthors) ? $coauthors : [];
+            }
+
+            $response->data[] = $paper;
+        }
+
+        $stmt->close();
+
+        // ===== IF NO FACULTY PAPERS FOUND, SEARCH STUDENT PAPERS =====
+        if (count($response->data) === 0) {
+            $studentQuery = "SELECT 
+                                srp.id,
+                                srp.title,
+                                srp.author,
+                                srp.coauthor,
+                                srp.category,
+                                srp.campus,
+                                srp.paper_type,
+                                srp.event_id,
+                                srp.event,
+                                srp.status,
+                                el.name as event_name
+                             FROM student_research_papers srp
+                             LEFT JOIN event_list el ON srp.event_id = el.id
+                             WHERE srp.status = 'accepted'
+                             AND (srp.event LIKE '%Symposium%' 
+                                  OR el.name LIKE '%Symposium%'
+                                  OR srp.event LIKE '%symposium%')
+                             AND srp.id NOT IN (
+                                 SELECT research_id FROM poster_submissions 
+                                 WHERE research_type = 'student'
+                             )
+                             AND (srp.title LIKE ? 
+                                  OR srp.author LIKE ?
+                                  OR srp.id = ?)
+                             ORDER BY srp.id DESC
+                             LIMIT 50";
+
+            $studentStmt = $con->prepare($studentQuery);
+            if ($studentStmt) {
+                $studentStmt->bind_param("ssi", $searchPattern, $searchPattern, $idSearch);
+                $studentStmt->execute();
+                $studentResult = $studentStmt->get_result();
+
+                while ($row = $studentResult->fetch_assoc()) {
+                    $paper = new stdClass();
+                    $paper->id = (int)$row['id'];
+                    $paper->title = $row['title'] ?? '';
+                    $paper->author = $row['author'] ?? '';
+                    $paper->coauthors = [];
+                    $paper->center = '';
+                    $paper->campus = $row['campus'] ?? '';
+                    $paper->category = $row['category'] ?? '';
+                    $paper->paper_trail_no = '';
+                    $paper->event = $row['event'] ?? '';
+                    $paper->event_id = $row['event_id'] ? (int)$row['event_id'] : null;
+                    $paper->event_name = $row['event_name'] ?? $row['event'] ?? '';
+                    $paper->status = $row['status'] ?? '';
+                    $paper->poster_submitted = 0;
+
+                    if (!empty($row['coauthor'])) {
+                        $coauthors = json_decode($row['coauthor'], true);
+                        $paper->coauthors = is_array($coauthors) ? $coauthors : [];
+                    }
+
+                    $response->data[] = $paper;
+                }
+                $studentStmt->close();
+            }
+        }
+
+        $response->status = true;
+        $response->message = count($response->data) . ' paper(s) found from Symposium events';
+
+        $con->close();
+
+    } catch (Exception $e) {
+        error_log("searchAcceptedPapers error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+    }
+
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+// Submit Poster
+if (isset($_POST['submitPoster'])) {
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->poster_id = null;
+    $response->drive_file_id = null;
+
+    try {
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception("User not logged in");
+        }
+
+        $senderId = $_SESSION['userId'];
+        $researchId = isset($_POST['research_id']) ? (int)$_POST['research_id'] : 0;
+        $eventId = isset($_POST['event_id']) ? (int)$_POST['event_id'] : 0;
+        $eventName = isset($_POST['event_name']) ? trim($_POST['event_name']) : '';
+        $title = isset($_POST['title']) ? trim($_POST['title']) : '';
+        $author = isset($_POST['author']) ? trim($_POST['author']) : '';
+        $coAuthors = isset($_POST['coAuthors']) ? $_POST['coAuthors'] : '[]';
+        $campus = isset($_POST['campus']) ? trim($_POST['campus']) : '';
+        $center = isset($_POST['center']) ? trim($_POST['center']) : '';
+        $category = isset($_POST['category']) ? trim($_POST['category']) : '';
+
+        if ($researchId <= 0) {
+            throw new Exception("Please select a valid research paper.");
+        }
+
+        if (!isset($_FILES['posterFile']) || $_FILES['posterFile']['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("Poster file is required.");
+        }
+
+        $file = $_FILES['posterFile'];
+        if ($file['type'] !== 'application/pdf' && !str_ends_with($file['name'], '.pdf')) {
+            throw new Exception("Only PDF files are allowed.");
+        }
+
+        if ($file['size'] > 30 * 1024 * 1024) {
+            throw new Exception("File size exceeds 30MB limit.");
+        }
+
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        // Start transaction
+        $con->begin_transaction();
+
+        // ===== CHECK IF POSTER ALREADY EXISTS =====
+        $checkQuery = "SELECT id FROM poster_submissions WHERE research_id = ? AND sender_id = ?";
+        $checkStmt = $con->prepare($checkQuery);
+        $checkStmt->bind_param("ii", $researchId, $senderId);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+
+        if ($checkResult->num_rows > 0) {
+            throw new Exception("A poster has already been submitted for this paper.");
+        }
+        $checkStmt->close();
+
+        $flagCheckQuery = "SELECT poster_submitted, paper_trail_no, author, title, event, center, category FROM researchfile WHERE id = ?";
+        $flagStmt = $con->prepare($flagCheckQuery);
+        $flagStmt->bind_param("i", $researchId);
+        $flagStmt->execute();
+        $flagResult = $flagStmt->get_result();
+        $researchData = $flagResult->fetch_assoc();
+        $flagStmt->close();
+
+        if ($researchData && isset($researchData['poster_submitted']) && $researchData['poster_submitted'] == 1) {
+            throw new Exception("A poster has already been submitted for this paper.");
+        }
+
+        $paperTrailNo = $researchData['paper_trail_no'] ?? null;
+        $authorName = $researchData['author'] ?? $author;
+        $researchTitle = $researchData['title'] ?? $title;
+        $eventType = $researchData['event'] ?? $eventName;
+        $centerName = $researchData['center'] ?? $center;
+        $categoryName = $researchData['category'] ?? $category;
+
+        // ===== UPLOAD TO GOOGLE DRIVE =====
+        if (!class_exists('GoogleDriveService')) {
+            throw new Exception("GoogleDriveService class not found");
+        }
+
+        $drive = new GoogleDriveService();
+
+        // Clean folder names
+        $cleanEventName = cleanFolderNameForDrive($eventType);
+        $cleanTitle = preg_replace('/[^\w\s\-]/', '', $researchTitle);
+        $cleanTitle = preg_replace('/\s+/', '_', $cleanTitle);
+        $cleanTitle = substr($cleanTitle, 0, 80);
+
+        // ===== LOCATION 1: Event -> Posters (for easy access) =====
+        $eventFolderId = $drive->findOrCreateFolder($cleanEventName, null);
+        if (!$eventFolderId) throw new Exception("Failed to create event folder");
+
+        $posterFolderId = $drive->findOrCreateFolder('Posters', $eventFolderId);
+        if (!$posterFolderId) throw new Exception("Failed to create Posters folder");
+
+        // Generate filename with paper trail no prefix
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $paperTrailPrefix = !empty($paperTrailNo) ? $paperTrailNo . ' - ' : '';
+        $posterFileName = $paperTrailPrefix . 'Poster - ' . $cleanTitle . '.' . $extension;
+
+        // Upload to Event -> Posters folder
+        $uploadResult = $drive->uploadFile($file['tmp_name'], $posterFileName, $posterFolderId);
+        if (!$uploadResult['success'] || empty($uploadResult['id'])) {
+            throw new Exception("Failed to upload poster: " . ($uploadResult['error'] ?? 'Unknown error'));
+        }
+
+        $drive->makeFilePublic($uploadResult['id']);
+        $fileId = $uploadResult['id'];
+        $viewUrl = "https://drive.google.com/file/d/{$fileId}/preview";
+        $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
+
+        // ===== LOCATION 2: Paper Trail -> Symposium -> Year -> {Paper Trail No} - {Title} =====
+        // Upload poster to Paper Trail folder structure
+        $paperTrailPosterResult = uploadPosterToPaperTrail(
+            $con,
+            $file['tmp_name'],
+            $posterFileName,
+            $researchId,
+            $paperTrailNo,
+            $researchTitle,
+            $authorName,
+            $eventType
+        );
+
+        $posterPaperTrailFileId = null;
+        $posterPaperTrailViewUrl = null;
+        $posterPaperTrailDownloadUrl = null;
+        $paperTrailFolderId = null;
+
+        if ($paperTrailPosterResult && $paperTrailPosterResult['success']) {
+            $posterPaperTrailFileId = $paperTrailPosterResult['drive_file_id'] ?? null;
+            $posterPaperTrailViewUrl = $paperTrailPosterResult['drive_view_url'] ?? null;
+            $posterPaperTrailDownloadUrl = $paperTrailPosterResult['drive_download_url'] ?? null;
+            $paperTrailFolderId = $paperTrailPosterResult['research_folder_id'] ?? null;
+            error_log("Poster uploaded to Paper Trail: " . $posterPaperTrailFileId);
+        } else {
+            error_log("Failed to upload poster to Paper Trail: " . ($paperTrailPosterResult['error'] ?? 'Unknown error'));
+        }
+
+        // ===== SAVE TO DATABASE =====
+        $insertQuery = "INSERT INTO poster_submissions (
+            research_id, paper_trail_no, sender_id, event_id,
+            event_folder_id, poster_folder_id,
+            poster_drive_file_id, poster_drive_view_url, poster_drive_download_url,
+            poster_file_name, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+
+        $insertStmt = $con->prepare($insertQuery);
+        if (!$insertStmt) {
+            throw new Exception("Prepare failed: " . $con->error);
+        }
+
+        $insertStmt->bind_param(
+            'isssssssss',
+            $researchId,
+            $paperTrailNo,
+            $senderId,
+            $eventId,
+            $eventFolderId,
+            $posterFolderId,
+            $fileId,
+            $viewUrl,
+            $downloadUrl,
+            $posterFileName
+        );
+
+        if (!$insertStmt->execute()) {
+            throw new Exception("Failed to save poster: " . $insertStmt->error);
+        }
+
+        $posterId = $con->insert_id;
+        $insertStmt->close();
+
+        // ===== UPDATE PAPER_TRAIL_FILES WITH POSTER INFO =====
+        if ($posterPaperTrailFileId && $paperTrailFolderId) {
+            // Check if paper_trail_files record exists for this research
+            $checkPaperTrailQuery = "SELECT id FROM paper_trail_files WHERE research_id = ? AND paper_trail_no = ? AND submission_type = 'Symposium' LIMIT 1";
+            $checkPaperTrailStmt = $con->prepare($checkPaperTrailQuery);
+            $checkPaperTrailStmt->bind_param("is", $researchId, $paperTrailNo);
+            $checkPaperTrailStmt->execute();
+            $checkPaperTrailResult = $checkPaperTrailStmt->get_result();
+            
+            if ($checkPaperTrailResult->num_rows > 0) {
+                // Update existing record with poster info
+                $updatePaperTrailQuery = "UPDATE paper_trail_files SET 
+                    poster_drive_view_url = ?,
+                    poster_drive_download_url = ?
+                    WHERE research_id = ? AND paper_trail_no = ? AND submission_type = 'Symposium'";
+                
+                $updatePaperTrailStmt = $con->prepare($updatePaperTrailQuery);
+                $updatePaperTrailStmt->bind_param("ssis", $posterPaperTrailViewUrl, $posterPaperTrailDownloadUrl, $researchId, $paperTrailNo);
+                $updatePaperTrailStmt->execute();
+                $updatePaperTrailStmt->close();
+                error_log("Updated paper_trail_files with poster info for research_id: $researchId");
+            } else {
+                // Insert new paper_trail_files record
+                $insertPaperTrailQuery = "INSERT INTO paper_trail_files (
+                    research_id, paper_trail_no, submission_type, year,
+                    paper_trail_root_id, submission_folder_id, year_folder_id,
+                    research_folder_id, research_folder_name,
+                    poster_drive_view_url, poster_drive_download_url,
+                    created_at
+                ) VALUES (?, ?, 'Symposium', ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                
+                $currentYear = date('Y');
+                $paperTrailRootId = $paperTrailPosterResult['paper_trail_root_id'] ?? null;
+                $submissionFolderId = $paperTrailPosterResult['sub_type_folder_id'] ?? null;
+                $yearFolderId = $paperTrailPosterResult['year_folder_id'] ?? null;
+                $researchFolderName = $paperTrailPosterResult['research_folder_name'] ?? null;
+                
+                $insertPaperTrailStmt = $con->prepare($insertPaperTrailQuery);
+                $insertPaperTrailStmt->bind_param(
+                    'ississsssss',
+                    $researchId,
+                    $paperTrailNo,
+                    $currentYear,
+                    $paperTrailRootId,
+                    $submissionFolderId,
+                    $yearFolderId,
+                    $paperTrailFolderId,
+                    $researchFolderName,
+                    $posterPaperTrailViewUrl,
+                    $posterPaperTrailDownloadUrl
+                );
+                $insertPaperTrailStmt->execute();
+                $insertPaperTrailStmt->close();
+                error_log("Inserted new paper_trail_files record for research_id: $researchId with poster info");
+            }
+            $checkPaperTrailStmt->close();
+        }
+
+        // ===== UPDATE RESEARCHFILE POSTER_SUBMITTED FLAG =====
+        $updateFlagQuery = "UPDATE researchfile SET poster_submitted = 1 WHERE id = ?";
+        $updateStmt = $con->prepare($updateFlagQuery);
+        $updateStmt->bind_param("i", $researchId);
+        if (!$updateStmt->execute()) {
+            throw new Exception("Failed to update poster_submitted flag: " . $updateStmt->error);
+        }
+        $updateStmt->close();
+
+        // Commit transaction
+        $con->commit();
+
+        $response->status = true;
+        $response->message = "Poster submitted successfully!";
+        $response->poster_id = $posterId;
+        $response->paper_trail_no = $paperTrailNo;
+        $response->drive_file_id = $fileId;
+        $response->drive_view_url = $viewUrl;
+        $response->paper_trail_file_id = $posterPaperTrailFileId;
+
+        $con->close();
+
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        if (isset($con) && $con) {
+            $con->rollback();
+        }
+        error_log("submitPoster error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+    }
+
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+// Helper function to upload poster to Paper Trail
+function uploadPosterToPaperTrail($con, $tempFilePath, $fileName, $researchId, $paperTrailNo, $title, $author, $eventType)
+{
+    try {
+        if (!file_exists($tempFilePath)) {
+            return ['success' => false, 'error' => "Temporary file not found: $tempFilePath"];
+        }
+
+        if (!class_exists('GoogleDriveService')) {
+            return ['success' => false, 'error' => "GoogleDriveService class not found"];
+        }
+
+        $drive = new GoogleDriveService();
+        $year = date('Y');
+
+        $authorParts = explode(' ', trim($author));
+        $authorLastName = end($authorParts);
+        $authorLastName = cleanFolderNameForDrive($authorLastName);
+
+        $cleanTitle = preg_replace('/[^\w\s\-]/', '', $title);
+        $cleanTitle = preg_replace('/\s+/', ' ', $cleanTitle);
+        $cleanTitle = trim($cleanTitle);
+        if (strlen($cleanTitle) > 80) {
+            $cleanTitle = substr($cleanTitle, 0, 77) . '...';
+        }
+        $cleanTitle = cleanFolderNameForDrive($cleanTitle);
+
+        // Paper Trail -> Symposium -> Year -> {paper_trail_no} - {title}
+        $paperTrailRootId = $drive->findOrCreateFolder('Paper Trail', null);
+        if (!$paperTrailRootId) {
+            return ['success' => false, 'error' => "Failed to create Paper Trail root folder"];
+        }
+
+        $symposiumFolderId = $drive->findOrCreateFolder('Symposium', $paperTrailRootId);
+        if (!$symposiumFolderId) {
+            return ['success' => false, 'error' => "Failed to create Symposium folder"];
+        }
+
+        $yearFolderId = $drive->findOrCreateFolder($year, $symposiumFolderId);
+        if (!$yearFolderId) {
+            return ['success' => false, 'error' => "Failed to create Year folder: $year"];
+        }
+
+        // Create research folder: {paper_trail_no} - {title}
+        $researchFolderName = '';
+        if (!empty($paperTrailNo)) {
+            $researchFolderName = $paperTrailNo . ' - ' . $cleanTitle;
+        } else {
+            $researchFolderName = $authorLastName . '_' . preg_replace('/[^a-zA-Z0-9]/', '_', substr($cleanTitle, 0, 30));
+        }
+        $researchFolderName = cleanFolderNameForDrive($researchFolderName);
+
+        // Check if research folder already exists
+        $researchFolderId = $drive->findOrCreateFolder($researchFolderName, $yearFolderId);
+        if (!$researchFolderId) {
+            return ['success' => false, 'error' => "Failed to create research folder: $researchFolderName"];
+        }
+
+        // Poster file name
+        $posterFileName = 'Poster.pdf';
+
+        $uploadResult = $drive->uploadFile($tempFilePath, $posterFileName, $researchFolderId);
+
+        if (!$uploadResult['success'] || empty($uploadResult['id'])) {
+            $errorMsg = $uploadResult['error'] ?? 'Unknown error';
+            return ['success' => false, 'error' => $errorMsg];
+        }
+
+        $drive->makeFilePublic($uploadResult['id']);
+
+        $fileId = $uploadResult['id'];
+        $embedUrl = "https://drive.google.com/file/d/{$fileId}/preview";
+        $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
+
+        return [
+            'success' => true,
+            'drive_file_id' => $fileId,
+            'drive_view_url' => $embedUrl,
+            'drive_download_url' => $downloadUrl,
+            'paper_trail_root_id' => $paperTrailRootId,
+            'sub_type_folder_id' => $symposiumFolderId,
+            'year_folder_id' => $yearFolderId,
+            'research_folder_id' => $researchFolderId,
+            'research_folder_name' => $researchFolderName,
+            'year' => $year,
+            'submission_type' => 'Symposium',
+            'file_name' => $posterFileName,
+            'paper_trail_no' => $paperTrailNo,
+            'author_last_name' => $authorLastName
+        ];
+
+    } catch (Exception $e) {
+        error_log("Poster Paper Trail upload failed: " . $e->getMessage());
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
+}
+
+// Get user's submitted posters
+if (isset($_POST['getUserPosters'])) {
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->data = [];
+
+    try {
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception("User not logged in");
+        }
+
+        $userId = $_SESSION['userId'];
+        $searchTerm = isset($_POST['search']) ? trim($_POST['search']) : '';
+        $status = isset($_POST['status']) ? trim($_POST['status']) : '';
+
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        $query = "SELECT 
+                    ps.*,
+                    rf.title,
+                    rf.author,
+                    rf.coauthor,
+                    rf.event,
+                    rf.event_id,
+                    rf.poster_submitted,
+                    el.name as event_name
+                  FROM poster_submissions ps
+                  LEFT JOIN researchfile rf ON ps.research_id = rf.id
+                  LEFT JOIN event_list el ON rf.event_id = el.id
+                  WHERE ps.sender_id = ?";
+
+        $params = [$userId];
+        $types = "i";
+
+        if (!empty($status)) {
+            $query .= " AND ps.status = ?";
+            $params[] = $status;
+            $types .= "s";
+        }
+
+        if (!empty($searchTerm)) {
+            $searchPattern = '%' . $con->real_escape_string($searchTerm) . '%';
+            $query .= " AND (rf.title LIKE ? OR rf.author LIKE ? OR el.name LIKE ? OR ps.paper_trail_no LIKE ?)";
+            $params[] = $searchPattern;
+            $params[] = $searchPattern;
+            $params[] = $searchPattern;
+            $params[] = $searchPattern;
+            $types .= "ssss";
+        }
+
+        $query .= " ORDER BY ps.created_at DESC";
+
+        $stmt = $con->prepare($query);
+        if (!$stmt) {
+            throw new Exception("Prepare failed: " . $con->error);
+        }
+
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        while ($row = $result->fetch_assoc()) {
+            $poster = new stdClass();
+            $poster->id = (int)$row['id'];
+            $poster->research_id = (int)$row['research_id'];
+            $poster->paper_trail_no = $row['paper_trail_no'] ?? '';
+            $poster->title = $row['title'] ?? '';
+            $poster->author = $row['author'] ?? '';
+            $poster->event_name = $row['event_name'] ?? $row['event'] ?? '';
+            $poster->status = $row['status'] ?? 'pending';
+            $poster->poster_file_name = $row['poster_file_name'] ?? '';
+            $poster->poster_drive_view_url = $row['poster_drive_view_url'] ?? '';
+            $poster->poster_drive_download_url = $row['poster_drive_download_url'] ?? '';
+            $poster->poster_submitted = (int)($row['poster_submitted'] ?? 0);
+            $poster->created_at = $row['created_at'] ?? null;
+            $poster->updated_at = $row['updated_at'] ?? null;
+            
+            $response->data[] = $poster;
+        }
+
+        $response->status = true;
+        $response->message = count($response->data) . ' poster(s) found';
+
+        $stmt->close();
+        $con->close();
+
+    } catch (Exception $e) {
+        error_log("getUserPosters error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+    }
+
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+
+if (isset($_POST['updatePoster'])) {
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+
+    try {
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception("User not logged in");
+        }
+
+        $senderId = $_SESSION['userId'];
+        $posterId = isset($_POST['poster_id']) ? (int)$_POST['poster_id'] : 0;
+        $researchId = isset($_POST['research_id']) ? (int)$_POST['research_id'] : 0;
+
+        if ($posterId <= 0) {
+            throw new Exception("Invalid poster ID");
+        }
+
+        if (!isset($_FILES['posterFile']) || $_FILES['posterFile']['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception("Poster file is required.");
+        }
+
+        $file = $_FILES['posterFile'];
+        if ($file['type'] !== 'application/pdf' && !str_ends_with($file['name'], '.pdf')) {
+            throw new Exception("Only PDF files are allowed.");
+        }
+
+        if ($file['size'] > 10 * 1024 * 1024) {
+            throw new Exception("File size exceeds 10MB limit.");
+        }
+
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        // Get existing poster record with research file title
+        $getQuery = "SELECT ps.*, rf.title as research_title 
+                     FROM poster_submissions ps
+                     LEFT JOIN researchfile rf ON ps.research_id = rf.id
+                     WHERE ps.id = ? AND ps.sender_id = ?";
+        $getStmt = $con->prepare($getQuery);
+        $getStmt->bind_param("ii", $posterId, $senderId);
+        $getStmt->execute();
+        $getResult = $getStmt->get_result();
+        $poster = $getResult->fetch_assoc();
+
+        if (!$poster) {
+            throw new Exception("Poster not found or you don't have permission to edit it.");
+        }
+        $getStmt->close();
+
+        // Initialize Google Drive service
+        if (!class_exists('GoogleDriveService')) {
+            throw new Exception("GoogleDriveService class not found");
+        }
+
+        $drive = new GoogleDriveService();
+
+        // ===== DELETE OLD FILE FROM GOOGLE DRIVE (Move to Trash) =====
+        $oldFileId = $poster['poster_drive_file_id'];
+        if (!empty($oldFileId)) {
+            try {
+                error_log("Attempting to move old poster file to trash: " . $oldFileId);
+                $result = $drive->trashFile($oldFileId);
+                if ($result) {
+                    error_log("Old poster file successfully moved to trash: " . $oldFileId);
+                } else {
+                    error_log("Failed to move old poster file to trash: " . $oldFileId);
+                }
+            } catch (Exception $e) {
+                error_log("Exception while trashing old poster file: " . $e->getMessage());
+                // Continue with upload even if trash fails
+            }
+        }
+
+        // ===== UPLOAD NEW FILE WITH RESEARCH TITLE =====
+        // Use the research title from the database
+        $researchTitle = $poster['research_title'] ?? 'Poster';
+        $cleanTitle = preg_replace('/[^\w\s\-]/', '', $researchTitle);
+        $cleanTitle = preg_replace('/\s+/', '_', $cleanTitle);
+        $cleanTitle = substr($cleanTitle, 0, 80);
+
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $paperTrailPrefix = !empty($poster['paper_trail_no']) ? $poster['paper_trail_no'] . ' - ' : '';
+        $posterFileName = $paperTrailPrefix . 'Poster - ' . $cleanTitle . '.' . $extension;
+
+        error_log("Uploading new poster file: " . $posterFileName . " to folder: " . $poster['poster_folder_id']);
+
+        $uploadResult = $drive->uploadFile($file['tmp_name'], $posterFileName, $poster['poster_folder_id']);
+        if (!$uploadResult['success'] || empty($uploadResult['id'])) {
+            throw new Exception("Failed to upload new poster: " . ($uploadResult['error'] ?? 'Unknown error'));
+        }
+
+        $drive->makeFilePublic($uploadResult['id']);
+        $fileId = $uploadResult['id'];
+        $viewUrl = "https://drive.google.com/file/d/{$fileId}/preview";
+        $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
+
+        // ===== UPDATE DATABASE =====
+        $updateQuery = "UPDATE poster_submissions SET 
+            poster_drive_file_id = ?,
+            poster_drive_view_url = ?,
+            poster_drive_download_url = ?,
+            poster_file_name = ?,
+            status = 'pending',
+            updated_at = NOW()
+            WHERE id = ? AND sender_id = ?";
+
+        $updateStmt = $con->prepare($updateQuery);
+        if (!$updateStmt) {
+            throw new Exception("Prepare failed: " . $con->error);
+        }
+
+        $updateStmt->bind_param(
+            'ssssii',
+            $fileId,
+            $viewUrl,
+            $downloadUrl,
+            $posterFileName,
+            $posterId,
+            $senderId
+        );
+
+        if (!$updateStmt->execute()) {
+            throw new Exception("Failed to update poster: " . $updateStmt->error);
+        }
+        $updateStmt->close();
+
+        $response->status = true;
+        $response->message = "Poster updated successfully! Old file moved to trash.";
+        $response->new_file_id = $fileId;
+        $response->old_file_id = $oldFileId;
+        $con->close();
+
+    } catch (Exception $e) {
+        error_log("updatePoster error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+    }
+
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
+}
+// Delete Poster
+if (isset($_POST['deletePoster'])) {
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+
+    try {
+        if (!isset($_SESSION['userId']) || empty($_SESSION['userId'])) {
+            throw new Exception("User not logged in");
+        }
+
+        $senderId = $_SESSION['userId'];
+        $posterId = isset($_POST['poster_id']) ? (int)$_POST['poster_id'] : 0;
+        $researchId = isset($_POST['research_id']) ? (int)$_POST['research_id'] : 0;
+
+        if ($posterId <= 0) {
+            throw new Exception("Invalid poster ID");
+        }
+
+        $con = new mysqli($host, $username, $pass, $dbName);
+        if ($con->connect_error) {
+            throw new Exception("Database connection failed: " . $con->connect_error);
+        }
+
+        // Start transaction
+        $con->begin_transaction();
+
+        // Get existing poster record
+        $getQuery = "SELECT * FROM poster_submissions WHERE id = ? AND sender_id = ?";
+        $getStmt = $con->prepare($getQuery);
+        $getStmt->bind_param("ii", $posterId, $senderId);
+        $getStmt->execute();
+        $getResult = $getStmt->get_result();
+        $poster = $getResult->fetch_assoc();
+
+        if (!$poster) {
+            throw new Exception("Poster not found or you don't have permission to delete it.");
+        }
+        $getStmt->close();
+
+        // Initialize Google Drive service
+        if (!class_exists('GoogleDriveService')) {
+            throw new Exception("GoogleDriveService class not found");
+        }
+
+        $drive = new GoogleDriveService();
+
+        // ===== DELETE FILE FROM GOOGLE DRIVE (Move to Trash) =====
+        $oldFileId = $poster['poster_drive_file_id'];
+        if (!empty($oldFileId)) {
+            try {
+                error_log("Attempting to move poster file to trash during delete: " . $oldFileId);
+                $result = $drive->trashFile($oldFileId);
+                if ($result) {
+                    error_log("Poster file successfully moved to trash: " . $oldFileId);
+                } else {
+                    error_log("Failed to move poster file to trash: " . $oldFileId);
+                }
+            } catch (Exception $e) {
+                error_log("Exception while trashing poster file: " . $e->getMessage());
+                // Continue with database deletion even if trash fails
+            }
+        }
+
+        // ===== DELETE FROM DATABASE =====
+        $deleteQuery = "DELETE FROM poster_submissions WHERE id = ? AND sender_id = ?";
+        $deleteStmt = $con->prepare($deleteQuery);
+        $deleteStmt->bind_param("ii", $posterId, $senderId);
+
+        if (!$deleteStmt->execute()) {
+            throw new Exception("Failed to delete poster: " . $deleteStmt->error);
+        }
+        $deleteStmt->close();
+
+        // ===== RESET POSTER_SUBMITTED FLAG IN RESEARCHFILE =====
+        $resetQuery = "UPDATE researchfile SET poster_submitted = 0 WHERE id = ?";
+        $resetStmt = $con->prepare($resetQuery);
+        $resetStmt->bind_param("i", $researchId);
+        if (!$resetStmt->execute()) {
+            throw new Exception("Failed to reset poster_submitted flag: " . $resetStmt->error);
+        }
+        $resetStmt->close();
+
+        // Commit transaction
+        $con->commit();
+
+        $response->status = true;
+        $response->message = "Poster deleted successfully! File moved to trash.";
+        $con->close();
+
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        if (isset($con) && $con) {
+            $con->rollback();
+        }
+        error_log("deletePoster error: " . $e->getMessage());
+        $response->status = false;
+        $response->message = $e->getMessage();
+    }
+
+    ob_clean();
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($response);
     exit();
