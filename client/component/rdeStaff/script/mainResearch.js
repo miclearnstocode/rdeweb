@@ -2909,112 +2909,121 @@ export const ResearchMain = () => {
         };
 
         function ChangeId(eventId, eventName) {
-            // Get current URL path
             const currentPath = window.location.pathname;
             const pathParts = currentPath.split('/');
-
-            // Find the position of 'scoreSummary' in the path
             const scoreSummaryIndex = pathParts.indexOf('scoreSummary');
 
             if (scoreSummaryIndex !== -1) {
-                // Update event ID at position scoreSummaryIndex + 1
                 pathParts[scoreSummaryIndex + 1] = eventId;
-
-                // Remove any category/center ID that follows
                 if (pathParts.length > scoreSummaryIndex + 2) {
                     pathParts.splice(scoreSummaryIndex + 2, pathParts.length - (scoreSummaryIndex + 2));
                 }
-
-                // Navigate to new URL
                 window.location.href = pathParts.join('/');
             } else {
-                // If not on scoreSummary page, navigate to it
                 window.location.href = `/rdeOffice/research/scoreSummary/${eventId}`;
             }
         }
 
         const Top = () => {
             const FilterEvent = () => {
-                return ($({
+                return $({
                     tag: 'div',
                     style: {
                         margin: 'auto',
-                        marginRight: '1vw',
+                        marginRight: '0',
                         marginLeft: 'auto',
                         width: 'fit-content',
                         height: 'fit-content',
                         position: 'relative',
-                        display: 'flex'
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px'
                     },
                     child: [
                         $({
-                            tag: 'div',
+                            tag: 'button',
                             style: {
-                                margin: 'auto',
-                                marginRight: '1vw',
-                                fontSize: '1.5vw',
-                                color: 'deepskyblue',
-                                cursor: 'pointer'
+                                padding: '8px 14px',
+                                backgroundColor: '#f8f9fa',
+                                border: '1px solid #e9ecef',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                color: '#6c757d',
+                                fontSize: '14px',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
                             },
                             child: [
                                 $({
-                                    tag: 'a',
-                                    style: {
-                                        textDecoration: 'none',
-                                        color: 'deepskyblue',
-                                    },
-                                    att: {
-                                        className: 'fa-solid fa-rotate',
-                                        href: '/rdeOffice/research/scoreSummary',
-                                        title: 'Refresh'
-                                    },
-                                    elementHandler: (el) => {
-                                        Anchor = el
-                                    }
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-rotate' },
+                                    style: { fontSize: '14px' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Refresh',
+                                    style: { fontSize: '13px', fontFamily: 'Inter, sans-serif' }
                                 })
-                            ]
+                            ],
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    const currentPath = window.location.pathname;
+                                    window.location.href = currentPath;
+                                }
+                            },
+                            mouseenter: (e) => {
+                                e.target.style.backgroundColor = '#e9ecef';
+                            },
+                            mouseleave: (e) => {
+                                e.target.style.backgroundColor = '#f8f9fa';
+                            }
                         }),
                         $({
                             tag: 'select',
                             style: {
-                                width: '20vw',
-                                height: '3vh',
-                                fontSize: '1vw',
-                                backgroundColor: 'transparent',
-                                border: 'none',
-                                color: '#bbb',
-                                outLine: 'none',
-                                borderBottom: 'solid thin #999',
+                                width: '220px',
+                                height: '40px',
+                                fontSize: '13px',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #e9ecef',
+                                borderRadius: '8px',
+                                color: '#2c3e50',
+                                outline: 'none',
+                                padding: '0 12px',
+                                fontFamily: 'Inter, sans-serif',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                appearance: 'auto'
                             },
                             event: {
                                 type: 'change',
                                 method: (ev) => {
                                     const eventId = ev.target.value;
-                                    const eventOption = ev.target.childNodes[ev.target.selectedIndex];
-
                                     if (eventId && eventId !== 'Select Event') {
-                                        // Update the URL to include the event ID
                                         const currentPath = window.location.pathname;
                                         const pathParts = currentPath.split('/');
 
-                                        // If we're already on a scoreSummary page with an event ID
                                         if (pathParts.includes('scoreSummary')) {
-                                            // Update the event ID in the URL (position 4)
                                             pathParts[4] = eventId;
-
-                                            // If there's a category/center after the event ID, remove it
-                                            // to go back to the main categories/centers view
                                             if (pathParts.length > 5) {
                                                 pathParts.splice(5, pathParts.length - 5);
                                             }
-
-                                            const newUrl = pathParts.join('/');
-                                            window.location.href = newUrl;
+                                            window.location.href = pathParts.join('/');
                                         } else {
-                                            // If not on scoreSummary page, navigate to it
                                             window.location.href = `/rdeOffice/research/scoreSummary/${eventId}`;
                                         }
                                     }
+                                },
+                                focus: (e) => {
+                                    e.target.style.borderColor = '#0d6efd';
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(13,110,253,0.1)';
+                                },
+                                blur: (e) => {
+                                    e.target.style.borderColor = '#e9ecef';
+                                    e.target.style.boxShadow = 'none';
                                 }
                             },
                             child: [
@@ -3025,700 +3034,992 @@ export const ResearchMain = () => {
                                         disabled: true,
                                         value: ''
                                     },
-                                    text: 'Select Event'
+                                    text: 'Select Event',
+                                    style: { color: '#adb5bd' }
                                 })
                             ],
                             elementHandler: (el) => {
                                 const req = new Request('/eventRequest')
-                                req.Post([
-                                    {
-                                        name: 'getEventAdmin',
-                                        value: '1'
-                                    }
-                                ])
+                                req.Post([{ name: 'getEventAdmin', value: '1' }])
                                 req.Json()
                                 req.Send().then(data => {
                                     data.forEach(val => {
                                         const option = $({
                                             tag: 'option',
-                                            att: {
-                                                value: val.id
-                                            },
+                                            att: { value: val.id },
                                             text: val.name,
                                             style: {
-                                                backgroundColor: '#222',
-                                                color: 'deepskyblue',
-                                                fontSize: '1vw',
+                                                padding: '8px',
+                                                fontFamily: 'Inter, sans-serif'
                                             }
                                         })
 
-                                        // If this option matches the current event ID in the URL, select it
                                         const currentPath = window.location.pathname;
                                         const pathParts = currentPath.split('/');
                                         if (pathParts.includes('scoreSummary') && pathParts[4]) {
-                                            const currentEventId = pathParts[4];
-                                            if (currentEventId == val.id) {
+                                            if (pathParts[4] == val.id) {
                                                 option.selected = true;
                                             }
                                         }
-
                                         el.appendChild(option);
                                     })
                                 }).catch(err => {
                                     console.error('Error loading events:', err);
-                                    el.appendChild($({
-                                        tag: 'option',
-                                        att: {
-                                            disabled: true
-                                        },
-                                        text: 'Error loading events'
-                                    }));
                                 })
                             }
                         })
                     ]
-                }))
+                })
             }
-            return ($({
+
+            return $({
                 tag: 'div',
                 style: {
                     width: '100%',
                     height: 'fit-content',
-                    paddingTop: '.5rem',
-                    paddingBottom: '.3rem',
-                    backgroundColor: 'rgba(100,100,100,0.34)',
-                    display: 'flex'
+                    padding: '16px 24px',
+                    backgroundColor: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    borderBottom: '1px solid #e9ecef',
+                    gap: '16px'
                 },
                 child: [
                     $({
                         tag: 'button',
                         style: {
-                            width: 'fit-content',
-                            height: 'fit-content',
-                            marginRight: '2vw',
-                            marginLeft: '1vw',
-                            border: 'solid thin deepskyblue',
-                            paddingLeft: '.5vw',
-                            paddingRight: '.5vw',
-                            borderRadius: '.5rem',
-                            backgroundColor: '#222',
+                            padding: '8px 16px',
+                            backgroundColor: '#f8f9fa',
+                            border: '1px solid #e9ecef',
+                            borderRadius: '8px',
                             cursor: 'pointer',
                             display: 'flex',
-                            flexDirection: 'column',
                             alignItems: 'center',
-                            justifyContent: 'center'
+                            gap: '8px',
+                            transition: 'all 0.2s ease',
+                            color: '#495057'
                         },
                         child: [
                             $({
-                                tag: 'div',
-                                text: 'Back',
-                                style: {
-                                    fontSize: '1vw',
-                                    fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                                    color: 'deepskyblue',
-                                    textDecoration: 'hidden'
-                                }
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-arrow-left' },
+                                style: { fontSize: '14px' }
                             }),
                             $({
-                                tag: 'div',
-                                att: {
-                                    className: 'fa fa-arrow-left'
-                                },
-                                style: {
-                                    margin: 'auto',
-                                    textAlign: 'center',
-                                    width: '100%',
-                                    fontSize: '1.2vw',
-                                    color: 'deepskyblue'
-                                }
+                                tag: 'span',
+                                text: 'Back',
+                                style: { fontSize: '13px', fontFamily: 'Inter, sans-serif', fontWeight: '500' }
                             })
                         ],
-                        event: {  // Add click event instead of href
+                        event: {
                             type: 'click',
                             method: () => {
                                 window.location.href = '/rdeOffice/research/research';
                             }
+                        },
+                        mouseenter: (e) => {
+                            e.target.style.backgroundColor = '#e9ecef';
+                        },
+                        mouseleave: (e) => {
+                            e.target.style.backgroundColor = '#f8f9fa';
                         }
                     }),
                     $({
                         tag: 'div',
-                        text: 'Score Summary and Ranking',
                         style: {
-                            margin: 'auto',
-                            marginLeft: '1vw',
-                            color: '#bbb',
-                            width: 'fit-content',
-                            height: 'fit-content',
-                            fontSize: '1.2vw',
-                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                            fontWeight: 'bolder'
-                        }
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-chart-simple' },
+                                style: { fontSize: '20px', color: '#0d6efd' }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: 'Score Summary & Ranking',
+                                style: {
+                                    fontSize: '18px',
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontWeight: '600',
+                                    color: '#1a1a2e',
+                                    letterSpacing: '-0.3px'
+                                }
+                            })
+                        ]
                     }),
                     FilterEvent()
                 ]
-            }))
+            })
         }
 
         const BodySum = () => {
+            let activeTab = null;
+            let tabContentContainer = null;
+            let tabsContainer = null;
+
             const LabelEvent = (text, url) => {
-                return ($({
+                return $({
                     tag: 'div',
                     style: {
                         width: 'fit-content',
                         height: 'fit-content',
-                        fontSize: '1.5vw',
-                        fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                        margin: '2vh auto'
+                        margin: '0'
                     },
                     child: [
                         $({
-                            tag: 'a',
-                            att: {
-                                href: `/rdeOffice/research/scoreSummary/${Path(4)}/category/${url}`
-                            },
-                            text: text,
+                            tag: 'button',
                             style: {
                                 textDecoration: 'none',
-                                color: 'deepskyblue',
-                                padding: '10px 20px',
-                                border: 'solid 1px deepskyblue',
-                                borderRadius: '5px',
-                                display: 'inline-block',
-                                transition: 'all 0.3s'
+                                color: '#2c3e50',
+                                padding: '12px 20px',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #e9ecef',
+                                borderRadius: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                transition: 'all 0.25s ease',
+                                fontFamily: 'Inter, sans-serif',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                minWidth: '160px',
+                                height: '44px',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                gap: '12px',
+                                cursor: 'pointer',
+                                border: activeTab === url ? '2px solid #0d6efd' : '1px solid #e9ecef',
+                                backgroundColor: activeTab === url ? '#f0f7ff' : '#ffffff'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    text: text,
+                                    style: {
+                                        flex: '1',
+                                        textAlign: 'left'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-chevron-right' },
+                                    style: {
+                                        fontSize: '11px',
+                                        color: activeTab === url ? '#0d6efd' : '#adb5bd',
+                                        transition: 'all 0.25s ease',
+                                        flexShrink: '0'
+                                    }
+                                })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    // Update active tab
+                                    activeTab = url;
+                                    
+                                    // Update all tab buttons
+                                    const allButtons = document.querySelectorAll('.category-tab-btn');
+                                    allButtons.forEach(btn => {
+                                        const btnUrl = btn.getAttribute('data-url');
+                                        if (btnUrl === url) {
+                                            btn.style.borderColor = '#0d6efd';
+                                            btn.style.backgroundColor = '#f0f7ff';
+                                            const arrow = btn.querySelector('.fa-chevron-right');
+                                            if (arrow) arrow.style.color = '#0d6efd';
+                                        } else {
+                                            btn.style.borderColor = '#e9ecef';
+                                            btn.style.backgroundColor = '#ffffff';
+                                            const arrow = btn.querySelector('.fa-chevron-right');
+                                            if (arrow) arrow.style.color = '#adb5bd';
+                                        }
+                                    });
+
+                                    // Load content for the selected tab
+                                    loadTabContent(url, text);
+                                }
+                            },
+                            elementHandler: (el) => {
+                                el.setAttribute('data-url', url);
+                                el.classList.add('category-tab-btn');
+                                
+                                // Hover effects
+                                el.addEventListener('mouseenter', () => {
+                                    if (activeTab !== url) {
+                                        el.style.borderColor = '#0d6efd';
+                                        el.style.boxShadow = '0 4px 16px rgba(13,110,253,0.12)';
+                                        el.style.transform = 'translateY(-2px)';
+                                        el.style.backgroundColor = '#f8f9ff';
+                                        const arrow = el.querySelector('.fa-chevron-right');
+                                        if (arrow) arrow.style.color = '#0d6efd';
+                                    }
+                                });
+                                el.addEventListener('mouseleave', () => {
+                                    if (activeTab !== url) {
+                                        el.style.borderColor = '#e9ecef';
+                                        el.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+                                        el.style.transform = 'translateY(0)';
+                                        el.style.backgroundColor = '#ffffff';
+                                        const arrow = el.querySelector('.fa-chevron-right');
+                                        if (arrow) arrow.style.color = '#adb5bd';
+                                    }
+                                });
                             }
                         })
                     ]
-                }))
+                })
             }
 
-            const SummaryPanel = (text) => {
-                let Report, ReportData
+            const loadTabContent = (categoryId, categoryName) => {
+                if (!tabContentContainer) return;
 
-                const getReport = ({ scoreRank, rankAve, RankPerCrit }) => {
-                    Report.addEventListener('click', () => {
-                        mainFrame.appendChild(Summary());
-                    })
-                }
+                // Show loading state
+                tabContentContainer.innerHTML = '';
+                tabContentContainer.appendChild($({
+                    tag: 'div',
+                    style: {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '60px 40px',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '16px',
+                        border: '1px solid #e9ecef',
+                        minHeight: '300px'
+                    },
+                    child: [
+                        $({
+                            tag: 'span',
+                            att: { className: 'fa-solid fa-spinner fa-pulse' },
+                            style: {
+                                fontSize: '40px',
+                                color: '#0d6efd',
+                                marginBottom: '16px'
+                            }
+                        }),
+                        $({
+                            tag: 'p',
+                            text: `Loading scores for ${categoryName}...`,
+                            style: {
+                                fontSize: '15px',
+                                color: '#6c757d',
+                                fontFamily: 'Inter, sans-serif'
+                            }
+                        })
+                    ]
+                }));
 
-                return ($({
+                // Fetch data for the selected category
+                const request = new Request('/ranking')
+                request.Post([
+                    { name: 'getEval', value: '1' },
+                    { name: 'eventId', value: Path(4) ? parseInt(Path(4)) : 0 },
+                    { name: 'categoryId', value: categoryId }
+                ])
+                request.Json()
+                request.Send().then((data) => {
+                    tabContentContainer.innerHTML = '';
+
+                    if (!data || !Array.isArray(data) || data.length === 0) {
+                        tabContentContainer.appendChild($({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '60px 40px',
+                                backgroundColor: '#ffffff',
+                                borderRadius: '16px',
+                                border: '1px solid #e9ecef',
+                                minHeight: '300px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-file-circle-exclamation' },
+                                    style: {
+                                        fontSize: '56px',
+                                        color: '#ced4da',
+                                        marginBottom: '20px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'h3',
+                                    text: 'No Scored Documents Yet',
+                                    style: {
+                                        fontSize: '22px',
+                                        fontWeight: '600',
+                                        color: '#2c3e50',
+                                        marginBottom: '10px',
+                                        fontFamily: 'Inter, sans-serif'
+                                    }
+                                }),
+                                $({
+                                    tag: 'p',
+                                    text: 'There are no evaluated documents for this category/center. Scores will appear here once evaluators have completed their assessments.',
+                                    style: {
+                                        fontSize: '15px',
+                                        color: '#6c757d',
+                                        maxWidth: '520px',
+                                        textAlign: 'center',
+                                        lineHeight: '1.7',
+                                        fontFamily: 'Inter, sans-serif'
+                                    }
+                                })
+                            ]
+                        }));
+                        return;
+                    }
+
+                    let Titles = [];
+                    let docSet = [];
+                    let allDocs = [];
+
+                    // Create a container for all content
+                    const contentWrapper = $({
+                        tag: 'div',
+                        style: {
+                            width: '100%'
+                        }
+                    });
+
+                    // Add category header
+                    contentWrapper.appendChild($({
+                        tag: 'div',
+                        style: {
+                            padding: '16px 20px',
+                            backgroundColor: '#f8f9fa',
+                            borderRadius: '12px',
+                            marginBottom: '20px',
+                            border: '1px solid #e9ecef'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                text: `Showing scores for: `,
+                                style: {
+                                    fontSize: '14px',
+                                    color: '#6c757d',
+                                    fontFamily: 'Inter, sans-serif'
+                                }
+                            }),
+                            $({
+                                tag: 'span',
+                                text: categoryName,
+                                style: {
+                                    fontSize: '15px',
+                                    fontWeight: '600',
+                                    color: '#0d6efd',
+                                    fontFamily: 'Inter, sans-serif'
+                                }
+                            })
+                        ]
+                    }));
+
+                    // Process and display each evaluator's scores
+                    data.forEach(val => {
+                        if (val.docs && val.docs.length > 0) {
+                            const Order = val.docs.sort((a, b) => {
+                                const scoreA = parseFloat(a.TotalScore) || 0;
+                                const scoreB = parseFloat(b.TotalScore) || 0;
+                                return scoreB - scoreA;
+                            });
+                            let SortCrit = RankPerCriteria(Order, val.evaluator.fullname);
+                            Titles.push(SortCrit);
+
+                            Order.forEach(doc => {
+                                if (doc.file && doc.file.id) {
+                                    const existingDoc = allDocs.find(d => d.docId === doc.file.id);
+                                    if (!existingDoc) {
+                                        allDocs.push({
+                                            docId: doc.file.id,
+                                            title: doc.file.title,
+                                            author: doc.file.author,
+                                            campus: doc.file.campus,
+                                            category: doc.file.category,
+                                            center: doc.file.center
+                                        });
+                                    }
+                                    docSet.push({
+                                        docId: doc.file.id,
+                                        title: doc.file.title,
+                                        author: doc.file.author,
+                                        campus: doc.file.campus,
+                                        totalScore: doc.TotalScore,
+                                        evaluatorName: val.evaluator.fullname
+                                    });
+                                }
+                            });
+
+                            // Display this evaluator's scores
+                            contentWrapper.appendChild(RankDocs({
+                                evalName: val.evaluator.fullname,
+                                docList: Order
+                            }));
+                        }
+                    });
+
+                    // Calculate and display overall ranking if there are documents
+                    if (allDocs.length > 0) {
+                        const docAverages = allDocs.map(doc => {
+                            const docScores = docSet.filter(d => d.docId === doc.docId);
+                            const totalScore = docScores.reduce((sum, d) => sum + (parseFloat(d.totalScore) || 0), 0);
+                            const averageScore = docScores.length > 0 ? totalScore / docScores.length : 0;
+
+                            return {
+                                ...doc,
+                                averageScore: averageScore,
+                                totalEvaluators: docScores.length
+                            };
+                        });
+
+                        const rankedByScore = docAverages
+                            .sort((a, b) => b.averageScore - a.averageScore)
+                            .map((doc, index) => ({
+                                ...doc,
+                                scoreRank: index + 1
+                            }));
+
+                        // Add overall ranking summary
+                        contentWrapper.appendChild($({
+                            tag: 'div',
+                            style: {
+                                marginTop: '24px',
+                                padding: '20px',
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '12px',
+                                border: '1px solid #e9ecef'
+                            },
+                            child: [
+                                $({
+                                    tag: 'h4',
+                                    text: '📊 Overall Ranking Summary',
+                                    style: {
+                                        fontSize: '16px',
+                                        fontWeight: '600',
+                                        color: '#1a1a2e',
+                                        fontFamily: 'Inter, sans-serif',
+                                        marginBottom: '12px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                        gap: '10px'
+                                    },
+                                    elementHandler: (el) => {
+                                        rankedByScore.forEach((doc, index) => {
+                                            const rankColors = ['#ffd700', '#c0c0c0', '#cd7f32', '#0d6efd', '#6c757d'];
+                                            const color = index < 3 ? rankColors[index] : rankColors[3];
+                                            
+                                            el.appendChild($({
+                                                tag: 'div',
+                                                style: {
+                                                    padding: '12px 16px',
+                                                    backgroundColor: '#ffffff',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #e9ecef',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '12px'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'span',
+                                                        text: `#${index + 1}`,
+                                                        style: {
+                                                            fontSize: '18px',
+                                                            fontWeight: '700',
+                                                            color: color,
+                                                            minWidth: '32px'
+                                                        }
+                                                    }),
+                                                    $({
+                                                        tag: 'div',
+                                                        style: {
+                                                            flex: '1'
+                                                        },
+                                                        child: [
+                                                            $({
+                                                                tag: 'div',
+                                                                text: doc.title || 'Untitled',
+                                                                style: {
+                                                                    fontSize: '13px',
+                                                                    fontWeight: '500',
+                                                                    color: '#2c3e50',
+                                                                    fontFamily: 'Inter, sans-serif'
+                                                                }
+                                                            }),
+                                                            $({
+                                                                tag: 'div',
+                                                                style: {
+                                                                    display: 'flex',
+                                                                    gap: '12px',
+                                                                    fontSize: '12px',
+                                                                    color: '#6c757d',
+                                                                    fontFamily: 'Inter, sans-serif',
+                                                                    marginTop: '2px'
+                                                                },
+                                                                child: [
+                                                                    $({
+                                                                        tag: 'span',
+                                                                        text: `Author: ${doc.author || 'N/A'}`
+                                                                    }),
+                                                                    $({
+                                                                        tag: 'span',
+                                                                        text: `Score: ${doc.averageScore.toFixed(2)}`
+                                                                    }),
+                                                                    $({
+                                                                        tag: 'span',
+                                                                        text: `(${doc.totalEvaluators} evaluator${doc.totalEvaluators > 1 ? 's' : ''})`
+                                                                    })
+                                                                ]
+                                                            })
+                                                        ]
+                                                    })
+                                                ]
+                                            }));
+                                        });
+                                    }
+                                })
+                            ]
+                        }));
+
+                        // Store report data
+                        const FinalRank = rankedByScore.map(doc => ({
+                            title: doc,
+                            averageScore: doc.averageScore,
+                            rankAverage: doc.scoreRank
+                        }));
+
+                        const RankAve = FinalRanking(FinalRank);
+                        const ScoreRank = ScoreRankAVe(FinalRank);
+
+                        // Store for report generation
+                        window._reportData = {
+                            scoreRank: ScoreRank,
+                            rankAve: RankAve,
+                            RankPerCrit: Titles
+                        };
+                    }
+
+                    tabContentContainer.appendChild(contentWrapper);
+
+                }).catch(error => {
+                    console.error('Error fetching ranking data:', error);
+                    tabContentContainer.innerHTML = '';
+                    tabContentContainer.appendChild($({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '60px 40px',
+                            backgroundColor: '#ffffff',
+                            borderRadius: '16px',
+                            border: '1px solid #f8d7da',
+                            minHeight: '300px'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                att: { className: 'fa-solid fa-triangle-exclamation' },
+                                style: {
+                                    fontSize: '56px',
+                                    color: '#dc3545',
+                                    marginBottom: '16px'
+                                }
+                            }),
+                            $({
+                                tag: 'h3',
+                                text: 'Error Loading Data',
+                                style: {
+                                    fontSize: '22px',
+                                    fontWeight: '600',
+                                    color: '#dc3545',
+                                    marginBottom: '8px',
+                                    fontFamily: 'Inter, sans-serif'
+                                }
+                            }),
+                            $({
+                                tag: 'p',
+                                text: 'Failed to load scoring data. Please try again.',
+                                style: {
+                                    fontSize: '15px',
+                                    color: '#6c757d',
+                                    maxWidth: '500px',
+                                    textAlign: 'center',
+                                    lineHeight: '1.7',
+                                    fontFamily: 'Inter, sans-serif'
+                                }
+                            }),
+                            $({
+                                tag: 'button',
+                                text: 'Retry',
+                                style: {
+                                    marginTop: '20px',
+                                    padding: '10px 28px',
+                                    backgroundColor: '#0d6efd',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    cursor: 'pointer',
+                                    fontSize: '14px',
+                                    fontWeight: '500',
+                                    fontFamily: 'Inter, sans-serif',
+                                    transition: 'all 0.2s ease'
+                                },
+                                event: {
+                                    type: 'click',
+                                    method: () => {
+                                        loadTabContent(categoryId, categoryName);
+                                    }
+                                }
+                            })
+                        ]
+                    }));
+                });
+            };
+
+            // Update the SummaryPanel to use tabs
+            const SummaryPanel = () => {
+                let Report;
+
+                return $({
                     tag: 'div',
                     style: {
                         width: '100%',
                         height: '100%',
+                        backgroundColor: '#f8f9fa',
+                        display: 'flex',
+                        flexDirection: 'column'
                     },
                     child: [
+                        // Tabs header
                         $({
                             tag: 'div',
                             style: {
                                 width: '100%',
                                 height: 'fit-content',
-                                backgroundColor: '#2c3e50',
-                                fontFamily: 'Helvetica',
+                                backgroundColor: '#ffffff',
+                                padding: '16px 24px',
                                 display: 'flex',
-                                padding: '10px',
-                                alignItems: 'center'
+                                alignItems: 'center',
+                                borderBottom: '1px solid #e9ecef',
+                                gap: '16px',
+                                flexShrink: '0'
                             },
                             elementHandler: (el) => {
-                                // Get event and category/center info
-                                const req = new Request('/score_rank')
-                                req.Post([
-                                    {
-                                        name: 'getCatIdName',
-                                        value: text
+                                // Back button
+                                const backBtn = $({
+                                    tag: 'a',
+                                    att: {
+                                        href: Current().replace(Base(), '').split('/').slice(0, 5).join('/'),
+                                        className: 'fa-solid fa-arrow-left'
                                     },
-                                    {
-                                        name: 'eventId',
-                                        value: Path(4) || '0'
+                                    style: {
+                                        color: '#495057',
+                                        textDecoration: 'none',
+                                        fontSize: '16px',
+                                        padding: '8px 12px',
+                                        border: '1px solid #e9ecef',
+                                        borderRadius: '8px',
+                                        transition: 'all 0.2s ease',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        flexShrink: '0'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            text: ' Back',
+                                            style: {
+                                                fontFamily: 'Inter, sans-serif',
+                                                fontSize: '13px',
+                                                fontWeight: '500'
+                                            }
+                                        })
+                                    ],
+                                    elementHandler: (btn) => {
+                                        btn.addEventListener('mouseenter', () => {
+                                            btn.style.backgroundColor = '#f8f9fa';
+                                            btn.style.borderColor = '#0d6efd';
+                                        });
+                                        btn.addEventListener('mouseleave', () => {
+                                            btn.style.backgroundColor = 'transparent';
+                                            btn.style.borderColor = '#e9ecef';
+                                        });
                                     }
-                                ])
-                                req.Json()
-                                req.Send().then(data => {
-                                    // Create back button
-                                    const backBtn = $({
-                                        tag: 'a',
-                                        att: {
-                                            href: Current().replace(Base(), '').split('/').slice(0, 5).join('/'),
-                                            className: 'fa-solid fa-arrow-left',
-                                            title: 'Back'
-                                        },
+                                });
+
+                                // Event name header
+                                const getEventNameReq = new Request('/score_rank');
+                                getEventNameReq.Post([
+                                    { name: 'getEventName', value: '1' },
+                                    { name: 'eventId', value: Path(4) }
+                                ]);
+                                getEventNameReq.Json();
+                                getEventNameReq.Send().then(eventData => {
+                                    const eventName = eventData.length > 0 ? eventData[0].name : 'Unknown Event';
+                                    
+                                    const headerText = $({
+                                        tag: 'div',
                                         style: {
-                                            color: 'deepskyblue',
-                                            textDecoration: 'none',
-                                            marginRight: '20px',
-                                            fontSize: '1.2vw',
-                                            padding: '5px 10px',
-                                            border: 'solid 1px deepskyblue',
-                                            borderRadius: '3px'
+                                            fontSize: '16px',
+                                            color: '#1a1a2e',
+                                            fontWeight: '600',
+                                            fontFamily: 'Inter, sans-serif',
+                                            flex: '1'
                                         },
                                         child: [
                                             $({
                                                 tag: 'span',
-                                                text: ' Back',
-                                                style: {
-                                                    fontFamily: 'Helvetica',
-                                                    fontWeight: 'normal',
-                                                    fontSize: '1vw'
-                                                }
+                                                text: eventName,
+                                                style: { color: '#495057', fontWeight: '400' }
+                                            }),
+                                            $({
+                                                tag: 'span',
+                                                text: ' - Score Summary',
+                                                style: { color: '#0d6efd' }
                                             })
                                         ]
                                     });
 
-                                    // Get event name
-                                    const getEventNameReq = new Request('/score_rank');
-                                    getEventNameReq.Post([
-                                        {
-                                            name: 'getEventName',
-                                            value: '1'
-                                        },
-                                        {
-                                            name: 'eventId',
-                                            value: Path(4)
-                                        }
-                                    ]);
-                                    getEventNameReq.Json();
-                                    getEventNameReq.Send().then(eventData => {
-                                        const eventName = eventData.length > 0 ? eventData[0].name : 'Unknown Event';
-
-                                        // Create header
-                                        const headerText = $({
-                                            tag: 'div',
-                                            style: {
-                                                fontSize: '1.2vw',
-                                                color: 'white',
-                                                fontWeight: 'bold',
-                                                marginLeft: '20px'
-                                            },
-                                            child: [
-                                                $({
-                                                    tag: 'span',
-                                                    text: eventName + ' - ',
-                                                    style: {
-                                                        color: '#bbb'
-                                                    }
-                                                }),
-                                                $({
-                                                    tag: 'span',
-                                                    text: data.length > 0 ? `"${data[0]['name']}"` : 'Unknown Category/Center',
-                                                    style: {
-                                                        color: 'deepskyblue'
-                                                    }
-                                                })
-                                            ]
-                                        });
-
-                                        el.appendChild(backBtn);
-                                        el.appendChild(headerText);
-                                    });
+                                    el.appendChild(backBtn);
+                                    el.appendChild(headerText);
                                 });
                             }
                         }),
+                        // Category tabs row
                         $({
                             tag: 'div',
                             style: {
                                 width: '100%',
-                                height: '87%',
-                                overflowY: 'auto',
-                                backgroundColor: '#767575'
+                                padding: '16px 24px',
+                                backgroundColor: '#ffffff',
+                                borderBottom: '1px solid #e9ecef',
+                                flexShrink: '0'
                             },
                             elementHandler: (el) => {
-                                const request = new Request('/ranking')
-                                request.Post([
-                                    {
-                                        name: 'getEval',
-                                        value: '1'
-                                    },
-                                    {
-                                        name: 'eventId',
-                                        value: Path(4) ? parseInt(Path(4)) : 0
-                                    },
-                                    {
-                                        name: 'categoryId',
-                                        value: Path(6) ? Path(6) : '0'
+                                tabsContainer = el;
+                                
+                                const container = $({
+                                    tag: 'div',
+                                    style: {
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
+                                        gap: '10px',
+                                        justifyContent: 'flex-start',
+                                        alignItems: 'center'
                                     }
-                                ])
-                                request.Json()
-                                request.Send().then((data) => {
+                                });
 
-                                    let Titles = []
-                                    let docSet = []
-                                    let allDocs = [] // Collect all documents for this category/center
-
-                                    // First, display each evaluator's scores
-                                    data.forEach(val => {
-                                        if (val.docs && val.docs.length > 0) {
-                                            //console.log(`Evaluator ${val.evaluator?.fullname} has ${val.docs.length} documents`);
-
-                                            // Sort documents by TotalScore descending
-                                            const Order = val.docs.sort((a, b) => {
-                                                const scoreA = parseFloat(a.TotalScore) || 0;
-                                                const scoreB = parseFloat(b.TotalScore) || 0;
-                                                return scoreB - scoreA; // Descending
-                                            })
-                                            // Rank per evaluator within this category/center
-                                            let SortCrit = RankPerCriteria(Order, val.evaluator.fullname)
-                                            Titles.push(SortCrit)
-
-                                            // Collect unique documents for this category/center
-                                            Order.forEach(doc => {
-                                                if (doc.file && doc.file.id) {
-                                                    const existingDoc = allDocs.find(d => d.docId === doc.file.id);
-                                                    if (!existingDoc) {
-                                                        allDocs.push({
-                                                            docId: doc.file.id,
-                                                            title: doc.file.title,
-                                                            author: doc.file.author,
-                                                            campus: doc.file.campus,
-                                                            category: doc.file.category,
-                                                            center: doc.file.center
-                                                        })
-                                                    }
-
-                                                    // Add to docSet for this evaluator
-                                                    docSet.push({
-                                                        docId: doc.file.id,
-                                                        title: doc.file.title,
-                                                        author: doc.file.author,
-                                                        campus: doc.file.campus,
-                                                        totalScore: doc.TotalScore,
-                                                        evaluatorName: val.evaluator.fullname
-                                                    })
-                                                }
-                                            })
-
-                                            // Display this evaluator's scores
-                                            el.appendChild(RankDocs({
-                                                evalName: val.evaluator.fullname,
-                                                docList: Order
-                                            }))
-                                        }
-                                    })
-
-                                    // Calculate ranking ONLY within this category/center
-                                    if (allDocs.length > 0) {
-                                        //console.log(`Total unique documents in this category/center: ${allDocs.length}`);
-
-                                        // Calculate average scores per document across all evaluators
-                                        const docAverages = allDocs.map(doc => {
-                                            // Get all scores for this document from all evaluators
-                                            const docScores = docSet.filter(d => d.docId === doc.docId);
-                                            const totalScore = docScores.reduce((sum, d) => sum + (parseFloat(d.totalScore) || 0), 0);
-                                            const averageScore = docScores.length > 0 ? totalScore / docScores.length : 0;
-
-                                            return {
-                                                ...doc,
-                                                averageScore: averageScore,
-                                                totalEvaluators: docScores.length
-                                            }
-                                        })
-
-                                        // Calculate ranking based on average score (descending)
-                                        const rankedByScore = docAverages
-                                            .sort((a, b) => b.averageScore - a.averageScore)
-                                            .map((doc, index) => ({
-                                                ...doc,
-                                                scoreRank: index + 1
-                                            }))
-
-                                        // Prepare data for summary display
-                                        const FinalRank = rankedByScore.map(doc => ({
-                                            title: doc,
-                                            averageScore: doc.averageScore,
-                                            rankAverage: doc.scoreRank
-                                        }))
-
-                                        const RankAve = FinalRanking(FinalRank);
-                                        const ScoreRank = ScoreRankAVe(FinalRank);
-
-                                        getReport({
-                                            scoreRank: ScoreRank,
-                                            rankAve: RankAve,
-                                            RankPerCrit: Titles
-                                        })
+                                // Fetch categories/centers
+                                const req = new Request('/score_rank');
+                                req.Post([
+                                    { name: 'scoreRank', value: '1' },
+                                    { name: 'getEventId', value: Path(4) + '' }
+                                ]);
+                                req.Json();
+                                req.Send().then(data => {
+                                    if (data && data.items && data.items.length > 0) {
+                                        data.items.forEach(val => {
+                                            container.appendChild(LabelEvent(val.name, val.id));
+                                        });
                                     } else {
-                                        // No documents found for this category/center
-                                        el.appendChild($({
+                                        container.appendChild($({
                                             tag: 'div',
+                                            text: 'No categories/centers available',
                                             style: {
-                                                padding: '20px',
-                                                backgroundColor: '#fff3cd',
-                                                color: '#856404',
-                                                borderRadius: '5px',
-                                                margin: '20px',
-                                                textAlign: 'center'
-                                            },
-                                            text: 'No documents found for this category/center. Please select a different category/center or check if documents have been scored.'
-                                        }))
-
-                                        // Still create empty report
-                                        getReport({
-                                            scoreRank: [],
-                                            rankAve: [],
-                                            RankPerCrit: []
-                                        })
+                                                color: '#6c757d',
+                                                fontSize: '14px',
+                                                fontFamily: 'Inter, sans-serif',
+                                                padding: '8px 0'
+                                            }
+                                        }));
                                     }
-                                }).catch(error => {
-                                    console.error('Error fetching ranking data:', error);
+                                    el.appendChild(container);
+                                }).catch(err => {
+                                    console.error('Error loading categories:', err);
                                     el.appendChild($({
                                         tag: 'div',
+                                        text: 'Error loading categories',
                                         style: {
-                                            padding: '20px',
-                                            backgroundColor: '#ffe6e6',
-                                            color: '#cc0000',
-                                            borderRadius: '5px',
-                                            margin: '20px'
-                                        },
-                                        text: `Error loading ranking data: ${error.message}`
+                                            color: '#dc3545',
+                                            fontSize: '14px',
+                                            fontFamily: 'Inter, sans-serif'
+                                        }
                                     }));
-
-                                    getReport({
-                                        scoreRank: [],
-                                        rankAve: [],
-                                        RankPerCrit: []
-                                    })
-                                })
-                            },
+                                });
+                            }
                         }),
+                        // Tab content area
                         $({
                             tag: 'div',
                             style: {
-                                height: '7vh',
-                                width: '100%',
-                                maxWidth: 'auto',
-                                backgroundColor: '#2c3e50',
-                                display: 'flex',
-                                justifyContent: 'center',
-                                position: 'fixed',
-                                bottom: '0',
-                                zIndex: '10',
-                                padding: '10px 0'
+                                flex: '1',
+                                overflowY: 'auto',
+                                padding: '20px 24px',
+                                backgroundColor: '#f8f9fa'
                             },
-                            child: [
-                                $({
+                            elementHandler: (el) => {
+                                tabContentContainer = el;
+                                // Show initial message
+                                tabContentContainer.appendChild($({
                                     tag: 'div',
                                     style: {
-                                        width: 'fit-content',
-                                        height: 'fit-content',
-                                        margin: 'auto'
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '80px 40px',
+                                        backgroundColor: '#ffffff',
+                                        borderRadius: '16px',
+                                        border: '1px solid #e9ecef',
+                                        minHeight: '300px'
                                     },
                                     child: [
                                         $({
-                                            tag: 'button',
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-hand-pointer' },
                                             style: {
-                                                width: 'fit-content',
-                                                height: 'fit-content',
-                                                fontSize: '1.2vw',
-                                                borderRadius: '.5rem',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                color: 'white',
-                                                backgroundColor: '#3498db',
-                                                padding: '10px 20px',
-                                                fontWeight: 'bold'
-                                            },
-                                            text: 'Generate Summary Report',
-                                            elementHandler: (el) => {
-                                                Report = el
+                                                fontSize: '56px',
+                                                color: '#ced4da',
+                                                marginBottom: '20px'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'h3',
+                                            text: 'Select a Category / Center',
+                                            style: {
+                                                fontSize: '22px',
+                                                fontWeight: '600',
+                                                color: '#2c3e50',
+                                                marginBottom: '10px',
+                                                fontFamily: 'Inter, sans-serif'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'p',
+                                            text: 'Click on any category or center button above to view scores and rankings.',
+                                            style: {
+                                                fontSize: '15px',
+                                                color: '#6c757d',
+                                                maxWidth: '400px',
+                                                textAlign: 'center',
+                                                lineHeight: '1.7',
+                                                fontFamily: 'Inter, sans-serif'
                                             }
                                         })
                                     ]
+                                }));
+                            }
+                        }),
+                        // Footer with Generate Report button
+                        $({
+                            tag: 'div',
+                            style: {
+                                height: '72px',
+                                width: '100%',
+                                backgroundColor: '#ffffff',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                borderTop: '1px solid #e9ecef',
+                                padding: '0 24px',
+                                flexShrink: '0'
+                            },
+                            child: [
+                                $({
+                                    tag: 'button',
+                                    style: {
+                                        padding: '12px 32px',
+                                        fontSize: '15px',
+                                        borderRadius: '10px',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        color: '#ffffff',
+                                        backgroundColor: '#0d6efd',
+                                        fontWeight: '600',
+                                        fontFamily: 'Inter, sans-serif',
+                                        transition: 'all 0.2s ease',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        boxShadow: '0 2px 8px rgba(13,110,253,0.25)'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            att: { className: 'fa-solid fa-file-pdf' },
+                                            style: { fontSize: '16px' }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            text: 'Generate Summary Report'
+                                        })
+                                    ],
+                                    elementHandler: (el) => {
+                                        Report = el;
+                                        el.addEventListener('click', () => {
+                                            if (window._reportData) {
+                                                mainFrame.appendChild(Summary());
+                                            } else {
+                                                alert('Please select a category/center with scored documents first.');
+                                            }
+                                        });
+                                    },
+                                    mouseenter: (e) => {
+                                        e.target.style.backgroundColor = '#0b5ed7';
+                                        e.target.style.transform = 'translateY(-2px)';
+                                        e.target.style.boxShadow = '0 6px 20px rgba(13,110,253,0.35)';
+                                    },
+                                    mouseleave: (e) => {
+                                        e.target.style.backgroundColor = '#0d6efd';
+                                        e.target.style.transform = 'translateY(0)';
+                                        e.target.style.boxShadow = '0 2px 8px rgba(13,110,253,0.25)';
+                                    }
                                 })
                             ]
                         })
                     ]
-                }))
-            }
+                });
+            };
 
-            return ($({
+            return $({
                 tag: 'div',
                 style: {
                     width: '100%',
-                    height: '92%',
+                    height: 'calc(100% - 72px)',
+                    backgroundColor: '#f8f9fa'
                 },
                 child: [
-                    $({
-                        tag: 'div',
-                        style: {
-                            height: '10%',
-                            width: '100%',
-                            padding: '1.5vh',
-                            fontSize: '1.5vw',
-                            color: 'white',
-                            fontFamily: 'Segoe UI Historic, Segoe UI, Helvetica, Arial, sans-serif',
-                            backgroundColor: '#2c3e50',
-                            textAlign: 'center',
-                            borderBottom: 'solid 2px deepskyblue'
-                        }
-                    }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            height: '80vh',
-                            width: '83vw',
-                            margin: 'auto',
-                            backgroundColor: '#d6d7d8',
-                            padding: '20px'
-                        },
-                        child: [
-                            Router({
-                                indexPath: 5,
-                                components: [
-                                    Route('index', $({
-                                        tag: 'div',
-                                        style: {
-                                            width: '100%',
-                                            height: '100%',
-                                            margin: 'auto',
-                                        },
-                                        elementHandler: (el) => {
-                                            // Create container for categories/centers
-                                            const container = $({
-                                                tag: 'div',
-                                                style: {
-                                                    width: '90%',
-                                                    margin: 'auto',
-                                                    padding: '20px'
-                                                }
-                                            });
-
-                                            // Create header
-                                            const header = $({
-                                                tag: 'div',
-                                                style: {
-                                                    textAlign: 'center',
-                                                    marginBottom: '30px',
-                                                    color: '#2c3e50'
-                                                },
-                                                child: [
-                                                    $({
-                                                        tag: 'h2',
-                                                        style: {
-                                                            fontSize: '1.8vw',
-                                                            marginBottom: '10px'
-                                                        },
-                                                        text: 'Select Category/Center'
-                                                    }),
-                                                    $({
-                                                        tag: 'p',
-                                                        style: {
-                                                            fontSize: '1vw',
-                                                            color: '#7f8c8d'
-                                                        },
-                                                        text: 'Click on a category or center to view scores and rankings'
-                                                    })
-                                                ]
-                                            });
-
-                                            container.appendChild(header);
-
-                                            const req = new Request('/score_rank')
-                                            req.Post([
-                                                {
-                                                    name: 'scoreRank',
-                                                    value: '1'
-                                                },
-                                                {
-                                                    name: 'getEventId',
-                                                    value: Path(4) + ''
-                                                }
-                                            ])
-                                            req.Json()
-                                            req.Send().then(data => {
-                                                if (data && data.items && data.items.length > 0) {
-                                                    const itemsContainer = $({
-                                                        tag: 'div',
-                                                        style: {
-                                                            display: 'flex',
-                                                            flexWrap: 'wrap',
-                                                            justifyContent: 'center',
-                                                            gap: '20px'
-                                                        }
-                                                    });
-
-                                                    data.items.forEach(val => {
-                                                        itemsContainer.appendChild(LabelEvent(val.name, val.id));
-                                                    });
-
-                                                    container.appendChild(itemsContainer);
-                                                } else {
-                                                    // Show message if no categories/centers found
-                                                    container.appendChild($({
-                                                        tag: 'div',
-                                                        style: {
-                                                            textAlign: 'center',
-                                                            color: '#7f8c8d',
-                                                            fontSize: '1.2vw',
-                                                            padding: '40px',
-                                                            backgroundColor: 'white',
-                                                            borderRadius: '5px',
-                                                            border: 'dashed 2px #bdc3c7'
-                                                        },
-                                                        child: [
-                                                            $({
-                                                                tag: 'div',
-                                                                att: {
-                                                                    className: 'fa-solid fa-folder-open'
-                                                                },
-                                                                style: {
-                                                                    fontSize: '3vw',
-                                                                    color: '#bdc3c7',
-                                                                    marginBottom: '20px'
-                                                                }
-                                                            }),
-                                                            $({
-                                                                tag: 'h3',
-                                                                text: 'No Data Available',
-                                                                style: {
-                                                                    marginBottom: '10px'
-                                                                }
-                                                            }),
-                                                            $({
-                                                                tag: 'p',
-                                                                text: data && data.isNewSystem ?
-                                                                    'No centers found for this event.' :
-                                                                    'No categories found for this event.'
-                                                            })
-                                                        ]
-                                                    }));
-                                                }
-                                                el.appendChild(container);
-                                            }).catch(err => {
-                                                //console.error('Error loading categories:', err);
-                                                container.appendChild($({
-                                                    tag: 'div',
-                                                    style: {
-                                                        textAlign: 'center',
-                                                        color: '#e74c3c',
-                                                        fontSize: '1.2vw',
-                                                        padding: '40px',
-                                                        backgroundColor: 'white',
-                                                        borderRadius: '5px',
-                                                        border: 'solid 2px #e74c3c'
-                                                    },
-                                                    text: 'Error loading data. Please try again.'
-                                                }));
-                                                el.appendChild(container);
-                                            });
-                                        }
-                                    })),
-                                    Route('category', SummaryPanel(Path(6))),
-                                ]
-                            })
-                        ]
-                    }),
-                ],
-            }))
+                    SummaryPanel()
+                ]
+            });
         }
 
-        return ($({
+        return $({
             tag: 'div',
             style: {
                 width: '100%',
                 height: '100%',
-                backgroundColor: '#333',
+                backgroundColor: '#ffffff',
                 position: 'absolute',
                 left: '0',
                 top: '0',
-                display: (Path(3) === 'scoreSummary') ? 'block' : 'none'
+                display: (Path(3) === 'scoreSummary') ? 'block' : 'none',
+                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                overflow: 'hidden'
             },
             elementHandler: (el) => {
                 setTimeout(() => {
@@ -3732,7 +4033,7 @@ export const ResearchMain = () => {
                 Top(),
                 BodySum()
             ]
-        }))
+        })
     }
     return ($({
         tag: 'div',
