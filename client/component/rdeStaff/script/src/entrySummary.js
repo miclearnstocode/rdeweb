@@ -1,4 +1,3 @@
-// entrySummary.js
 import { $, Base, ConfirmationAlert, Current, Path, Request, SearchMethod, TimeConvert, Waiting, CustomModal } from "../../../../lib/lib.js";
 import { Print } from "../../../otherComponent/comment.js";
 import { PrintSummary } from "../../../otherComponent/ReviewTemplate.js";
@@ -1063,6 +1062,9 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 child: [
                                     $({
                                         tag: 'select',
+                                        att: {
+                                            id: 'printPanelCategorySelect'
+                                        },
                                         style: {
                                             width: '100%',
                                             backgroundColor: '#ffffff',
@@ -1075,66 +1077,92 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                             borderRadius: '8px',
                                             cursor: 'pointer'
                                         },
-                                        child: [
-                                            $({
+                                        elementHandler: async (el) => {
+                                            // Add default option
+                                            el.appendChild($({
                                                 tag: 'option',
-                                                text: '-- Select Center --',
+                                                text: '-- Select Category --',
                                                 att: {
                                                     disabled: true,
-                                                    selected: true
+                                                    selected: true,
+                                                    value: ''
                                                 },
-                                                style: { backgroundColor: '#ffffff', color: '#6c757d' }
-                                            }),
-                                            $({
+                                                style: {
+                                                    backgroundColor: '#ffffff',
+                                                    color: '#6c757d'
+                                                }
+                                            }));
+                                            
+                                            // Add "Print All Category" option
+                                            el.appendChild($({
                                                 tag: 'option',
                                                 text: 'Print All Category',
-                                                style: { backgroundColor: '#ffffff', fontSize: '14px' }
-                                            }),
-                                            $({
-                                                tag: 'option',
-                                                text: 'Crop Science Research & Developement Center (CSRDC)',
-                                                style: { backgroundColor: '#ffffff', fontSize: '14px' }
-                                            }),
-                                            $({
-                                                tag: 'option',
-                                                text: 'Livestock Research & Development Center (LRDC)',
-                                                style: { backgroundColor: '#ffffff', fontSize: '14px' }
-                                            }),
-                                            $({
-                                                tag: 'option',
-                                                text: 'Fisheries Research & Development Center (FRDC)',
-                                                style: { backgroundColor: '#ffffff', fontSize: '14px' }
-                                            }),
-                                            $({
-                                                tag: 'option',
-                                                text: 'Food and Industrial Technology Research & Development Center (FIRDC) ',
-                                                style: { backgroundColor: '#ffffff', fontSize: '14px' }
-                                            }),
-                                            $({
-                                                tag: 'option',
-                                                text: 'Social Science Research & Development Center (SSRDC)',
-                                                style: { backgroundColor: '#ffffff', fontSize: '14px' }
-                                            }),
-                                            $({
-                                                tag: 'option',
-                                                text: 'Machinery and Agricultural Technology Engineering Center (MATEC)     ',
-                                                style: { backgroundColor: '#ffffff', fontSize: '14px' }
-                                            }),
-                                            $({
-                                                tag: 'option',
-                                                text: 'Coconut Research and Development Center (Coco RDC)',
-                                                style: { backgroundColor: '#ffffff', fontSize: '14px' }
-                                            }),
-                                            $({
-                                                tag: 'option',
-                                                text: 'Extension ',
-                                                style: { backgroundColor: '#ffffff', fontSize: '14px' }
-                                            }),
-                                        ],
+                                                att: {
+                                                    value: 'Print All Category'
+                                                },
+                                                style: {
+                                                    backgroundColor: '#ffffff',
+                                                    color: '#2c3e50',
+                                                    fontSize: '14px'
+                                                }
+                                            }));
+                                            
+                                            // Fetch categories from the category table
+                                            const req = new Request('/comments');
+                                            req.Post([{
+                                                name: 'getCategories',
+                                                value: '1'
+                                            }]);
+                                            req.Json();
+                                            req.Send().then(data => {
+                                                if (data && Array.isArray(data)) {
+                                                    data.forEach(val => {
+                                                        el.appendChild($({
+                                                            tag: 'option',
+                                                            text: val.name,
+                                                            att: {
+                                                                value: val.id
+                                                            },
+                                                            style: {
+                                                                backgroundColor: '#ffffff',
+                                                                color: '#2c3e50',
+                                                                height: '36px',
+                                                                fontSize: '14px'
+                                                            }
+                                                        }));
+                                                    });
+                                                }
+                                            }).catch(err => {
+                                                console.error('Error loading categories:', err);
+                                                // Fallback: Add hardcoded categories if fetch fails
+                                                const fallbackCategories = [
+                                                    'Social Science',
+                                                    'Natural / Biological',
+                                                    'Food',
+                                                    'Development',
+                                                    'Extension'
+                                                ];
+                                                fallbackCategories.forEach(name => {
+                                                    el.appendChild($({
+                                                        tag: 'option',
+                                                        text: name,
+                                                        att: {
+                                                            value: name
+                                                        },
+                                                        style: {
+                                                            backgroundColor: '#ffffff',
+                                                            color: '#2c3e50',
+                                                            height: '36px',
+                                                            fontSize: '14px'
+                                                        }
+                                                    }));
+                                                });
+                                            });
+                                        },
                                         event: {
                                             type: 'change',
                                             method: (event) => {
-                                                getCategory(event.target.value)
+                                                getCategory(event.target.value);
                                             }
                                         }
                                     })
@@ -1190,37 +1218,128 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 event: {
                                     type: 'click',
                                     method: async () => {
-                                        const form = new FormData()
-                                        form.append('commentRequest', 'true')
-                                        form.append('eventType', filter)
-                                        form.append('category', category)
+                                        // Validate selection
+                                        if (!filter || filter === '-- Select Event type --') {
+                                            alert('Please select an event type first.');
+                                            return;
+                                        }
+                                        
+                                        const form = new FormData();
+                                        form.append('commentRequest', 'true');
+                                        form.append('eventType', filter);
+                                        
+                                        // Use the category variable from getCategory
+                                        // This contains the value from the select element
+                                        if (category && category !== 'Print All Category' && category !== '-- Select Category --') {
+                                            form.append('categoryId', category);
+                                            
+                                            // Also get the category name from the select element for display
+                                            const categorySelect = document.querySelector('#printPanelCategorySelect');
+                                            if (categorySelect) {
+                                                const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+                                                if (selectedOption) {
+                                                    form.append('categoryName', selectedOption.text);
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Show loading state
+                                        print.innerHTML = `
+                                            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:60px 40px;color:#6c757d;">
+                                                <span class="fa-solid fa-spinner fa-pulse" style="font-size:40px;color:#0d6efd;margin-bottom:16px;"></span>
+                                                <p style="font-family:Inter,sans-serif;font-size:15px;">Loading comments...</p>
+                                            </div>
+                                        `;
+                                        
                                         await fetch('/comments', {
                                             method: 'POST',
                                             body: form
                                         }).then(res => res.json())
-                                            .then(data => {
-                                                print.innerHTML = ''
-                                                if (data && data.length > 0) {
-                                                    data.forEach(val => {
-                                                        if(val.comments && val.comments.length > 0){
-                                                            print.appendChild(Print({
-                                                                title: val.title,
-                                                                review: val.comments,
-                                                                category: val.category,
-                                                                campus: val.campus,
-                                                                date: val.date ? val.date.split(' ')[0] : '',
-                                                                author: val.author,
-                                                                all: true,
-                                                                getHandler: (el) => {
-                                                                    samp = el
-                                                                }
-                                                            }))
+                                        .then(data => {
+                                            print.innerHTML = '';
+                                            
+                                            if (data && data.length > 0) {
+                                                // Display each document with its comments
+                                                data.forEach(doc => {
+                                                    if (doc.comments && doc.comments.length > 0) {
+                                                        print.appendChild(Print({
+                                                            title: doc.title,
+                                                            review: doc.comments,
+                                                            category: doc.category,
+                                                            campus: doc.campus,
+                                                            center: doc.center,
+                                                            author: doc.author,
+                                                            coauthor: doc.coauthor,
+                                                            presenter: doc.presenter,
+                                                            paper_trail_no: doc.paper_trail_no,
+                                                            all: true,
+                                                            getHandler: (el) => {
+                                                                samp = el;
+                                                            }
+                                                        }));
+                                                    }
+                                                });
+                                                
+                                                // Show count
+                                                const countDiv = document.createElement('div');
+                                                countDiv.style.cssText = `
+                                                    padding: 12px 16px;
+                                                    margin-bottom: 16px;
+                                                    background-color: #e7f1ff;
+                                                    border-radius: 8px;
+                                                    font-family: Inter, sans-serif;
+                                                    font-size: 14px;
+                                                    color: #0d6efd;
+                                                    font-weight: 500;
+                                                `;
+                                                
+                                                // Get category name for display
+                                                let categoryLabel = '';
+                                                if (category && category !== 'Print All Category' && category !== '-- Select Category --') {
+                                                    const categorySelect = document.querySelector('#printPanelCategorySelect');
+                                                    if (categorySelect) {
+                                                        const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+                                                        if (selectedOption) {
+                                                            categoryLabel = ` for "${selectedOption.text}"`;
                                                         }
-                                                    })
-                                                } else {
-                                                    print.innerHTML = '<div style="text-align:center;padding:40px;color:#6c757d;">No comments found</div>'
+                                                    }
                                                 }
-                                            })
+                                                
+                                                countDiv.textContent = `📄 Found ${data.length} document(s) with comments${categoryLabel}`;
+                                                print.prepend(countDiv);
+                                                
+                                            } else {
+                                                let categoryLabel = 'the selected event';
+                                                if (category && category !== 'Print All Category' && category !== '-- Select Category --') {
+                                                    const categorySelect = document.querySelector('#printPanelCategorySelect');
+                                                    if (categorySelect) {
+                                                        const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+                                                        if (selectedOption) {
+                                                            categoryLabel = `"${selectedOption.text}"`;
+                                                        }
+                                                    }
+                                                }
+                                                
+                                                print.innerHTML = `
+                                                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:60px 40px;color:#6c757d;">
+                                                        <span class="fa-solid fa-comment-slash" style="font-size:48px;color:#ced4da;margin-bottom:16px;"></span>
+                                                        <h3 style="font-family:Inter,sans-serif;font-size:20px;color:#2c3e50;margin-bottom:8px;">No Comments Found</h3>
+                                                        <p style="font-family:Inter,sans-serif;font-size:15px;max-width:400px;text-align:center;line-height:1.6;">
+                                                            No comments found for ${categoryLabel}.
+                                                        </p>
+                                                    </div>
+                                                `;
+                                            }
+                                        })
+                                        .catch(err => {
+                                            print.innerHTML = `
+                                                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:60px 40px;color:#dc3545;">
+                                                    <span class="fa-solid fa-triangle-exclamation" style="font-size:48px;margin-bottom:16px;"></span>
+                                                    <h3 style="font-family:Inter,sans-serif;font-size:20px;">Error Loading Comments</h3>
+                                                    <p style="font-family:Inter,sans-serif;font-size:15px;">${err.message || 'Please try again.'}</p>
+                                                </div>
+                                            `;
+                                        });
                                     }
                                 }
                             }),

@@ -141,7 +141,7 @@ export const PosterSubmissionModal = ({ onSuccess, onClose }) => {
             tag: 'input',
             att: {
                 type: 'text',
-                placeholder: 'Search by title, author',
+                placeholder: 'Search by Title/Author',
                 autocomplete: 'off'
             },
             style: {

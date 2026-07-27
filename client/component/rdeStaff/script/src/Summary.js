@@ -2,10 +2,10 @@ import { $, Path, Request } from "../../../../lib/lib.js"
 const XLSX = window.XLSX
 const jsPDF = window.jspdf?.jsPDF || window.jspdf
 
-export const Summary = () => {
+export const Summary = (eventIdParam, categoryIdParam) => {
     let panel
-    let eventId = Path(4) || ''
-    let categoryId = Path(6) || '0'
+    let eventId = Path(4)
+    let categoryId = categoryIdParam
     
     // Main container
     const container = $({
@@ -45,12 +45,11 @@ export const Summary = () => {
     })
     container.appendChild(loadingDiv)
 
-    // Fetch data from API - USING CORRECT ENDPOINT
     const req = new Request('/ranking')
     req.Post([
         { name: 'generateSummaryReport', value: '1' },
         { name: 'eventId', value: eventId },
-        { name: 'categoryId', value: categoryId }
+        { name: 'categoryId', value: categoryId || 0 }
     ])
     req.Json()
     
@@ -64,8 +63,38 @@ export const Summary = () => {
         
         const data = response.data
         
+        // Create a function to fetch final rank data with the categoryId
+        const fetchFinalRankData = () => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/ranking', false);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            
+            const params = new URLSearchParams({
+                getFinalRank: '1',
+                eventId: eventId,
+                categoryId: categoryId || 0
+            }).toString();
+            
+            xhr.send(params);
+            
+            if (xhr.status === 200) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        return response.data;
+                    }
+                } catch (e) {
+                    console.error('Error parsing final rank data:', e);
+                }
+            }
+            return null;
+        };
+        
+        const finalRankData = fetchFinalRankData();
+        
         container.appendChild(createHeader(data))
-        container.appendChild(createContent(data))
+        container.appendChild(createContent(data, finalRankData))
+        
     }).catch(error => {
         container.removeChild(loadingDiv)
         container.appendChild(createErrorPanel('Network error: ' + error.message))

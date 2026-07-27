@@ -3159,119 +3159,8 @@ export const ResearchMain = () => {
             let activeTab = null;
             let tabContentContainer = null;
             let tabsContainer = null;
-
-            const LabelEvent = (text, url) => {
-                return $({
-                    tag: 'div',
-                    style: {
-                        width: 'fit-content',
-                        height: 'fit-content',
-                        margin: '0'
-                    },
-                    child: [
-                        $({
-                            tag: 'button',
-                            style: {
-                                textDecoration: 'none',
-                                color: '#2c3e50',
-                                padding: '12px 20px',
-                                backgroundColor: '#ffffff',
-                                border: '1px solid #e9ecef',
-                                borderRadius: '10px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                transition: 'all 0.25s ease',
-                                fontFamily: 'Inter, sans-serif',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                minWidth: '160px',
-                                height: '44px',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                                position: 'relative',
-                                overflow: 'hidden',
-                                gap: '12px',
-                                cursor: 'pointer',
-                                border: activeTab === url ? '2px solid #0d6efd' : '1px solid #e9ecef',
-                                backgroundColor: activeTab === url ? '#f0f7ff' : '#ffffff'
-                            },
-                            child: [
-                                $({
-                                    tag: 'span',
-                                    text: text,
-                                    style: {
-                                        flex: '1',
-                                        textAlign: 'left'
-                                    }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-chevron-right' },
-                                    style: {
-                                        fontSize: '11px',
-                                        color: activeTab === url ? '#0d6efd' : '#adb5bd',
-                                        transition: 'all 0.25s ease',
-                                        flexShrink: '0'
-                                    }
-                                })
-                            ],
-                            event: {
-                                type: 'click',
-                                method: () => {
-                                    // Update active tab
-                                    activeTab = url;
-                                    
-                                    // Update all tab buttons
-                                    const allButtons = document.querySelectorAll('.category-tab-btn');
-                                    allButtons.forEach(btn => {
-                                        const btnUrl = btn.getAttribute('data-url');
-                                        if (btnUrl === url) {
-                                            btn.style.borderColor = '#0d6efd';
-                                            btn.style.backgroundColor = '#f0f7ff';
-                                            const arrow = btn.querySelector('.fa-chevron-right');
-                                            if (arrow) arrow.style.color = '#0d6efd';
-                                        } else {
-                                            btn.style.borderColor = '#e9ecef';
-                                            btn.style.backgroundColor = '#ffffff';
-                                            const arrow = btn.querySelector('.fa-chevron-right');
-                                            if (arrow) arrow.style.color = '#adb5bd';
-                                        }
-                                    });
-
-                                    // Load content for the selected tab
-                                    loadTabContent(url, text);
-                                }
-                            },
-                            elementHandler: (el) => {
-                                el.setAttribute('data-url', url);
-                                el.classList.add('category-tab-btn');
-                                
-                                // Hover effects
-                                el.addEventListener('mouseenter', () => {
-                                    if (activeTab !== url) {
-                                        el.style.borderColor = '#0d6efd';
-                                        el.style.boxShadow = '0 4px 16px rgba(13,110,253,0.12)';
-                                        el.style.transform = 'translateY(-2px)';
-                                        el.style.backgroundColor = '#f8f9ff';
-                                        const arrow = el.querySelector('.fa-chevron-right');
-                                        if (arrow) arrow.style.color = '#0d6efd';
-                                    }
-                                });
-                                el.addEventListener('mouseleave', () => {
-                                    if (activeTab !== url) {
-                                        el.style.borderColor = '#e9ecef';
-                                        el.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
-                                        el.style.transform = 'translateY(0)';
-                                        el.style.backgroundColor = '#ffffff';
-                                        const arrow = el.querySelector('.fa-chevron-right');
-                                        if (arrow) arrow.style.color = '#adb5bd';
-                                    }
-                                });
-                            }
-                        })
-                    ]
-                })
-            }
+            let selectedCategoryId = null;
+            let selectedCategoryName = null;
 
             const loadTabContent = (categoryId, categoryName) => {
                 if (!tabContentContainer) return;
@@ -3689,9 +3578,137 @@ export const ResearchMain = () => {
                 });
             };
 
+            const LabelEvent = (text, url) => {
+                return $({
+                    tag: 'div',
+                    style: {
+                        width: 'fit-content',
+                        height: 'fit-content',
+                        margin: '0'
+                    },
+                    child: [
+                        $({
+                            tag: 'button',
+                            style: {
+                                textDecoration: 'none',
+                                color: '#2c3e50',
+                                padding: '12px 20px',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #e9ecef',
+                                borderRadius: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                transition: 'all 0.25s ease',
+                                fontFamily: 'Inter, sans-serif',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                minWidth: '160px',
+                                height: '44px',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                gap: '12px',
+                                cursor: 'pointer'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    text: text,
+                                    style: {
+                                        flex: '1',
+                                        textAlign: 'left'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-chevron-right' },
+                                    style: {
+                                        fontSize: '11px',
+                                        color: '#adb5bd',
+                                        transition: 'all 0.25s ease',
+                                        flexShrink: '0'
+                                    }
+                                })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    // Update selected category
+                                    selectedCategoryId = url;
+                                    selectedCategoryName = text;
+                                    
+                                    // Update all tab buttons
+                                    const allButtons = document.querySelectorAll('.category-tab-btn');
+                                    allButtons.forEach(btn => {
+                                        const btnUrl = btn.getAttribute('data-url');
+                                        if (btnUrl === url) {
+                                            btn.style.borderColor = '#0d6efd';
+                                            btn.style.backgroundColor = '#f0f7ff';
+                                            btn.style.boxShadow = '0 0 0 3px rgba(13,110,253,0.15)';
+                                            const arrow = btn.querySelector('.fa-chevron-right');
+                                            if (arrow) arrow.style.color = '#0d6efd';
+                                        } else {
+                                            btn.style.borderColor = '#e9ecef';
+                                            btn.style.backgroundColor = '#ffffff';
+                                            btn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+                                            const arrow = btn.querySelector('.fa-chevron-right');
+                                            if (arrow) arrow.style.color = '#adb5bd';
+                                        }
+                                    });
+
+                                    // Update the indicator in the footer
+                                    const indicator = document.querySelector('.footer-indicator');
+                                    if (indicator && indicator._updateIndicator) {
+                                        indicator._updateIndicator();
+                                    }
+
+                                    // Load content for the selected tab
+                                    loadTabContent(url, text);
+                                }
+                            },
+                            elementHandler: (el) => {
+                                el.setAttribute('data-url', url);
+                                el.classList.add('category-tab-btn');
+                                
+                                // Hover effects
+                                el.addEventListener('mouseenter', () => {
+                                    if (selectedCategoryId !== url) {
+                                        el.style.borderColor = '#0d6efd';
+                                        el.style.boxShadow = '0 4px 16px rgba(13,110,253,0.12)';
+                                        el.style.transform = 'translateY(-2px)';
+                                        el.style.backgroundColor = '#f8f9ff';
+                                        const arrow = el.querySelector('.fa-chevron-right');
+                                        if (arrow) arrow.style.color = '#0d6efd';
+                                    }
+                                });
+                                el.addEventListener('mouseleave', () => {
+                                    if (selectedCategoryId !== url) {
+                                        el.style.borderColor = '#e9ecef';
+                                        el.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+                                        el.style.transform = 'translateY(0)';
+                                        el.style.backgroundColor = '#ffffff';
+                                        const arrow = el.querySelector('.fa-chevron-right');
+                                        if (arrow) arrow.style.color = '#adb5bd';
+                                    }
+                                });
+                            }
+                        })
+                    ]
+                });
+            };
+
             // Update the SummaryPanel to use tabs
             const SummaryPanel = () => {
                 let Report;
+
+                const getReportData = () => {
+                    // Get the current active tab's data
+                    if (selectedCategoryId && window._reportData) {
+                        return window._reportData;
+                    }
+                    return null;
+                };
 
                 return $({
                     tag: 'div',
@@ -3703,7 +3720,7 @@ export const ResearchMain = () => {
                         flexDirection: 'column'
                     },
                     child: [
-                        // Tabs header
+                        // Header with Event Name only
                         $({
                             tag: 'div',
                             style: {
@@ -3718,7 +3735,7 @@ export const ResearchMain = () => {
                                 flexShrink: '0'
                             },
                             elementHandler: (el) => {
-                                // Event name header only - removed back button
+                                // Event name header
                                 const getEventNameReq = new Request('/score_rank');
                                 getEventNameReq.Post([
                                     { name: 'getEventName', value: '1' },
@@ -3731,11 +3748,10 @@ export const ResearchMain = () => {
                                     const headerText = $({
                                         tag: 'div',
                                         style: {
-                                            fontSize: '16px',
+                                            fontSize: '18px',
                                             color: '#1a1a2e',
                                             fontWeight: '600',
                                             fontFamily: 'Inter, sans-serif',
-                                            flex: '1',
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '12px'
@@ -3744,7 +3760,7 @@ export const ResearchMain = () => {
                                             $({
                                                 tag: 'span',
                                                 att: { className: 'fa-solid fa-chart-simple' },
-                                                style: { fontSize: '20px', color: '#0d6efd' }
+                                                style: { color: '#0d6efd', fontSize: '20px' }
                                             }),
                                             $({
                                                 tag: 'span',
@@ -3892,7 +3908,7 @@ export const ResearchMain = () => {
                                 }));
                             }
                         }),
-                        // Footer with Generate Report button
+                        // Footer with Generate Report button and indicator
                         $({
                             tag: 'div',
                             style: {
@@ -3904,9 +3920,41 @@ export const ResearchMain = () => {
                                 alignItems: 'center',
                                 borderTop: '1px solid #e9ecef',
                                 padding: '0 24px',
-                                flexShrink: '0'
+                                flexShrink: '0',
+                                gap: '16px'
                             },
                             child: [
+                                // Selected tab indicator
+                                $({
+                                    tag: 'div',
+                                    att: { className: 'footer-indicator' },
+                                    style: {
+                                        fontSize: '13px',
+                                        color: '#6c757d',
+                                        fontFamily: 'Inter, sans-serif',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                    },
+                                    elementHandler: (el) => {
+                                        // This will be updated when a tab is selected
+                                        const updateIndicator = () => {
+                                            if (selectedCategoryName) {
+                                                el.innerHTML = `
+                                                    <span style="color: #0d6efd; font-weight: 500;">Active:</span>
+                                                    <span style="background: #e9ecef; padding: 2px 12px; border-radius: 12px; font-size: 12px; color: #2c3e50;">${selectedCategoryName}</span>
+                                                `;
+                                            } else {
+                                                el.innerHTML = `
+                                                    <span style="color: #adb5bd;">No category selected</span>
+                                                `;
+                                            }
+                                        };
+                                        updateIndicator();
+                                        // Store reference for updates
+                                        el._updateIndicator = updateIndicator;
+                                    }
+                                }),
                                 $({
                                     tag: 'button',
                                     style: {
@@ -3939,10 +3987,15 @@ export const ResearchMain = () => {
                                     elementHandler: (el) => {
                                         Report = el;
                                         el.addEventListener('click', () => {
-                                            if (window._reportData) {
-                                                mainFrame.appendChild(Summary());
+                                            const reportData = getReportData();
+                                            if (reportData && selectedCategoryId) {
+                                                // Pass the eventId and categoryId to Summary
+                                                const eventId = Path(4) || '';
+                                                mainFrame.appendChild(Summary(eventId, selectedCategoryId));
+                                            } else if (!selectedCategoryId) {
+                                                alert('Please select a category/center first.');
                                             } else {
-                                                alert('Please select a category/center with scored documents first.');
+                                                alert('No scored documents available for the selected category/center.');
                                             }
                                         });
                                     },
