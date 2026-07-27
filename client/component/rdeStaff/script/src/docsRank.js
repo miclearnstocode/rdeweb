@@ -4,71 +4,77 @@ export const RankDocs = ({evalName, docList}) => {
     const DocumentList = ({title, criteria, Total, category, center_code, display_name}) => {
         // SIMPLE SUM: Just add up all the scores (no weighting)
         const calculatedTotal = criteria.reduce((sum, criterion) => {
-            // Convert score to number (handle string or number)
             const score = parseFloat(criterion.score) || 0;
             return sum + score;
         }, 0);
         
-        // Use Total if provided, otherwise use calculated total
         const finalTotal = (Total !== undefined && !isNaN(Total) && Total !== null) ? 
                         Total : calculatedTotal;
 
-        const CriteriaList = criteria.map(data => {
+        const CriteriaList = criteria.map((data, index) => {
             const score = parseFloat(data.score) || 0;
             
             return $({
                 tag: 'div',
                 style: {
                     display: 'flex',
-                    border: 'solid thin #666',
-                    color: 'black',
-                    backgroundColor: '#f9f9f9'
+                    borderBottom: index === criteria.length - 1 ? 'none' : '1px solid #f0f2f5',
+                    backgroundColor: index % 2 === 0 ? '#fafbfc' : '#ffffff',
+                    transition: 'background-color 0.15s ease'
+                },
+                event: {
+                    type: 'mouseenter',
+                    method: (e) => {
+                        e.currentTarget.style.backgroundColor = '#f1f5f9';
+                    },
+                    type2: 'mouseleave',
+                    method2: (e) => {
+                        e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#fafbfc' : '#ffffff';
+                    }
                 },
                 child: [
                     $({
                         tag: 'div',
                         text: data.name,
                         style: {
-                            width: '60%',
-                            border: 'solid thin #666',
-                            padding: '.3rem',
-                            backgroundColor: 'white'
+                            flex: '3',
+                            padding: '10px 14px',
+                            color: '#1a2a3a',
+                            fontSize: '13px',
+                            borderRight: '1px solid #f0f2f5'
+                        }
+                    }),
+                    $({
+                        tag: 'div',
+                        text: data.percentage || '—',
+                        style: {
+                            flex: '1',
+                            padding: '10px 14px',
+                            textAlign: 'center',
+                            color: '#64748b',
+                            fontSize: '13px',
+                            fontWeight: '500',
+                            borderRight: '1px solid #f0f2f5'
                         }
                     }),
                     $({
                         tag: 'div',
                         style: {
-                            width: '20%',
-                            border: 'solid thin #666',
-                            padding: '.3rem',
-                            textAlign: 'center',
-                            backgroundColor: 'white'
+                            flex: '1',
+                            padding: '10px 14px',
+                            textAlign: 'center'
                         },
                         child: [
                             $({
-                                tag: 'div',
-                                text: data.percentage,
-                                style: {
-                                    fontWeight: 'bold'
-                                }
-                            })
-                        ]
-                    }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '20%',
-                            border: 'solid thin #666',
-                            padding: '.3rem',
-                            textAlign: 'center',
-                            backgroundColor: 'white'
-                        },
-                        child: [
-                            $({
-                                tag: 'div',
+                                tag: 'span',
                                 text: `${data.score}`,
                                 style: {
-                                    fontWeight: 'bold'
+                                    fontWeight: '600',
+                                    color: '#1976D2',
+                                    backgroundColor: '#e3f2fd',
+                                    padding: '2px 12px',
+                                    borderRadius: '4px',
+                                    fontSize: '13px'
                                 }
                             })
                         ]
@@ -78,225 +84,340 @@ export const RankDocs = ({evalName, docList}) => {
         });
 
         const TotalScore = () => {
-            // Calculate the correct total to display
             const displayTotal = finalTotal;
             
-            return ($({
+            return $({
                 tag: 'div',
                 style: {
                     display: 'flex',
                     width: '100%',
-                    marginRight: '0',
-                    marginLeft: 'auto',
-                    fontSize: '1.1vw',
-                    fontWeight: 'bold',
-                    color: 'white',
-                    backgroundColor: '#2c3e50',
-                    border: 'solid thin #666',
-                    marginTop: '1vh'
+                    backgroundColor: '#f8fafc',
+                    borderTop: '1px solid #e8ecf0',
+                    marginTop: '4px',
+                    borderRadius: '0 0 6px 6px'
                 },
                 child: [
                     $({
                         tag: 'div',
                         text: 'TOTAL SCORE',
                         style: {
-                            padding: '.4rem',
-                            width: '80%',
+                            flex: '3',
+                            padding: '10px 14px',
                             textAlign: 'right',
-                            fontWeight: 'bold'
+                            fontWeight: '600',
+                            color: '#475569',
+                            fontSize: '13px',
+                            letterSpacing: '0.5px'
                         }
                     }),
                     $({
                         tag: 'div',
-                        text: displayTotal,
                         style: {
-                            padding: '.4rem',
-                            fontSize: '1rem',
-                            width: '20%',
-                            textAlign: 'center',
-                            backgroundColor: '#3498db',
-                            fontWeight: 'bold'
-                        }
-                    }),
+                            flex: '2',
+                            padding: '10px 14px',
+                            textAlign: 'center'
+                        },
+                        child: [
+                            $({
+                                tag: 'span',
+                                text: displayTotal,
+                                style: {
+                                    fontWeight: '700',
+                                    color: '#ffffff',
+                                    backgroundColor: '#1976D2',
+                                    padding: '4px 20px',
+                                    borderRadius: '6px',
+                                    fontSize: '15px'
+                                }
+                            })
+                        ]
+                    })
                 ]
-            }))
+            })
         }
 
-        // Don't push TotalScore if we don't have any criteria
         if (criteria.length > 0) {
             CriteriaList.push(TotalScore());
         }
 
-        // Add center/category info if available
         const centerInfo = display_name || category;
-        
-        return ($({
+
+        // Score summary badge
+        const scoreBadgeColor = finalTotal >= 90 ? '#22c55e' : 
+                                finalTotal >= 75 ? '#f59e0b' : 
+                                finalTotal >= 60 ? '#f97316' : '#ef4444';
+
+        return $({
             tag: 'div',
             style: {
                 width: '100%',
-                margin: '1vh auto auto',
-                border: 'solid thin #ddd',
-                padding: '.5rem',
-                backgroundColor: 'white',
-                borderRadius: '5px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                marginBottom: '16px',
+                backgroundColor: '#ffffff',
+                borderRadius: '10px',
+                border: '1px solid #e8ecf0',
+                overflow: 'hidden',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                transition: 'box-shadow 0.2s ease'
+            },
+            event: {
+                type: 'mouseenter',
+                method: (e) => {
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
+                },
+                type2: 'mouseleave',
+                method2: (e) => {
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
+                }
             },
             child: [
-                // Center/Category information
-                centerInfo && $({
-                    tag: 'div',
-                    style: {
-                        display: 'inline-block',
-                        width: '99%',
-                        padding: '.3rem',
-                        color: 'black',
-                        fontSize: '0.9vw',
-                        fontStyle: 'italic',
-                        backgroundColor: '#f0f0f0',
-                        marginBottom: '0.5rem',
-                        borderRadius: '3px'
-                    },
-                    child: [
-                        $({
-                            tag: 'span',
-                            text: center_code ? 'Center: ' : 'Category: ',
-                            style: {
-                                fontWeight: 'bold',
-                                color: 'deepskyblue'
-                            }
-                        }),
-                        $({
-                            tag: 'span',
-                            text: centerInfo,
-                            style: {
-                                color: 'black'
-                            }
-                        })
-                    ]
-                }),
-                
-                // Title
+                // Header: Title + Score Badge
                 $({
                     tag: 'div',
                     style: {
-                        display: 'inline-block',
-                        width: '99%',
-                        padding: '.3rem',
-                        color: 'deepskyblue',
-                        fontSize: '1vw',
-                        marginBottom: '0.5rem'
-                    },
-                    child: [
-                        $({
-                            tag: 'span',
-                            text: 'Title: ',
-                            style: {
-                                fontWeight: 'bold',
-                                color: 'black'
-                            }
-                        }),
-                        $({
-                            tag: 'span',
-                            text: `"${title}"`,
-                            style: {
-                                color: 'black',
-                                fontStyle: 'italic'
-                            }
-                        })
-                    ]
-                }),
-                
-                // Criteria Table Header (only if we have criteria)
-                criteria.length > 0 && $({
-                    tag: 'div',
-                    style: {
                         display: 'flex',
-                        border: 'solid thin #666',
-                        backgroundColor: '#34495e',
-                        color: 'white',
-                        fontWeight: 'bold'
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '14px 18px',
+                        backgroundColor: '#fafbfc',
+                        borderBottom: '1px solid #e8ecf0',
+                        flexWrap: 'wrap',
+                        gap: '8px'
                     },
                     child: [
+                        // Title
                         $({
                             tag: 'div',
-                            text: 'Criteria',
                             style: {
-                                width: '60%',
-                                padding: '.3rem',
-                                textAlign: 'center'
-                            }
+                                flex: 1,
+                                minWidth: '200px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    text: title || 'Untitled Document',
+                                    style: {
+                                        color: '#1a2a3a',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        lineHeight: '1.4'
+                                    }
+                                }),
+                                centerInfo && $({
+                                    tag: 'div',
+                                    style: {
+                                        marginTop: '4px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            text: center_code ? '🏛️' : '📂',
+                                            style: { fontSize: '12px' }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            text: centerInfo,
+                                            style: {
+                                                color: '#64748b',
+                                                fontSize: '12px'
+                                            }
+                                        })
+                                    ]
+                                })
+                            ]
                         }),
+                        // Score Badge
                         $({
                             tag: 'div',
                             style: {
-                                width: '20%',
-                                padding: '.3rem',
-                                textAlign: 'center'
-                            }
-                        }),
-                        $({
-                            tag: 'div',
-                            text: 'Score',
-                            style: {
-                                width: '20%',
-                                padding: '.3rem',
-                                textAlign: 'center'
-                            }
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                backgroundColor: '#f8fafc',
+                                padding: '6px 14px 6px 12px',
+                                borderRadius: '8px',
+                                border: '1px solid #e8ecf0'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    text: 'Score:',
+                                    style: {
+                                        color: '#64748b',
+                                        fontSize: '12px',
+                                        fontWeight: '500'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: finalTotal,
+                                    style: {
+                                        color: scoreBadgeColor,
+                                        fontSize: '16px',
+                                        fontWeight: '700'
+                                    }
+                                })
+                            ]
                         })
                     ]
                 }),
                 
-                // Criteria List (only if we have criteria)
-                criteria.length > 0 && $({
+                // Criteria Table
+                criteria.length > 0 ? $({
                     tag: 'div',
-                    child: CriteriaList
-                }),
-                
-                // Message if no criteria
-                criteria.length === 0 && $({
+                    child: [
+                        // Table Header
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                backgroundColor: '#f1f5f9',
+                                borderBottom: '2px solid #e8ecf0'
+                            },
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    text: 'Criteria',
+                                    style: {
+                                        flex: '3',
+                                        padding: '10px 14px',
+                                        color: '#475569',
+                                        fontSize: '11px',
+                                        fontWeight: '600',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: 'Weight',
+                                    style: {
+                                        flex: '1',
+                                        padding: '10px 14px',
+                                        textAlign: 'center',
+                                        color: '#475569',
+                                        fontSize: '11px',
+                                        fontWeight: '600',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: 'Score',
+                                    style: {
+                                        flex: '1',
+                                        padding: '10px 14px',
+                                        textAlign: 'center',
+                                        color: '#475569',
+                                        fontSize: '11px',
+                                        fontWeight: '600',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px'
+                                    }
+                                })
+                            ]
+                        }),
+                        // Criteria Rows
+                        $({
+                            tag: 'div',
+                            child: CriteriaList
+                        })
+                    ]
+                }) : $({
                     tag: 'div',
                     style: {
-                        padding: '1rem',
+                        padding: '24px',
                         textAlign: 'center',
-                        color: '#999',
+                        color: '#94a3b8',
+                        fontSize: '14px',
                         fontStyle: 'italic'
                     },
                     text: 'No scores recorded for this document'
                 })
-            ].filter(Boolean) // Remove any falsy values
-        }))
+            ].filter(Boolean)
+        })
     }
 
     return $({
         tag: 'div',
         style: {
-            width: '95%',
-            padding: '.5rem',
-            backgroundColor: 'white',
-            margin: '1vh 2vh auto',
-            fontFamily: 'Helvetica',
-            userSelect: 'text',
-            border: 'solid thin #ddd',
-            borderRadius: '5px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+            width: '100%',
+            maxWidth: '1200px',
+            margin: '0 auto',
+            padding: '20px 0',
+            backgroundColor: '#ffffff',
+            fontFamily: 'system-ui, -apple-system, sans-serif'
         },
         child: [
+            // Evaluator Header
             $({
                 tag: 'div',
                 style: {
-                    fontSize: '1.2vw',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    backgroundColor: '#2c3e50',
-                    padding: '.5rem',
-                    borderRadius: '3px',
-                    marginBottom: '1rem',
-                    borderBottom: 'solid 3px deepskyblue'
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '16px 20px',
+                    marginBottom: '20px',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '12px',
+                    border: '1px solid #e8ecf0'
                 },
-                text: 'Evaluator: ' + evalName
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            backgroundColor: '#1976D2',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#ffffff',
+                            fontWeight: '600',
+                            fontSize: '16px',
+                            flexShrink: 0
+                        },
+                        text: evalName ? evalName.charAt(0).toUpperCase() : 'E'
+                    }),
+                    $({
+                        tag: 'div',
+                        style: {
+                            flex: 1
+                        },
+                        child: [
+                            $({
+                                tag: 'div',
+                                text: evalName || 'Evaluator',
+                                style: {
+                                    color: '#1a2a3a',
+                                    fontSize: '18px',
+                                    fontWeight: '600'
+                                }
+                            }),
+                            $({
+                                tag: 'div',
+                                text: `${docList.length} document${docList.length !== 1 ? 's' : ''} evaluated`,
+                                style: {
+                                    color: '#94a3b8',
+                                    fontSize: '13px'
+                                }
+                            })
+                        ]
+                    })
+                ]
             }),
+            // Document List
             $({
                 tag: 'div',
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px'
+                },
                 child: docList.map((v, index) => {
                     return DocumentList({
                         title: v.file.title || `Document ${index + 1}`,

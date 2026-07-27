@@ -17,11 +17,11 @@ export const Summary = (eventIdParam, categoryIdParam) => {
             left: 0,
             width: '100vw',
             height: '100vh',
-            backgroundColor: '#f0f0f0',
+            backgroundColor: '#f5f7fa',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            fontFamily: 'Calibri, Arial, sans-serif'
+            fontFamily: 'Inter, system-ui, -apple-system, sans-serif'
         },
         elementHandler: (el) => { panel = el }
     })
@@ -34,16 +34,43 @@ export const Summary = (eventIdParam, categoryIdParam) => {
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            fontSize: '18px',
-            color: '#2c3e50',
-            backgroundColor: 'white',
-            padding: '20px 40px',
-            borderRadius: '5px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+            fontSize: '16px',
+            color: '#1a2a3a',
+            backgroundColor: '#ffffff',
+            padding: '30px 50px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px'
         },
-        text: 'Loading summary report...'
+        child: [
+            $({
+                tag: 'div',
+                style: {
+                    width: '40px',
+                    height: '40px',
+                    border: '4px solid #e8ecf0',
+                    borderTop: '4px solid #1976D2',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                }
+            }),
+            $({ tag: 'div', text: 'Loading summary report...', style: { color: '#64748b', fontSize: '14px' } })
+        ]
     })
     container.appendChild(loadingDiv)
+
+    // Add keyframes for spinner
+    const styleEl = document.createElement('style')
+    styleEl.textContent = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `
+    document.head.appendChild(styleEl)
 
     const req = new Request('/ranking')
     req.Post([
@@ -63,7 +90,7 @@ export const Summary = (eventIdParam, categoryIdParam) => {
         
         const data = response.data
         
-        // Create a function to fetch final rank data with the categoryId
+        // Fetch final rank data
         const fetchFinalRankData = () => {
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/ranking', false);
@@ -100,7 +127,6 @@ export const Summary = (eventIdParam, categoryIdParam) => {
         container.appendChild(createErrorPanel('Network error: ' + error.message))
     })
 
-    // Create Error Panel
     const createErrorPanel = (message) => {
         return $({
             tag: 'div',
@@ -109,54 +135,62 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                 top: '50%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
-                fontSize: '16px',
-                color: '#e74c3c',
-                backgroundColor: 'white',
-                padding: '30px',
-                borderRadius: '5px',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                fontSize: '14px',
+                color: '#1a2a3a',
+                backgroundColor: '#ffffff',
+                padding: '30px 40px',
+                borderRadius: '12px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 textAlign: 'center',
-                border: 'solid 1px #e74c3c'
+                border: '1px solid #fecaca'
             },
             child: [
-                $({ tag: 'h3', text: 'Error', style: { marginBottom: '15px', color: '#c0392b' } }),
-                $({ tag: 'p', text: message, style: { marginBottom: '20px' } }),
+                $({ tag: 'div', text: '⚠️', style: { fontSize: '40px', marginBottom: '12px' } }),
+                $({ tag: 'h3', text: 'Error Loading Report', style: { marginBottom: '12px', color: '#1a2a3a', fontSize: '18px', fontWeight: '600' } }),
+                $({ tag: 'p', text: message, style: { marginBottom: '20px', color: '#64748b', fontSize: '14px' } }),
                 $({
                     tag: 'button',
                     text: 'Close',
                     style: {
-                        padding: '8px 20px',
-                        backgroundColor: '#3498db',
+                        padding: '10px 32px',
+                        backgroundColor: '#1976D2',
                         color: 'white',
                         border: 'none',
-                        borderRadius: '3px',
+                        borderRadius: '8px',
                         cursor: 'pointer',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        transition: 'background-color 0.2s'
                     },
                     event: {
                         type: 'click',
-                        method: () => { if (panel) panel.remove() }
+                        method: () => { if (panel) panel.remove() },
+                        type2: 'mouseenter',
+                        method2: (e) => { e.currentTarget.style.backgroundColor = '#1565C0' },
+                        type3: 'mouseleave',
+                        method3: (e) => { e.currentTarget.style.backgroundColor = '#1976D2' }
                     }
                 })
             ]
         })
     }
 
-    // Create Header with Back Button and Export
     const createHeader = (data) => {
         return $({
             tag: 'div',
             style: {
-                height: '60px',
+                height: '64px',
                 width: '100%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                backgroundColor: '#2c3e50',
-                color: 'white',
-                padding: '0 25px',
+                backgroundColor: '#ffffff',
+                color: '#1a2a3a',
+                padding: '0 24px',
                 boxSizing: 'border-box',
-                borderBottom: 'solid 3px #3498db'
+                borderBottom: '1px solid #e8ecf0',
+                flexShrink: 0,
+                boxShadow: '0 1px 4px rgba(0,0,0,0.04)'
             },
             child: [
                 // Back button
@@ -165,15 +199,16 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                     style: {
                         padding: '8px 16px',
                         backgroundColor: 'transparent',
-                        color: 'deepskyblue',
-                        border:'solid thin deepskyblue',
-                        borderRadius: '4px',
+                        color: '#1976D2',
+                        border: '1px solid #e8ecf0',
+                        borderRadius: '8px',
                         cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: 'bold',
+                        fontSize: '13px',
+                        fontWeight: '500',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '5px'
+                        gap: '8px',
+                        transition: 'all 0.2s'
                     },
                     child: [
                         $({ tag: 'span', att: { className: 'fa-solid fa-arrow-left' }, style: { fontSize: '14px' } }),
@@ -181,65 +216,86 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                     ],
                     event: {
                         type: 'click',
-                        method: () => { if (panel) panel.remove() }
+                        method: () => { if (panel) panel.remove() },
+                        type2: 'mouseenter',
+                        method2: (e) => { e.currentTarget.style.backgroundColor = '#f8fafc' },
+                        type3: 'mouseleave',
+                        method3: (e) => { e.currentTarget.style.backgroundColor = 'transparent' }
                     }
                 }),
-                // Title - DYNAMIC from database
+                // Title
                 $({
                     tag: 'div',
                     style: {
-                        fontSize: '18px',
-                        fontWeight: 'bold',
-                        color: 'white',
-                        fontFamily: 'Calibri, Arial, sans-serif'
-                    }
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        color: '#1a2a3a',
+                        fontFamily: 'Inter, system-ui, sans-serif'
+                    },
+                    text: data.event?.name || 'Score Summary'
                 }),
                 // Export buttons
                 $({
                     tag: 'div',
-                    style: { display: 'flex', gap: '12px' },
+                    style: { display: 'flex', gap: '10px' },
                     child: [
                         $({
                             tag: 'button',
                             style: {
-                                padding: '8px 16px',
-                                backgroundColor: '#27ae60',
+                                padding: '8px 18px',
+                                backgroundColor: '#22c55e',
                                 color: 'white',
                                 border: 'none',
-                                borderRadius: '4px',
+                                borderRadius: '8px',
                                 cursor: 'pointer',
-                                fontSize: '14px',
-                                fontWeight: 'bold',
+                                fontSize: '13px',
+                                fontWeight: '500',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '5px'
+                                gap: '6px',
+                                transition: 'background-color 0.2s'
                             },
                             child: [
                                 $({ tag: 'span', att: { className: 'fa-solid fa-file-excel' } }),
-                                $({ tag: 'span', text: 'Export to Excel' })
+                                $({ tag: 'span', text: 'Excel' })
                             ],
-                            event: { type: 'click', method: () => exportToExcel(data) }
+                            event: { 
+                                type: 'click', 
+                                method: () => exportToExcel(data),
+                                type2: 'mouseenter',
+                                method2: (e) => { e.currentTarget.style.backgroundColor = '#16a34a' },
+                                type3: 'mouseleave',
+                                method3: (e) => { e.currentTarget.style.backgroundColor = '#22c55e' }
+                            }
                         }),
                         $({
                             tag: 'button',
                             style: {
-                                padding: '8px 16px',
-                                backgroundColor: '#e67e22',
+                                padding: '8px 18px',
+                                backgroundColor: '#ef4444',
                                 color: 'white',
                                 border: 'none',
-                                borderRadius: '4px',
+                                borderRadius: '8px',
                                 cursor: 'pointer',
-                                fontSize: '14px',
-                                fontWeight: 'bold',
+                                fontSize: '13px',
+                                fontWeight: '500',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '5px'
+                                gap: '6px',
+                                transition: 'background-color 0.2s'
                             },
                             child: [
                                 $({ tag: 'span', att: { className: 'fa-solid fa-file-pdf' } }),
-                                $({ tag: 'span', text: 'Export to PDF' })
+                                $({ tag: 'span', text: 'PDF' })
                             ],
-                            event: { type: 'click', method: () => exportToPDF(data) }
+                            event: { 
+                                type: 'click', 
+                                method: () => exportToPDF(data),
+                                type2: 'mouseenter',
+                                method2: (e) => { e.currentTarget.style.backgroundColor = '#dc2626' },
+                                type3: 'mouseleave',
+                                method3: (e) => { e.currentTarget.style.backgroundColor = '#ef4444' }
+                            }
                         })
                     ]
                 })
@@ -247,8 +303,7 @@ export const Summary = (eventIdParam, categoryIdParam) => {
         })
     }
 
-    // Main Content - EXACT EXCEL FORMAT WITH AVERAGE RANKS
-    const createContent = (data) => {
+    const createContent = (data, finalRankData) => {
         if (!data) return $({ tag: 'div', text: 'No data available' })
         
         const contentDiv = $({
@@ -257,9 +312,9 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                 flex: 1,
                 width: '100%',
                 overflow: 'auto',
-                padding: '20px',
+                padding: '24px',
                 boxSizing: 'border-box',
-                backgroundColor: '#f5f5f5'
+                backgroundColor: '#f5f7fa'
             }
         })
 
@@ -268,26 +323,27 @@ export const Summary = (eventIdParam, categoryIdParam) => {
             tag: 'div',
             style: {
                 width: '100%',
-                minWidth: '1200px',
+                maxWidth: '1400px',
                 margin: '0 auto',
-                backgroundColor: '#ddd',
-                padding: '30px',
-                boxShadow: '0 0 10px rgba(0,0,0,0.05)',
-                border: 'solid 1px #ddd'
+                backgroundColor: '#ffffff',
+                padding: '32px 40px',
+                borderRadius: '16px',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                border: '1px solid #e8ecf0'
             }
         })
 
-        // HEADER SECTION - DYNAMIC EVENT TITLE 
+        // HEADER SECTION
         wrapper.appendChild($({
             tag: 'div',
             style: {
-                fontSize: '30px',
-                fontWeight: 'bold',
-                color: '#040720',
+                fontSize: '24px',
+                fontWeight: '700',
+                color: '#1a2a3a',
                 textAlign: 'center',
-                marginBottom: '5px',
-                fontFamily: 'Quattrocento Sans',
-                textTransform: 'uppercase'
+                marginBottom: '4px',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                letterSpacing: '-0.5px'
             },
             text: data.event?.name || data.event?.title
         }))
@@ -295,13 +351,12 @@ export const Summary = (eventIdParam, categoryIdParam) => {
         wrapper.appendChild($({
             tag: 'div',
             style: {
-                fontSize: '19px',
-                fontWeight: 'bold',
-                color: '#040720',
+                fontSize: '16px',
+                fontWeight: '500',
+                color: '#64748b',
                 textAlign: 'center',
-                marginBottom: '25px',
-                fontFamily: 'Quattrocento Sans',
-                textTransform: 'uppercase'
+                marginBottom: '28px',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
             },
             text: `${data.category?.type}: ${data.category?.name || ''}`
         }))
@@ -318,169 +373,153 @@ export const Summary = (eventIdParam, categoryIdParam) => {
             documents.forEach(doc => {
                 documentColumns.push(doc.column)
                 documentTitles[doc.id] = doc.title
-                // Calculate max title length for dynamic width
                 maxTitleLength = Math.max(maxTitleLength, doc.title.length)
             })
         }
         
         const documentCount = documentColumns.length;
+        const criteriaColWidth = 260;
+        const baseCharWidth = 7;
+        let scoreColWidth = Math.min(260, Math.max(90, maxTitleLength * baseCharWidth));
         
-        const criteriaColWidth = 280;
-        const baseCharWidth = 8;
-        const minScoreWidth = 80;
-        const maxScoreWidth = 320;
-        let scoreColWidth = Math.min(maxScoreWidth, Math.max(minScoreWidth, maxTitleLength * baseCharWidth));
-        
-        // If there are many documents, cap the width to prevent overflow
         if (documentCount > 10) {
-            scoreColWidth = Math.min(scoreColWidth, 120);
+            scoreColWidth = Math.min(scoreColWidth, 110);
         }
         
-        //total table width
-        const totalTableWidth = criteriaColWidth + (scoreColWidth * documentCount);
-        
-        // Fetch final rank data FIRST
-        let finalRankData = null;
-        
-        // Create a synchronous XMLHttpRequest to get final rank data
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/ranking', false); // false makes it synchronous
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        
-        const params = new URLSearchParams({
-            getFinalRank: '1',
-            eventId: eventId,
-            categoryId: categoryId
-        }).toString();
-        
-        xhr.send(params);
-        
-        if (xhr.status === 200) {
-            try {
-                const response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                    finalRankData = response.data;
-                }
-            } catch (e) {
-                console.error('Error parsing final rank data:', e);
-            }
-        }
-        
-        // EVALUATOR SHEETS 
+        const totalTableWidth = criteriaColWidth + (scoreColWidth * documentCount) + 40;
+
+        // EVALUATOR SHEETS
         if (data.evaluators && Array.isArray(data.evaluators)) {
             data.evaluators.forEach((evaluatorSheet, evalIndex) => {
                 const evaluator = evaluatorSheet.evaluator
+                const headerColors = ['#e3f2fd', '#e8f5e9', '#fff3e0', '#fce4ec', '#f3e5f5']
+                const headerColor = headerColors[evalIndex % headerColors.length]
                 
-                // Evaluator Header (centered)
+                // Evaluator Header
                 wrapper.appendChild($({
                     tag: 'div',
                     style: {
-                        fontSize: '19px',
-                        fontWeight: 'bold',
-                        color: '#040720',
-                        marginTop: evalIndex > 0 ? '30px' : '10px',
-                        marginBottom: '5px',
-                        marginLeft: '30px',
-                        fontFamily: 'Quattrocento Sans',
-                        fontWeight: 'bold',
-                        textAlign: 'left',
-                        width: '100%'
-                    },
-                    text: `Evaluator ${evaluator.number}: ${evaluator.name}`
-                }))
-
-                wrapper.appendChild($({
-                    tag: 'div',
-                    style: {
-                        fontSize: '25px',
-                        fontWeight: 'bold',
-                        color: '#040720',
-                        textAlign: 'center',
+                        display: 'flex',
                         alignItems: 'center',
-                        marginBottom: '20px',
-                        fontFamily: 'Quattrocento Sans',
-                        textTransform: 'uppercase',
-                        borderBottom: 'solid 2px #545770',
-                        paddingBottom: '10px',
-                        width: '100%',  
-                        maxWidth: '1000px', 
-                        marginLeft: 'auto',
-                        marginRight: 'auto'  
+                        gap: '12px',
+                        marginTop: evalIndex > 0 ? '32px' : '8px',
+                        marginBottom: '16px',
+                        padding: '12px 20px',
+                        backgroundColor: headerColor,
+                        borderRadius: '10px',
+                        border: '1px solid #e8ecf0'
                     },
-                    text: 'Score Sheet'
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: {
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                backgroundColor: '#1976D2',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#ffffff',
+                                fontWeight: '600',
+                                fontSize: '14px',
+                                flexShrink: 0
+                            },
+                            text: evaluator.number || 'E'
+                        }),
+                        $({
+                            tag: 'div',
+                            style: {
+                                fontSize: '16px',
+                                fontWeight: '600',
+                                color: '#1a2a3a',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                            },
+                            text: `Evaluator ${evaluator.number}: ${evaluator.name}`
+                        })
+                    ]
                 }))
 
-                // Create table container with fixed width and auto margins for centering
+                const totalRowWidth = criteriaColWidth + (scoreColWidth * documentCount);
+
                 const tableContainer = $({
                     tag: 'div',
                     style: {
-                        width: `${totalTableWidth}px`,
-                        marginLeft: 'auto',
-                        marginRight: 'auto',
-                        borderCollapse: 'collapse'
+                        width: '100%',
+                        overflow: 'auto',
+                        borderRadius: '10px',
+                        border: '1px solid #e8ecf0',
+                        backgroundColor: '#ffffff',
+                        WebkitOverflowScrolling: 'touch',
+                        maxWidth: '100%'
                     }
                 });
 
-                // CRITERIA ROW (Column Headers) 
-                const criteriaRow = $({
+                // Inner container to prevent shrinking
+                const tableInner = $({
+                    tag: 'div',
+                    style: {
+                        minWidth: `${totalRowWidth}px`,
+                        width: '100%'
+                    }
+                });
+
+                // ===== HEADER ROW =====
+                const headerRow = $({
                     tag: 'div',
                     style: {
                         display: 'flex',
                         width: '100%',
-                        borderTop: 'solid 2px #040720',
-                        borderLeft: 'solid 1px #040720',
-                        borderRight: 'solid 1px #040720',
-                        backgroundColor: evalIndex % 3 === 0 ? '#b4c6e7' : evalIndex % 3 === 1 ? '#a8d08d' : '#ffd965',      
-                        fontWeight: 'bold'
+                        backgroundColor: headerColor,
+                        borderBottom: '2px solid #e8ecf0',
+                        fontWeight: '600'
                     }
                 })
 
-                // CRITERIA cell
-                criteriaRow.appendChild($({
+                headerRow.appendChild($({
                     tag: 'div',
                     style: {
                         width: `${criteriaColWidth}px`,
-                        padding: '8px 5px',
-                        borderRight: 'solid 1px #040720',
-                        borderBottom: 'solid 1px #040720',
-                        fontSize: '20px',
-                        textAlign: 'center',
-                        fontWeight: 'bold',
-                        fontFamily: 'Quattrocento Sans',
-                        backgroundColor: evalIndex % 3 === 0 ? '#b4c6e7' : evalIndex % 3 === 1 ? '#a8d08d' : '#ffd965',   
+                        padding: '10px 14px',
+                        fontSize: '13px',
+                        color: '#1a2a3a',
+                        fontWeight: '600',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        flexShrink: 0,
+                        borderRight: '1px solid rgba(0,0,0,0.08)',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                     },
                     text: 'CRITERIA'
                 }))
 
-                // Column numbers
-                documentColumns.forEach((col) => {
-                    criteriaRow.appendChild($({
+                documentColumns.forEach((col, colIndex) => {
+                    headerRow.appendChild($({
                         tag: 'div',
                         style: {
                             width: `${scoreColWidth}px`,
-                            padding: '8px 2px',
-                            borderRight: 'solid 1px #040720',
-                            borderBottom: 'solid 1px #040720',
+                            padding: '10px 6px',
+                            fontSize: '13px',
+                            color: '#1a2a3a',
+                            fontWeight: '600',
                             textAlign: 'center',
-                            fontSize: '20px',
-                            fontWeight: 'bold',
-                            fontFamily: 'Quattrocento Sans',
-                            backgroundColor: evalIndex % 3 === 0 ? '#b4c6e7' : evalIndex % 3 === 1 ? '#a8d08d' : '#ffd965', 
+                            flexShrink: 0,
+                            borderRight: colIndex < documentColumns.length - 1 ? '1px solid rgba(0,0,0,0.08)' : 'none',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                         },
                         text: col
                     }))
                 })
-                tableContainer.appendChild(criteriaRow)
+                tableInner.appendChild(headerRow)
 
-                // TITLE ROW 
+                // ===== TITLE ROW =====
                 const titleRow = $({
                     tag: 'div',
                     style: {
                         display: 'flex',
                         width: '100%',
-                        borderLeft: 'solid 1px #040720',
-                        borderRight: 'solid 1px #040720',
-                        backgroundColor: '#f9f9f9'
+                        backgroundColor: '#fafbfc',
+                        borderBottom: '1px solid #e8ecf0'
                     }
                 })
 
@@ -488,48 +527,43 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                     tag: 'div',
                     style: {
                         width: `${criteriaColWidth}px`,
-                        padding: '8px 5px',
-                        borderRight: 'solid 1px #040720',
-                        borderBottom: 'solid 1px #040720',
-                        fontSize: '24px',
-                        fontWeight: 'bold',
-                        fontFamily: 'Quattrocento Sans',
-                        backgroundColor: '#f9f9f9',
-                        textAlign: 'center',
-                        fontStyle: 'italic'
+                        padding: '8px 14px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        color: '#1976D2',
+                        flexShrink: 0,
+                        borderRight: '1px solid #e8ecf0',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                     },
                     text: 'TITLE'
                 }))
 
-                // Document titles
                 const documents = Object.values(evaluatorSheet.documents || {})
                 documents.sort((a, b) => a.column - b.column)
                 
-                documents.forEach((doc) => {
+                documents.forEach((doc, docIndex) => {
                     titleRow.appendChild($({
                         tag: 'div',
                         style: {
                             width: `${scoreColWidth}px`,
-                            padding: '8px 2px',
-                            borderRight: 'solid 1px #040720',
-                            borderBottom: 'solid 1px #040720',
+                            padding: '8px 6px',
                             textAlign: 'center',
-                            fontSize: scoreColWidth > 100 ? '12px' : '11px',
-                            fontFamily: 'Times New Roman',
-                            wordWrap: 'break-word',  
-                            whiteSpace: 'normal',         
-                            overflow: 'visible',
-                            color: '#325BBA',
-                            backgroundColor: '#f9f9f9',
-                            lineHeight: '1.2'
+                            fontSize: scoreColWidth > 110 ? '11px' : '10px',
+                            color: '#1976D2',
+                            fontWeight: '500',
+                            flexShrink: 0,
+                            borderRight: docIndex < documents.length - 1 ? '1px solid #e8ecf0' : 'none',
+                            wordWrap: 'break-word',
+                            lineHeight: '1.3',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                         },
                         att: { title: doc.title },
                         text: doc.title 
                     }))
                 })
-                tableContainer.appendChild(titleRow)
+                tableInner.appendChild(titleRow)
 
-                // CRITERIA SCORE ROWS 
+                // ===== CRITERIA SCORE ROWS =====
                 if (evaluatorSheet.criteria_rows && Array.isArray(evaluatorSheet.criteria_rows)) {
                     evaluatorSheet.criteria_rows.forEach((criteriaRow, critIndex) => {
                         const scoreRow = $({
@@ -537,13 +571,11 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                             style: {
                                 display: 'flex',
                                 width: '100%',
-                                borderLeft: 'solid 1px #040720',
-                                borderRight: 'solid 1px #040720',
-                                backgroundColor: critIndex % 2 === 0 ? '#fff' : '#f9f9f9'
+                                backgroundColor: critIndex % 2 === 0 ? '#ffffff' : '#fafbfc',
+                                borderBottom: '1px solid #f0f2f5'
                             }
                         })
 
-                        // Criteria name with percentage
                         const criteriaName = criteriaRow.percentage 
                             ? `${criteriaRow.name}` 
                             : criteriaRow.name
@@ -552,37 +584,35 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                             tag: 'div',
                             style: {
                                 width: `${criteriaColWidth}px`,
-                                padding: '8px 5px',
-                                borderRight: 'solid 1px #040720',
-                                borderBottom: critIndex === evaluatorSheet.criteria_rows.length - 1 ? 'solid 2px #040720' : 'solid 1px #040720',
-                                fontSize: '14px',
-                                fontFamily: 'Arial Narrow',
-                                textAlign: 'left',
-                                fontWeight: 'bold',
-                                whiteSpace: 'normal',
-                                overflow: 'visible',
-                                wordWrap: 'break-word'
+                                padding: '8px 14px',
+                                fontSize: '13px',
+                                color: '#1a2a3a',
+                                fontWeight: '500',
+                                flexShrink: 0,
+                                borderRight: '1px solid #f0f2f5',
+                                wordWrap: 'break-word',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                             },
                             att: { title: criteriaName },
                             text: criteriaName
                         }))
 
-                        // Scores for each document
                         const scores = criteriaRow.scores || {}
                         
-                        documents.forEach((doc) => {
+                        documents.forEach((doc, docIndex) => {
                             const score = scores[doc.column] !== undefined ? scores[doc.column] : 0
                             
                             scoreRow.appendChild($({
                                 tag: 'div',
                                 style: {
                                     width: `${scoreColWidth}px`,
-                                    padding: '8px 2px',
-                                    borderRight: 'solid 1px #040720',
-                                    borderBottom: critIndex === evaluatorSheet.criteria_rows.length - 1 ? 'solid 2px #040720' : 'solid 1px #040720',
+                                    padding: '8px 6px',
                                     textAlign: 'center',
                                     fontSize: '14px',
-                                    fontFamily: 'Times New Roman',
+                                    color: '#1a2a3a',
+                                    flexShrink: 0,
+                                    borderRight: docIndex < documents.length - 1 ? '1px solid #f0f2f5' : 'none',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                                 },
                                 text: score > 0 
                                     ? (Number.isInteger(score) ? score : score.toFixed(1)) 
@@ -590,21 +620,19 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                             }))
                         })
                         
-                        tableContainer.appendChild(scoreRow)
+                        tableInner.appendChild(scoreRow)
                     })
                 }
                 
-                // TOTAL ROW 
+                // ===== TOTAL ROW =====
                 const totalRow = $({
                     tag: 'div',
                     style: {
                         display: 'flex',
                         width: '100%',
-                        borderLeft: 'solid 1px #040720',
-                        borderRight: 'solid 1px #040720',
-                        borderBottom: 'solid 2px #040720',
-                        backgroundColor: '#ffffff',
-                        fontWeight: 'bold'
+                        backgroundColor: '#f8fafc',
+                        borderTop: '2px solid #e8ecf0',
+                        fontWeight: '600'
                     }
                 })
 
@@ -612,46 +640,46 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                     tag: 'div',
                     style: {
                         width: `${criteriaColWidth}px`,
-                        padding: '8px 5px',
-                        borderRight: 'solid 1px #040720',
-                        fontSize: '20px',
-                        fontWeight: 'bold',
-                        fontFamily: 'Times New Roman',
-                        backgroundColor: '#ffffff'
+                        padding: '10px 14px',
+                        fontSize: '14px',
+                        color: '#1a2a3a',
+                        fontWeight: '700',
+                        flexShrink: 0,
+                        borderRight: '1px solid #e8ecf0',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                     },
                     text: 'Total'
                 }))
 
-                documents.forEach((doc) => {
+                documents.forEach((doc, docIndex) => {
                     totalRow.appendChild($({
                         tag: 'div',
                         style: {
                             width: `${scoreColWidth}px`,
-                            padding: '8px 2px',
-                            borderRight: 'solid 1px #040720',
+                            padding: '10px 6px',
                             textAlign: 'center',
-                            fontSize: '18px',
-                            fontWeight: 'bold',
-                            fontFamily: 'Times New Roman',
-                            backgroundColor: '#ffffff'
+                            fontSize: '15px',
+                            fontWeight: '700',
+                            color: '#1976D2',
+                            flexShrink: 0,
+                            borderRight: docIndex < documents.length - 1 ? '1px solid #e8ecf0' : 'none',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                         },
                         text: (doc.total_score || 0).toFixed(1)
                     }))
                 })
-                tableContainer.appendChild(totalRow)
+                tableInner.appendChild(totalRow)
                 
-                // RANK ROW (PER EVALUATOR) 
+                // ===== RANK ROW (per evaluator) =====
                 if (evaluatorSheet.rank_row) {
                     const rankRow = $({
                         tag: 'div',
                         style: {
                             display: 'flex',
                             width: '100%',
-                            borderLeft: 'solid 1px #040720',
-                            borderRight: 'solid 1px #040720',
-                            borderBottom: 'solid 2px #040720',
-                            backgroundColor: '#ffe6b3',
-                            fontWeight: 'bold'
+                            backgroundColor: '#fff8e1',
+                            borderTop: '1px solid #e8ecf0',
+                            fontWeight: '600'
                         }
                     })
 
@@ -659,39 +687,44 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                         tag: 'div',
                         style: {
                             width: `${criteriaColWidth}px`,
-                            padding: '8px 5px',
-                            borderRight: 'solid 1px #040720',
-                            fontSize: '20px',
-                            fontWeight: 'bold',
-                            fontFamily: 'Times New Roman',
-                            backgroundColor: '#ffe6b3',
-                            color: '#8b4513'
+                            padding: '10px 14px',
+                            fontSize: '14px',
+                            color: '#e65100',
+                            fontWeight: '700',
+                            flexShrink: 0,
+                            borderRight: '1px solid #e8ecf0',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                         },
                         text: 'Rank'
                     }))
 
-                    documents.forEach((doc) => {
+                    documents.forEach((doc, docIndex) => {
                         const rankValue = evaluatorSheet.rank_row[doc.column] || ''
+                        const isTop = rankValue === 1 || rankValue === 2 || rankValue === 3
+                        const colors = { 1: '#f1c40f', 2: '#bdc3c7', 3: '#cd7f32' }
+                        
                         rankRow.appendChild($({
                             tag: 'div',
                             style: {
                                 width: `${scoreColWidth}px`,
-                                padding: '8px 2px',
-                                borderRight: 'solid 1px #040720',
+                                padding: '10px 6px',
                                 textAlign: 'center',
-                                fontSize: '18px',
-                                fontWeight: 'bold',
-                                fontFamily: 'Times New Roman',
-                                backgroundColor: '#ffe6b3',
-                                color: '#8b4513'
+                                fontSize: '16px',
+                                fontWeight: '700',
+                                color: isTop ? '#1a2a3a' : '#64748b',
+                                backgroundColor: isTop ? (colors[rankValue] || 'transparent') : 'transparent',
+                                borderRadius: isTop ? '4px' : '0',
+                                flexShrink: 0,
+                                borderRight: docIndex < documents.length - 1 ? '1px solid #e8ecf0' : 'none',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                             },
                             text: rankValue
                         }))
                     })
-                    tableContainer.appendChild(rankRow)
+                    tableInner.appendChild(rankRow)
                 }
 
-                // FINAL CONSOLIDATED RANK ROW (1224 STANDARD) - ADD THIS AFTER RANK ROW
+                // ===== FINAL CONSOLIDATED RANK ROW =====
                 if (finalRankData && finalRankData.final_rank_rows) {
                     const finalRankRowData = finalRankData.final_rank_rows[evaluator.id];
                     
@@ -701,12 +734,10 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                             style: {
                                 display: 'flex',
                                 width: '100%',
-                                borderLeft: 'solid 1px #9b59b6',
-                                borderRight: 'solid 1px #9b59b6',
-                                borderBottom: 'solid 2px #9b59b6',
-                                backgroundColor: '#e1d5e7',
-                                fontWeight: 'bold',
-                                marginTop: '5px'
+                                backgroundColor: '#f3e5f5',
+                                borderTop: '2px solid #9b59b6',
+                                fontWeight: '600',
+                                marginTop: '2px'
                             }
                         });
 
@@ -714,118 +745,93 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                             tag: 'div',
                             style: {
                                 width: `${criteriaColWidth}px`,
-                                padding: '8px 5px',
-                                borderRight: 'solid 1px #9b59b6',
-                                fontSize: '18px',
-                                fontWeight: 'bold',
-                                fontFamily: 'Quattrocento Sans',
-                                backgroundColor: '#e1d5e7',
-                                color: '#4a235a'
+                                padding: '10px 14px',
+                                fontSize: '13px',
+                                color: '#4a235a',
+                                fontWeight: '600',
+                                flexShrink: 0,
+                                borderRight: '1px solid #e8ecf0',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                             },
                             text: 'Final Rank (1224)'
                         }));
 
-                        documents.forEach((doc) => {
+                        documents.forEach((doc, docIndex) => {
                             const finalRank = finalRankRowData[doc.column] || '';
-                            
-                            // Style based on rank
-                            let bgColor = '#e1d5e7';
-                            let textColor = '#4a235a';
-                            let fontWeight = 'bold';
-                            
-                            if (finalRank === 1) {
-                                bgColor = '#f1c40f'; // Gold
-                                textColor = '#000000';
-                            } else if (finalRank === 2) {
-                                bgColor = '#bdc3c7'; // Silver
-                                textColor = '#000000';
-                            } else if (finalRank === 3) {
-                                bgColor = '#cd7f32'; // Bronze
-                                textColor = '#ffffff';
-                            }
+                            const isTop = finalRank === 1 || finalRank === 2 || finalRank === 3;
+                            const colors = { 1: '#f1c40f', 2: '#bdc3c7', 3: '#cd7f32' };
                             
                             finalRankRow.appendChild($({
                                 tag: 'div',
                                 style: {
                                     width: `${scoreColWidth}px`,
-                                    padding: '8px 2px',
-                                    borderRight: 'solid 1px #9b59b6',
+                                    padding: '10px 6px',
                                     textAlign: 'center',
-                                    fontSize: '18px',
-                                    fontWeight: fontWeight,
-                                    fontFamily: 'Quattrocento Sans',
-                                    backgroundColor: bgColor,
-                                    color: textColor
+                                    fontSize: '16px',
+                                    fontWeight: '700',
+                                    color: isTop ? '#1a2a3a' : '#4a235a',
+                                    backgroundColor: isTop ? (colors[finalRank] || '#f3e5f5') : 'transparent',
+                                    borderRadius: isTop ? '4px' : '0',
+                                    flexShrink: 0,
+                                    borderRight: docIndex < documents.length - 1 ? '1px solid #e8ecf0' : 'none',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                                 },
                                 text: finalRank
                             }));
                         });
 
-                        tableContainer.appendChild(finalRankRow);
+                        tableInner.appendChild(finalRankRow);
                     }
                 }
 
+                // Append tableInner to tableContainer
+                tableContainer.appendChild(tableInner);
                 wrapper.appendChild(tableContainer);
-
-                // Add spacing after rank rows
                 wrapper.appendChild($({
                     tag: 'div',
-                    style: { height: '30px', width: '100%' }
+                    style: { height: '8px' }
                 }))
             })
         }
         
-        // CRITERIA RANKINGS SECTIONS 
+        // ===== CRITERIA RANKINGS SECTION =====
         if (data.criteria_rankings && Object.keys(data.criteria_rankings).length > 0) {
-            
-            // Add spacing before criteria rankings
             wrapper.appendChild($({
                 tag: 'div',
-                style: { height: '40px', width: '100%' }
+                style: { height: '32px' }
             }))
             
-            // Title for criteria rankings section
             wrapper.appendChild($({
                 tag: 'div',
                 style: {
-                    fontSize: '22px',
-                    fontWeight: 'bold',
-                    color: '#040720',
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: '#1a2a3a',
                     textAlign: 'center',
-                    alignItems: 'center',
                     marginBottom: '20px',
-                    fontFamily: 'Quattrocento Sans',
-                    textTransform: 'uppercase',
-                    borderBottom: 'solid 2px #333',
-                    paddingBottom: '10px',
-                    width: '100%',  
-                    maxWidth: '1000px', 
-                    marginLeft: 'auto',
-                    marginRight: 'auto'  
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    letterSpacing: '-0.3px'
                 },
-                text: 'RANKING BY CRITERIA'
+                text: 'Ranking by Criteria'
             }))
             
-            // Create centered container for rankings
             const rankingsContainer = $({
                 tag: 'div',
                 style: {
-                    width: `${totalTableWidth}px`,
-                    marginLeft: 'auto',
-                    marginRight: 'auto'
+                    width: '100%',
+                    overflow: 'auto',
+                    borderRadius: '10px',
+                    border: '1px solid #e8ecf0'
                 }
             });
             
-            // Get all criteria IDs and sort them
             const criteriaIds = Object.keys(data.criteria_rankings).sort((a, b) => parseInt(a) - parseInt(b))
             
-            // Loop through each criteria
             criteriaIds.forEach((criteriaId, index) => {
                 const criteriaData = data.criteria_rankings[criteriaId]
                 const criteriaName = criteriaData.name
                 const rankings = criteriaData.rankings || []
                 
-                // Create a map of column to rank for this criteria
                 const rankMap = {}
                 const scoreMap = {}
                 rankings.forEach(item => {
@@ -833,94 +839,86 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                     scoreMap[item.column] = item.total_score
                 })
                 
-                // Criteria header with alternating colors
-                const headerColors = ['#b4c6e7', '#a8d08d', '#ffd965', '#f4b084', '#c2a5cf']
+                const headerColors = ['#e3f2fd', '#e8f5e9', '#fff3e0', '#fce4ec', '#f3e5f5']
                 const headerColor = headerColors[index % headerColors.length]
                 
-                // Criteria name header
+                // Criteria header
                 rankingsContainer.appendChild($({
                     tag: 'div',
                     style: {
-                        fontSize: '18px',
-                        fontWeight: 'bold',
-                        color: '#040720',
-                        marginTop: index > 0 ? '30px' : '10px',
-                        marginBottom: '10px',
-                        fontFamily: 'Quattrocento Sans',
-                        padding: '8px 15px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '10px 16px',
                         backgroundColor: headerColor,
-                        borderLeft: 'solid 3px #040720',
-                        borderRight: 'solid 3px #040720',
-                        borderTop: 'solid 2px #040720',
-                        borderBottom: 'solid 2px #040720',
-                        borderRadius: '5px 5px 0 0'
+                        borderBottom: '1px solid #e8ecf0',
+                        fontWeight: '600',
+                        fontSize: '14px',
+                        color: '#1a2a3a',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                     },
-                    text: `${criteriaName}`
+                    text: criteriaName
                 }))
                 
-                // Create ranking row for this criteria
+                // Ranking row
                 const criteriaRankRow = $({
                     tag: 'div',
                     style: {
                         display: 'flex',
                         width: '100%',
-                        borderLeft: 'solid 1px #040720',
-                        borderRight: 'solid 1px #040720',
-                        borderBottom: 'solid 2px #040720',
-                        backgroundColor: headerColor,
-                        fontWeight: 'bold',
-                        marginBottom: '15px'
+                        backgroundColor: '#fafbfc',
+                        borderBottom: '1px solid #e8ecf0'
                     }
                 })
 
-                // Label cell
                 criteriaRankRow.appendChild($({
                     tag: 'div',
                     style: {
                         width: `${criteriaColWidth}px`,
-                        padding: '8px 5px',
-                        borderRight: 'solid 1px #040720',
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                        fontFamily: 'Quattrocento Sans',
-                        backgroundColor: headerColor
+                        padding: '8px 14px',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#475569',
+                        flexShrink: 0,
+                        borderRight: '1px solid #e8ecf0',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                     },
                     text: 'RANK'
                 }))
 
-                // Rank value cells
-                documentColumns.forEach((col) => {
+                documentColumns.forEach((col, colIndex) => {
                     const rank = rankMap[col] !== undefined ? rankMap[col] : ''
+                    const isTop = rank === 1 || rank === 2 || rank === 3;
+                    const colors = { 1: '#f1c40f', 2: '#bdc3c7', 3: '#cd7f32' };
+                    
                     criteriaRankRow.appendChild($({
                         tag: 'div',
                         style: {
                             width: `${scoreColWidth}px`,
-                            padding: '8px 2px',
-                            borderRight: 'solid 1px #040720',
+                            padding: '8px 6px',
                             textAlign: 'center',
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            fontFamily: 'Quattrocento Sans',
-                            backgroundColor: headerColor
+                            fontSize: '15px',
+                            fontWeight: '700',
+                            color: isTop ? '#1a2a3a' : '#64748b',
+                            backgroundColor: isTop ? (colors[rank] || 'transparent') : 'transparent',
+                            borderRadius: isTop ? '4px' : '0',
+                            flexShrink: 0,
+                            borderRight: colIndex < documentColumns.length - 1 ? '1px solid #e8ecf0' : 'none',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                         },
                         text: rank
                     }))
                 })
                 rankingsContainer.appendChild(criteriaRankRow)
                 
-                // Add score details row
+                // Score details row
                 if (rankings.length > 0) {
                     const scoreDetailsRow = $({
                         tag: 'div',
                         style: {
                             display: 'flex',
                             width: '100%',
-                            borderLeft: 'solid 1px #ddd',
-                            borderRight: 'solid 1px #ddd',
-                            borderBottom: 'solid 1px #ddd',
-                            backgroundColor: '#f9f9f9',
-                            fontSize: '12px',
-                            marginBottom: '5px'
+                            backgroundColor: '#f8f9fa',
+                            borderBottom: '1px solid #e8ecf0'
                         }
                     })
 
@@ -928,26 +926,30 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                         tag: 'div',
                         style: {
                             width: `${criteriaColWidth}px`,
-                            padding: '4px 5px',
-                            borderRight: 'solid 1px #ddd',
-                            fontFamily: 'Quattrocento Sans',
+                            padding: '6px 14px',
+                            fontSize: '11px',
+                            color: '#94a3b8',
                             fontStyle: 'italic',
-                            color: '#555'
+                            flexShrink: 0,
+                            borderRight: '1px solid #e8ecf0',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                         },
                         text: 'Total Score'
                     }))
 
-                    documentColumns.forEach((col) => {
+                    documentColumns.forEach((col, colIndex) => {
                         const score = scoreMap[col] || 0
                         scoreDetailsRow.appendChild($({
                             tag: 'div',
                             style: {
                                 width: `${scoreColWidth}px`,
-                                padding: '4px 2px',
-                                borderRight: 'solid 1px #ddd',
+                                padding: '6px 6px',
                                 textAlign: 'center',
-                                fontFamily: 'Quattrocento Sans',
-                                color: '#555'
+                                fontSize: '11px',
+                                color: '#94a3b8',
+                                flexShrink: 0,
+                                borderRight: colIndex < documentColumns.length - 1 ? '1px solid #e8ecf0' : 'none',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                             },
                             text: score.toFixed(1)
                         }))
@@ -959,127 +961,48 @@ export const Summary = (eventIdParam, categoryIdParam) => {
             wrapper.appendChild(rankingsContainer);
         }
 
-        // AVERAGE RANK SECTION 
         wrapper.appendChild(createAverageRankSection(eventId, categoryId, documentColumns, data))
-
-        // FINAL RANK ROW (Global) - Remove this section if it's duplicate
-        if (data.rankings && data.rankings.length > 0) {
-            const finalRankContainer = $({
-                tag: 'div',
-                style: {
-                    width: `${totalTableWidth}px`,
-                    marginLeft: 'auto',
-                    marginRight: 'auto',
-                    marginTop: '30px'
-                }
-            });
-            
-            const rankRow = $({
-                tag: 'div',
-                style: {
-                    display: 'flex',
-                    width: '100%',
-                    borderLeft: 'solid 1px #FFA500',
-                    borderRight: 'solid 1px #FFA500',
-                    borderBottom: 'solid 2px #FFA500',
-                    backgroundColor: '#FFA500',
-                    fontWeight: 'bold'
-                }
-            })
-
-            rankRow.appendChild($({
-                tag: 'div',
-                style: {
-                    width: `${criteriaColWidth}px`,
-                    padding: '8px 5px',
-                    borderRight: 'solid 1px #FFA500',
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                    fontFamily: 'Quattrocento Sans',
-                    backgroundColor: '#FFA500'
-                },
-                text: 'RANK'
-            }))
-
-            // Create a map of column to rank
-            const rankMap = {}
-            data.rankings.forEach(item => {
-                rankMap[item.column] = item.rank
-            })
-
-            documentColumns.forEach((col) => {
-                rankRow.appendChild($({
-                    tag: 'div',
-                    style: {
-                        width: `${scoreColWidth}px`,
-                        padding: '8px 2px',
-                        borderRight: 'solid 1px #FFA500',
-                        textAlign: 'center',
-                        fontSize: '18px',
-                        fontWeight: 'bold',
-                        fontFamily: 'Quattrocento Sans',
-                        backgroundColor: '#FFA500'
-                    },
-                    text: rankMap[col] !== undefined ? rankMap[col] : ''
-                }))
-            })
-            
-            finalRankContainer.appendChild(rankRow);
-            wrapper.appendChild(finalRankContainer);
-        }
 
         contentDiv.appendChild(wrapper)
         return contentDiv
     }
 
-    //  AVERAGE RANK SECTION 
     const createAverageRankSection = (eventId, categoryId, documentColumns, summaryData) => {
         const container = $({
             tag: 'div',
             style: {
                 width: '100%',
-                marginTop: '40px',
-                marginBottom: '30px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center'
+                marginTop: '32px'
             }
         })
 
-        // Title (centered)
         container.appendChild($({
             tag: 'div',
             style: {
-                fontSize: '22px',
-                fontWeight: 'bold',
-                color: '#040720',
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#1a2a3a',
                 textAlign: 'center',
                 marginBottom: '20px',
-                fontFamily: 'Quattrocento Sans',
-                textTransform: 'uppercase',
-                borderBottom: 'solid 2px #9b59b6',
-                paddingBottom: '10px',
-                width: '100%',
-                maxWidth: '1000px'
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                letterSpacing: '-0.3px'
             },
-            text: 'AVERAGE RANK ACROSS ALL EVALUATORS'
+            text: 'Average Rank Across All Evaluators'
         }))
 
-        // Loading indicator (centered)
         const loadingDiv = $({
             tag: 'div',
             style: {
                 textAlign: 'center',
-                padding: '20px',
-                color: '#666',
-                fontStyle: 'italic'
+                padding: '24px',
+                color: '#94a3b8',
+                fontStyle: 'italic',
+                fontSize: '14px'
             },
             text: 'Loading average ranks...'
         })
         container.appendChild(loadingDiv)
 
-        // Fetch average rank data
         const req = new Request('/ranking')
         req.Post([
             { name: 'getAverageRank', value: '1' },
@@ -1089,7 +1012,6 @@ export const Summary = (eventIdParam, categoryIdParam) => {
         req.Json()
         
         req.Send().then(response => {
-            // Remove loading indicator
             container.removeChild(loadingDiv)
             
             if (!response.success || !response.data) {
@@ -1097,11 +1019,12 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                     tag: 'div',
                     style: {
                         padding: '20px',
-                        backgroundColor: '#fff3cd',
-                        color: '#856404',
-                        border: 'solid 1px #ffeeba',
-                        borderRadius: '4px',
-                        textAlign: 'center'
+                        backgroundColor: '#fef3c7',
+                        color: '#92400e',
+                        borderRadius: '10px',
+                        textAlign: 'center',
+                        fontSize: '14px',
+                        border: '1px solid #fcd34d'
                     },
                     text: response.error || 'No average rank data available'
                 }))
@@ -1110,207 +1033,232 @@ export const Summary = (eventIdParam, categoryIdParam) => {
 
             const rankData = response.data
             
-            //  GET EVALUATOR NAMES FROM SUMMARY DATA 
             let evaluatorNames = []
             if (summaryData && summaryData.evaluators && summaryData.evaluators.length > 0) {
                 evaluatorNames = summaryData.evaluators.map(evalSheet => {
                     const evaluator = evalSheet.evaluator
-                    const fullName = evaluator.name
-                    
                     return {
-                        full: fullName,
+                        full: evaluator.name,
                         number: evaluator.number
                     }
                 })
             }
             
-            //  DYNAMIC COLUMN WIDTH CALCULATION 
             const evaluatorCount = evaluatorNames.length
             
-            // Calculate maximum name length to determine column width
-            let maxNameLength = 0
-            evaluatorNames.forEach(evaluator => {
-                maxNameLength = Math.max(maxNameLength, evaluator.full.length)
-            })
-            
             const finalRankWidth = 100
-            const averageRankWidth = 120
+            const averageRankWidth = 240
             
-            const minEvalWidth = Math.max(180, maxNameLength * 8)
-            const maxEvalWidth = 350 // Upper limit for very long names
-            const minTitleWidth = 300
-            const maxTitleWidth = 500
+            let maxTitleLength = 0
+            const allDocs = Object.values(rankData.average_ranks || {})
+            allDocs.forEach(doc => {
+                if (doc.title && doc.title.length > maxTitleLength) {
+                    maxTitleLength = doc.title.length
+                }
+            })
+            let titleWidth = Math.min(600, Math.max(250, maxTitleLength * 7.5))
             
-            // Calculate total width dynamically
-            let evaluatorColWidth = Math.min(maxEvalWidth, minEvalWidth)
-            let titleWidth = Math.min(maxTitleWidth, Math.max(minTitleWidth, 400))
+            let maxEvalNameLength = 0
+            evaluatorNames.forEach(evaluator => {
+                if (evaluator.full.length > maxEvalNameLength) {
+                    maxEvalNameLength = evaluator.full.length
+                }
+            })
+            let evaluatorColWidth = Math.min(300, Math.max(200, maxEvalNameLength * 6.5))
+            let totalWidth = finalRankWidth + titleWidth + (evaluatorColWidth * evaluatorCount) + averageRankWidth + 40
             
-            // Adjust if total is too wide
-            let totalWidth = finalRankWidth + titleWidth + (evaluatorColWidth * evaluatorCount) + averageRankWidth
-            const maxTotalWidth = 1600 // Maximum table width
-            
+            const maxTotalWidth = 1300
             if (totalWidth > maxTotalWidth) {
-                // Scale down proportionally
-                const scaleFactor = maxTotalWidth / totalWidth
+                const scaleFactor = (maxTotalWidth - 40) / (totalWidth - 40)
                 titleWidth = Math.floor(titleWidth * scaleFactor)
                 evaluatorColWidth = Math.floor(evaluatorColWidth * scaleFactor)
-                totalWidth = finalRankWidth + titleWidth + (evaluatorColWidth * evaluatorCount) + averageRankWidth + 30
+                totalWidth = finalRankWidth + titleWidth + (evaluatorColWidth * evaluatorCount) + averageRankWidth + 40
             }
-            
-            // Create average rank table with fixed width
-            const table = $({
+
+            const tableWrapper = $({
                 tag: 'div',
                 style: {
-                    width: `${totalWidth}px`,
-                    border: 'solid 1px #9b59b6',
-                    marginTop: '10px',
-                    marginLeft: 'auto',
-                    marginRight: 'auto',
-                    overflow: 'visible'
+                    width: '100%',
+                    overflow: 'auto',
+                    borderRadius: '10px',
+                    border: '1px solid #e8ecf0',
+                    backgroundColor: '#ffffff'
                 }
             })
 
-            //  HEADER ROW 
+            const table = $({
+                tag: 'div',
+                style: {
+                    minWidth: `${totalWidth}px`,
+                    width: '100%'
+                }
+            })
+
             const headerRow = $({
                 tag: 'div',
                 style: {
                     display: 'flex',
                     width: '100%',
-                    backgroundColor: '#9b59b6',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    borderBottom: 'solid 2px #040720'
+                    backgroundColor: '#f1f5f9',
+                    borderBottom: '2px solid #e2e8f0',
+                    fontWeight: '600'
                 }
             })
 
-            // Final Rank header
             headerRow.appendChild($({
                 tag: 'div',
                 style: {
                     width: `${finalRankWidth}px`,
-                    padding: '12px 5px',
-                    borderRight: 'solid 1px #fff',
+                    padding: '10px 8px',
                     textAlign: 'center',
-                    fontSize: '14px',
-                    backgroundColor: '#9b59b6',
-                    flexShrink: 0
+                    fontSize: '11px',
+                    color: '#475569',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    flexShrink: 0,
+                    borderRight: '1px solid #e2e8f0'
                 },
-                text: 'Final Rank'
+                text: 'Rank'
             }))
 
-            // Document Title header
             headerRow.appendChild($({
                 tag: 'div',
                 style: {
                     width: `${titleWidth}px`,
-                    padding: '12px 5px',
-                    borderRight: 'solid 1px #fff',
-                    textAlign: 'center',
-                    fontSize: '14px',
-                    backgroundColor: '#9b59b6',
-                    flexShrink: 0
+                    padding: '10px 14px',
+                    fontSize: '11px',
+                    color: '#475569',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    flexShrink: 0,
+                    borderRight: '1px solid #e2e8f0'
                 },
                 text: 'Document Title'
             }))
             
-            // Evaluator headers - WITH FULL NAMES, NO TRUNCATION
             evaluatorNames.forEach((evaluator, index) => {
-                const headerCell = $({
+                headerRow.appendChild($({
                     tag: 'div',
                     style: {
                         width: `${evaluatorColWidth}px`,
-                        padding: '12px 5px',
-                        borderRight: index < evaluatorNames.length - 1 ? 'solid 1px #fff' : 'none',
+                        padding: '10px 6px',
                         textAlign: 'center',
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        cursor: 'help',
-                        backgroundColor: '#9b59b6',
+                        fontSize: '10px',
+                        color: '#475569',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.3px',
                         flexShrink: 0,
-                        whiteSpace: 'normal',
+                        borderRight: index < evaluatorNames.length - 1 ? '1px solid #e2e8f0' : 'none',
                         wordWrap: 'break-word',
-                        lineHeight: '1.3'
+                        lineHeight: '1.2'
                     },
-                    child: [
-                        $({
-                            tag: 'span',
-                            style: {
-                                display: 'inline',
-                                whiteSpace: 'normal',
-                                wordWrap: 'break-word',
-                                fontSize: '12px'
-                            },
-                            text: evaluator.full // FULL NAME
-                        })
-                    ]
-                })
-                
-                // Still keep title attribute for additional info
-                headerCell.setAttribute('title', evaluator.full)
-                headerRow.appendChild(headerCell)
+                    att: { title: evaluator.full },
+                    text: evaluator.full
+                }))
             })
-            headerRow.appendChild($({
-                tag: 'div',
-                style: {
-                    width: `${averageRankWidth}px`, // Reuse average rank width or adjust as needed
-                    padding: '12px 5px',
-                    borderRight: 'solid 1px #fff',
-                    textAlign: 'center',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    backgroundColor: '#f39c12', // Different color to distinguish
-                    flexShrink: 0
-                },
-                text: 'Total Rank Score'
-            }))
-            // Average Rank header
+            
             headerRow.appendChild($({
                 tag: 'div',
                 style: {
                     width: `${averageRankWidth}px`,
-                    padding: '12px 5px',
+                    padding: '10px 6px',
                     textAlign: 'center',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    backgroundColor: '#e67e22',
-                    flexShrink: 0
+                    fontSize: '11px',
+                    color: '#475569',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    flexShrink: 0,
+                    backgroundColor: '#fef3c7',
+                    borderLeft: '1px solid #e2e8f0'
                 },
-                text: 'Average Rank'
+                text: 'Average'
             }))
 
             table.appendChild(headerRow)
 
-            // Sort documents by final rank
             const sortedDocs = Object.values(rankData.average_ranks || {}).sort((a, b) => a.final_rank - b.final_rank)
 
-            // Data rows
+
+            const rankColors = {
+                1: { bg: '#fef9e7', border: '#f1c40f', text: '#7d6608' },
+                2: { bg: '#f4f6f7', border: '#bdc3c7', text: '#5d6d7e' },
+                3: { bg: '#fdf2e9', border: '#cd7f32', text: '#6e2c00' },
+                default: { bg: '#f8f9fa', border: '#e8ecf0', text: '#2c3e50' }
+            }
+
             sortedDocs.forEach((doc, index) => {
+                const isEven = index % 2 === 0
+                const rowBg = isEven ? '#ffffff' : '#fafbfc'
+                
                 const row = $({
                     tag: 'div',
                     style: {
                         display: 'flex',
                         width: '100%',
-                        backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8f9fa',
-                        borderBottom: index === sortedDocs.length - 1 ? 'none' : 'solid 1px #ddd'
+                        backgroundColor: rowBg,
+                        borderBottom: index === sortedDocs.length - 1 ? 'none' : '1px solid #f0f2f5',
+                        transition: 'background-color 0.15s ease'
+                    },
+                    event: {
+                        type: 'mouseenter',
+                        method: (e) => {
+                            e.currentTarget.style.backgroundColor = '#f1f5f9'
+                        },
+                        type2: 'mouseleave',
+                        method2: (e) => {
+                            e.currentTarget.style.backgroundColor = rowBg
+                        }
                     }
                 })
 
-                // Final rank cell
-                const rankColor = doc.final_rank === 1 ? '#f1c40f' : 
-                                doc.final_rank === 2 ? '#bdc3c7' : 
-                                doc.final_rank === 3 ? '#cd7f32' : '#9b59b6'
+                const rank = doc.final_rank
+                const color = rankColors[rank] || rankColors.default
+                
+                let badgeStyle = {
+                    display: 'inline-block',
+                    padding: '2px 10px',
+                    borderRadius: '20px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    backgroundColor: color.bg,
+                    color: color.text,
+                    border: `2px solid ${color.border}`
+                }
+                
+                if (rank === 1) {
+                    badgeStyle = {
+                        ...badgeStyle,
+                        backgroundColor: '#fef9e7',
+                        color: '#7d6608',
+                        border: '2px solid #f1c40f',
+                        boxShadow: '0 2px 8px rgba(241, 196, 15, 0.3)'
+                    }
+                } else if (rank === 2) {
+                    badgeStyle = {
+                        ...badgeStyle,
+                        backgroundColor: '#f4f6f7',
+                        color: '#5d6d7e',
+                        border: '2px solid #bdc3c7',
+                        boxShadow: '0 2px 8px rgba(189, 195, 199, 0.3)'
+                    }
+                } else if (rank === 3) {
+                    badgeStyle = {
+                        ...badgeStyle,
+                        backgroundColor: '#fdf2e9',
+                        color: '#6e2c00',
+                        border: '2px solid #cd7f32',
+                        boxShadow: '0 2px 8px rgba(205, 127, 50, 0.3)'
+                    }
+                }
                 
                 const rankCell = $({
                     tag: 'div',
                     style: {
                         width: `${finalRankWidth}px`,
-                        padding: '10px 5px',
-                        borderRight: 'solid 1px #ddd',
+                        padding: '10px 8px',
                         textAlign: 'center',
-                        fontWeight: 'bold',
-                        color: 'white',
-                        backgroundColor: rankColor,
                         flexShrink: 0,
+                        borderRight: '1px solid #f0f2f5',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
@@ -1318,42 +1266,30 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                     child: [
                         $({
                             tag: 'span',
-                            style: {
-                                display: 'inline-block',
-                                width: '30px',
-                                height: '30px',
-                                lineHeight: '30px',
-                                borderRadius: '50%',
-                                backgroundColor: 'rgba(255,255,255,0.2)',
-                                textAlign: 'center',
-                                fontSize: '16px',
-                                fontWeight: 'bold'
-                            },
-                            text: doc.final_rank
+                            style: badgeStyle,
+                            text: rank
                         })
                     ]
                 })
                 row.appendChild(rankCell)
 
-                const titleCell = $({
+                row.appendChild($({
                     tag: 'div',
                     style: {
                         width: `${titleWidth}px`,
-                        padding: '10px 5px',
-                        borderRight: 'solid 1px #ddd',
+                        padding: '10px 14px',
                         fontSize: '13px',
-                        fontWeight: 'bold',
-                        whiteSpace: 'normal',
+                        fontWeight: '500',
+                        color: '#1a2a3a',
+                        flexShrink: 0,
+                        borderRight: '1px solid #f0f2f5',
                         wordWrap: 'break-word',
-                        lineHeight: '1.4',
-                        flexShrink: 0
+                        lineHeight: '1.4'
                     },
+                    att: { title: doc.title },
                     text: doc.title
-                })
-                titleCell.setAttribute('title', doc.title)
-                row.appendChild(titleCell)
+                }))
 
-                // Individual evaluator ranks
                 const rankByColumn = {}
                 if (doc.final_ranks && Array.isArray(doc.final_ranks)) {
                     doc.final_ranks.forEach((rank, idx) => {
@@ -1363,195 +1299,121 @@ export const Summary = (eventIdParam, categoryIdParam) => {
 
                 for (let i = 1; i <= evaluatorNames.length; i++) {
                     const rankValue = rankByColumn[i] !== undefined ? rankByColumn[i] : ''
-                    const isTopRank = rankValue === 1
+                    const isTop = rankValue === 1 || rankValue === 2 || rankValue === 3
+                    const colors = { 1: '#fef9e7', 2: '#f4f6f7', 3: '#fdf2e9' }
+                    const textColors = { 1: '#7d6608', 2: '#5d6d7e', 3: '#6e2c00' }
                     
-                    const rankCell = $({
+                    row.appendChild($({
                         tag: 'div',
                         style: {
                             width: `${evaluatorColWidth}px`,
-                            padding: '10px 5px',
-                            borderRight: i < evaluatorNames.length ? 'solid 1px #ddd' : 'none',
+                            padding: '10px 6px',
                             textAlign: 'center',
-                            fontSize: '14px',
-                            fontWeight: 'bold',
-                            color: isTopRank ? '#27ae60' : '#34495e',
-                            backgroundColor: isTopRank ? '#e8f8f5' : 'transparent',
+                            fontSize: '13px',
+                            fontWeight: isTop ? '700' : '500',
+                            color: isTop ? textColors[rankValue] : '#64748b',
+                            backgroundColor: isTop ? colors[rankValue] : 'transparent',
+                            borderRadius: isTop ? '4px' : '0',
                             flexShrink: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
+                            borderRight: i < evaluatorNames.length ? '1px solid #f0f2f5' : 'none'
                         },
-                        child: [
-                            $({
-                                tag: 'span',
-                                style: {
-                                    display: 'inline-block',
-                                    padding: '4px 10px',
-                                    borderRadius: isTopRank ? '20px' : '0',
-                                    backgroundColor: isTopRank ? '#27ae60' : 'transparent',
-                                    color: isTopRank ? 'white' : 'inherit',
-                                    fontSize: '14px',
-                                    fontWeight: 'bold'
-                                },
-                                text: rankValue !== '' ? rankValue : '—'
-                            })
-                        ]
-                    })
-                    
-                    if (evaluatorNames[i-1]) {
-                        const rankText = rankValue !== '' ? `Final Rank: ${rankValue}` : 'Not scored'
-                        rankCell.setAttribute('title', `${evaluatorNames[i-1].full}: ${rankText}`)
-                    }
-                    
-                    row.appendChild(rankCell)
+                        text: rankValue !== '' ? rankValue : '—'
+                    }))
                 }
 
-                // ADD TOTAL RANK SCORE CELL (NEW)
-                const totalRankScore = doc.total_rank_score || 0
-                const totalScoreCell = $({
-                    tag: 'div',
-                    style: {
-                        width: `${averageRankWidth}px`,
-                        padding: '10px 5px',
-                        borderRight: 'solid 1px #ddd',
-                        textAlign: 'center',
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                        color: '#c0392b',
-                        backgroundColor: '#fde9e9',
-                        flexShrink: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    },
-                    child: [
-                        $({
-                            tag: 'span',
-                            style: {
-                                display: 'inline-block',
-                                padding: '4px 8px',
-                                borderRadius: '4px',
-                                backgroundColor: '#c0392b',
-                                color: 'white',
-                                fontSize: '14px',
-                                fontWeight: 'bold'
-                            },
-                            text: totalRankScore.toFixed(1)
-                        })
-                    ]
-                })
-                totalScoreCell.setAttribute('title', `Sum of final ranks from all evaluators`)
-                row.appendChild(totalScoreCell)
-
-                // Average rank cell
                 const avgValue = doc.formatted_average || (doc.average ? doc.average.toFixed(1) : '0.0')
-                const avgCell = $({
+                const avgNum = parseFloat(avgValue)
+                let avgColor = '#64748b'
+                let avgBg = '#f8fafc'
+                
+                if (avgNum <= 2) {
+                    avgColor = '#15803d'
+                    avgBg = '#dcfce7'
+                } else if (avgNum <= 3.5) {
+                    avgColor = '#b45309'
+                    avgBg = '#fef3c7'
+                } else {
+                    avgColor = '#b91c1c'
+                    avgBg = '#fecaca'
+                }
+                
+                row.appendChild($({
                     tag: 'div',
                     style: {
                         width: `${averageRankWidth}px`,
-                        padding: '10px 5px',
+                        padding: '10px 6px',
                         textAlign: 'center',
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                        color: '#e67e22',
-                        backgroundColor: '#fff3e0',
                         flexShrink: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        borderLeft: '1px solid #f0f2f5'
                     },
                     child: [
                         $({
                             tag: 'span',
                             style: {
                                 display: 'inline-block',
-                                padding: '4px 8px',
-                                borderRadius: '4px',
-                                backgroundColor: '#e67e22',
-                                color: 'white',
+                                padding: '4px 12px',
+                                borderRadius: '6px',
                                 fontSize: '14px',
-                                fontWeight: 'bold'
+                                fontWeight: '700',
+                                color: avgColor,
+                                backgroundColor: avgBg
                             },
                             text: avgValue
                         })
                     ]
-                })
-                avgCell.setAttribute('title', `Average of final ranks from ${doc.count || evaluatorNames.length} evaluators`)
-                row.appendChild(avgCell)
+                }))
 
                 table.appendChild(row)
             })
 
-            container.appendChild(table)
+            tableWrapper.appendChild(table)
+            container.appendChild(tableWrapper)
 
-            // Legend and Summary (centered with table)
-            const legendAndSummary = $({
+            const legend = $({
                 tag: 'div',
                 style: {
-                    marginTop: '15px',
+                    marginTop: '16px',
                     display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '20px',
+                    padding: '12px 20px',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '10px',
+                    border: '1px solid #e8ecf0',
+                    fontSize: '12px',
+                    color: '#64748b',
                     flexWrap: 'wrap',
-                    gap: '10px',
-                    width: `${totalWidth}px`,
-                    marginLeft: 'auto',
-                    marginRight: 'auto'
+                    alignItems: 'center'
                 },
                 child: [
-                    // Legend
-                    $({
-                        tag: 'div',
-                        style: {
-                            display: 'flex',
-                            gap: '20px',
-                            padding: '8px 15px',
-                            backgroundColor: '#f8f9fa',
-                            borderRadius: '20px',
-                            fontSize: '12px',
-                            flexWrap: 'wrap'
-                        },
+                    $({ 
+                        tag: 'span', 
+                        style: { display: 'flex', alignItems: 'center', gap: '6px' }, 
                         child: [
-                            $({ tag: 'span', style: { display: 'flex', alignItems: 'center', gap: '4px' }, 
-                                child: [
-                                    $({ tag: 'span', style: { fontSize: '16px' }, text: '🥇' }),
-                                    $({ tag: 'span', text: '1st Place' })
-                                ] 
-                            }),
-                            $({ tag: 'span', style: { display: 'flex', alignItems: 'center', gap: '4px' }, 
-                                child: [
-                                    $({ tag: 'span', style: { fontSize: '16px' }, text: '🥈' }),
-                                    $({ tag: 'span', text: '2nd Place' })
-                                ] 
-                            }),
-                            $({ tag: 'span', style: { display: 'flex', alignItems: 'center', gap: '4px' }, 
-                                child: [
-                                    $({ tag: 'span', style: { fontSize: '16px' }, text: '🥉' }),
-                                    $({ tag: 'span', text: '3rd Place' })
-                                ] 
-                            })
-                        ]
+                            $({ tag: 'span', style: { display: 'inline-block', width: '14px', height: '14px', backgroundColor: '#fef9e7', border: '2px solid #f1c40f', borderRadius: '3px' } }),
+                            $({ tag: 'span', text: '1st Place' })
+                        ] 
                     }),
-                    // Summary
-                    $({
-                        tag: 'div',
-                        style: {
-                            padding: '8px 15px',
-                            backgroundColor: '#f8f9fa',
-                            borderRadius: '20px',
-                            fontSize: '12px',
-                            color: '#666'
-                        },
+                    $({ 
+                        tag: 'span', 
+                        style: { display: 'flex', alignItems: 'center', gap: '6px' }, 
                         child: [
-                            $({ tag: 'span', style: { marginRight: '15px' }, text: `👥 Evaluators: ${rankData.summary?.total_evaluators || 0}` }),
-                            $({ tag: 'span', style: { marginRight: '15px' }, text: `📄 Documents: ${rankData.summary?.total_documents || 0}` }),
-                            $({ tag: 'span', text: `🕒 ${rankData.summary?.generated_at || ''}` })
-                        ]
-                    })
+                            $({ tag: 'span', style: { display: 'inline-block', width: '14px', height: '14px', backgroundColor: '#f4f6f7', border: '2px solid #bdc3c7', borderRadius: '3px' } }),
+                            $({ tag: 'span', text: '2nd Place' })
+                        ] 
+                    }),
+                    $({ 
+                        tag: 'span', 
+                        style: { display: 'flex', alignItems: 'center', gap: '6px' }, 
+                        child: [
+                            $({ tag: 'span', style: { display: 'inline-block', width: '14px', height: '14px', backgroundColor: '#fdf2e9', border: '2px solid #cd7f32', borderRadius: '3px' } }),
+                            $({ tag: 'span', text: '3rd Place' })
+                        ] 
+                    }),
+                    $({ tag: 'span', style: { color: '#94a3b8' }, text: `👥 ${rankData.summary?.total_evaluators || 0} Evaluators • 📄 ${rankData.summary?.total_documents || 0} Documents` })
                 ]
             })
-
-            container.appendChild(legendAndSummary)
+            container.appendChild(legend)
 
         }).catch(error => {
             if (container.contains(loadingDiv)) {
@@ -1561,14 +1423,12 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                 tag: 'div',
                 style: {
                     padding: '20px',
-                    backgroundColor: '#f8d7da',
-                    color: '#721c24',
-                    border: 'solid 1px #f5c6cb',
-                    borderRadius: '4px',
+                    backgroundColor: '#fef2f2',
+                    color: '#991b1b',
+                    borderRadius: '10px',
                     textAlign: 'center',
-                    width: '600px',
-                    marginLeft: 'auto',
-                    marginRight: 'auto'
+                    fontSize: '14px',
+                    border: '1px solid #fca5a5'
                 },
                 text: 'Error loading average ranks: ' + error.message
             }))
@@ -1576,8 +1436,9 @@ export const Summary = (eventIdParam, categoryIdParam) => {
 
         return container
     }
+
     //  EXPORT TO EXCEL
-    const exportToExcel = async (data) => {  // Add async here
+    const exportToExcel = async (data) => { 
         if (!XLSX) {
             alert('Excel export library not loaded. Please refresh the page.')
             return
@@ -1589,7 +1450,6 @@ export const Summary = (eventIdParam, categoryIdParam) => {
         }
 
         try {
-            // FIRST, FETCH THE AVERAGE RANK DATA USING THE SAME API AS CANVAS
             const rankReq = new Request('/ranking')
             rankReq.Post([
                 { name: 'getAverageRank', value: '1' },
@@ -1603,7 +1463,6 @@ export const Summary = (eventIdParam, categoryIdParam) => {
             
             const wb = XLSX.utils.book_new()
             
-            // Create worksheet data
             let wsData = []
             
             // Title - DYNAMIC from database
@@ -1611,7 +1470,6 @@ export const Summary = (eventIdParam, categoryIdParam) => {
             wsData.push([`${data.category?.type || 'CATEGORY'}: ${data.category?.name || ''}`])
             wsData.push([])
             
-            // Get document columns from first evaluator
             let documentColumns = []
             let documentsList = []
             
@@ -1624,7 +1482,6 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                 })
             }
             
-            // Process each evaluator - DATA PREPARATION ONLY (NO STYLING)
             if (data.evaluators && Array.isArray(data.evaluators)) {
                 data.evaluators.forEach((evaluatorSheet, evalIndex) => {
                     const evaluator = evaluatorSheet.evaluator
@@ -1633,7 +1490,6 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                     wsData.push(['Score Sheet'])
                     wsData.push([])
                     
-                    // Header row with column numbers
                     let headerRow = ['CRITERIA']
                     documentColumns.forEach(col => headerRow.push(col))
                     wsData.push(headerRow)
@@ -1650,7 +1506,6 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                         evaluatorSheet.criteria_rows.forEach((criteriaRow) => {
                             let row = []
                             
-                            // Criteria name without percentage in parentheses
                             const criteriaName = criteriaRow.percentage 
                                 ? `${criteriaRow.name}` 
                                 : criteriaRow.name
@@ -1673,7 +1528,6 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                     documents.forEach(doc => totalRow.push(parseFloat((doc.total_score || 0).toFixed(1))))
                     wsData.push(totalRow)
                     
-                    // Rank row for evaluator
                     if (evaluatorSheet.rank_row) {
                         let rankExcelRow = []
                         evaluatorSheet.rank_row.forEach((value) => {
@@ -1687,7 +1541,6 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                 })
             }
             
-            //  CRITERIA RANKINGS IN EXCEL 
             if (data.criteria_rankings && Object.keys(data.criteria_rankings).length > 0) {
                 wsData.push([])
                 wsData.push([])
@@ -1701,23 +1554,19 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                     const criteriaName = criteriaData.name
                     const rankings = criteriaData.rankings || []
                     
-                    // Create rank map
                     const rankMap = {}
                     rankings.forEach(item => {
                         rankMap[item.column] = item.rank
                     })
                     
-                    // Criteria header
                     wsData.push([`${criteriaName}`])
                     
-                    // Rank row
                     let rankRow = ['RANK']
                     documentColumns.forEach(col => {
                         rankRow.push(rankMap[col] || '')
                     })
                     wsData.push(rankRow)
                     
-                    // Score row (optional)
                     let scoreRow = ['Total Score']
                     documentColumns.forEach(col => {
                         const rankingItem = rankings.find(item => item.column === col)
@@ -1727,12 +1576,9 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                     wsData.push([])
                 })
             }
-            
-            // ============ AVERAGE RANK SECTION IN EXCEL (USING API DATA) ============
-            // Move this BEFORE creating the worksheet and column widths
+
             let evaluatorNames = []
             if (rankData && rankData.average_ranks) {
-                // Get evaluator names from the original data - WITH FULL NAMES
                 if (data.evaluators && data.evaluators.length > 0) {
                     evaluatorNames = data.evaluators.map(evalSheet => {
                         const evaluator = evalSheet.evaluator
@@ -1745,27 +1591,21 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                 wsData.push(['AVERAGE RANK ACROSS ALL EVALUATORS'])
                 wsData.push([])
                 
-                // Header row - USE FULL EVALUATOR NAMES
                 let headerRow = ['Final Rank', 'Document Title', ...evaluatorNames, 'Total Rank Score', 'Average Rank']
                 wsData.push(headerRow)
                 
-                // Get the pre-calculated average ranks from the API
                 const sortedDocs = Object.values(rankData.average_ranks || {}).sort((a, b) => a.final_rank - b.final_rank)
                 
-                // Data rows - use the data from the API with Total Rank Score
                 sortedDocs.forEach(doc => {
                     let row = [doc.final_rank, doc.title]
                     
-                    // Add final ranks for each evaluator (from doc.final_ranks array)
                     for (let i = 0; i < evaluatorNames.length; i++) {
                         const rankValue = doc.final_ranks && doc.final_ranks[i] !== undefined ? doc.final_ranks[i] : ''
                         row.push(rankValue)
                     }
                     
-                    // Add Total Rank Score
                     row.push(doc.total_rank_score || 0)
-                    
-                    // Add Average Rank
+
                     row.push(doc.formatted_average || doc.average?.toFixed(1) || '0.0')
                     wsData.push(row)
                 })
@@ -1775,14 +1615,12 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                 throw new Error('No data to export')
             }
             
-            // Create worksheet
             const ws = XLSX.utils.aoa_to_sheet(wsData)
-            
-            // Calculate column widths - UPDATE THIS to include evaluator columns and Total Rank Score
+
             const baseColWidths = [
                 { wch: 15 }, // Final Rank
                 { wch: 50 }, // Document Title
-                ...evaluatorNames.map(() => ({ wch: 25 })), // Evaluator columns - wider for full names
+                ...evaluatorNames.map(() => ({ wch: 25 })), // Evaluator columns
                 { wch: 18 }, // Total Rank Score
                 { wch: 15 }  // Average Rank
             ]
@@ -2196,7 +2034,7 @@ export const Summary = (eventIdParam, categoryIdParam) => {
     }
 
     //  EXPORT TO PDF
-    const exportToPDF = async (data) => {  // Add async here
+    const exportToPDF = async (data) => { 
         if (!jsPDF) {
             alert('PDF export library not loaded. Please refresh the page.')
             return
