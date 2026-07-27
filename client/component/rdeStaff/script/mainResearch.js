@@ -3718,50 +3718,7 @@ export const ResearchMain = () => {
                                 flexShrink: '0'
                             },
                             elementHandler: (el) => {
-                                // Back button
-                                const backBtn = $({
-                                    tag: 'a',
-                                    att: {
-                                        href: Current().replace(Base(), '').split('/').slice(0, 5).join('/'),
-                                        className: 'fa-solid fa-arrow-left'
-                                    },
-                                    style: {
-                                        color: '#495057',
-                                        textDecoration: 'none',
-                                        fontSize: '16px',
-                                        padding: '8px 12px',
-                                        border: '1px solid #e9ecef',
-                                        borderRadius: '8px',
-                                        transition: 'all 0.2s ease',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        flexShrink: '0'
-                                    },
-                                    child: [
-                                        $({
-                                            tag: 'span',
-                                            text: ' Back',
-                                            style: {
-                                                fontFamily: 'Inter, sans-serif',
-                                                fontSize: '13px',
-                                                fontWeight: '500'
-                                            }
-                                        })
-                                    ],
-                                    elementHandler: (btn) => {
-                                        btn.addEventListener('mouseenter', () => {
-                                            btn.style.backgroundColor = '#f8f9fa';
-                                            btn.style.borderColor = '#0d6efd';
-                                        });
-                                        btn.addEventListener('mouseleave', () => {
-                                            btn.style.backgroundColor = 'transparent';
-                                            btn.style.borderColor = '#e9ecef';
-                                        });
-                                    }
-                                });
-
-                                // Event name header
+                                // Event name header only - removed back button
                                 const getEventNameReq = new Request('/score_rank');
                                 getEventNameReq.Post([
                                     { name: 'getEventName', value: '1' },
@@ -3778,9 +3735,17 @@ export const ResearchMain = () => {
                                             color: '#1a1a2e',
                                             fontWeight: '600',
                                             fontFamily: 'Inter, sans-serif',
-                                            flex: '1'
+                                            flex: '1',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px'
                                         },
                                         child: [
+                                            $({
+                                                tag: 'span',
+                                                att: { className: 'fa-solid fa-chart-simple' },
+                                                style: { fontSize: '20px', color: '#0d6efd' }
+                                            }),
                                             $({
                                                 tag: 'span',
                                                 text: eventName,
@@ -3788,13 +3753,16 @@ export const ResearchMain = () => {
                                             }),
                                             $({
                                                 tag: 'span',
-                                                text: ' - Score Summary',
+                                                style: { color: '#adb5bd' }
+                                            }),
+                                            $({
+                                                tag: 'span',
+                                                text: 'Score Summary',
                                                 style: { color: '#0d6efd' }
                                             })
                                         ]
                                     });
 
-                                    el.appendChild(backBtn);
                                     el.appendChild(headerText);
                                 });
                             }
