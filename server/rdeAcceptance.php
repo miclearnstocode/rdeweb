@@ -46,6 +46,215 @@ require_once __DIR__ . '/Mailer/mailTemplate.php';
 require_once __DIR__ . '/Mailer/MailSender.php';
 date_default_timezone_set('Asia/Manila');
 
+if (isset($_POST['saveAcceptanceLetter'])) {
+    $response = ['status' => false, 'message' => ''];
+    
+    try {
+        $eventId = isset($_POST['eventId']) ? intval($_POST['eventId']) : 0;
+        $eventName = isset($_POST['eventName']) ? trim($_POST['eventName']) : '';
+        $eventType = isset($_POST['eventType']) ? trim($_POST['eventType']) : 'ftf';
+        $dateToBeHeld = isset($_POST['dateToBeHeld']) ? trim($_POST['dateToBeHeld']) : '';
+        $driveLink = isset($_POST['driveLink']) ? trim($_POST['driveLink']) : '';
+        $venue = isset($_POST['venue']) ? trim($_POST['venue']) : null;
+        $pptDeadline = isset($_POST['pptDeadline']) ? trim($_POST['pptDeadline']) : null;
+        $zoomTime = isset($_POST['zoomTime']) ? trim($_POST['zoomTime']) : null;
+        $zoomLink = isset($_POST['zoomLink']) ? trim($_POST['zoomLink']) : null;
+        $meetingId = isset($_POST['meetingId']) ? trim($_POST['meetingId']) : null;
+        $passcode = isset($_POST['passcode']) ? trim($_POST['passcode']) : null;
+        
+        // Validate required fields
+        if ($eventId <= 0) {
+            throw new Exception('Invalid event ID');
+        }
+        
+        if (empty($eventName)) {
+            throw new Exception('Event name is required');
+        }
+        
+        if (empty($dateToBeHeld)) {
+            throw new Exception('Date to be held is required');
+        }
+        
+        if (empty($driveLink)) {
+            throw new Exception('Google Drive link is required');
+        }
+        
+        // Validate based on event type
+        if ($eventType === 'ftf') {
+            if (empty($venue)) {
+                throw new Exception('Venue is required for Face-to-Face events');
+            }
+            if (empty($pptDeadline)) {
+                throw new Exception('PPT Deadline is required for Face-to-Face events');
+            }
+        } else if ($eventType === 'zoom') {
+            if (empty($zoomTime)) {
+                throw new Exception('Time is required for Zoom events');
+            }
+            if (empty($zoomLink)) {
+                throw new Exception('Zoom link is required for Zoom events');
+            }
+            if (empty($meetingId)) {
+                throw new Exception('Meeting ID is required for Zoom events');
+            }
+            if (empty($passcode)) {
+                throw new Exception('Passcode is required for Zoom events');
+            }
+        } else {
+            throw new Exception('Invalid event type. Must be "ftf" or "zoom"');
+        }
+        
+        $con = new mysqli($host, $username, $pass, $dbName);
+        
+        if ($con->connect_error) {
+            throw new Exception('Database connection failed: ' . $con->connect_error);
+        }
+        
+        // Check if record exists
+        $checkStmt = $con->prepare("SELECT id FROM acceptance_letter_data WHERE event_id = ?");
+        $checkStmt->bind_param("i", $eventId);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        $exists = $checkResult->num_rows > 0;
+        $checkStmt->close();
+        
+        if ($exists) {
+            // Update existing record
+            $stmt = $con->prepare("
+                UPDATE acceptance_letter_data SET
+                    event_name = ?,
+                    event_type = ?,
+                    date_to_be_held = ?,
+                    drive_link = ?,
+                    venue = ?,
+                    ppt_deadline = ?,
+                    zoom_time = ?,
+                    zoom_link = ?,
+                    meeting_id = ?,
+                    passcode = ?
+                WHERE event_id = ?
+            ");
+            $stmt->bind_param(
+                "ssssssssssi",
+                $eventName,
+                $eventType,
+                $dateToBeHeld,
+                $driveLink,
+                $venue,
+                $pptDeadline,
+                $zoomTime,
+                $zoomLink,
+                $meetingId,
+                $passcode,
+                $eventId
+            );
+        } else {
+            // Insert new record
+            $stmt = $con->prepare("
+                INSERT INTO acceptance_letter_data (
+                    event_id, event_name, event_type, date_to_be_held, drive_link,
+                    venue, ppt_deadline, zoom_time, zoom_link, meeting_id, passcode
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->bind_param(
+                "issssssssss",
+                $eventId,
+                $eventName,
+                $eventType,
+                $dateToBeHeld,
+                $driveLink,
+                $venue,
+                $pptDeadline,
+                $zoomTime,
+                $zoomLink,
+                $meetingId,
+                $passcode
+            );
+        }
+        
+        if ($stmt->execute()) {
+            $response['status'] = true;
+            $response['message'] = $exists ? 'Acceptance letter data updated successfully' : 'Acceptance letter data saved successfully';
+            $response['id'] = $exists ? $eventId : $con->insert_id;
+        } else {
+            throw new Exception('Failed to save data: ' . $stmt->error);
+        }
+        
+        $stmt->close();
+        $con->close();
+        
+    } catch (Exception $e) {
+        error_log("saveAcceptanceLetter error: " . $e->getMessage());
+        $response['status'] = false;
+        $response['message'] = $e->getMessage();
+    }
+    
+    echo json_encode($response);
+    exit();
+}
+
+if (isset($_POST['getAcceptanceLetterData'])) {
+    $response = ['status' => false, 'message' => '', 'data' => null];
+    
+    try {
+        $eventId = isset($_POST['eventId']) ? intval($_POST['eventId']) : 0;
+        
+        if ($eventId <= 0) {
+            throw new Exception('Invalid event ID');
+        }
+        
+        $con = new mysqli($host, $username, $pass, $dbName);
+        
+        if ($con->connect_error) {
+            throw new Exception('Database connection failed: ' . $con->connect_error);
+        }
+        
+        $stmt = $con->prepare("
+            SELECT 
+                id,
+                event_id,
+                event_name,
+                event_type,
+                date_to_be_held,
+                drive_link,
+                venue,
+                ppt_deadline,
+                zoom_time,
+                zoom_link,
+                meeting_id,
+                passcode,
+                created_at,
+                updated_at
+            FROM acceptance_letter_data 
+            WHERE event_id = ?
+        ");
+        $stmt->bind_param("i", $eventId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($result->num_rows > 0) {
+            $data = $result->fetch_assoc();
+            $response['status'] = true;
+            $response['data'] = $data;
+            $response['message'] = 'Data found';
+        } else {
+            $response['status'] = false;
+            $response['message'] = 'No data found for this event';
+        }
+        
+        $stmt->close();
+        $con->close();
+        
+    } catch (Exception $e) {
+        error_log("getAcceptanceLetterData error: " . $e->getMessage());
+        $response['status'] = false;
+        $response['message'] = $e->getMessage();
+    }
+    
+    echo json_encode($response);
+    exit();
+}
+
 //new Request for incoming for faculty center or extension
 if (isset($_POST['incomingEndorsement'])) {
     $response = [];

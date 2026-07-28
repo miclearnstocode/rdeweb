@@ -7,9 +7,73 @@ import { FinalRanking, RankPerCriteria, ScoreRankAVe } from "./rankAlgo.js";
 import { Summary } from "./Summary.js";
 import { PrintResearch } from "../../../otherComponent/researchSummary.js";
 import { PosterForwarded } from "./posterForwarded.js"
+import { PrintResearchZoom } from "../../../otherComponent/researchSummaryZoom.js";
 
 export const Content = (mainFrame, leftPDiv = null) => {
     let researchBody, endorseBody, serch, Bod
+
+    const saveAcceptanceLetterData = (eventDetails, formData, eventType) => {
+        return new Promise((resolve, reject) => {
+            const saveForm = new FormData();
+            saveForm.append('saveAcceptanceLetter', '1');
+            saveForm.append('eventId', eventDetails.eventId || eventDetails.id || '');
+            saveForm.append('eventName', eventDetails.name || '');
+            saveForm.append('eventType', eventType);
+            saveForm.append('dateToBeHeld', formData.dateToBeHeld || '');
+            saveForm.append('driveLink', formData.driveLink || '');
+            
+            if (eventType === 'ftf') {
+                saveForm.append('venue', formData.venue || '');
+                saveForm.append('pptDeadline', formData.pptDeadline || '');
+            } else {
+                saveForm.append('zoomTime', formData.zoomTime || '');
+                saveForm.append('zoomLink', formData.zoomLink || '');
+                saveForm.append('meetingId', formData.meetingId || '');
+                saveForm.append('passcode', formData.passcode || '');
+            }
+            
+            fetch('/acceptance-letter', {
+                method: 'POST',
+                body: saveForm
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status) {
+                    resolve(data);
+                } else {
+                    reject(new Error(data.message || 'Failed to save data'));
+                }
+            })
+            .catch(error => {
+                reject(error);
+            });
+        });
+    };
+
+    // Get acceptance letter data from database
+    const getAcceptanceLetterData = (eventId) => {
+        return new Promise((resolve, reject) => {
+            const form = new FormData();
+            form.append('getAcceptanceLetterData', '1');
+            form.append('eventId', eventId);
+            
+            fetch('/acceptance-letter', {
+                method: 'POST',
+                body: form
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status && data.data) {
+                    resolve(data.data);
+                } else {
+                    resolve(null);
+                }
+            })
+            .catch(error => {
+                reject(error);
+            });
+        });
+    };
 
     const ResearchDocs = ({category, center,file, docId, title, author, eventTYpe, deleteRequest, campus,endorseId, mainFrame}) => {
         const resDetails = () => {
@@ -1877,6 +1941,15 @@ export const Content = (mainFrame, leftPDiv = null) => {
                 }
                 
                 const createPrintModal = (eventDetails) => {
+                    let ftfFieldsContainer, zoomFieldsContainer;
+                    let ftfLabelElement, zoomLabelElement;
+                    let existingData = null;
+                    let isDataLoaded = false;
+                    let hasUnsavedChanges = false;
+
+                    // Track original values for comparison
+                    let originalValues = {};
+
                     const content = () => {
                         const container = $({
                             tag: 'div',
@@ -1884,15 +1957,231 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 padding: '8px 0'
                             }
                         });
+
+                        // Show loading state
+                        const loadingDiv = $({
+                            tag: 'div',
+                            id: 'loadingData',
+                            style: {
+                                textAlign: 'center',
+                                padding: '30px',
+                                color: '#6c757d',
+                                fontSize: '14px',
+                                fontFamily: 'Inter, sans-serif'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-spinner fa-pulse' },
+                                    style: { fontSize: '24px', color: '#0d6efd', display: 'block', marginBottom: '10px' }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: 'Loading existing data...'
+                                })
+                            ]
+                        });
+                        container.appendChild(loadingDiv);
+
+                        // Fetch existing data first
+                        const eventId = eventDetails.eventId || eventDetails.id;
                         
-                        const fields = [
-                            { id: 'dateToBeHeld', label: 'Date to be held:', placeholder: 'e.g., March 2-3, 2026' },
-                            { id: 'venue', label: 'Venue:', placeholder: 'e.g., Roxas City Campus, Fuentes Drive, Roxas City, Capiz' },
-                            { id: 'pptDeadline', label: 'PPT Deadline:', placeholder: 'e.g., March 01, 2026, 3:00 p.m.' },
-                            { id: 'driveLink', label: 'Drive link:', placeholder: 'e.g., https://bit.ly/38thIHR_PPTs' }
+                        getAcceptanceLetterData(eventId)
+                            .then(data => {
+                                existingData = data;
+                                isDataLoaded = true;
+                                loadingDiv.style.display = 'none';
+                                
+                                // Build the form with existing data if available
+                                buildForm(container, existingData);
+                            })
+                            .catch(error => {
+                                console.error('Error loading acceptance letter data:', error);
+                                loadingDiv.style.display = 'none';
+                                // Build empty form
+                                buildForm(container, null);
+                            });
+
+                        return container;
+                    };
+
+                    const buildForm = (container, data) => {
+                        const defaultType = data?.event_type || 'ftf';
+                        const isZoom = defaultType === 'zoom';
+                        
+                        // Store original values
+                        originalValues = {
+                            eventType: defaultType,
+                            dateToBeHeld: data?.date_to_be_held || '',
+                            driveLink: data?.drive_link || '',
+                            venue: data?.venue || '',
+                            pptDeadline: data?.ppt_deadline || '',
+                            zoomTime: data?.zoom_time || '',
+                            zoomLink: data?.zoom_link || '',
+                            meetingId: data?.meeting_id || '',
+                            passcode: data?.passcode || ''
+                        };
+
+                        // Add event type selection (FTF vs Zoom)
+                        const eventTypeDiv = $({
+                            tag: 'div',
+                            style: {
+                                marginBottom: '24px',
+                                width: '100%'
+                            }
+                        });
+                        
+                        const eventTypeLabel = $({
+                            tag: 'label',
+                            style: {
+                                display: 'block',
+                                marginBottom: '8px',
+                                color: '#495057',
+                                fontSize: '14px',
+                                fontFamily: 'Inter, sans-serif',
+                                fontWeight: '500'
+                            },
+                            text: 'Event Type:'
+                        });
+                        eventTypeDiv.appendChild(eventTypeLabel);
+                        
+                        const eventTypeWrapper = $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                gap: '16px'
+                            }
+                        });
+                        
+                        // FTF Option
+                        const ftfOption = $({
+                            tag: 'label',
+                            style: {
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 16px',
+                                border: '2px solid ' + (defaultType === 'ftf' ? '#0d6efd' : '#dee2e6'),
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                fontFamily: 'Inter, sans-serif',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                color: '#495057',
+                                flex: '1',
+                                justifyContent: 'center',
+                                backgroundColor: defaultType === 'ftf' ? '#f0f7ff' : 'transparent'
+                            },
+                            child: [
+                                $({
+                                    tag: 'input',
+                                    att: {
+                                        type: 'radio',
+                                        name: 'eventType',
+                                        value: 'ftf',
+                                        checked: defaultType === 'ftf',
+                                        id: 'ftfOption'
+                                    },
+                                    style: {
+                                        width: '16px',
+                                        height: '16px',
+                                        cursor: 'pointer',
+                                        accentColor: '#0d6efd'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Face-to-Face'
+                                })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    document.getElementById('ftfOption').checked = true;
+                                    toggleFields('ftf');
+                                }
+                            },
+                            elementHandler: (el) => {
+                                ftfLabelElement = el;
+                            }
+                        });
+                        eventTypeWrapper.appendChild(ftfOption);
+                        
+                        // Zoom Option
+                        const zoomOption = $({
+                            tag: 'label',
+                            style: {
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 16px',
+                                border: '2px solid ' + (defaultType === 'zoom' ? '#0d6efd' : '#dee2e6'),
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                fontFamily: 'Inter, sans-serif',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                color: '#495057',
+                                flex: '1',
+                                justifyContent: 'center',
+                                backgroundColor: defaultType === 'zoom' ? '#f0f7ff' : 'transparent'
+                            },
+                            child: [
+                                $({
+                                    tag: 'input',
+                                    att: {
+                                        type: 'radio',
+                                        name: 'eventType',
+                                        value: 'zoom',
+                                        checked: defaultType === 'zoom',
+                                        id: 'zoomOption'
+                                    },
+                                    style: {
+                                        width: '16px',
+                                        height: '16px',
+                                        cursor: 'pointer',
+                                        accentColor: '#0d6efd'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Via Zoom'
+                                })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    document.getElementById('zoomOption').checked = true;
+                                    toggleFields('zoom');
+                                }
+                            },
+                            elementHandler: (el) => {
+                                zoomLabelElement = el;
+                            }
+                        });
+                        eventTypeWrapper.appendChild(zoomOption);
+                        eventTypeDiv.appendChild(eventTypeWrapper);
+                        container.appendChild(eventTypeDiv);
+                        
+                        // FTF Fields
+                        ftfFieldsContainer = $({
+                            tag: 'div',
+                            id: 'ftfFields',
+                            style: {
+                                display: defaultType === 'ftf' ? 'block' : 'none'
+                            }
+                        });
+                        
+                        const ftfFields = [
+                            { id: 'dateToBeHeld', label: 'Date to be held:', placeholder: 'e.g., March 2-3, 2026', value: data?.date_to_be_held || '' },
+                            { id: 'venue', label: 'Venue:', placeholder: 'e.g., Roxas City Campus, Fuentes Drive, Roxas City, Capiz', value: data?.venue || '' },
+                            { id: 'pptDeadline', label: 'PPT Deadline:', placeholder: 'e.g., March 01, 2026, 3:00 p.m.', value: data?.ppt_deadline || '' },
+                            { id: 'driveLink', label: 'Google Drive Link:', placeholder: 'e.g., https://bit.ly/38thIHR_PPTs', value: data?.drive_link || '' }
                         ];
                         
-                        fields.forEach(field => {
+                        ftfFields.forEach(field => {
                             const fieldDiv = $({
                                 tag: 'div',
                                 style: {
@@ -1921,7 +2210,8 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 att: {
                                     type: 'text',
                                     id: field.id,
-                                    placeholder: field.placeholder
+                                    placeholder: field.placeholder,
+                                    value: field.value
                                 },
                                 style: {
                                     width: '100%',
@@ -1933,6 +2223,12 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     boxSizing: 'border-box',
                                     transition: 'all 0.2s ease',
                                     outline: 'none'
+                                },
+                                event: {
+                                    type: 'input',
+                                    method: (e) => {
+                                        hasUnsavedChanges = true;
+                                    }
                                 }
                             });
                             
@@ -1946,12 +2242,166 @@ export const Content = (mainFrame, leftPDiv = null) => {
                             });
                             
                             fieldDiv.appendChild(input);
-                            container.appendChild(fieldDiv);
+                            ftfFieldsContainer.appendChild(fieldDiv);
+                        });
+                        container.appendChild(ftfFieldsContainer);
+                        
+                        // Zoom Fields
+                        zoomFieldsContainer = $({
+                            tag: 'div',
+                            id: 'zoomFields',
+                            style: {
+                                display: defaultType === 'zoom' ? 'block' : 'none'
+                            }
                         });
                         
-                        return container;
+                        const zoomFields = [
+                            { id: 'zoomDateToBeHeld', label: 'Date to be held:', placeholder: 'e.g., July 29-30, 2026', value: data?.date_to_be_held || '' },
+                            { id: 'zoomTime', label: 'Time:', placeholder: 'e.g., 8:00AM', value: data?.zoom_time || '' },
+                            { id: 'zoomLink', label: 'Zoom Link:', placeholder: 'e.g., https://zoom.us/j/92157257818', value: data?.zoom_link || '' },
+                            { id: 'meetingId', label: 'Meeting ID:', placeholder: 'e.g., 921 5725 7818', value: data?.meeting_id || '' },
+                            { id: 'passcode', label: 'Passcode:', placeholder: 'e.g., capsurde', value: data?.passcode || '' },
+                            { id: 'zoomDriveLink', label: 'Google Drive Link:', placeholder: 'e.g., https://bit.ly/44thSymposiumPPTs', value: data?.drive_link || '' }
+                        ];
+                        
+                        zoomFields.forEach(field => {
+                            const fieldDiv = $({
+                                tag: 'div',
+                                style: {
+                                    marginBottom: '20px',
+                                    width: '100%'
+                                }
+                            });
+                            
+                            const label = $({
+                                tag: 'label',
+                                att: { htmlFor: field.id },
+                                style: {
+                                    display: 'block',
+                                    marginBottom: '8px',
+                                    color: '#495057',
+                                    fontSize: '14px',
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontWeight: '500'
+                                },
+                                text: field.label
+                            });
+                            fieldDiv.appendChild(label);
+                            
+                            const input = $({
+                                tag: 'input',
+                                att: {
+                                    type: 'text',
+                                    id: field.id,
+                                    placeholder: field.placeholder,
+                                    value: field.value
+                                },
+                                style: {
+                                    width: '100%',
+                                    padding: '10px 12px',
+                                    border: '1px solid #dee2e6',
+                                    borderRadius: '8px',
+                                    fontSize: '14px',
+                                    fontFamily: 'Inter, sans-serif',
+                                    boxSizing: 'border-box',
+                                    transition: 'all 0.2s ease',
+                                    outline: 'none'
+                                },
+                                event: {
+                                    type: 'input',
+                                    method: (e) => {
+                                        hasUnsavedChanges = true;
+                                    }
+                                }
+                            });
+                            
+                            input.addEventListener('focus', () => {
+                                input.style.borderColor = '#0d6efd';
+                                input.style.boxShadow = '0 0 0 3px rgba(13,110,253,0.1)';
+                            });
+                            input.addEventListener('blur', () => {
+                                input.style.borderColor = '#dee2e6';
+                                input.style.boxShadow = 'none';
+                            });
+                            
+                            fieldDiv.appendChild(input);
+                            zoomFieldsContainer.appendChild(fieldDiv);
+                        });
+                        container.appendChild(zoomFieldsContainer);
+                        
+                        // Show saved indicator if data exists
+                        if (data && data.id) {
+                            const savedInfo = $({
+                                tag: 'div',
+                                style: {
+                                    marginTop: '12px',
+                                    padding: '10px 14px',
+                                    backgroundColor: '#d4edda',
+                                    borderRadius: '8px',
+                                    color: '#155724',
+                                    fontSize: '13px',
+                                    fontFamily: 'Inter, sans-serif',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    border: '1px solid #c3e6cb'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        att: { className: 'fa-solid fa-check-circle' },
+                                        style: { fontSize: '16px', color: '#28a745' }
+                                    }),
+                                    $({
+                                        tag: 'span',
+                                        text: 'Data already saved. You can modify and save again if needed.'
+                                    })
+                                ]
+                            });
+                            container.appendChild(savedInfo);
+                        }
+
+                        // Hidden field to track if data exists
+                        const dataExistsInput = $({
+                            tag: 'input',
+                            att: {
+                                type: 'hidden',
+                                id: 'dataExists',
+                                value: data && data.id ? '1' : '0'
+                            }
+                        });
+                        container.appendChild(dataExistsInput);
+                        
+                        // Toggle function
+                        window.toggleFields = (type) => {
+                            if (ftfFieldsContainer && zoomFieldsContainer) {
+                                if (type === 'ftf') {
+                                    ftfFieldsContainer.style.display = 'block';
+                                    zoomFieldsContainer.style.display = 'none';
+                                    if (ftfLabelElement) {
+                                        ftfLabelElement.style.borderColor = '#0d6efd';
+                                        ftfLabelElement.style.backgroundColor = '#f0f7ff';
+                                    }
+                                    if (zoomLabelElement) {
+                                        zoomLabelElement.style.borderColor = '#dee2e6';
+                                        zoomLabelElement.style.backgroundColor = 'transparent';
+                                    }
+                                } else {
+                                    ftfFieldsContainer.style.display = 'none';
+                                    zoomFieldsContainer.style.display = 'block';
+                                    if (ftfLabelElement) {
+                                        ftfLabelElement.style.borderColor = '#dee2e6';
+                                        ftfLabelElement.style.backgroundColor = 'transparent';
+                                    }
+                                    if (zoomLabelElement) {
+                                        zoomLabelElement.style.borderColor = '#0d6efd';
+                                        zoomLabelElement.style.backgroundColor = '#f0f7ff';
+                                    }
+                                }
+                            }
+                        };
                     };
-                    
+
                     const footer = ({ closeModal }) => {
                         return $({
                             tag: 'div',
@@ -2017,26 +2467,118 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                         }),
                                         $({
                                             tag: 'span',
-                                            text: 'Print'
+                                            text: existingData && !hasUnsavedChanges ? 'Print' : 'Save & Print'
                                         })
                                     ],
                                     event: {
                                         type: 'click',
                                         method: (e) => {
-                                            const formData = {
-                                                dateToBeHeld: document.getElementById('dateToBeHeld')?.value || '',
-                                                venue: document.getElementById('venue')?.value || '',
-                                                pptDeadline: document.getElementById('pptDeadline')?.value || '',
-                                                driveLink: document.getElementById('driveLink')?.value || ''
-                                            };
+                                            const zoomRadio = document.getElementById('zoomOption');
+                                            const isZoom = zoomRadio ? zoomRadio.checked : false;
+                                            const dataExists = document.getElementById('dataExists')?.value === '1';
                                             
-                                            if (!formData.dateToBeHeld || !formData.venue || !formData.pptDeadline || !formData.driveLink) {
+                                            // Get current form values
+                                            let currentValues = {};
+                                            let formData = {};
+                                            
+                                            if (isZoom) {
+                                                const zoomDate = document.getElementById('zoomDateToBeHeld')?.value || '';
+                                                const zoomTime = document.getElementById('zoomTime')?.value || '8:00AM';
+                                                
+                                                formData = {
+                                                    dateToBeHeld: zoomDate + (zoomTime ? ` at ${zoomTime}` : ''),
+                                                    zoomTime: zoomTime,
+                                                    zoomLink: document.getElementById('zoomLink')?.value || '',
+                                                    meetingId: document.getElementById('meetingId')?.value || '',
+                                                    passcode: document.getElementById('passcode')?.value || '',
+                                                    driveLink: document.getElementById('zoomDriveLink')?.value || ''
+                                                };
+                                                
+                                                currentValues = {
+                                                    dateToBeHeld: formData.dateToBeHeld,
+                                                    zoomTime: formData.zoomTime,
+                                                    zoomLink: formData.zoomLink,
+                                                    meetingId: formData.meetingId,
+                                                    passcode: formData.passcode,
+                                                    driveLink: formData.driveLink
+                                                };
+                                            } else {
+                                                formData = {
+                                                    dateToBeHeld: document.getElementById('dateToBeHeld')?.value || '',
+                                                    venue: document.getElementById('venue')?.value || '',
+                                                    pptDeadline: document.getElementById('pptDeadline')?.value || '',
+                                                    driveLink: document.getElementById('driveLink')?.value || ''
+                                                };
+                                                
+                                                currentValues = {
+                                                    dateToBeHeld: formData.dateToBeHeld,
+                                                    venue: formData.venue,
+                                                    pptDeadline: formData.pptDeadline,
+                                                    driveLink: formData.driveLink
+                                                };
+                                            }
+                                            
+                                            // Validate required fields
+                                            const requiredFields = ['dateToBeHeld', 'driveLink'];
+                                            if (isZoom) {
+                                                requiredFields.push('zoomLink', 'meetingId', 'passcode');
+                                            } else {
+                                                requiredFields.push('venue', 'pptDeadline');
+                                            }
+                                            
+                                            const missingFields = requiredFields.filter(field => !formData[field]);
+                                            if (missingFields.length > 0) {
                                                 alert('Please fill in all fields before printing');
                                                 return;
                                             }
                                             
-                                            closeModal();
-                                            printResearchSummary(eventDetails, formData);
+                                            // Check if values have changed (only if data exists)
+                                            let hasChanges = false;
+                                            if (dataExists) {
+                                                if (isZoom) {
+                                                    hasChanges = (
+                                                        currentValues.dateToBeHeld !== originalValues.dateToBeHeld ||
+                                                        currentValues.zoomTime !== originalValues.zoomTime ||
+                                                        currentValues.zoomLink !== originalValues.zoomLink ||
+                                                        currentValues.meetingId !== originalValues.meetingId ||
+                                                        currentValues.passcode !== originalValues.passcode ||
+                                                        currentValues.driveLink !== originalValues.driveLink
+                                                    );
+                                                } else {
+                                                    hasChanges = (
+                                                        currentValues.dateToBeHeld !== originalValues.dateToBeHeld ||
+                                                        currentValues.venue !== originalValues.venue ||
+                                                        currentValues.pptDeadline !== originalValues.pptDeadline ||
+                                                        currentValues.driveLink !== originalValues.driveLink
+                                                    );
+                                                }
+                                            }
+                                            
+                                            // Only save if data doesn't exist OR has changes
+                                            if (!dataExists || (dataExists && hasChanges)) {
+                                                // Save to database
+                                                const eventType = isZoom ? 'zoom' : 'ftf';
+                                                saveAcceptanceLetterData(eventDetails, formData, eventType)
+                                                    .then(() => {
+                                                        closeModal();
+                                                        if (isZoom) {
+                                                            printResearchZoom(eventDetails, formData);
+                                                        } else {
+                                                            printResearchSummary(eventDetails, formData);
+                                                        }
+                                                    })
+                                                    .catch(error => {
+                                                        alert('Error saving data: ' + error.message);
+                                                    });
+                                            } else {
+                                                // No changes, just print
+                                                closeModal();
+                                                if (isZoom) {
+                                                    printResearchZoom(eventDetails, formData);
+                                                } else {
+                                                    printResearchSummary(eventDetails, formData);
+                                                }
+                                            }
                                         }
                                     },
                                     mouseenter: (e) => {
@@ -2053,14 +2595,84 @@ export const Content = (mainFrame, leftPDiv = null) => {
                     };
                     
                     CustomModal({
-                        title: 'Print Research Entry Summary',
+                        title: existingData ? 'Acceptance Letter Data' : 'Print Research & Extension Acceptance Letter',
                         size: 'medium',
                         content: content,
                         footer: footer,
                         showCloseButton: true,
                         closeOnOverlayClick: true
                     });
-                }
+                };
+
+                const printResearchZoom = (eventDetails, formData) => {
+                    let loading = Waiting();
+                    document.body.appendChild(loading);
+                    
+                    const removeLoading = () => {
+                        if (loading && loading.parentNode) {
+                            loading.parentNode.removeChild(loading);
+                        }
+                    };
+                    
+                    const req = new Request('/entrycount');
+                    req.Post([
+                        { name: 'printEntry', value: '1' },
+                        { name: 'eventName', value: eventDetails.name }
+                    ]);
+                    req.Json();
+                    
+                    req.Send().then(data => {
+                        removeLoading();
+                        
+                        let WinPrint = window.open('', '_blank', 'width=1200,height=800,toolbar=0,scrollbars=1,status=0');
+                        
+                        if (!WinPrint) {
+                            alert('Popup blocked! Please allow popups for this site.');
+                            return;
+                        }
+                        
+                        // Import the Zoom version of the print component
+                        import('../../../otherComponent/researchSummaryZoom.js').then(module => {
+                            const { PrintResearchZoom } = module;
+                            
+                            WinPrint.document.write(`
+                                <!DOCTYPE html>
+                                <html>
+                                <head>
+                                    <title>Research Entries (Zoom) - ${eventDetails.name}</title>
+                                    <link rel="stylesheet" href="/client/component/otherComponent/style/review.css">
+                                    <style>
+                                        @page { size: A4; margin: 0; }
+                                        body { margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                                    </style>
+                                </head>
+                                <body>
+                                    ${PrintResearchZoom({
+                                        eventName: eventDetails.name,
+                                        data: data,
+                                        formData: formData
+                                    }).innerHTML}
+                                </body>
+                                </html>
+                            `);
+                            
+                            WinPrint.document.close();
+                            
+                            WinPrint.onload = function() {
+                                setTimeout(() => {
+                                    WinPrint.focus();
+                                    WinPrint.print();
+                                }, 500);
+                            };
+                        }).catch(err => {
+                            removeLoading();
+                            alert('Error loading Zoom print component: ' + err.message);
+                        });
+                    }).catch(error => {
+                        removeLoading();
+                        alert('Error loading research entries. Please try again.');
+                    });
+                };
                 
                 const createCertificateModal = (eventDetails) => {
                     const content = () => {
@@ -2563,7 +3175,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     }),
                                     $({
                                         tag: 'span',
-                                        text: 'Print Research Entry Summary'
+                                        text: 'Print Acceptance Letter'
                                     })
                                 ],
                                 event: {

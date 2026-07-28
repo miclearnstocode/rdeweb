@@ -6,7 +6,6 @@ include_once('db.php');
 /** @var TYPE_NAME $pass */
 /** @var TYPE_NAME $dbName */
 
-// ===== SYSTEM LOGS (Existing) =====
 if (isset($_POST['logRequest'])) {
     $response = [];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
@@ -32,7 +31,6 @@ if (isset($_POST['logRequest'])) {
     exit();
 }
 
-// ===== EMAIL LOGS (Existing) =====
 if (isset($_POST['emailLogRequest'])) {
     $response = [];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
@@ -48,7 +46,6 @@ if (isset($_POST['emailLogRequest'])) {
     exit();
 }
 
-// ===== NEW: SUBMISSION LOGS =====
 if (isset($_POST['submissionLogRequest'])) {
     $response = [];
     $limit = isset($_POST['limit']) ? (int)$_POST['limit'] : 100;
@@ -167,7 +164,6 @@ if (isset($_POST['submissionLogRequest'])) {
     exit();
 }
 
-// ===== NEW: SUBMISSION STATISTICS =====
 if (isset($_POST['submissionStats'])) {
     $response = [];
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
@@ -230,7 +226,6 @@ if (isset($_POST['submissionStats'])) {
     exit();
 }
 
-// ===== NEW: SUBMISSION LOG DETAILS =====
 if (isset($_POST['submissionLogDetail'])) {
     $logId = isset($_POST['log_id']) ? (int)$_POST['log_id'] : 0;
     $response = null;

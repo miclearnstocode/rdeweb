@@ -26,6 +26,8 @@ export const CommentBoard = ({ title, docId, closeState }) => {
         other: ''
     };
     let documentTitle = title || 'Loading...';
+    let eventId = null;
+    let eventName = null;
     closeState({ base: baseData, raw: data });
 
     // Comment sections configuration
@@ -54,6 +56,60 @@ export const CommentBoard = ({ title, docId, closeState }) => {
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         }
     });
+
+    const getEventInfo = async () => {
+        try {
+            const form = new FormData();
+            form.append('getEventInfo', '1');
+            form.append('docId', docId);
+            
+            const response = await fetch('/uploadResearchFile', {
+                method: 'POST',
+                body: form
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            if (data.status) {
+                eventId = data.event_id;
+                eventName = data.event_name;
+            }
+        } catch (error) {
+            console.error('Error fetching event info:', error);
+        }
+    };
+
+    // Queue comment for email scheduling
+    const queueCommentForEmail = async () => {
+        if (!docId) return;
+        
+        try {
+            const formData = new FormData();
+            formData.append('queueCommentForEmail', '1');
+            formData.append('docId', docId);
+            if (eventId) formData.append('eventId', eventId);
+            if (eventName) formData.append('eventName', eventName);
+            
+            const response = await fetch('/comments', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            console.log('Email queue result:', result);
+            return result;
+        } catch (error) {
+            console.error('Error queueing comment for email:', error);
+            return null;
+        }
+    };
 
     // Header
     const header = $({
@@ -108,6 +164,7 @@ export const CommentBoard = ({ title, docId, closeState }) => {
                     type: 'click',
                     method: async () => {
                         if (!docId) { alert('Document ID required'); return; }
+                        
                         const formData = new FormData();
                         formData.append('updateReview', 'true');
                         formData.append('title', data.title || '');
@@ -121,32 +178,46 @@ export const CommentBoard = ({ title, docId, closeState }) => {
                         formData.append('other', data.other || '');
                         formData.append('docId', docId);
 
-                        let loading = Waiting()
-                        document.body.appendChild(loading)
+                        let loading = Waiting();
+                        document.body.appendChild(loading);
 
                         const remove = () => {
-                            loading.remove()
-                        }
+                            if (loading && loading.parentNode) {
+                                loading.remove();
+                            }
+                        };
+
                         try {
-                            const response = await fetch('/uploadResearchFile', { method: 'POST', body: formData });
+                            const response = await fetch('/uploadResearchFile', { 
+                                method: 'POST', 
+                                body: formData 
+                            });
+                            
                             if (!response.ok) {
                                 throw new Error(`HTTP error! status: ${response.status}`);
                             }
+                            
                             const result = await response.json();
-                            remove()
-                            if (result.emailStatus) {
-                                alert(result.message + '\n' + result.emailStatus);
-                            } else {
-                                alert(result.message || 'Saved!');
-                            }
+                            remove();
 
                             if (result.status) {
                                 Object.keys(baseData).forEach(key => baseData[key] = data[key]);
                                 closeState({ base: { ...baseData }, raw: { ...data } });
+                                
+                                // After saving comments, queue for email scheduling
+                                const queueResult = await queueCommentForEmail();
+                                
+                                if (queueResult && queueResult.status) {
+                                    alert(result.message + '\n' + queueResult.message);
+                                } else {
+                                    alert(result.message || 'Comments saved successfully!');
+                                }
+                            } else {
+                                alert(result.message || 'Failed to save comments');
                             }
 
                         } catch (error) {
-                            remove()
+                            remove();
                             console.error('Error saving comments:', error);
                             alert('Error saving: ' + error.message);
                         }
@@ -254,6 +325,9 @@ export const CommentBoard = ({ title, docId, closeState }) => {
             }
         });
     }
+
+    // Fetch event info
+    getEventInfo();
 
     // Main content area with sidebar and editor
     const mainContent = $({

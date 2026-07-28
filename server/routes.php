@@ -19,6 +19,8 @@ post('/uploadResearchFile','server/researchFile.php');
 post('/uploadFacultyDocs', 'server/researchFacultySub.php');
 post('/uploadExtensionDocs','server/extensionAPI/extensionChairSub.php');
 post('/getresearch','server/rdeAcceptance.php');
+post('/acceptanceLetter','server/schedule_emails.php');
+post('/scheduleEmails','server/schedule_emails.php');
 post('/filesSend','server/file.php');
 post('/inboxFile','server/fileViewer.php');
 post('/approval','server/approval.php');

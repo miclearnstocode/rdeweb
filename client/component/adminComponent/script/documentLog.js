@@ -1,5 +1,6 @@
 import { $, Base, Current, LoadLocation, Path, Request, TimeConvert } from '../../../lib/lib.js'
 import { Error } from "../../../error.js";
+import { EmailScheduler } from './EmailScheduler.js';
 
 export const DocumentLog = () => {
     const Bot = ({ label, url }) => {
@@ -51,10 +52,13 @@ export const DocumentLog = () => {
     }
 
     const systemLogs = () => {
+        // ... (existing systemLogs code remains unchanged)
+        // Keeping the existing code for brevity
         let bodyMainList
         let currentSort = { column: null, ascending: true }
 
         const Logs = ({ date, time, rdeName, details, id }) => {
+            // ... existing code
             return ($({
                 tag: 'div',
                 style: {
@@ -71,9 +75,7 @@ export const DocumentLog = () => {
                     fontSize: '0.85vw',
                     boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
                 },
-                att: {
-                    className: 'logList'
-                },
+                att: { className: 'logList' },
                 event: {
                     mouseover: (e) => {
                         e.currentTarget.style.transform = 'translateX(4px)'
@@ -90,88 +92,31 @@ export const DocumentLog = () => {
                     $({
                         tag: 'div',
                         text: date || 'N/A',
-                        style: {
-                            width: '15%',
-                            paddingLeft: '1vw',
-                            color: '#1e293b',
-                            fontWeight: '500'
-                        }
+                        style: { width: '15%', paddingLeft: '1vw', color: '#1e293b', fontWeight: '500' }
                     }),
                     $({
                         tag: 'div',
                         text: time || 'N/A',
-                        style: {
-                            width: '15%',
-                            color: '#1e293b'
-                        }
+                        style: { width: '15%', color: '#1e293b' }
                     }),
                     $({
                         tag: 'div',
-                        style: {
-                            width: '25%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5vw'
-                        },
+                        style: { width: '25%', display: 'flex', alignItems: 'center', gap: '0.5vw' },
                         child: [
-                            $({
-                                tag: 'span',
-                                att: {
-                                    className: 'fa-solid fa-user-circle'
-                                },
-                                style: {
-                                    color: '#3b82f6',
-                                    fontSize: '0.9vw'
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                text: rdeName || 'SYSTEM',
-                                style: {
-                                    color: '#3b82f6',
-                                    fontWeight: '600'
-                                }
-                            })
+                            $({ tag: 'span', att: { className: 'fa-solid fa-user-circle' }, style: { color: '#3b82f6', fontSize: '0.9vw' } }),
+                            $({ tag: 'span', text: rdeName || 'SYSTEM', style: { color: '#3b82f6', fontWeight: '600' } })
                         ]
                     }),
                     $({
                         tag: 'div',
-                        style: {
-                            width: '45%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5vw',
-                            paddingRight: '1vw',
-                            cursor: 'pointer'
-                        },
+                        style: { width: '45%', display: 'flex', alignItems: 'center', gap: '0.5vw', paddingRight: '1vw', cursor: 'pointer' },
                         child: [
-                            $({
-                                tag: 'span',
-                                att: {
-                                    className: 'fa-solid fa-message'
-                                },
-                                style: {
-                                    color: '#94a3b8',
-                                    fontSize: '0.8vw'
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                text: details || 'No details',
-                                style: {
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    color: '#475569',
-                                    flex: '1'
-                                }
-                            })
+                            $({ tag: 'span', att: { className: 'fa-solid fa-message' }, style: { color: '#94a3b8', fontSize: '0.8vw' } }),
+                            $({ tag: 'span', text: details || 'No details', style: { textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', color: '#475569', flex: '1' } })
                         ],
                         event: {
                             type: 'click',
-                            method: () => {
-                                showSystemDetailsModal(details, rdeName, date, time)
-                            }
+                            method: () => { showSystemDetailsModal(details, rdeName, date, time) }
                         }
                     })
                 ]
@@ -179,6 +124,7 @@ export const DocumentLog = () => {
         }
 
         const showSystemDetailsModal = (details, rdeName, date, time) => {
+            // ... existing modal code
             const modal = $({
                 tag: 'div',
                 style: {
@@ -218,20 +164,12 @@ export const DocumentLog = () => {
                                     fontSize: '1.5vw',
                                     transition: 'all 0.2s ease'
                                 },
-                                att: {
-                                    className: 'fa-solid fa-circle-xmark'
-                                },
+                                att: { className: 'fa-solid fa-circle-xmark' },
                                 event: {
                                     type: 'click',
-                                    method: () => {
-                                        modal.remove()
-                                    },
-                                    mouseover: (e) => {
-                                        e.target.style.color = '#3b82f6'
-                                    },
-                                    mouseout: (e) => {
-                                        e.target.style.color = '#94a3b8'
-                                    }
+                                    method: () => { modal.remove() },
+                                    mouseover: (e) => { e.target.style.color = '#3b82f6' },
+                                    mouseout: (e) => { e.target.style.color = '#94a3b8' }
                                 }
                             }),
                             $({
@@ -245,20 +183,8 @@ export const DocumentLog = () => {
                                     fontWeight: '700'
                                 },
                                 child: [
-                                    $({
-                                        tag: 'span',
-                                        att: {
-                                            className: 'fa-solid fa-file-lines me-2'
-                                        },
-                                        style: {
-                                            color: '#3b82f6',
-                                            marginRight: '0.5vw'
-                                        }
-                                    }),
-                                    $({
-                                        tag: 'span',
-                                        text: 'System Log Details'
-                                    })
+                                    $({ tag: 'span', att: { className: 'fa-solid fa-file-lines me-2' }, style: { color: '#3b82f6', marginRight: '0.5vw' } }),
+                                    $({ tag: 'span', text: 'System Log Details' })
                                 ]
                             }),
                             $({
@@ -283,89 +209,26 @@ export const DocumentLog = () => {
                                         child: [
                                             $({
                                                 tag: 'div',
-                                                style: {
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.5vw'
-                                                },
+                                                style: { display: 'flex', alignItems: 'center', gap: '0.5vw' },
                                                 child: [
-                                                    $({
-                                                        tag: 'span',
-                                                        att: {
-                                                            className: 'fa-solid fa-calendar'
-                                                        },
-                                                        style: {
-                                                            color: '#3b82f6',
-                                                            fontSize: '0.9vw'
-                                                        }
-                                                    }),
-                                                    $({
-                                                        tag: 'span',
-                                                        text: date,
-                                                        style: {
-                                                            color: '#1e293b',
-                                                            fontSize: '0.9vw',
-                                                            fontWeight: '500'
-                                                        }
-                                                    })
+                                                    $({ tag: 'span', att: { className: 'fa-solid fa-calendar' }, style: { color: '#3b82f6', fontSize: '0.9vw' } }),
+                                                    $({ tag: 'span', text: date, style: { color: '#1e293b', fontSize: '0.9vw', fontWeight: '500' } })
                                                 ]
                                             }),
                                             $({
                                                 tag: 'div',
-                                                style: {
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.5vw'
-                                                },
+                                                style: { display: 'flex', alignItems: 'center', gap: '0.5vw' },
                                                 child: [
-                                                    $({
-                                                        tag: 'span',
-                                                        att: {
-                                                            className: 'fa-solid fa-clock'
-                                                        },
-                                                        style: {
-                                                            color: '#3b82f6',
-                                                            fontSize: '0.9vw'
-                                                        }
-                                                    }),
-                                                    $({
-                                                        tag: 'span',
-                                                        text: time,
-                                                        style: {
-                                                            color: '#1e293b',
-                                                            fontSize: '0.9vw',
-                                                            fontWeight: '500'
-                                                        }
-                                                    })
+                                                    $({ tag: 'span', att: { className: 'fa-solid fa-clock' }, style: { color: '#3b82f6', fontSize: '0.9vw' } }),
+                                                    $({ tag: 'span', text: time, style: { color: '#1e293b', fontSize: '0.9vw', fontWeight: '500' } })
                                                 ]
                                             }),
                                             $({
                                                 tag: 'div',
-                                                style: {
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.5vw'
-                                                },
+                                                style: { display: 'flex', alignItems: 'center', gap: '0.5vw' },
                                                 child: [
-                                                    $({
-                                                        tag: 'span',
-                                                        att: {
-                                                            className: 'fa-solid fa-user'
-                                                        },
-                                                        style: {
-                                                            color: '#3b82f6',
-                                                            fontSize: '0.9vw'
-                                                        }
-                                                    }),
-                                                    $({
-                                                        tag: 'span',
-                                                        text: rdeName || 'SYSTEM',
-                                                        style: {
-                                                            color: '#3b82f6',
-                                                            fontWeight: '600',
-                                                            fontSize: '0.9vw'
-                                                        }
-                                                    })
+                                                    $({ tag: 'span', att: { className: 'fa-solid fa-user' }, style: { color: '#3b82f6', fontSize: '0.9vw' } }),
+                                                    $({ tag: 'span', text: rdeName || 'SYSTEM', style: { color: '#3b82f6', fontWeight: '600', fontSize: '0.9vw' } })
                                                 ]
                                             })
                                         ]
@@ -392,10 +255,7 @@ export const DocumentLog = () => {
                             }),
                             $({
                                 tag: 'div',
-                                style: {
-                                    display: 'flex',
-                                    justifyContent: 'center'
-                                },
+                                style: { display: 'flex', justifyContent: 'center' },
                                 child: [
                                     $({
                                         tag: 'button',
@@ -415,15 +275,9 @@ export const DocumentLog = () => {
                                         text: 'Close',
                                         event: {
                                             type: 'click',
-                                            method: () => {
-                                                modal.remove()
-                                            },
-                                            mouseover: (e) => {
-                                                e.target.style.background = '#2563eb'
-                                            },
-                                            mouseout: (e) => {
-                                                e.target.style.background = '#3b82f6'
-                                            }
+                                            method: () => { modal.remove() },
+                                            mouseover: (e) => { e.target.style.background = '#2563eb' },
+                                            mouseout: (e) => { e.target.style.background = '#3b82f6' }
                                         }
                                     })
                                 ]
@@ -432,17 +286,14 @@ export const DocumentLog = () => {
                     })
                 ]
             })
-
             document.body.appendChild(modal)
         }
 
         const sortData = (column, data) => {
             const sorted = [...data]
             const ascending = currentSort.column === column ? !currentSort.ascending : true
-
             sorted.sort((a, b) => {
                 let valA, valB
-
                 switch (column) {
                     case 'date':
                         valA = new Date(a.date)
@@ -463,12 +314,10 @@ export const DocumentLog = () => {
                     default:
                         return 0
                 }
-
                 if (valA < valB) return ascending ? -1 : 1
                 if (valA > valB) return ascending ? 1 : -1
                 return 0
             })
-
             currentSort = { column, ascending }
             return sorted
         }
@@ -486,9 +335,7 @@ export const DocumentLog = () => {
                     transition: 'all 0.2s ease',
                     alignItems: 'center'
                 },
-                att: {
-                    className: 'sortHead'
-                },
+                att: { className: 'sortHead' },
                 event: {
                     type: 'click',
                     method: (event) => {
@@ -500,7 +347,6 @@ export const DocumentLog = () => {
                                 icon.style.color = '#94a3b8'
                             }
                         })
-
                         const currentIcon = event.currentTarget.querySelector('.sort-icon')
                         if (currentIcon) {
                             if (currentSort.column === column) {
@@ -512,7 +358,6 @@ export const DocumentLog = () => {
                             }
                             currentIcon.style.color = '#3b82f6'
                         }
-
                         const req = new Request('/documentLog');
                         req.Post([{ name: 'logRequest', value: '1' }])
                         req.Json()
@@ -567,9 +412,7 @@ export const DocumentLog = () => {
                             margin: 'auto',
                             marginRight: '1vw',
                         },
-                        att: {
-                            className: 'fa-solid fa-sort sort-icon'
-                        },
+                        att: { className: 'fa-solid fa-sort sort-icon' },
                         style: {
                             color: '#94a3b8',
                             fontSize: '0.8vw',
@@ -628,17 +471,7 @@ export const DocumentLog = () => {
                                 }
                             },
                             child: [
-                                $({
-                                    tag: 'div',
-                                    att: {
-                                        className: 'fa-solid fa-search'
-                                    },
-                                    style: {
-                                        fontSize: '0.8vw',
-                                        color: '#94a3b8',
-                                        marginRight: '0.5vw'
-                                    }
-                                }),
+                                $({ tag: 'div', att: { className: 'fa-solid fa-search' }, style: { fontSize: '0.8vw', color: '#94a3b8', marginRight: '0.5vw' } }),
                                 $({
                                     tag: 'input',
                                     style: {
@@ -651,10 +484,7 @@ export const DocumentLog = () => {
                                         fontSize: '0.8vw',
                                         fontFamily: 'Segoe UI, sans-serif'
                                     },
-                                    att: {
-                                        placeholder: 'Search system logs...',
-                                        type: 'text'
-                                    },
+                                    att: { placeholder: 'Search system logs...', type: 'text' },
                                     event: {
                                         type: 'input',
                                         method: (ev) => {
@@ -683,19 +513,8 @@ export const DocumentLog = () => {
                                 fontSize: '0.75vw'
                             },
                             child: [
-                                $({
-                                    tag: 'span',
-                                    att: {
-                                        className: 'fa-solid fa-info-circle'
-                                    },
-                                    style: {
-                                        color: '#3b82f6'
-                                    }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'Click on any log to view full details'
-                                })
+                                $({ tag: 'span', att: { className: 'fa-solid fa-info-circle' }, style: { color: '#3b82f6' } }),
+                                $({ tag: 'span', text: 'Click on any log to view full details' })
                             ]
                         })
                     ]
@@ -730,17 +549,11 @@ export const DocumentLog = () => {
                     elementHandler: (el) => {
                         bodyMainList = el
                         const req = new Request('/documentLog');
-                        req.Post([
-                            {
-                                name: 'logRequest',
-                                value: '1'
-                            }
-                        ])
+                        req.Post([{ name: 'logRequest', value: '1' }])
                         req.Json()
                         req.Send().then(data => {
                             if (data && data.length > 0) {
                                 data.sort((a, b) => new Date(b.date) - new Date(a.date))
-
                                 data.forEach(val => {
                                     let name = val.rdeName
                                     if (val.rdeName === null) {
@@ -757,32 +570,10 @@ export const DocumentLog = () => {
                             } else {
                                 el.appendChild($({
                                     tag: 'div',
-                                    style: {
-                                        width: '100%',
-                                        padding: '4rem 2rem',
-                                        textAlign: 'center',
-                                        color: '#94a3b8'
-                                    },
+                                    style: { width: '100%', padding: '4rem 2rem', textAlign: 'center', color: '#94a3b8' },
                                     child: [
-                                        $({
-                                            tag: 'div',
-                                            att: {
-                                                className: 'fa-solid fa-folder-open'
-                                            },
-                                            style: {
-                                                fontSize: '3vw',
-                                                color: '#e2e8f0',
-                                                marginBottom: '1vh'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'div',
-                                            text: 'No system logs found',
-                                            style: {
-                                                fontSize: '1vw',
-                                                color: '#64748b'
-                                            }
-                                        })
+                                        $({ tag: 'div', att: { className: 'fa-solid fa-folder-open' }, style: { fontSize: '3vw', color: '#e2e8f0', marginBottom: '1vh' } }),
+                                        $({ tag: 'div', text: 'No system logs found', style: { fontSize: '1vw', color: '#64748b' } })
                                     ]
                                 }))
                             }
@@ -797,6 +588,7 @@ export const DocumentLog = () => {
     }
 
     const emailLogs = () => {
+        // ... (existing emailLogs code remains unchanged - keeping for brevity)
         let bodyMainList
         let currentSort = { column: null, ascending: true }
 
@@ -821,9 +613,7 @@ export const DocumentLog = () => {
                     boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                     boxSizing: 'border-box'
                 },
-                att: {
-                    className: 'logList'
-                },
+                att: { className: 'logList' },
                 event: {
                     mouseover: (e) => {
                         e.currentTarget.style.transform = 'translateX(4px)'
@@ -837,213 +627,42 @@ export const DocumentLog = () => {
                     }
                 },
                 child: [
-                    $({
-                        tag: 'div',
-                        text: date,
-                        style: {
-                            width: '12%',
-                            paddingLeft: '1vw',
-                            color: '#1e293b',
-                            fontWeight: '500',
-                            boxSizing: 'border-box',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                        }
-                    }),
-                    $({
-                        tag: 'div',
-                        text: time,
-                        style: {
-                            width: '10%',
-                            color: '#1e293b',
-                            boxSizing: 'border-box',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                        }
-                    }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '20%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5vw',
-                            boxSizing: 'border-box',
-                            paddingRight: '0.5vw'
-                        },
+                    $({ tag: 'div', text: date, style: { width: '12%', paddingLeft: '1vw', color: '#1e293b', fontWeight: '500', boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }),
+                    $({ tag: 'div', text: time, style: { width: '10%', color: '#1e293b', boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }),
+                    $({ tag: 'div', style: { width: '20%', display: 'flex', alignItems: 'center', gap: '0.5vw', boxSizing: 'border-box', paddingRight: '0.5vw' },
                         child: [
-                            $({
-                                tag: 'span',
-                                att: {
-                                    className: 'fa-solid fa-envelope'
-                                },
-                                style: {
-                                    color: '#3b82f6',
-                                    fontSize: '0.9vw',
-                                    flexShrink: 0
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                text: author_email || 'N/A',
-                                style: {
-                                    color: '#3b82f6',
-                                    fontWeight: '500',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden'
-                                }
-                            })
+                            $({ tag: 'span', att: { className: 'fa-solid fa-envelope' }, style: { color: '#3b82f6', fontSize: '0.9vw', flexShrink: 0 } }),
+                            $({ tag: 'span', text: author_email || 'N/A', style: { color: '#3b82f6', fontWeight: '500', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' } })
                         ]
                     }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '15%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5vw',
-                            boxSizing: 'border-box',
-                            paddingRight: '0.5vw'
-                        },
+                    $({ tag: 'div', style: { width: '15%', display: 'flex', alignItems: 'center', gap: '0.5vw', boxSizing: 'border-box', paddingRight: '0.5vw' },
                         child: [
-                            $({
-                                tag: 'span',
-                                att: {
-                                    className: 'fa-solid fa-tag'
-                                },
-                                style: {
-                                    color: '#94a3b8',
-                                    fontSize: '0.8vw',
-                                    flexShrink: 0
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                text: email_type || 'N/A',
-                                style: {
-                                    color: '#475569',
-                                    textTransform: 'capitalize',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden'
-                                }
-                            })
+                            $({ tag: 'span', att: { className: 'fa-solid fa-tag' }, style: { color: '#94a3b8', fontSize: '0.8vw', flexShrink: 0 } }),
+                            $({ tag: 'span', text: email_type || 'N/A', style: { color: '#475569', textTransform: 'capitalize', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' } })
                         ]
                     }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '10%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5vw',
-                            boxSizing: 'border-box'
-                        },
+                    $({ tag: 'div', style: { width: '10%', display: 'flex', alignItems: 'center', gap: '0.5vw', boxSizing: 'border-box' },
                         child: [
-                            $({
-                                tag: 'span',
-                                att: {
-                                    className: `fa-solid ${status ? 'fa-check-circle' : 'fa-clock'}`
-                                },
-                                style: {
-                                    color: status ? '#22c55e' : '#f59e0b',
-                                    fontSize: '0.8vw',
-                                    flexShrink: 0
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                text: status ? 'Sent' : 'Pending',
-                                style: {
-                                    color: status ? '#22c55e' : '#f59e0b',
-                                    fontWeight: '500',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden'
-                                }
-                            })
+                            $({ tag: 'span', att: { className: `fa-solid ${status ? 'fa-check-circle' : 'fa-clock'}` }, style: { color: status ? '#22c55e' : '#f59e0b', fontSize: '0.8vw', flexShrink: 0 } }),
+                            $({ tag: 'span', text: status ? 'Sent' : 'Pending', style: { color: status ? '#22c55e' : '#f59e0b', fontWeight: '500', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' } })
                         ]
                     }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '15%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5vw',
-                            cursor: 'pointer',
-                            boxSizing: 'border-box',
-                            paddingRight: '0.5vw'
-                        },
+                    $({ tag: 'div', style: { width: '15%', display: 'flex', alignItems: 'center', gap: '0.5vw', cursor: 'pointer', boxSizing: 'border-box', paddingRight: '0.5vw' },
                         child: [
-                            $({
-                                tag: 'span',
-                                att: {
-                                    className: 'fa-solid fa-eye'
-                                },
-                                style: {
-                                    color: '#3b82f6',
-                                    fontSize: '0.8vw',
-                                    flexShrink: 0
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                text: `Doc #${document_id || 'N/A'}`,
-                                style: {
-                                    color: '#3b82f6',
-                                    fontWeight: '500',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden'
-                                }
-                            })
+                            $({ tag: 'span', att: { className: 'fa-solid fa-eye' }, style: { color: '#3b82f6', fontSize: '0.8vw', flexShrink: 0 } }),
+                            $({ tag: 'span', text: `Doc #${document_id || 'N/A'}`, style: { color: '#3b82f6', fontWeight: '500', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' } })
                         ],
                         event: {
                             type: 'click',
                             method: () => {
-                                showEmailDetailsModal({
-                                    id, document_id, evaluator_id, author_email, sent_date, email_type, status
-                                })
+                                showEmailDetailsModal({ id, document_id, evaluator_id, author_email, sent_date, email_type, status })
                             }
                         }
                     }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '8%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.3vw',
-                            boxSizing: 'border-box'
-                        },
+                    $({ tag: 'div', style: { width: '8%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3vw', boxSizing: 'border-box' },
                         child: [
-                            $({
-                                tag: 'span',
-                                att: {
-                                    className: 'fa-solid fa-id-card'
-                                },
-                                style: {
-                                    color: '#cbd5e1',
-                                    fontSize: '0.8vw',
-                                    flexShrink: 0
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                text: `E-${id}`,
-                                style: {
-                                    color: '#94a3b8',
-                                    fontSize: '0.75vw',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden'
-                                }
-                            })
+                            $({ tag: 'span', att: { className: 'fa-solid fa-id-card' }, style: { color: '#cbd5e1', fontSize: '0.8vw', flexShrink: 0 } }),
+                            $({ tag: 'span', text: `E-${id}`, style: { color: '#94a3b8', fontSize: '0.75vw', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' } })
                         ]
                     })
                 ]
@@ -1090,20 +709,12 @@ export const DocumentLog = () => {
                                     fontSize: '1.5vw',
                                     transition: 'all 0.2s ease'
                                 },
-                                att: {
-                                    className: 'fa-solid fa-circle-xmark'
-                                },
+                                att: { className: 'fa-solid fa-circle-xmark' },
                                 event: {
                                     type: 'click',
-                                    method: () => {
-                                        modal.remove()
-                                    },
-                                    mouseover: (e) => {
-                                        e.target.style.color = '#3b82f6'
-                                    },
-                                    mouseout: (e) => {
-                                        e.target.style.color = '#94a3b8'
-                                    }
+                                    method: () => { modal.remove() },
+                                    mouseover: (e) => { e.target.style.color = '#3b82f6' },
+                                    mouseout: (e) => { e.target.style.color = '#94a3b8' }
                                 }
                             }),
                             $({
@@ -1117,20 +728,8 @@ export const DocumentLog = () => {
                                     fontWeight: '700'
                                 },
                                 child: [
-                                    $({
-                                        tag: 'span',
-                                        att: {
-                                            className: 'fa-solid fa-envelope'
-                                        },
-                                        style: {
-                                            color: '#3b82f6',
-                                            marginRight: '0.5vw'
-                                        }
-                                    }),
-                                    $({
-                                        tag: 'span',
-                                        text: 'Email Log Details'
-                                    })
+                                    $({ tag: 'span', att: { className: 'fa-solid fa-envelope' }, style: { color: '#3b82f6', marginRight: '0.5vw' } }),
+                                    $({ tag: 'span', text: 'Email Log Details' })
                                 ]
                             }),
                             $({
@@ -1154,179 +753,40 @@ export const DocumentLog = () => {
                                             borderBottom: '1px solid #e2e8f0'
                                         },
                                         child: [
-                                            $({
-                                                tag: 'div',
-                                                style: {
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.5vw'
-                                                },
+                                            $({ tag: 'div', style: { display: 'flex', alignItems: 'center', gap: '0.5vw' },
                                                 child: [
-                                                    $({
-                                                        tag: 'span',
-                                                        att: {
-                                                            className: 'fa-solid fa-calendar'
-                                                        },
-                                                        style: {
-                                                            color: '#3b82f6',
-                                                            fontSize: '0.9vw'
-                                                        }
-                                                    }),
-                                                    $({
-                                                        tag: 'span',
-                                                        text: data.sent_date ? data.sent_date.split(" ")[0] : 'N/A',
-                                                        style: {
-                                                            color: '#1e293b',
-                                                            fontSize: '0.9vw',
-                                                            fontWeight: '500'
-                                                        }
-                                                    })
+                                                    $({ tag: 'span', att: { className: 'fa-solid fa-calendar' }, style: { color: '#3b82f6', fontSize: '0.9vw' } }),
+                                                    $({ tag: 'span', text: data.sent_date ? data.sent_date.split(" ")[0] : 'N/A', style: { color: '#1e293b', fontSize: '0.9vw', fontWeight: '500' } })
                                                 ]
                                             }),
-                                            $({
-                                                tag: 'div',
-                                                style: {
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.5vw'
-                                                },
+                                            $({ tag: 'div', style: { display: 'flex', alignItems: 'center', gap: '0.5vw' },
                                                 child: [
-                                                    $({
-                                                        tag: 'span',
-                                                        att: {
-                                                            className: 'fa-solid fa-clock'
-                                                        },
-                                                        style: {
-                                                            color: '#3b82f6',
-                                                            fontSize: '0.9vw'
-                                                        }
-                                                    }),
-                                                    $({
-                                                        tag: 'span',
-                                                        text: data.sent_date ? TimeConvert(data.sent_date.split(" ")[1].split(":")) : 'N/A',
-                                                        style: {
-                                                            color: '#1e293b',
-                                                            fontSize: '0.9vw',
-                                                            fontWeight: '500'
-                                                        }
-                                                    })
+                                                    $({ tag: 'span', att: { className: 'fa-solid fa-clock' }, style: { color: '#3b82f6', fontSize: '0.9vw' } }),
+                                                    $({ tag: 'span', text: data.sent_date ? TimeConvert(data.sent_date.split(" ")[1].split(":")) : 'N/A', style: { color: '#1e293b', fontSize: '0.9vw', fontWeight: '500' } })
                                                 ]
                                             }),
-                                            $({
-                                                tag: 'div',
-                                                style: {
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.5vw'
-                                                },
+                                            $({ tag: 'div', style: { display: 'flex', alignItems: 'center', gap: '0.5vw' },
                                                 child: [
-                                                    $({
-                                                        tag: 'span',
-                                                        att: {
-                                                            className: 'fa-solid fa-user'
-                                                        },
-                                                        style: {
-                                                            color: '#3b82f6',
-                                                            fontSize: '0.9vw'
-                                                        }
-                                                    }),
-                                                    $({
-                                                        tag: 'span',
-                                                        text: data.author_email || 'N/A',
-                                                        style: {
-                                                            color: '#1e293b',
-                                                            fontSize: '0.9vw',
-                                                            fontWeight: '500'
-                                                        }
-                                                    })
+                                                    $({ tag: 'span', att: { className: 'fa-solid fa-user' }, style: { color: '#3b82f6', fontSize: '0.9vw' } }),
+                                                    $({ tag: 'span', text: data.author_email || 'N/A', style: { color: '#1e293b', fontSize: '0.9vw', fontWeight: '500' } })
                                                 ]
                                             }),
-                                            $({
-                                                tag: 'div',
-                                                style: {
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.5vw'
-                                                },
+                                            $({ tag: 'div', style: { display: 'flex', alignItems: 'center', gap: '0.5vw' },
                                                 child: [
-                                                    $({
-                                                        tag: 'span',
-                                                        att: {
-                                                            className: 'fa-solid fa-tag'
-                                                        },
-                                                        style: {
-                                                            color: '#3b82f6',
-                                                            fontSize: '0.9vw'
-                                                        }
-                                                    }),
-                                                    $({
-                                                        tag: 'span',
-                                                        text: data.email_type || 'N/A',
-                                                        style: {
-                                                            color: '#1e293b',
-                                                            fontSize: '0.9vw',
-                                                            fontWeight: '500',
-                                                            textTransform: 'capitalize'
-                                                        }
-                                                    })
+                                                    $({ tag: 'span', att: { className: 'fa-solid fa-tag' }, style: { color: '#3b82f6', fontSize: '0.9vw' } }),
+                                                    $({ tag: 'span', text: data.email_type || 'N/A', style: { color: '#1e293b', fontSize: '0.9vw', fontWeight: '500', textTransform: 'capitalize' } })
                                                 ]
                                             }),
-                                            $({
-                                                tag: 'div',
-                                                style: {
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.5vw'
-                                                },
+                                            $({ tag: 'div', style: { display: 'flex', alignItems: 'center', gap: '0.5vw' },
                                                 child: [
-                                                    $({
-                                                        tag: 'span',
-                                                        att: {
-                                                            className: `fa-solid ${data.status ? 'fa-check-circle' : 'fa-clock'}`
-                                                        },
-                                                        style: {
-                                                            color: data.status ? '#22c55e' : '#f59e0b',
-                                                            fontSize: '0.9vw'
-                                                        }
-                                                    }),
-                                                    $({
-                                                        tag: 'span',
-                                                        text: data.status ? 'Sent' : 'Pending',
-                                                        style: {
-                                                            color: data.status ? '#22c55e' : '#f59e0b',
-                                                            fontSize: '0.9vw',
-                                                            fontWeight: '500'
-                                                        }
-                                                    })
+                                                    $({ tag: 'span', att: { className: `fa-solid ${data.status ? 'fa-check-circle' : 'fa-clock'}` }, style: { color: data.status ? '#22c55e' : '#f59e0b', fontSize: '0.9vw' } }),
+                                                    $({ tag: 'span', text: data.status ? 'Sent' : 'Pending', style: { color: data.status ? '#22c55e' : '#f59e0b', fontSize: '0.9vw', fontWeight: '500' } })
                                                 ]
                                             }),
-                                            $({
-                                                tag: 'div',
-                                                style: {
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.5vw'
-                                                },
+                                            $({ tag: 'div', style: { display: 'flex', alignItems: 'center', gap: '0.5vw' },
                                                 child: [
-                                                    $({
-                                                        tag: 'span',
-                                                        att: {
-                                                            className: 'fa-solid fa-file'
-                                                        },
-                                                        style: {
-                                                            color: '#3b82f6',
-                                                            fontSize: '0.9vw'
-                                                        }
-                                                    }),
-                                                    $({
-                                                        tag: 'span',
-                                                        text: `Document #${data.document_id || 'N/A'}`,
-                                                        style: {
-                                                            color: '#1e293b',
-                                                            fontSize: '0.9vw',
-                                                            fontWeight: '500'
-                                                        }
-                                                    })
+                                                    $({ tag: 'span', att: { className: 'fa-solid fa-file' }, style: { color: '#3b82f6', fontSize: '0.9vw' } }),
+                                                    $({ tag: 'span', text: `Document #${data.document_id || 'N/A'}`, style: { color: '#1e293b', fontSize: '0.9vw', fontWeight: '500' } })
                                                 ]
                                             })
                                         ]
@@ -1341,24 +801,15 @@ export const DocumentLog = () => {
                                             color: '#64748b'
                                         },
                                         child: [
-                                            $({
-                                                tag: 'span',
-                                                text: `Log ID: E-${data.id}`
-                                            }),
-                                            $({
-                                                tag: 'span',
-                                                text: `Evaluator ID: ${data.evaluator_id || 'N/A'}`
-                                            })
+                                            $({ tag: 'span', text: `Log ID: E-${data.id}` }),
+                                            $({ tag: 'span', text: `Evaluator ID: ${data.evaluator_id || 'N/A'}` })
                                         ]
                                     })
                                 ]
                             }),
                             $({
                                 tag: 'div',
-                                style: {
-                                    display: 'flex',
-                                    justifyContent: 'center'
-                                },
+                                style: { display: 'flex', justifyContent: 'center' },
                                 child: [
                                     $({
                                         tag: 'button',
@@ -1378,15 +829,9 @@ export const DocumentLog = () => {
                                         text: 'Close',
                                         event: {
                                             type: 'click',
-                                            method: () => {
-                                                modal.remove()
-                                            },
-                                            mouseover: (e) => {
-                                                e.target.style.background = '#2563eb'
-                                            },
-                                            mouseout: (e) => {
-                                                e.target.style.background = '#3b82f6'
-                                            }
+                                            method: () => { modal.remove() },
+                                            mouseover: (e) => { e.target.style.background = '#2563eb' },
+                                            mouseout: (e) => { e.target.style.background = '#3b82f6' }
                                         }
                                     })
                                 ]
@@ -1395,17 +840,14 @@ export const DocumentLog = () => {
                     })
                 ]
             })
-
             document.body.appendChild(modal)
         }
 
         const sortEmailData = (column, data) => {
             const sorted = [...data]
             const ascending = currentSort.column === column ? !currentSort.ascending : true
-
             sorted.sort((a, b) => {
                 let valA, valB
-
                 switch (column) {
                     case 'date':
                         valA = new Date(a.sent_date)
@@ -1434,12 +876,10 @@ export const DocumentLog = () => {
                     default:
                         return 0
                 }
-
                 if (valA < valB) return ascending ? -1 : 1
                 if (valA > valB) return ascending ? 1 : -1
                 return 0
             })
-
             currentSort = { column, ascending }
             return sorted
         }
@@ -1457,9 +897,7 @@ export const DocumentLog = () => {
                     borderLeft: 'solid thin #e2e8f0',
                     boxSizing: 'border-box'
                 },
-                att: {
-                    className: 'sortHead'
-                },
+                att: { className: 'sortHead' },
                 event: {
                     type: 'click',
                     method: (event) => {
@@ -1471,7 +909,6 @@ export const DocumentLog = () => {
                                 icon.style.color = '#94a3b8'
                             }
                         })
-
                         const currentIcon = event.currentTarget.querySelector('.sort-icon')
                         if (currentIcon) {
                             if (currentSort.column === column) {
@@ -1483,7 +920,6 @@ export const DocumentLog = () => {
                             }
                             currentIcon.style.color = '#3b82f6'
                         }
-
                         const req = new Request('/documentLog');
                         req.Post([{ name: 'emailLogRequest', value: '1' }])
                         req.Json()
@@ -1532,19 +968,9 @@ export const DocumentLog = () => {
                     }),
                     $({
                         tag: 'div',
-                        style: {
-                            marginRight: '1vw',
-                            display: 'flex',
-                            alignItems: 'center'
-                        },
-                        att: {
-                            className: 'fa-solid fa-sort sort-icon'
-                        },
-                        style: {
-                            color: '#94a3b8',
-                            fontSize: '0.8vw',
-                            transition: 'color 0.2s ease'
-                        }
+                        style: { marginRight: '1vw', display: 'flex', alignItems: 'center' },
+                        att: { className: 'fa-solid fa-sort sort-icon' },
+                        style: { color: '#94a3b8', fontSize: '0.8vw', transition: 'color 0.2s ease' }
                     })
                 ]
             }))
@@ -1600,17 +1026,7 @@ export const DocumentLog = () => {
                                 }
                             },
                             child: [
-                                $({
-                                    tag: 'div',
-                                    att: {
-                                        className: 'fa-solid fa-search'
-                                    },
-                                    style: {
-                                        fontSize: '0.8vw',
-                                        color: '#94a3b8',
-                                        marginRight: '0.5vw'
-                                    }
-                                }),
+                                $({ tag: 'div', att: { className: 'fa-solid fa-search' }, style: { fontSize: '0.8vw', color: '#94a3b8', marginRight: '0.5vw' } }),
                                 $({
                                     tag: 'input',
                                     style: {
@@ -1623,10 +1039,7 @@ export const DocumentLog = () => {
                                         fontSize: '0.8vw',
                                         fontFamily: 'Segoe UI, sans-serif'
                                     },
-                                    att: {
-                                        placeholder: 'Search email logs...',
-                                        type: 'text'
-                                    },
+                                    att: { placeholder: 'Search email logs...', type: 'text' },
                                     event: {
                                         type: 'input',
                                         method: (ev) => {
@@ -1655,19 +1068,8 @@ export const DocumentLog = () => {
                                 fontSize: '0.75vw'
                             },
                             child: [
-                                $({
-                                    tag: 'span',
-                                    att: {
-                                        className: 'fa-solid fa-info-circle'
-                                    },
-                                    style: {
-                                        color: '#3b82f6'
-                                    }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'Click on document ID to view details'
-                                })
+                                $({ tag: 'span', att: { className: 'fa-solid fa-info-circle' }, style: { color: '#3b82f6' } }),
+                                $({ tag: 'span', text: 'Click on document ID to view details' })
                             ]
                         })
                     ]
@@ -1731,17 +1133,11 @@ export const DocumentLog = () => {
                     elementHandler: (el) => {
                         bodyMainList = el
                         const req = new Request('/documentLog');
-                        req.Post([
-                            {
-                                name: 'emailLogRequest',
-                                value: '1'
-                            }
-                        ])
+                        req.Post([{ name: 'emailLogRequest', value: '1' }])
                         req.Json()
                         req.Send().then(data => {
                             if (Array.isArray(data) && data.length > 0) {
                                 data.sort((a, b) => new Date(b.sent_date) - new Date(a.sent_date))
-
                                 data.forEach(val => {
                                     el.appendChild(EmailLogItem({
                                         id: val.id,
@@ -1756,32 +1152,10 @@ export const DocumentLog = () => {
                             } else {
                                 el.appendChild($({
                                     tag: 'div',
-                                    style: {
-                                        width: '100%',
-                                        padding: '4rem 2rem',
-                                        textAlign: 'center',
-                                        color: '#94a3b8'
-                                    },
+                                    style: { width: '100%', padding: '4rem 2rem', textAlign: 'center', color: '#94a3b8' },
                                     child: [
-                                        $({
-                                            tag: 'div',
-                                            att: {
-                                                className: 'fa-solid fa-envelope-open'
-                                            },
-                                            style: {
-                                                fontSize: '3vw',
-                                                color: '#e2e8f0',
-                                                marginBottom: '1vh'
-                                            }
-                                        }),
-                                        $({
-                                            tag: 'div',
-                                            text: 'No email logs found',
-                                            style: {
-                                                fontSize: '1vw',
-                                                color: '#64748b'
-                                            }
-                                        })
+                                        $({ tag: 'div', att: { className: 'fa-solid fa-envelope-open' }, style: { fontSize: '3vw', color: '#e2e8f0', marginBottom: '1vh' } }),
+                                        $({ tag: 'div', text: 'No email logs found', style: { fontSize: '1vw', color: '#64748b' } })
                                     ]
                                 }))
                             }
@@ -1789,32 +1163,10 @@ export const DocumentLog = () => {
                             console.error('Error loading email logs:', error)
                             el.appendChild($({
                                 tag: 'div',
-                                style: {
-                                    width: '100%',
-                                    padding: '4rem 2rem',
-                                    textAlign: 'center',
-                                    color: '#ef4444'
-                                },
+                                style: { width: '100%', padding: '4rem 2rem', textAlign: 'center', color: '#ef4444' },
                                 child: [
-                                    $({
-                                        tag: 'div',
-                                        att: {
-                                            className: 'fa-solid fa-exclamation-triangle'
-                                        },
-                                        style: {
-                                            fontSize: '3vw',
-                                            color: '#ef4444',
-                                            marginBottom: '1vh'
-                                        }
-                                    }),
-                                    $({
-                                        tag: 'div',
-                                        text: 'Failed to load email logs',
-                                        style: {
-                                            fontSize: '1vw',
-                                            color: '#ef4444'
-                                        }
-                                    })
+                                    $({ tag: 'div', att: { className: 'fa-solid fa-exclamation-triangle' }, style: { fontSize: '3vw', color: '#ef4444', marginBottom: '1vh' } }),
+                                    $({ tag: 'div', text: 'Failed to load email logs', style: { fontSize: '1vw', color: '#ef4444' } })
                                 ]
                             }))
                         })
@@ -1825,6 +1177,7 @@ export const DocumentLog = () => {
     }
 
     const submissionLogs = () => {
+        // ... (existing submissionLogs code remains unchanged - keeping for brevity)
         let bodyMainList
         let currentSort = { column: null, ascending: true }
         let currentFilter = { status: '', type: '' }
@@ -1908,7 +1261,6 @@ export const DocumentLog = () => {
                         return requestData.substring(0, 50)
                     }
                 }
-
                 const fields = []
                 if (requestData.post) {
                     if (requestData.post.title) fields.push(`Title: ${requestData.post.title.substring(0, 30)}...`)
@@ -1937,9 +1289,7 @@ export const DocumentLog = () => {
                     boxSizing: 'border-box',
                     cursor: 'pointer'
                 },
-                att: {
-                    className: 'logList'
-                },
+                att: { className: 'logList' },
                 event: {
                     mouseover: (e) => {
                         e.currentTarget.style.transform = 'translateX(4px)'
@@ -1961,196 +1311,34 @@ export const DocumentLog = () => {
                     }
                 },
                 child: [
-                    $({
-                        tag: 'div',
-                        text: date,
-                        style: {
-                            width: '10%',
-                            paddingLeft: '1vw',
-                            color: '#1e293b',
-                            fontWeight: '500',
-                            boxSizing: 'border-box',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                        }
-                    }),
-                    $({
-                        tag: 'div',
-                        text: time,
-                        style: {
-                            width: '8%',
-                            color: '#1e293b',
-                            boxSizing: 'border-box',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                        }
-                    }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '15%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5vw',
-                            boxSizing: 'border-box'
-                        },
+                    $({ tag: 'div', text: date, style: { width: '10%', paddingLeft: '1vw', color: '#1e293b', fontWeight: '500', boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }),
+                    $({ tag: 'div', text: time, style: { width: '8%', color: '#1e293b', boxSizing: 'border-box', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }),
+                    $({ tag: 'div', style: { width: '15%', display: 'flex', alignItems: 'center', gap: '0.5vw', boxSizing: 'border-box' },
                         child: [
-                            $({
-                                tag: 'span',
-                                att: { className: 'fa-solid fa-user' },
-                                style: {
-                                    color: '#3b82f6',
-                                    fontSize: '0.8vw',
-                                    flexShrink: 0
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                text: user_fullname || `User #${user_id}`,
-                                style: {
-                                    color: '#1e293b',
-                                    fontWeight: '500',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden'
-                                }
-                            })
+                            $({ tag: 'span', att: { className: 'fa-solid fa-user' }, style: { color: '#3b82f6', fontSize: '0.8vw', flexShrink: 0 } }),
+                            $({ tag: 'span', text: user_fullname || `User #${user_id}`, style: { color: '#1e293b', fontWeight: '500', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' } })
                         ]
                     }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '12%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            boxSizing: 'border-box'
-                        },
-                        child: [getTypeBadge(submission_type)]
-                    }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '12%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            boxSizing: 'border-box'
-                        },
-                        child: [getStatusBadge(status)]
-                    }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '25%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5vw',
-                            boxSizing: 'border-box',
-                            paddingRight: '0.5vw'
-                        },
+                    $({ tag: 'div', style: { width: '12%', display: 'flex', alignItems: 'center', boxSizing: 'border-box' }, child: [getTypeBadge(submission_type)] }),
+                    $({ tag: 'div', style: { width: '12%', display: 'flex', alignItems: 'center', boxSizing: 'border-box' }, child: [getStatusBadge(status)] }),
+                    $({ tag: 'div', style: { width: '25%', display: 'flex', alignItems: 'center', gap: '0.5vw', boxSizing: 'border-box', paddingRight: '0.5vw' },
                         child: [
-                            $({
-                                tag: 'span',
-                                att: { className: 'fa-solid fa-message' },
-                                style: {
-                                    color: '#94a3b8',
-                                    fontSize: '0.7vw',
-                                    flexShrink: 0
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                text: getRequestSummary(request_data),
-                                style: {
-                                    color: '#475569',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden'
-                                }
-                            })
+                            $({ tag: 'span', att: { className: 'fa-solid fa-message' }, style: { color: '#94a3b8', fontSize: '0.7vw', flexShrink: 0 } }),
+                            $({ tag: 'span', text: getRequestSummary(request_data), style: { color: '#475569', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' } })
                         ]
                     }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '10%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5vw',
-                            boxSizing: 'border-box'
-                        },
+                    $({ tag: 'div', style: { width: '10%', display: 'flex', alignItems: 'center', gap: '0.5vw', boxSizing: 'border-box' },
                         child: [
-                            $({
-                                tag: 'span',
-                                att: { className: 'fa-solid fa-file' },
-                                style: {
-                                    color: '#94a3b8',
-                                    fontSize: '0.7vw',
-                                    flexShrink: 0
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                text: `${file_count || 0} files`,
-                                style: {
-                                    color: '#64748b',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden'
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                att: { className: 'fa-solid fa-clock' },
-                                style: {
-                                    color: '#94a3b8',
-                                    fontSize: '0.7vw',
-                                    marginLeft: 'auto',
-                                    flexShrink: 0
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                text: `${response_time_ms || 0}ms`,
-                                style: {
-                                    color: '#64748b',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    fontSize: '0.7vw'
-                                }
-                            })
+                            $({ tag: 'span', att: { className: 'fa-solid fa-file' }, style: { color: '#94a3b8', fontSize: '0.7vw', flexShrink: 0 } }),
+                            $({ tag: 'span', text: `${file_count || 0} files`, style: { color: '#64748b', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' } }),
+                            $({ tag: 'span', att: { className: 'fa-solid fa-clock' }, style: { color: '#94a3b8', fontSize: '0.7vw', marginLeft: 'auto', flexShrink: 0 } }),
+                            $({ tag: 'span', text: `${response_time_ms || 0}ms`, style: { color: '#64748b', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', fontSize: '0.7vw' } })
                         ]
                     }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            width: '8%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.3vw',
-                            boxSizing: 'border-box'
-                        },
+                    $({ tag: 'div', style: { width: '8%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3vw', boxSizing: 'border-box' },
                         child: [
-                            $({
-                                tag: 'span',
-                                att: { className: 'fa-solid fa-hashtag' },
-                                style: {
-                                    color: '#cbd5e1',
-                                    fontSize: '0.7vw',
-                                    flexShrink: 0
-                                }
-                            }),
-                            $({
-                                tag: 'span',
-                                text: `#${id}`,
-                                style: {
-                                    color: '#94a3b8',
-                                    fontSize: '0.7vw'
-                                }
-                            })
+                            $({ tag: 'span', att: { className: 'fa-solid fa-hashtag' }, style: { color: '#cbd5e1', fontSize: '0.7vw', flexShrink: 0 } }),
+                            $({ tag: 'span', text: `#${id}`, style: { color: '#94a3b8', fontSize: '0.7vw' } })
                         ]
                     })
                 ]
@@ -2189,7 +1377,6 @@ export const DocumentLog = () => {
                             flexDirection: 'column'
                         },
                         child: [
-                            // Close button
                             $({
                                 tag: 'div',
                                 style: {
@@ -2209,7 +1396,6 @@ export const DocumentLog = () => {
                                     mouseout: (e) => { e.target.style.color = '#94a3b8' }
                                 }
                             }),
-                            // Header
                             $({
                                 tag: 'div',
                                 style: {
@@ -2223,31 +1409,19 @@ export const DocumentLog = () => {
                                     gap: '1vw'
                                 },
                                 child: [
-                                    $({
-                                        tag: 'span',
-                                        att: { className: 'fa-solid fa-file-lines' },
-                                        style: { color: '#3b82f6' }
-                                    }),
-                                    $({
-                                        tag: 'span',
-                                        text: `Submission Log #${data.id}`
-                                    }),
-                                    $({
-                                        tag: 'span',
-                                        text: data.status ? data.status.toUpperCase() : '',
-                                        style: {
-                                            backgroundColor: data.status === 'success' ? '#22c55e' :
-                                                data.status === 'failed' ? '#ef4444' : '#f59e0b',
-                                            color: 'white',
-                                            padding: '2px 12px',
-                                            borderRadius: '20px',
-                                            fontSize: '0.7vw',
-                                            fontWeight: '500'
-                                        }
-                                    })
+                                    $({ tag: 'span', att: { className: 'fa-solid fa-file-lines' }, style: { color: '#3b82f6' } }),
+                                    $({ tag: 'span', text: `Submission Log #${data.id}` }),
+                                    $({ tag: 'span', text: data.status ? data.status.toUpperCase() : '', style: {
+                                        backgroundColor: data.status === 'success' ? '#22c55e' :
+                                            data.status === 'failed' ? '#ef4444' : '#f59e0b',
+                                        color: 'white',
+                                        padding: '2px 12px',
+                                        borderRadius: '20px',
+                                        fontSize: '0.7vw',
+                                        fontWeight: '500'
+                                    }})
                                 ]
                             }),
-                            // Content
                             $({
                                 tag: 'div',
                                 style: {
@@ -2262,10 +1436,7 @@ export const DocumentLog = () => {
                                     border: '1px solid #e2e8f0'
                                 },
                                 child: [
-                                    // Left column
-                                    $({
-                                        tag: 'div',
-                                        style: { display: 'flex', flexDirection: 'column', gap: '1vh' },
+                                    $({ tag: 'div', style: { display: 'flex', flexDirection: 'column', gap: '1vh' },
                                         child: [
                                             $({ tag: 'div', style: { fontWeight: '600', color: '#64748b' }, text: 'Basic Information' }),
                                             $({ tag: 'div', text: `User: ${data.user_fullname || 'N/A'}`, style: { color: '#1e293b' } }),
@@ -2276,10 +1447,7 @@ export const DocumentLog = () => {
                                             $({ tag: 'div', text: `Response Time: ${data.response_time_ms || 0}ms`, style: { color: '#1e293b' } })
                                         ]
                                     }),
-                                    // Right column
-                                    $({
-                                        tag: 'div',
-                                        style: { display: 'flex', flexDirection: 'column', gap: '1vh' },
+                                    $({ tag: 'div', style: { display: 'flex', flexDirection: 'column', gap: '1vh' },
                                         child: [
                                             $({ tag: 'div', style: { fontWeight: '600', color: '#64748b' }, text: 'References' }),
                                             $({ tag: 'div', text: `Research ID: ${data.research_id || 'N/A'}`, style: { color: '#1e293b' } }),
@@ -2290,7 +1458,6 @@ export const DocumentLog = () => {
                                             data.error_message ? $({ tag: 'div', text: `❌ Error: ${data.error_message}`, style: { color: '#ef4444' } }) : null
                                         ]
                                     }),
-                                    // File Upload Details (Full width)
                                     data.files && data.files.length > 0 ? $({
                                         tag: 'div',
                                         style: { gridColumn: '1 / -1', marginTop: '1vh' },
@@ -2300,43 +1467,32 @@ export const DocumentLog = () => {
                                                 tag: 'table',
                                                 style: { width: '100%', fontSize: '0.75vw', borderCollapse: 'collapse' },
                                                 child: [
-                                                    $({
-                                                        tag: 'thead',
-                                                        child: [
-                                                            $({
-                                                                tag: 'tr',
-                                                                style: { borderBottom: '1px solid #e2e8f0' },
-                                                                child: [
-                                                                    $({ tag: 'th', text: 'File Type', style: { textAlign: 'left', padding: '0.3vw' } }),
-                                                                    $({ tag: 'th', text: 'File Name', style: { textAlign: 'left', padding: '0.3vw' } }),
-                                                                    $({ tag: 'th', text: 'Status', style: { textAlign: 'left', padding: '0.3vw' } }),
-                                                                    $({ tag: 'th', text: 'Drive ID', style: { textAlign: 'left', padding: '0.3vw' } })
-                                                                ]
-                                                            })
-                                                        ]
-                                                    }),
-                                                    $({
-                                                        tag: 'tbody',
-                                                        child: data.files.map(file =>
-                                                            $({
-                                                                tag: 'tr',
-                                                                style: { borderBottom: '1px solid #f1f5f9' },
-                                                                child: [
-                                                                    $({ tag: 'td', text: file.file_type || 'N/A', style: { padding: '0.3vw' } }),
-                                                                    $({ tag: 'td', text: file.file_name || 'N/A', style: { padding: '0.3vw' } }),
-                                                                    $({ tag: 'td', text: file.upload_status || 'N/A', style: { padding: '0.3vw', color: file.upload_status === 'success' ? '#22c55e' : '#ef4444' } }),
-                                                                    $({ tag: 'td', text: file.drive_file_id || 'N/A', style: { padding: '0.3vw', fontSize: '0.65vw', color: '#64748b' } })
-                                                                ]
-                                                            })
-                                                        )
-                                                    })
+                                                    $({ tag: 'thead', child: [
+                                                        $({ tag: 'tr', style: { borderBottom: '1px solid #e2e8f0' },
+                                                            child: [
+                                                                $({ tag: 'th', text: 'File Type', style: { textAlign: 'left', padding: '0.3vw' } }),
+                                                                $({ tag: 'th', text: 'File Name', style: { textAlign: 'left', padding: '0.3vw' } }),
+                                                                $({ tag: 'th', text: 'Status', style: { textAlign: 'left', padding: '0.3vw' } }),
+                                                                $({ tag: 'th', text: 'Drive ID', style: { textAlign: 'left', padding: '0.3vw' } })
+                                                            ]
+                                                        })
+                                                    ] }),
+                                                    $({ tag: 'tbody', child: data.files.map(file =>
+                                                        $({ tag: 'tr', style: { borderBottom: '1px solid #f1f5f9' },
+                                                            child: [
+                                                                $({ tag: 'td', text: file.file_type || 'N/A', style: { padding: '0.3vw' } }),
+                                                                $({ tag: 'td', text: file.file_name || 'N/A', style: { padding: '0.3vw' } }),
+                                                                $({ tag: 'td', text: file.upload_status || 'N/A', style: { padding: '0.3vw', color: file.upload_status === 'success' ? '#22c55e' : '#ef4444' } }),
+                                                                $({ tag: 'td', text: file.drive_file_id || 'N/A', style: { padding: '0.3vw', fontSize: '0.65vw', color: '#64748b' } })
+                                                            ]
+                                                        })
+                                                    ) })
                                                 ]
                                             })
                                         ]
                                     }) : null
                                 ]
                             }),
-                            // Close button
                             $({
                                 tag: 'div',
                                 style: {
@@ -2376,7 +1532,6 @@ export const DocumentLog = () => {
                     })
                 ]
             })
-
             document.body.appendChild(modal)
         }
 
@@ -2384,27 +1539,13 @@ export const DocumentLog = () => {
             if (isLoading) return
             isLoading = true
 
-            // Show loading indicator
             el.innerHTML = ''
             el.appendChild($({
                 tag: 'div',
-                style: {
-                    width: '100%',
-                    padding: '4rem 2rem',
-                    textAlign: 'center',
-                    color: '#94a3b8'
-                },
+                style: { width: '100%', padding: '4rem 2rem', textAlign: 'center', color: '#94a3b8' },
                 child: [
-                    $({
-                        tag: 'div',
-                        att: { className: 'fa-solid fa-spinner fa-pulse' },
-                        style: { fontSize: '3vw', color: '#3b82f6', marginBottom: '1vh' }
-                    }),
-                    $({
-                        tag: 'div',
-                        text: 'Loading submission logs...',
-                        style: { fontSize: '1vw', color: '#64748b' }
-                    })
+                    $({ tag: 'div', att: { className: 'fa-solid fa-spinner fa-pulse' }, style: { fontSize: '3vw', color: '#3b82f6', marginBottom: '1vh' } }),
+                    $({ tag: 'div', text: 'Loading submission logs...', style: { fontSize: '1vw', color: '#64748b' } })
                 ]
             }))
 
@@ -2433,25 +1574,12 @@ export const DocumentLog = () => {
                 } else {
                     el.appendChild($({
                         tag: 'div',
-                        style: {
-                            width: '100%',
-                            padding: '4rem 2rem',
-                            textAlign: 'center',
-                            color: '#94a3b8'
-                        },
+                        style: { width: '100%', padding: '4rem 2rem', textAlign: 'center', color: '#94a3b8' },
                         child: [
-                            $({
-                                tag: 'div',
-                                att: { className: 'fa-solid fa-folder-open' },
-                                style: { fontSize: '3vw', color: '#e2e8f0', marginBottom: '1vh' }
-                            }),
-                            $({
-                                tag: 'div',
-                                text: filters.status || filters.type ?
-                                    `No submission logs found matching the selected filters` :
-                                    'No submission logs found',
-                                style: { fontSize: '1vw', color: '#64748b' }
-                            })
+                            $({ tag: 'div', att: { className: 'fa-solid fa-folder-open' }, style: { fontSize: '3vw', color: '#e2e8f0', marginBottom: '1vh' } }),
+                            $({ tag: 'div', text: filters.status || filters.type ?
+                                'No submission logs found matching the selected filters' :
+                                'No submission logs found', style: { fontSize: '1vw', color: '#64748b' } })
                         ]
                     }))
                 }
@@ -2461,29 +1589,15 @@ export const DocumentLog = () => {
                 el.innerHTML = ''
                 el.appendChild($({
                     tag: 'div',
-                    style: {
-                        width: '100%',
-                        padding: '4rem 2rem',
-                        textAlign: 'center',
-                        color: '#ef4444'
-                    },
+                    style: { width: '100%', padding: '4rem 2rem', textAlign: 'center', color: '#ef4444' },
                     child: [
-                        $({
-                            tag: 'div',
-                            att: { className: 'fa-solid fa-exclamation-circle' },
-                            style: { fontSize: '3vw', color: '#ef4444', marginBottom: '1vh' }
-                        }),
-                        $({
-                            tag: 'div',
-                            text: 'Failed to load submission logs: ' + (error.message || 'Unknown error'),
-                            style: { fontSize: '1vw', color: '#64748b' }
-                        })
+                        $({ tag: 'div', att: { className: 'fa-solid fa-exclamation-circle' }, style: { fontSize: '3vw', color: '#ef4444', marginBottom: '1vh' } }),
+                        $({ tag: 'div', text: 'Failed to load submission logs: ' + (error.message || 'Unknown error'), style: { fontSize: '1vw', color: '#64748b' } })
                     ]
                 }))
             })
         }
 
-        // Function to apply filters
         const applyFilters = () => {
             const statusFilter = document.getElementById('statusFilter')
             const typeFilter = document.getElementById('typeFilter')
@@ -2506,7 +1620,6 @@ export const DocumentLog = () => {
                 background: '#ffffff'
             },
             child: [
-                // Filter bar
                 $({
                     tag: 'div',
                     style: {
@@ -2521,7 +1634,6 @@ export const DocumentLog = () => {
                         flexWrap: 'wrap'
                     },
                     child: [
-                        // Search
                         $({
                             tag: 'div',
                             style: {
@@ -2549,11 +1661,7 @@ export const DocumentLog = () => {
                                 }
                             },
                             child: [
-                                $({
-                                    tag: 'div',
-                                    att: { className: 'fa-solid fa-search' },
-                                    style: { fontSize: '0.8vw', color: '#94a3b8', marginRight: '0.5vw' }
-                                }),
+                                $({ tag: 'div', att: { className: 'fa-solid fa-search' }, style: { fontSize: '0.8vw', color: '#94a3b8', marginRight: '0.5vw' } }),
                                 $({
                                     tag: 'input',
                                     style: {
@@ -2586,7 +1694,6 @@ export const DocumentLog = () => {
                                 })
                             ]
                         }),
-                        // Status filter
                         $({
                             tag: 'select',
                             style: {
@@ -2601,9 +1708,7 @@ export const DocumentLog = () => {
                                 cursor: 'pointer'
                             },
                             att: { id: 'statusFilter' },
-                            event: {
-                                change: applyFilters
-                            },
+                            event: { change: applyFilters },
                             child: [
                                 $({ tag: 'option', text: 'All Status', att: { value: '' } }),
                                 $({ tag: 'option', text: 'Success', att: { value: 'success' } }),
@@ -2612,7 +1717,6 @@ export const DocumentLog = () => {
                                 $({ tag: 'option', text: 'Duplicate Warning', att: { value: 'duplicate_warning' } })
                             ]
                         }),
-                        // Type filter
                         $({
                             tag: 'select',
                             style: {
@@ -2627,9 +1731,7 @@ export const DocumentLog = () => {
                                 cursor: 'pointer'
                             },
                             att: { id: 'typeFilter' },
-                            event: {
-                                change: applyFilters
-                            },
+                            event: { change: applyFilters },
                             child: [
                                 $({ tag: 'option', text: 'All Types', att: { value: '' } }),
                                 $({ tag: 'option', text: 'Symposium', att: { value: 'symposium' } }),
@@ -2640,7 +1742,6 @@ export const DocumentLog = () => {
                                 $({ tag: 'option', text: 'Student', att: { value: 'student' } })
                             ]
                         }),
-                        // Apply Filters button
                         $({
                             tag: 'button',
                             style: {
@@ -2678,20 +1779,12 @@ export const DocumentLog = () => {
                                 fontSize: '0.75vw'
                             },
                             child: [
-                                $({
-                                    tag: 'span',
-                                    att: { className: 'fa-solid fa-info-circle' },
-                                    style: { color: '#3b82f6' }
-                                }),
-                                $({
-                                    tag: 'span',
-                                    text: 'Click on any log to view full details'
-                                })
+                                $({ tag: 'span', att: { className: 'fa-solid fa-info-circle' }, style: { color: '#3b82f6' } }),
+                                $({ tag: 'span', text: 'Click on any log to view full details' })
                             ]
                         })
                     ]
                 }),
-                // Header
                 $({
                     tag: 'div',
                     style: {
@@ -2716,7 +1809,6 @@ export const DocumentLog = () => {
                         $({ tag: 'div', text: 'ID', style: { width: '8%', color: '#64748b', fontWeight: '600', fontSize: '0.75vw', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', justifyContent: 'center' } })
                     ]
                 }),
-                // Body
                 $({
                     tag: 'div',
                     style: {
@@ -2735,6 +1827,276 @@ export const DocumentLog = () => {
             ]
         }))
     }
+
+    const emailScheduler = () => {
+        let eventSelector = null;
+        let schedulerContainer = null;
+        let selectedEventId = null;
+        let selectedEventName = null;
+        let selectedEventDate = null;
+        let isLoading = false;
+
+        const loadAcceptanceLetters = async () => {
+            if (isLoading) return;
+            isLoading = true;
+
+            const container = document.getElementById('event-selector-container');
+            if (container) {
+                container.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:12px;padding:8px 0;">
+                        <span class="fa-solid fa-spinner fa-pulse" style="color:#3b82f6;"></span>
+                        <span style="color:#64748b;font-size:14px;">Loading events...</span>
+                    </div>
+                `;
+            }
+
+            try {
+                // Use the new endpoint that returns correct event_id
+                const req = new Request('/scheduleEmails');
+                req.Post([{ name: 'getAcceptanceLettersWithEvent', value: '1' }]);
+                req.Json();
+                const result = await req.Send();
+
+                console.log('Acceptance letters response:', result);
+
+                if (result.status && result.data && result.data.length > 0) {
+                    renderEventSelector(result.data);
+                } else {
+                    showEmptyState('No acceptance letters found. Create an acceptance letter first.');
+                }
+            } catch (error) {
+                console.error('Error loading acceptance letters:', error);
+                showEmptyState('Error loading events: ' + error.message);
+            } finally {
+                isLoading = false;
+            }
+        };
+
+        const renderEventSelector = (events) => {
+            const container = document.getElementById('event-selector-container');
+            if (!container) return;
+
+            // Sort events by date_to_be_held (most recent first)
+            events.sort(function(a, b) {
+                if (!a.date_to_be_held) return 1;
+                if (!b.date_to_be_held) return -1;
+                return new Date(b.date_to_be_held) - new Date(a.date_to_be_held);
+            });
+
+            const select = $({
+                tag: 'select',
+                style: {
+                    padding: '8px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                    fontSize: '14px',
+                    backgroundColor: '#ffffff',
+                    minWidth: '300px',
+                    cursor: 'pointer',
+                    outline: 'none'
+                },
+                att: { id: 'event-select' },
+                event: {
+                    change: function(e) {
+                        const value = e.target.value;
+                        if (value) {
+                            const event = events.find(function(ev) { return ev.id == value; });
+                            if (event) {
+                                // IMPORTANT: Use event_id from acceptance_letter_data
+                                // This is the actual event ID (not the acceptance letter ID)
+                                selectedEventId = event.event_id;  // Use event_id, not id
+                                selectedEventName = event.event_name || event.event_type || 'Event';
+                                selectedEventDate = event.date_to_be_held || event.event_date || null;
+                                renderScheduler();
+                            }
+                        } else {
+                            selectedEventId = null;
+                            selectedEventName = null;
+                            selectedEventDate = null;
+                            renderScheduler();
+                        }
+                    }
+                },
+                child: [
+                    $({ tag: 'option', att: { value: '' }, text: '-- Select an Event --' })
+                ]
+            });
+
+            // Add options - use the acceptance letter ID as the value, but store event_id
+            events.forEach(function(event) {
+                const dateDisplay = event.date_to_be_held || 'No Date';
+                const label = (event.event_name || event.event_type || 'Untitled') + ' (' + dateDisplay + ')';
+                const option = document.createElement('option');
+                option.value = event.id;  // Store acceptance letter ID as value
+                option.dataset.eventId = event.event_id;  // Store actual event ID
+                option.textContent = label;
+                select.appendChild(option);
+            });
+
+            container.innerHTML = '';
+            container.appendChild(select);
+
+            // Auto-select the first event if available
+            if (events.length > 0) {
+                const firstEvent = events[0];
+                // Use event_id from acceptance_letter_data
+                selectedEventId = firstEvent.event_id;  // Use event_id, not id
+                selectedEventName = firstEvent.event_name || firstEvent.event_type || 'Event';
+                selectedEventDate = firstEvent.date_to_be_held || firstEvent.event_date || null;
+                select.value = firstEvent.id;
+                renderScheduler();
+            }
+        };
+
+        const showEmptyState = function(message) {
+            const container = document.getElementById('event-selector-container');
+            if (container) {
+                container.innerHTML = `
+                    <div style="padding:12px 0;color:#64748b;font-size:14px;display:flex;align-items:center;gap:8px;">
+                        <span class="fa-solid fa-info-circle" style="color:#f59e0b;"></span>
+                        <span>${message}</span>
+                    </div>
+                `;
+            }
+        };
+
+        const renderScheduler = function() {
+            const container = document.getElementById('scheduler-container');
+            if (!container) return;
+
+            if (!selectedEventId) {
+                container.innerHTML = `
+                    <div style="padding:40px 20px;text-align:center;color:#94a3b8;">
+                        <div style="font-size:48px;margin-bottom:12px;">📧</div>
+                        <h3 style="color:#475569;margin-bottom:8px;">Select an Event</h3>
+                        <p style="font-size:14px;">Choose an event from the dropdown above to manage email scheduling.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Pass the correct event ID (should be 12, not 1)
+            const schedulerElement = EmailScheduler({
+                eventId: parseInt(selectedEventId),  // Ensure it's a number
+                eventName: selectedEventName,
+                eventDate: selectedEventDate,
+                onScheduleComplete: function(result) {
+                    console.log('Schedule complete:', result);
+                }
+            });
+
+            container.innerHTML = '';
+            container.appendChild(schedulerElement);
+        };
+
+        // Main container for the email scheduler tab
+        return $({
+            tag: 'div',
+            style: {
+                height: '100%',
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                background: '#ffffff',
+                padding: '16px',
+                boxSizing: 'border-box',
+                overflowY: 'auto'
+            },
+            child: [
+                // Header
+                $({
+                    tag: 'div',
+                    style: {
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '20px',
+                        paddingBottom: '12px',
+                        borderBottom: '2px solid #e2e8f0'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            child: [
+                                $({
+                                    tag: 'h2',
+                                    text: '📧 Email Scheduler',
+                                    style: { margin: '0', fontSize: '20px', color: '#0f172a' }
+                                }),
+                                $({
+                                    tag: 'p',
+                                    text: 'Schedule and manage comment notification emails',
+                                    style: { margin: '4px 0 0 0', fontSize: '14px', color: '#64748b' }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'button',
+                            text: '🔄 Refresh Events',
+                            style: {
+                                padding: '6px 16px',
+                                background: '#f1f5f9',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                color: '#475569',
+                                transition: 'all 0.2s'
+                            },
+                            event: {
+                                click: loadAcceptanceLetters,
+                                mouseenter: function(e) { e.target.style.background = '#e2e8f0'; },
+                                mouseleave: function(e) { e.target.style.background = '#f1f5f9'; }
+                            }
+                        })
+                    ]
+                }),
+                // Event Selector
+                $({
+                    tag: 'div',
+                    style: {
+                        marginBottom: '20px',
+                        padding: '12px 16px',
+                        background: '#f8fafc',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    text: 'Select Event:',
+                                    style: { fontSize: '14px', fontWeight: '600', color: '#475569' }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    att: { id: 'event-selector-container' },
+                                    style: { flex: '1', minWidth: '250px' }
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                // Scheduler Component Container
+                $({
+                    tag: 'div',
+                    att: { id: 'scheduler-container' },
+                    style: {
+                        flex: '1',
+                        overflowY: 'auto',
+                        padding: '4px 0'
+                    }
+                })
+            ],
+            elementHandler: function(el) {
+                // Load events when the tab is shown
+                loadAcceptanceLetters();
+            }
+        });
+    };
 
     const Top = () => {
         return ($({
@@ -2758,9 +2120,14 @@ export const DocumentLog = () => {
                     label: 'Email Logs',
                     url: '/admin/document_logs/email'
                 }),
-                Bot({  // ← NEW
+                Bot({
                     label: 'Submission Logs',
                     url: '/admin/document_logs/submission'
+                }),
+                // NEW: Email Scheduler Tab
+                Bot({
+                    label: '📧 Email Scheduler',
+                    url: '/admin/document_logs/scheduler'
                 })
             ]
         }))
@@ -2793,8 +2160,11 @@ export const DocumentLog = () => {
                         case 'email':
                             el.appendChild(emailLogs())
                             break
-                        case 'submission':  // ← NEW
+                        case 'submission':
                             el.appendChild(submissionLogs())
+                            break
+                        case 'scheduler':  // NEW
+                            el.appendChild(emailScheduler())
                             break
                         default:
                             el.appendChild(Error({ message: 'Page not found' }))
