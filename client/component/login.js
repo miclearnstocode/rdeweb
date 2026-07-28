@@ -163,7 +163,7 @@ const LoginPanel = (prop) => {
                                     fontFamily: 'Inter, Segoe UI, sans-serif',
                                     letterSpacing: '-0.5px'
                                 },
-                                text: 'Welcome Back, Researcher & Extensionist!'
+                                text: 'Welcome Back, Researcher, Innovator & Extensionist!'
                             }),
                             $({
                                 tag: 'p',
@@ -1308,7 +1308,6 @@ export const LoginPage = () => {
         const currentPath = window.location.href.replace(window.location.origin, '');
 
         if (currentPath === '/account/Login?' || currentPath === '/account/Login') {
-            // Use a span with click handler instead of static HTML
             val.innerHTML = '';
 
             const linkSpan = document.createElement('span');
