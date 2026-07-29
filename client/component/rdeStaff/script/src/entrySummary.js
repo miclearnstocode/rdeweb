@@ -1,4 +1,4 @@
-import { $, Base, ConfirmationAlert, Current, Path, Request, SearchMethod, TimeConvert, Waiting, CustomModal } from "../../../../lib/lib.js";
+import { $, Base, ConfirmationAlert, Current, Path, Request, SearchMethod, TimeConvert, Waiting, CustomModal, DragDropUpload } from "../../../../lib/lib.js";
 import { Print } from "../../../otherComponent/comment.js";
 import { PrintSummary } from "../../../otherComponent/ReviewTemplate.js";
 import { Route, Router } from "../../../../lib/Router.js";
@@ -2675,6 +2675,9 @@ export const Content = (mainFrame, leftPDiv = null) => {
                 };
                 
                 const createCertificateModal = (eventDetails) => {
+                    let uploadedBackgroundFile = null;
+                    let backgroundPreviewUrl = null;
+
                     const content = () => {
                         const container = $({
                             tag: 'div',
@@ -2682,7 +2685,8 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 padding: '8px 0'
                             }
                         });
-                        
+
+                        // Event info
                         const eventInfo = $({
                             tag: 'div',
                             style: {
@@ -2708,12 +2712,13 @@ export const Content = (mainFrame, leftPDiv = null) => {
                             ]
                         });
                         container.appendChild(eventInfo);
-                        
+
+                        // Fields
                         const fields = [
                             { id: 'certDateToBeHeld', label: 'Date of Event:', placeholder: 'e.g., March 2-3, 2026' },
                             { id: 'certVenue', label: 'Venue:', placeholder: 'e.g., CAPSU Conference Room, Roxas City, Capiz' }
                         ];
-                        
+
                         fields.forEach(field => {
                             const fieldDiv = $({
                                 tag: 'div',
@@ -2722,7 +2727,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     width: '100%'
                                 }
                             });
-                            
+
                             const label = $({
                                 tag: 'label',
                                 att: { htmlFor: field.id },
@@ -2737,7 +2742,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 text: field.label
                             });
                             fieldDiv.appendChild(label);
-                            
+
                             const input = $({
                                 tag: 'input',
                                 att: {
@@ -2757,7 +2762,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     outline: 'none'
                                 }
                             });
-                            
+
                             input.addEventListener('focus', () => {
                                 input.style.borderColor = '#ffc107';
                                 input.style.boxShadow = '0 0 0 3px rgba(255,193,7,0.15)';
@@ -2766,14 +2771,225 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 input.style.borderColor = '#dee2e6';
                                 input.style.boxShadow = 'none';
                             });
-                            
+
                             fieldDiv.appendChild(input);
                             container.appendChild(fieldDiv);
                         });
-                        
+
+                        // Background Image Upload Section
+                        const bgSection = $({
+                            tag: 'div',
+                            style: {
+                                marginBottom: '20px',
+                                padding: '16px',
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '8px',
+                                border: '1px solid #e9ecef'
+                            }
+                        });
+
+                        const bgTitle = $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                marginBottom: '12px',
+                                color: '#495057',
+                                fontSize: '14px',
+                                fontFamily: 'Inter, sans-serif',
+                                fontWeight: '500'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-image' },
+                                    style: { color: '#ffc107', fontSize: '16px' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Certificate Background Image'
+                                })
+                            ]
+                        });
+                        bgSection.appendChild(bgTitle);
+
+                        // Drag and Drop Upload
+                        const uploadComponent = DragDropUpload({
+                            label: 'Upload Background Image',
+                            accept: '.png,.jpg,.jpeg,.gif,.webp,.svg',
+                            multiple: false,
+                            description: 'Upload a custom background image for certificates (PNG, JPG, JPEG)',
+                            maxSizeMB: 10,
+                            showPreview: true,
+                            onFileSelect: (files, fileList) => {
+                                if (files && files.length > 0) {
+                                    uploadedBackgroundFile = files[0];
+                                    // Create preview URL
+                                    if (backgroundPreviewUrl) {
+                                        URL.revokeObjectURL(backgroundPreviewUrl);
+                                    }
+                                    backgroundPreviewUrl = URL.createObjectURL(uploadedBackgroundFile);
+                                    
+                                    // Show preview in the container
+                                    const previewContainer = document.querySelector('.background-preview-container');
+                                    if (previewContainer) {
+                                        previewContainer.innerHTML = `
+                                            <div style="
+                                                position: relative;
+                                                width: 100%;
+                                                max-height: 150px;
+                                                overflow: hidden;
+                                                border-radius: 8px;
+                                                border: 2px solid #ffc107;
+                                                margin-top: 12px;
+                                            ">
+                                                <img src="${backgroundPreviewUrl}" 
+                                                    alt="Background Preview" 
+                                                    style="
+                                                        width: 100%;
+                                                        height: auto;
+                                                        max-height: 150px;
+                                                        object-fit: contain;
+                                                        background: #f8f9fa;
+                                                    ">
+                                                <div style="
+                                                    position: absolute;
+                                                    bottom: 8px;
+                                                    right: 8px;
+                                                    background: rgba(0,0,0,0.7);
+                                                    color: white;
+                                                    padding: 4px 12px;
+                                                    border-radius: 4px;
+                                                    font-size: 12px;
+                                                    font-family: Inter, sans-serif;
+                                                ">
+                                                    ✓ Custom Background
+                                                </div>
+                                            </div>
+                                        `;
+                                    }
+                                    
+                                    // Show toast notification
+                                    if (window.Toast) {
+                                        Toast.success('Background image uploaded successfully!');
+                                    }
+                                }
+                            },
+                            onFileRemove: (file, index, fileList) => {
+                                uploadedBackgroundFile = null;
+                                if (backgroundPreviewUrl) {
+                                    URL.revokeObjectURL(backgroundPreviewUrl);
+                                    backgroundPreviewUrl = null;
+                                }
+                                const previewContainer = document.querySelector('.background-preview-container');
+                                if (previewContainer) {
+                                    previewContainer.innerHTML = `
+                                        <div style="
+                                            padding: 20px;
+                                            text-align: center;
+                                            color: #94a3b8;
+                                            font-size: 13px;
+                                            font-family: Inter, sans-serif;
+                                            border: 2px dashed #dee2e6;
+                                            border-radius: 8px;
+                                            margin-top: 12px;
+                                        ">
+                                            <span class="fa-regular fa-image" style="font-size: 24px; display: block; margin-bottom: 8px;"></span>
+                                            No custom background uploaded
+                                            <div style="font-size: 11px; color: #adb5bd; margin-top: 4px;">Default will be used</div>
+                                        </div>
+                                    `;
+                                }
+                            }
+                        });
+
+                        bgSection.appendChild(uploadComponent.element);
+
+                        // Preview container for background
+                        const previewContainer = $({
+                            tag: 'div',
+                            att: { className: 'background-preview-container' },
+                            style: {
+                                width: '100%'
+                            }
+                        });
+
+                        // Check if there's a default background
+                        const defaultBgCheck = new Image();
+                        defaultBgCheck.src = '/client/images/certBackground.png';
+                        defaultBgCheck.onload = () => {
+                            previewContainer.innerHTML = `
+                                <div style="
+                                    padding: 16px;
+                                    text-align: center;
+                                    color: #6c757d;
+                                    font-size: 13px;
+                                    font-family: Inter, sans-serif;
+                                    border: 2px dashed #dee2e6;
+                                    border-radius: 8px;
+                                    margin-top: 12px;
+                                ">
+                                    <span class="fa-regular fa-image" style="font-size: 20px; display: block; margin-bottom: 4px;"></span>
+                                    Default background will be used
+                                    <div style="font-size: 11px; color: #adb5bd; margin-top: 4px;">Upload a custom image above to change</div>
+                                </div>
+                            `;
+                        };
+                        defaultBgCheck.onerror = () => {
+                            previewContainer.innerHTML = `
+                                <div style="
+                                    padding: 16px;
+                                    text-align: center;
+                                    color: #dc3545;
+                                    font-size: 13px;
+                                    font-family: Inter, sans-serif;
+                                    border: 2px dashed #dc3545;
+                                    border-radius: 8px;
+                                    margin-top: 12px;
+                                ">
+                                    <span class="fa-solid fa-triangle-exclamation" style="font-size: 20px; display: block; margin-bottom: 4px;"></span>
+                                    No default background found
+                                    <div style="font-size: 11px; color: #adb5bd; margin-top: 4px;">Please upload a custom background</div>
+                                </div>
+                            `;
+                        };
+
+                        bgSection.appendChild(previewContainer);
+                        container.appendChild(bgSection);
+
+                        // Info note
+                        const note = $({
+                            tag: 'div',
+                            style: {
+                                padding: '12px 16px',
+                                backgroundColor: '#fff3cd',
+                                borderRadius: '8px',
+                                border: '1px solid #ffe69c',
+                                color: '#856404',
+                                fontSize: '13px',
+                                fontFamily: 'Inter, sans-serif',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-info-circle' },
+                                    style: { fontSize: '16px', color: '#856404' }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: 'Upload a custom background image for certificates. If no image is uploaded, the default background will be used.'
+                                })
+                            ]
+                        });
+                        container.appendChild(note);
+
                         return container;
                     };
-                    
+
                     const footer = ({ closeModal }) => {
                         return $({
                             tag: 'div',
@@ -2849,14 +3065,17 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                 dateToBeHeld: document.getElementById('certDateToBeHeld')?.value || '',
                                                 venue: document.getElementById('certVenue')?.value || ''
                                             };
-                                            
+
                                             if (!formData.dateToBeHeld || !formData.venue) {
                                                 alert('Please fill in all required fields');
                                                 return;
                                             }
-                                            
+
+                                            // Get the uploaded background file
+                                            const backgroundFile = uploadedBackgroundFile;
+
                                             closeModal();
-                                            generateCertificates(eventDetails, formData);
+                                            generateCertificates(eventDetails, formData, backgroundFile);
                                         }
                                     },
                                     mouseenter: (e) => {
@@ -2871,7 +3090,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                             ]
                         });
                     };
-                    
+
                     CustomModal({
                         title: 'Print Presentor Certificates',
                         size: 'medium',
@@ -2880,198 +3099,380 @@ export const Content = (mainFrame, leftPDiv = null) => {
                         showCloseButton: true,
                         closeOnOverlayClick: true
                     });
-                }
+                };
                 
-                const generateCertificates = (eventDetails, formData) => {
+                const generateCertificates = (eventDetails, formData, backgroundFile = null) => {
                     let loading = Waiting();
                     document.body.appendChild(loading);
-                    
+
                     const removeLoading = () => {
                         if (loading && loading.parentNode) {
                             loading.parentNode.removeChild(loading);
                         }
                     };
-                    
+
                     const req = new Request('/entrycount');
                     req.Post([
                         { name: 'getCertificates', value: '1' },
                         { name: 'eventName', value: eventDetails.name }
                     ]);
                     req.Json();
-                    
+
                     req.Send().then(response => {
                         if (!response) {
                             removeLoading();
                             alert('No response from server');
                             return;
                         }
-                        
+
                         if (response.status === 'error') {
                             removeLoading();
                             alert('Error: ' + (response.message || 'Failed to load certificate data'));
                             return;
                         }
-                        
+
                         if (!response.data || response.data.length === 0) {
                             removeLoading();
                             alert('No accepted research files found for this event');
                             return;
                         }
-                        
+
                         let WinPrint = window.open('', '_blank', 'width=1200,height=800,toolbar=0,scrollbars=1,status=0');
-                        
+
                         if (!WinPrint) {
                             removeLoading();
                             alert('Popup blocked! Please allow popups for this site and try again.');
                             return;
                         }
-                        
+
                         const checkWindowClosed = setInterval(() => {
                             if (WinPrint.closed) {
                                 clearInterval(checkWindowClosed);
                                 removeLoading();
                             }
                         }, 500);
-                        
+
                         WinPrint.onunload = function() {
                             clearInterval(checkWindowClosed);
                             removeLoading();
                         };
-                        
-                        WinPrint.document.write(`
-                            <!DOCTYPE html>
-                            <html>
-                            <head>
-                                <title>Certificates - ${eventDetails.name}</title>
-                                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-                                <style>
-                                    body {
-                                        margin: 0;
-                                        padding: 0;
-                                        background-color: #333;
-                                        font-family: Arial, sans-serif;
-                                    }
-                                    @media print {
-                                        body {
-                                            background-color: white;
-                                        }
-                                        .no-print {
-                                            display: none !important;
-                                        }
-                                    }
-                                    .print-controls {
-                                        position: fixed;
-                                        bottom: 20px;
-                                        right: 20px;
-                                        z-index: 1000;
-                                        display: flex;
-                                        gap: 10px;
-                                    }
-                                    .print-btn {
-                                        padding: 12px 24px;
-                                        background-color: #FFD700;
-                                        color: #2a2a2a;
-                                        border: none;
-                                        border-radius: 5px;
-                                        font-size: 16px;
-                                        font-weight: bold;
-                                        cursor: pointer;
-                                        display: flex;
-                                        align-items: center;
-                                        gap: 8px;
-                                        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-                                    }
-                                    .print-btn:hover {
-                                        background-color: #FFC800;
-                                    }
-                                    .certificate-container {
-                                        padding: 20px;
-                                    }
-                                    .certificate-page {
-                                        position: relative;
-                                        width: 29.7cm;
-                                        height: 21cm;
-                                        page-break-after: always;
-                                        page-break-inside: avoid;
-                                        margin: 0 auto;
-                                        overflow: hidden;
-                                        background: white;
-                                    }
-                                    .certificate-background {
-                                        position: absolute;
-                                        top: 0;
-                                        left: 0;
-                                        width: 100%;
-                                        height: 100%;
-                                        z-index: 1;
-                                    }
-                                    .certificate-background img {
-                                        width: 100%;
-                                        height: 100%;
-                                        object-fit: cover;
-                                        display: block;
-                                    }
-                                    .certificate-content {
-                                        position: absolute;
-                                        top: 0;
-                                        left: 0;
-                                        width: 100%;
-                                        height: 100%;
-                                        z-index: 2;
-                                        display: flex;
-                                        flex-direction: column;
-                                        justify-content: center;
-                                        align-items: center;
-                                        text-align: center;
-                                        font-family: 'Times New Roman', serif;
-                                        box-sizing: border-box;
-                                        padding: 20px;
-                                    }
-                                </style>
-                            </head>
-                            <body>
-                                <div class="print-controls no-print">
-                                    <button class="print-btn" onclick="window.print()">
-                                        <i class="fa-solid fa-print"></i> Print Certificates
-                                    </button>
-                                </div>
-                                <div id="certificate-container" class="certificate-container"></div>
-                                
-                                <script src="/client/component/otherComponent/researchCertificates.js?v=${Date.now()}"></script>
-                                <script>
-                                    function renderCertificatesWithRetry() {
-                                        if (window.renderCertificates) {
-                                            window.renderCertificates(
-                                                document.getElementById('certificate-container'),
-                                                ${JSON.stringify(response.data)},
-                                                {
-                                                    event: ${JSON.stringify(eventDetails.name)},
-                                                    date: ${JSON.stringify(formData.dateToBeHeld)},
-                                                    venue: ${JSON.stringify(formData.venue)},
-                                                    backgroundImage: '/client/images/certBackground.png'
-                                                }
-                                            );
-                                            
-                                            setTimeout(function() {
-                                                window.print();
-                                            }, 1500);
-                                        } else {
-                                            setTimeout(renderCertificatesWithRetry, 100);
-                                        }
-                                    }
-                                    
-                                    setTimeout(renderCertificatesWithRetry, 300);
-                                </script>
-                            </body>
-                            </html>
-                        `);
-                        
-                        WinPrint.document.close();
-                        
+
+                        // Prepare background image data
+                        let backgroundImageData = null;
+                        let backgroundImagePath = '/client/images/certBackground.png'; // Default path
+
+                        // If a custom background file was uploaded, convert it to base64 for inline use
+                        if (backgroundFile) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                backgroundImageData = e.target.result;
+                                renderCertificatesWindow(WinPrint, response, eventDetails, formData, backgroundImageData);
+                            };
+                            reader.onerror = function() {
+                                console.error('Failed to read background file');
+                                renderCertificatesWindow(WinPrint, response, eventDetails, formData, null);
+                            };
+                            reader.readAsDataURL(backgroundFile);
+                        } else {
+                            // Check if default background exists
+                            const img = new Image();
+                            img.onload = function() {
+                                // Default exists, use it
+                                renderCertificatesWindow(WinPrint, response, eventDetails, formData, backgroundImagePath);
+                            };
+                            img.onerror = function() {
+                                // Default doesn't exist, use a generated background
+                                renderCertificatesWindow(WinPrint, response, eventDetails, formData, null);
+                            };
+                            img.src = backgroundImagePath;
+                        }
                     }).catch(error => {
                         removeLoading();
                         alert('Error: ' + error.message);
                     });
+                };
+
+                const renderCertificatesWindow = (WinPrint, response, eventDetails, formData, backgroundSrc) => {
+                    WinPrint.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>Certificates - ${eventDetails.name}</title>
+                            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+                            <style>
+                                body {
+                                    margin: 0;
+                                    padding: 0;
+                                    background-color: #333;
+                                    font-family: 'Times New Roman', serif;
+                                }
+                                @media print {
+                                    body {
+                                        background-color: white;
+                                    }
+                                    .no-print {
+                                        display: none !important;
+                                    }
+                                }
+                                .print-controls {
+                                    position: fixed;
+                                    bottom: 20px;
+                                    right: 20px;
+                                    z-index: 1000;
+                                    display: flex;
+                                    gap: 10px;
+                                }
+                                .print-btn {
+                                    padding: 12px 24px;
+                                    background-color: #FFD700;
+                                    color: #2a2a2a;
+                                    border: none;
+                                    border-radius: 5px;
+                                    font-size: 16px;
+                                    font-weight: bold;
+                                    cursor: pointer;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 8px;
+                                    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                                }
+                                .print-btn:hover {
+                                    background-color: #FFC800;
+                                }
+                                .certificate-container {
+                                    padding: 20px;
+                                }
+                                .certificate-page {
+                                    position: relative;
+                                    width: 29.7cm;
+                                    height: 21cm;
+                                    page-break-after: always;
+                                    page-break-inside: avoid;
+                                    margin: 0 auto;
+                                    overflow: hidden;
+                                    background: white;
+                                }
+                                .certificate-background {
+                                    position: absolute;
+                                    top: 0;
+                                    left: 0;
+                                    width: 100%;
+                                    height: 100%;
+                                    z-index: 1;
+                                    background-size: cover;
+                                    background-position: center;
+                                    background-repeat: no-repeat;
+                                }
+                                .certificate-background img {
+                                    width: 100%;
+                                    height: 100%;
+                                    object-fit: cover;
+                                    display: block;
+                                }
+                                .certificate-content {
+                                    position: absolute;
+                                    top: 0;
+                                    left: 0;
+                                    width: 100%;
+                                    height: 100%;
+                                    z-index: 2;
+                                    display: flex;
+                                    flex-direction: column;
+                                    justify-content: center;
+                                    align-items: center;
+                                    text-align: center;
+                                    font-family: 'Times New Roman', serif;
+                                    box-sizing: border-box;
+                                    padding: 20px;
+                                }
+                                .category-separator {
+                                    position: relative;
+                                    width: 29.7cm;
+                                    height: 21cm;
+                                    page-break-after: always;
+                                    page-break-inside: avoid;
+                                    margin: 0 auto;
+                                    display: flex;
+                                    flex-direction: column;
+                                    justify-content: center;
+                                    align-items: center;
+                                    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+                                    border: 3px solid #FFD700;
+                                    border-radius: 10px;
+                                }
+                                .category-separator h1 {
+                                    font-size: 48px;
+                                    color: #2c3e50;
+                                    font-family: 'Times New Roman', serif;
+                                    text-transform: uppercase;
+                                    letter-spacing: 5px;
+                                    margin-bottom: 20px;
+                                }
+                                .category-separator .subtitle {
+                                    font-size: 24px;
+                                    color: #666;
+                                    font-family: 'Times New Roman', serif;
+                                }
+                                @media screen {
+                                    .certificate-page, .category-separator {
+                                        box-shadow: 0 0 10px rgba(0,0,0,0.3);
+                                        margin: 20px auto;
+                                        border: 1px solid #ccc;
+                                    }
+                                }
+                                @page {
+                                    size: landscape;
+                                    margin: 0;
+                                }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="print-controls no-print">
+                                <button class="print-btn" onclick="window.print()">
+                                    <i class="fa-solid fa-print"></i> Print Certificates
+                                </button>
+                            </div>
+                            <div id="certificate-container" class="certificate-container"></div>
+
+                            <script>
+                                // Data passed from server
+                                const certificatesData = ${JSON.stringify(response.data)};
+                                const eventInfo = {
+                                    event: ${JSON.stringify(eventDetails.name)},
+                                    date: ${JSON.stringify(formData.dateToBeHeld)},
+                                    venue: ${JSON.stringify(formData.venue)}
+                                };
+                                const backgroundSrc = ${JSON.stringify(backgroundSrc)};
+
+                                // Function to render certificates
+                                function renderCertificates(container, data, info, bgSrc) {
+                                    if (!container) {
+                                        console.error('Container element not found');
+                                        return;
+                                    }
+
+                                    container.innerHTML = '';
+
+                                    // Categories
+                                    const categories = Object.keys(data).sort();
+
+                                    categories.forEach((category) => {
+                                        const items = data[category];
+                                        if (!items || !Array.isArray(items) || items.length === 0) return;
+
+                                        const sortedItems = [...items].sort((a, b) => {
+                                            return (a.title || '').localeCompare(b.title || '');
+                                        });
+
+                                        // Category separator
+                                        const separator = document.createElement('div');
+                                        separator.className = 'category-separator';
+                                        separator.innerHTML = \`
+                                            <h1>\${category}</h1>
+                                            <div class="subtitle">Category</div>
+                                        \`;
+                                        container.appendChild(separator);
+
+                                        sortedItems.forEach((item) => {
+                                            const certDiv = document.createElement('div');
+                                            certDiv.className = 'certificate-page';
+
+                                            // Background
+                                            const background = document.createElement('div');
+                                            background.className = 'certificate-background';
+                                            
+                                            if (bgSrc && bgSrc.startsWith('data:image')) {
+                                                // Custom uploaded background (base64)
+                                                const bgImg = document.createElement('img');
+                                                bgImg.src = bgSrc;
+                                                bgImg.alt = 'Certificate Background';
+                                                bgImg.style.width = '100%';
+                                                bgImg.style.height = '100%';
+                                                bgImg.style.objectFit = 'cover';
+                                                background.appendChild(bgImg);
+                                            } else if (bgSrc && typeof bgSrc === 'string' && bgSrc.startsWith('/')) {
+                                                // Default background path
+                                                const bgImg = document.createElement('img');
+                                                bgImg.src = bgSrc;
+                                                bgImg.alt = 'Certificate Background';
+                                                bgImg.style.width = '100%';
+                                                bgImg.style.height = '100%';
+                                                bgImg.style.objectFit = 'cover';
+                                                bgImg.onerror = function() {
+                                                    this.style.display = 'none';
+                                                    background.style.backgroundColor = '#f5f5f5';
+                                                    background.style.backgroundImage = 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)';
+                                                    background.style.border = '2px solid #FFD700';
+                                                };
+                                                background.appendChild(bgImg);
+                                            } else {
+                                                // Fallback gradient background
+                                                background.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)';
+                                                background.style.backgroundSize = 'cover';
+                                                background.style.backgroundPosition = 'center';
+                                                background.style.border = '3px solid #FFD700';
+                                            }
+
+                                            // Content - dynamically positioned
+                                            const content = document.createElement('div');
+                                            content.className = 'certificate-content';
+
+                                            const researchers = item.researchers && Array.isArray(item.researchers)
+                                                ? item.researchers.join(', ')
+                                                : (item.researchers || '');
+
+                                            content.innerHTML = \`
+                                                <div style="width: 80%; margin: 120px auto 0 auto; text-align: center;">
+                                                    <div style="font-size: 42px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; text-shadow: 2px 2px 3px rgba(255,255,255,0.8);">
+                                                        \${item.presenter || 'Not specified'}
+                                                    </div>
+                                                    <div style="font-size: 16px; color: #333; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                                                        PRESENTER
+                                                    </div>
+                                                    <div style="font-size: 22px; font-weight: bold; color: #2c3e50; max-width: 80%; margin-left: auto; margin-right: auto; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                                                        \${item.title}
+                                                    </div>
+                                                    <div style="font-size: 18px; color: #333; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                                                        \${item.category} Category
+                                                    </div>
+                                                    <div style="font-size: 16px; color: #666; font-style: italic; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                                                        \${researchers}
+                                                    </div>
+                                                    <div style="font-size: 16px; color: #666; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                                                        RESEARCHERS
+                                                    </div>
+                                                    <div style="font-size: 20px; font-weight: bold; color: #333; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                                                        \${info.event}
+                                                    </div>
+                                                    <div style="font-size: 16px; color: #666; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                                                        \${info.date || ''} at \${info.venue || ''}
+                                                    </div>
+                                                </div>
+                                            \`;
+
+                                            certDiv.appendChild(background);
+                                            certDiv.appendChild(content);
+                                            container.appendChild(certDiv);
+                                        });
+                                    });
+                                }
+
+                                // Wait for DOM to be ready
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const container = document.getElementById('certificate-container');
+                                    renderCertificates(container, certificatesData, eventInfo, backgroundSrc);
+                                    
+                                    // Auto print after a short delay
+                                    setTimeout(function() {
+                                        // window.print();
+                                    }, 1500);
+                                });
+                            </script>
+                        </body>
+                        </html>
+                    `);
+
+                    WinPrint.document.close();
                 };
                 
                 const printResearchSummary = (eventDetails, formData) => {

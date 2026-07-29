@@ -1173,6 +1173,7 @@ if(isset($_POST['getCertificates'])) {
         $query = "SELECT 
                     researchfile.id,
                     researchfile.title,
+                    researchfile.final_symposium_title,
                     researchfile.category,
                     researchfile.presenter,
                     researchfile.author,
@@ -1187,41 +1188,131 @@ if(isset($_POST['getCertificates'])) {
         $stmt->execute();
         $result = $stmt->get_result();
         
-        $certificateData = [];
+        // ============================================================
+        // STEP 1: Get all documents and their scores
+        // ============================================================
+        $allDocs = [];
+        $docScores = [];
         
         while ($row = $result->fetch_assoc()) {
-            $certItem = new stdClass();
-            $certItem->id = $row['id'];
-            $certItem->title = formatDocumentTitle($row['title']);
-            $certItem->category = $row['category'];
-            
-            // Format presenter name
-            $certItem->presenter = formatName($row['presenter'] ?: 'Not specified');
-            
-            // Combine author and coauthors
-            $researchers = [];
-            
-            // Add main author if exists
+            // Format authors
+            $authors = [];
             if (!empty($row['author'])) {
-                $researchers[] = formatName($row['author']);
+                $authors[] = $row['author'];
             }
-            
-            // Add coauthors if exist
             if (!empty($row['coauthor'])) {
                 $coauthors = json_decode($row['coauthor'], true);
                 if (is_array($coauthors)) {
-                    foreach ($coauthors as $coauthor) {
-                        $researchers[] = formatName($coauthor);
+                    $authors = array_merge($authors, $coauthors);
+                }
+            }
+            
+            // Use final_symposium_title if exists, otherwise use title
+            $displayTitle = !empty($row['final_symposium_title']) 
+                ? $row['final_symposium_title'] 
+                : $row['title'];
+            
+            // Clean title for better comparison (remove prefixes like "1. ", "2. ", etc.)
+            $cleanTitle = preg_replace('/^[\d]+\.\s*/', '', $displayTitle);
+            
+            // Get total score for this document
+            $scoreQuery = "SELECT SUM(score) as total_score 
+                          FROM score_board 
+                          WHERE doc_id = ?";
+            $scoreStmt = $con->prepare($scoreQuery);
+            $scoreStmt->bind_param("i", $row['id']);
+            $scoreStmt->execute();
+            $scoreResult = $scoreStmt->get_result();
+            $scoreRow = $scoreResult->fetch_assoc();
+            $totalScore = $scoreRow['total_score'] ?? 0;
+            $scoreStmt->close();
+            
+            $allDocs[] = [
+                'id' => $row['id'],
+                'title' => $displayTitle,
+                'clean_title' => $cleanTitle,
+                'original_title' => $row['title'],
+                'final_symposium_title' => $row['final_symposium_title'],
+                'category' => $row['category'],
+                'presenter' => $row['presenter'],
+                'authors' => $authors,
+                'total_score' => (int)$totalScore
+            ];
+            
+            $docScores[$row['id']] = (int)$totalScore;
+        }
+        
+        // ============================================================
+        // STEP 2: Deduplicate documents using fuzzy matching
+        // ============================================================
+        $uniqueDocs = [];
+        $usedIndices = [];
+        
+        for ($i = 0; $i < count($allDocs); $i++) {
+            if (in_array($i, $usedIndices)) {
+                continue;
+            }
+            
+            $bestIndex = $i;
+            $bestScore = $allDocs[$i]['total_score'];
+            $bestTitle = $allDocs[$i]['title'];
+            
+            // Check against all other documents
+            for ($j = $i + 1; $j < count($allDocs); $j++) {
+                if (in_array($j, $usedIndices)) {
+                    continue;
+                }
+                
+                $title1 = $allDocs[$i]['clean_title'];
+                $title2 = $allDocs[$j]['clean_title'];
+                
+                // Check if titles are similar
+                if (isSimilarString($title1, $title2, 85)) {
+                    $usedIndices[] = $j;
+                    
+                    // Check if this document has a higher score
+                    $currentScore = $allDocs[$j]['total_score'];
+                    if ($currentScore > $bestScore) {
+                        $bestScore = $currentScore;
+                        $bestIndex = $j;
+                        $bestTitle = $allDocs[$j]['title'];
                     }
                 }
             }
             
-            $certItem->researchers = $researchers;
+            // Keep the document with the highest score
+            $uniqueDocs[] = $allDocs[$bestIndex];
             
+            error_log("Kept certificate document: ID={$allDocs[$bestIndex]['id']}, Title='$bestTitle', Score=$bestScore");
+        }
+        
+        // ============================================================
+        // STEP 3: Build certificate data from unique docs
+        // ============================================================
+        $certificateData = [];
+        
+        foreach ($uniqueDocs as $doc) {
+            $certItem = new stdClass();
+            $certItem->id = $doc['id'];
+            $certItem->title = formatDocumentTitle($doc['title']);
+            $certItem->category = $doc['category'];
+            
+            // Format presenter name
+            $certItem->presenter = formatName($doc['presenter'] ?: 'Not specified');
+            
+            // Combine author and coauthors
+            $researchers = [];
+            foreach ($doc['authors'] as $author) {
+                $researchers[] = formatName($author);
+            }
+            
+            $certItem->researchers = $researchers;
             $certificateData[] = $certItem;
         }
         
-        // Group by category
+        // ============================================================
+        // STEP 4: Group by category
+        // ============================================================
         $groupedData = [];
         foreach ($certificateData as $item) {
             $category = $item->category;
@@ -1235,7 +1326,9 @@ if(isset($_POST['getCertificates'])) {
             'status' => 'success',
             'event' => $eventName,
             'data' => $groupedData,
-            'count' => count($certificateData)
+            'count' => count($certificateData),
+            'total_original' => count($allDocs),
+            'duplicates_removed' => count($allDocs) - count($certificateData)
         ];
         
         $stmt->close();
