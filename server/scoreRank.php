@@ -42,39 +42,21 @@ if (isset($_POST['scoreRank'])) {
             'name' => $eventName
         ];
         
-        if ($eventId >= 13) {
-            // NEW SYSTEM: Use center for events 13 and above
-            $query = "SELECT 
-                center.id,
-                center.name,
-                center.code,
-                COUNT(researchfile.id) as total 
-            FROM center
-            LEFT JOIN researchfile ON researchfile.center = CONCAT(center.name, ' (', center.code, ')')
-            LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-            LEFT JOIN event_list ON researchfile.event_id = event_list.id
-            WHERE endorsement.status = 'accepted' 
-            AND event_list.id = ?
-            AND researchfile.center IS NOT NULL
-            GROUP BY center.id, center.name, center.code
-            ORDER BY center.name";
-        } else {
-            // OLD SYSTEM: Use category for events below 13
-            $query = "SELECT 
-                category.id,
-                category.name,
-                '' as code,
-                COUNT(researchfile.id) as total 
-            FROM category
-            LEFT JOIN researchfile ON researchfile.category = category.name
-            LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-            LEFT JOIN event_list ON researchfile.event_id = event_list.id
-            WHERE endorsement.status = 'accepted' 
-            AND event_list.id = ?
-            AND researchfile.category IS NOT NULL
-            GROUP BY category.id, category.name
-            ORDER BY category.name";
-        }
+        // ALWAYS USE CATEGORY - removed new system logic
+        $query = "SELECT 
+            category.id,
+            category.name,
+            '' as code,
+            COUNT(researchfile.id) as total 
+        FROM category
+        LEFT JOIN researchfile ON researchfile.category = category.name
+        LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
+        LEFT JOIN event_list ON researchfile.event_id = event_list.id
+        WHERE endorsement.status = 'accepted' 
+        AND event_list.id = ?
+        AND researchfile.category IS NOT NULL
+        GROUP BY category.id, category.name
+        ORDER BY category.name";
         
         $statement = $con->prepare($query);
         $statement->bind_param("i", $eventId);
@@ -87,22 +69,38 @@ if (isset($_POST['scoreRank'])) {
         }
         
         $response['items'] = $items;
-        $response['isNewSystem'] = ($eventId >= 13);
     }
     
     output_json($response);
 }
-
 if (isset($_POST['getEventName'])) {
     $response = [];
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $query = "SELECT event_list.name FROM event_list WHERE event_list.id=?";
-        $statement = $con->prepare($query);
     
-        // Get the event ID from the correct parameter
-        $eventId = isset($_POST['eventId']) ? $_POST['eventId'] : (isset($_POST['getEventName']) ? $_POST['getEventName'] : '');
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        // Get the event ID from POST - check both possible parameter names
+        $eventId = isset($_POST['eventId']) ? trim($_POST['eventId']) : '';
         
-        if (is_numeric($eventId)) {
+        // If eventId is empty or 'undefined', try to get from getEventName
+        if (empty($eventId) || $eventId === 'undefined' || $eventId === 'null') {
+            $eventId = isset($_POST['getEventName']) ? trim($_POST['getEventName']) : '';
+        }
+        
+        // If still empty, try to get from the raw POST data
+        if (empty($eventId) || $eventId === 'undefined' || $eventId === 'null') {
+            // Check if it's a numeric value in the POST array
+            foreach ($_POST as $key => $value) {
+                if (is_numeric($value) && intval($value) > 0) {
+                    $eventId = $value;
+                    break;
+                }
+            }
+        }
+        
+        // Validate the event ID
+        if (is_numeric($eventId) && intval($eventId) > 0) {
+            $eventId = intval($eventId);
+            $query = "SELECT event_list.name FROM event_list WHERE event_list.id = ?";
+            $statement = $con->prepare($query);
             $statement->bind_param("i", $eventId);
             $statement->execute();
             $result = $statement->get_result();
@@ -114,14 +112,22 @@ if (isset($_POST['getEventName'])) {
             } else {
                 $response[] = ['name' => 'Unknown Event'];
             }
+            $statement->close();
         } else {
+            // Log the invalid event ID for debugging
+            error_log("Invalid event ID received: " . print_r($eventId, true));
             $response[] = ['name' => 'Invalid Event ID'];
         }
+        
+        $con->close();
     } else {
         $response[] = ['name' => 'Database Error'];
     }
     
-    output_json($response);
+    // Use proper JSON output
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    exit();
 }
 
 if (isset($_POST['getCatIdName'])) {
