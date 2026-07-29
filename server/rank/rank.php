@@ -11,6 +11,84 @@ ob_start();
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-cache, must-revalidate');
 
+function isSimilarString($str1, $str2, $threshold = 0.85) {
+    // Remove common prefixes like "1.", "2.", etc.
+    $clean1 = preg_replace('/^[\d]+\.\s*/', '', trim($str1));
+    $clean2 = preg_replace('/^[\d]+\.\s*/', '', trim($str2));
+    
+    // If strings are identical after cleaning, they're the same
+    if ($clean1 === $clean2) {
+        return true;
+    }
+    
+    // Calculate Levenshtein distance
+    $len1 = strlen($clean1);
+    $len2 = strlen($clean2);
+    
+    // If length difference is too big, they're probably not the same
+    if (abs($len1 - $len2) > max($len1, $len2) * 0.3) {
+        return false;
+    }
+    
+    $distance = levenshtein($clean1, $clean2);
+    $maxLen = max($len1, $len2);
+    
+    // Calculate similarity percentage
+    if ($maxLen === 0) {
+        return true;
+    }
+    
+    $similarity = 1 - ($distance / $maxLen);
+    
+    return $similarity >= $threshold;
+}
+
+function deduplicateDocuments($documents, $docScores = []) {
+    $uniqueDocs = [];
+    $usedIndices = [];
+    $docList = array_values($documents);
+    
+    for ($i = 0; $i < count($docList); $i++) {
+        if (in_array($i, $usedIndices)) {
+            continue;
+        }
+        
+        $bestIndex = $i;
+        $bestScore = isset($docScores[$docList[$i]['id']]) ? $docScores[$docList[$i]['id']] : 0;
+        $bestTitle = $docList[$i]['title'];
+        
+        // Check against all other documents
+        for ($j = $i + 1; $j < count($docList); $j++) {
+            if (in_array($j, $usedIndices)) {
+                continue;
+            }
+            
+            $title1 = $docList[$i]['title'] ?? '';
+            $title2 = $docList[$j]['title'] ?? '';
+            
+            // If titles are similar, mark as duplicate
+            if (isSimilarString($title1, $title2)) {
+                $usedIndices[] = $j;
+                
+                // Check if this document has a higher score
+                $currentScore = isset($docScores[$docList[$j]['id']]) ? $docScores[$docList[$j]['id']] : 0;
+                if ($currentScore > $bestScore) {
+                    $bestScore = $currentScore;
+                    $bestIndex = $j;
+                    $bestTitle = $docList[$j]['title'];
+                }
+            }
+        }
+        
+        // Keep the document with the highest score
+        $uniqueDocs[$docList[$bestIndex]['id']] = $docList[$bestIndex];
+        
+        error_log("Kept document: ID={$docList[$bestIndex]['id']}, Title='$bestTitle', Score=$bestScore");
+    }
+    
+    return $uniqueDocs;
+}
+
 if(isset($_POST['getEval'])) {
     $response = [];
     
@@ -30,7 +108,7 @@ if(isset($_POST['getEval'])) {
     $eventId = (int)$_POST['eventId'];
     $categoryId = (int)$_POST['categoryId'];
     
-    // If no category/center selected, return empty array
+    // If no category selected, return empty array
     if ($categoryId <= 0) {
         ob_clean();
         echo json_encode([]);
@@ -42,7 +120,6 @@ if(isset($_POST['getEval'])) {
         // STEP 1: Get the category name from the ID
         $categoryName = '';
         
-        // First try category table (old system)
         $catStmt = $con->prepare("SELECT name FROM category WHERE id = ?");
         if (!$catStmt) {
             throw new Exception('Prepare failed: ' . $con->error);
@@ -56,23 +133,7 @@ if(isset($_POST['getEval'])) {
         }
         $catStmt->close();
         
-        // If not found in category, try center table (new system)
-        if (empty($categoryName)) {
-            $centerStmt = $con->prepare("SELECT name FROM center WHERE id = ?");
-            if (!$centerStmt) {
-                throw new Exception('Prepare failed: ' . $con->error);
-            }
-            $centerStmt->bind_param("i", $categoryId);
-            $centerStmt->execute();
-            $centerResult = $centerStmt->get_result();
-            
-            if ($centerRow = $centerResult->fetch_assoc()) {
-                $categoryName = $centerRow['name'];
-            }
-            $centerStmt->close();
-        }
-        
-        // If no category/center found, return empty
+        // If no category found, return empty
         if (empty($categoryName)) {
             error_log("No category found for ID: " . $categoryId);
             ob_clean();
@@ -86,7 +147,7 @@ if(isset($_POST['getEval'])) {
         error_log("Category ID: " . $categoryId);
         error_log("Category Name from DB: '" . $categoryName . "'");
         
-        // STEP 2: First, let's check what documents exist for this event and category
+        // STEP 2: Get documents for this event and category
         $checkQuery = "SELECT rf.id, rf.title, rf.category, rf.event_id, e.status 
                        FROM researchfile rf 
                        INNER JOIN endorsement e ON rf.endorsementid = e.id 
@@ -100,8 +161,15 @@ if(isset($_POST['getEval'])) {
         $checkResult = $checkStmt->get_result();
         
         $docIds = [];
+        $allDocs = [];
         while ($row = $checkResult->fetch_assoc()) {
             $docIds[] = $row['id'];
+            $allDocs[$row['id']] = [
+                'id' => $row['id'],
+                'title' => $row['title'],
+                'category' => $row['category'],
+                'event_id' => $row['event_id']
+            ];
             error_log("Found document: ID=" . $row['id'] . ", Title=" . $row['title'] . ", Category=" . $row['category']);
         }
         $checkStmt->close();
@@ -112,6 +180,35 @@ if(isset($_POST['getEval'])) {
             echo json_encode([]);
             ob_end_flush();
             exit();
+        }
+        
+        // STEP 2.5: Get total scores for each document to help with deduplication
+        $docIdPlaceholder = implode(',', array_fill(0, count($docIds), '?'));
+        $scoreSumQuery = "SELECT 
+                            doc_id,
+                            SUM(score) as total_score
+                          FROM score_board
+                          WHERE doc_id IN ($docIdPlaceholder)
+                          GROUP BY doc_id";
+        
+        $scoreSumStmt = $con->prepare($scoreSumQuery);
+        if ($scoreSumStmt) {
+            $types = str_repeat('i', count($docIds));
+            $scoreSumStmt->bind_param($types, ...$docIds);
+            $scoreSumStmt->execute();
+            $scoreSumResult = $scoreSumStmt->get_result();
+            
+            $docScores = [];
+            while ($row = $scoreSumResult->fetch_assoc()) {
+                $docScores[$row['doc_id']] = (int)$row['total_score'];
+            }
+            $scoreSumStmt->close();
+            
+            // Deduplicate documents using fuzzy matching
+            $allDocs = deduplicateDocuments($allDocs, $docScores);
+            $docIds = array_keys($allDocs);
+            
+            error_log("After deduplication: " . count($docIds) . " documents remain");
         }
         
         // STEP 3: Get evaluators who have scored these documents
@@ -164,7 +261,6 @@ if(isset($_POST['getEval'])) {
             rf.author,
             rf.campus,
             rf.category,
-            rf.center,
             rf.event_id,
             sb.eval_id,
             COALESCE(sb.score, 0) as score,
@@ -218,7 +314,6 @@ if(isset($_POST['getEval'])) {
                         'author' => $row['author'] ?? '',
                         'campus' => $row['campus'] ?? '',
                         'category' => $row['category'] ?? '',
-                        'center' => $row['center'] ?? '',
                         'event_id' => (int)$row['event_id']
                     ],
                     'TotalScore' => 0,
@@ -274,7 +369,6 @@ if(isset($_POST['getEval'])) {
     exit();
 }
 
-// GENERATE SUMMARY REPORT - EXACT EXCEL FORMAT
 if(isset($_POST['generateSummaryReport'])) {
     $response = ['success' => false, 'data' => null, 'error' => ''];
     
@@ -283,108 +377,105 @@ if(isset($_POST['generateSummaryReport'])) {
         
         $eventId = (int)$_POST['eventId'];
         $categoryId = isset($_POST['categoryId']) ? (int)$_POST['categoryId'] : 0;
-        $isNewSystem = ($eventId >= 13);
         
         try {
             // STEP 1: GET EVENT DETAILS
             $eventName = getEventName($con, $eventId);
             $eventTitle = $eventName;
             
-            // STEP 2: GET CATEGORY/CENTER NAME
+            // STEP 2: GET CATEGORY NAME
             $categoryName = 'All Categories';
-            $systemType = $isNewSystem ? 'Center' : 'Category';
-            $centerCode = '';
             $categoryDatabaseId = 0;
             
             if ($categoryId > 0) {
-                if ($isNewSystem) {
-                    $centerQuery = "SELECT name, code, id FROM center WHERE id = ?";
-                    $centerStmt = $con->prepare($centerQuery);
-                    $centerStmt->bind_param("i", $categoryId);
-                    $centerStmt->execute();
-                    $centerResult = $centerStmt->get_result();
-                    if ($centerRow = $centerResult->fetch_assoc()) {
-                        $categoryName = $centerRow['name'];
-                        $centerCode = $centerRow['code'] ?? '';
-                        $categoryDatabaseId = $centerRow['id'];
-                    }
-                    $centerStmt->close();
-                } else {
-                    $catQuery = "SELECT name, id FROM category WHERE id = ?";
-                    $catStmt = $con->prepare($catQuery);
-                    $catStmt->bind_param("i", $categoryId);
-                    $catStmt->execute();
-                    $catResult = $catStmt->get_result();
-                    if ($catRow = $catResult->fetch_assoc()) {
-                        $categoryName = $catRow['name'];
-                        $categoryDatabaseId = $catRow['id'];
-                    }
-                    $catStmt->close();
+                $catQuery = "SELECT name, id FROM category WHERE id = ?";
+                $catStmt = $con->prepare($catQuery);
+                $catStmt->bind_param("i", $categoryId);
+                $catStmt->execute();
+                $catResult = $catStmt->get_result();
+                if ($catRow = $catResult->fetch_assoc()) {
+                    $categoryName = $catRow['name'];
+                    $categoryDatabaseId = $catRow['id'];
                 }
+                $catStmt->close();
             }
             
-            // STEP 3: GET CRITERIA FOR THIS EVENT AND CATEGORY
+            // STEP 3: GET CRITERIA FOR THIS EVENT
             $criteriaList = [];
             $qualityPresentationCriteriaId = null;
 
-            $criteriaQuery = "SELECT DISTINCT c.id, c.name, c.percentage 
-                            FROM criteria c
-                            WHERE c.event_id = ?";
-            
-            $params = [$eventId];
-            $types = "i";
-            
-            // Filter by category/center if specified
-            if ($categoryId > 0) {
-                if ($isNewSystem) {
-                    $criteriaQuery .= " AND c.center_id = ?";
-                    $params[] = $categoryDatabaseId;
-                    $types .= "i";
-                } else {
-                    $criteriaQuery .= " AND c.category_id = ?";
-                    $params[] = $categoryDatabaseId;
-                    $types .= "i";
-                }
-            }
-            
-            $criteriaQuery .= " ORDER BY c.id ASC";
-            
-            $criteriaStmt = $con->prepare($criteriaQuery);
-            if (!$criteriaStmt) {
+            // First, get the criteria IDs that are actually being used in scores for this category
+            $criteriaIdQuery = "SELECT DISTINCT sb.criteria_id 
+                                FROM score_board sb
+                                INNER JOIN researchfile rf ON rf.id = sb.doc_id
+                                INNER JOIN endorsement e ON rf.endorsementid = e.id
+                                WHERE rf.event_id = ? 
+                                AND rf.category = ? 
+                                AND e.status = 'accepted'
+                                AND sb.score > 0";
+
+            $criteriaIdStmt = $con->prepare($criteriaIdQuery);
+            if (!$criteriaIdStmt) {
                 throw new Exception('Prepare failed: ' . $con->error);
             }
-            $criteriaStmt->bind_param($types, ...$params);
-            $criteriaStmt->execute();
-            $criteriaResult = $criteriaStmt->get_result();
+            $criteriaIdStmt->bind_param("is", $eventId, $categoryName);
+            $criteriaIdStmt->execute();
+            $criteriaIdResult = $criteriaIdStmt->get_result();
 
-            while ($criterion = $criteriaResult->fetch_assoc()) {
-                $criteriaList[] = [
-                    'id' => (int)$criterion['id'],
-                    'name' => $criterion['name'],
-                    'percentage' => (int)$criterion['percentage']
-                ];
+            $criteriaIds = [];
+            while ($row = $criteriaIdResult->fetch_assoc()) {
+                $criteriaIds[] = (int)$row['criteria_id'];
+            }
+            $criteriaIdStmt->close();
+
+            error_log("Criteria IDs found in score_board: " . implode(', ', $criteriaIds));
+
+            // If criteria IDs found, get the full criteria details
+            if (!empty($criteriaIds)) {
+                $idPlaceholder = implode(',', array_fill(0, count($criteriaIds), '?'));
+                $criteriaQuery = "SELECT DISTINCT c.id, c.name, c.percentage 
+                                FROM criteria c
+                                WHERE c.id IN ($idPlaceholder)
+                                ORDER BY c.id ASC";
                 
-                if (stripos($criterion['name'], 'Quality of Presentation') !== false) {
-                    $qualityPresentationCriteriaId = (int)$criterion['id'];
+                $criteriaStmt = $con->prepare($criteriaQuery);
+                if (!$criteriaStmt) {
+                    throw new Exception('Prepare failed: ' . $con->error);
                 }
+                
+                $types = str_repeat('i', count($criteriaIds));
+                $criteriaStmt->bind_param($types, ...$criteriaIds);
+                $criteriaStmt->execute();
+                $criteriaResult = $criteriaStmt->get_result();
+                
+                while ($criterion = $criteriaResult->fetch_assoc()) {
+                    $criteriaList[] = [
+                        'id' => (int)$criterion['id'],
+                        'name' => $criterion['name'],
+                        'percentage' => (int)$criterion['percentage']
+                    ];
+                    
+                    if (stripos($criterion['name'], 'Quality of Presentation') !== false) {
+                        $qualityPresentationCriteriaId = (int)$criterion['id'];
+                    }
+                }
+                $criteriaStmt->close();
+                
+                error_log("Found " . count($criteriaList) . " criteria from score_board data with IDs: " . implode(', ', array_column($criteriaList, 'id')));
             }
-            $criteriaStmt->close();
 
-            error_log("Criteria for Event $eventId, Category $categoryId: " . count($criteriaList) . " criteria found");
-            
-            // If no criteria found, return error
+            // If still no criteria found, return error
             if (empty($criteriaList)) {
-                throw new Exception('No criteria found for this event and category/center');
+                throw new Exception('No criteria found for this event and category');
             }
             
-            // STEP 4: GET ACCEPTED DOCUMENTS FOR THIS EVENT (FILTER BY CATEGORY IF SPECIFIED)
+            // STEP 4: GET ACCEPTED DOCUMENTS FOR THIS EVENT
             $docQuery = "SELECT 
                 rf.id,  
                 rf.title,
                 rf.author,
                 rf.campus,
-                rf.category,
-                rf.center
+                rf.category
             FROM researchfile rf
             INNER JOIN endorsement e ON rf.endorsementid = e.id
             WHERE rf.event_id = ?
@@ -394,15 +485,9 @@ if(isset($_POST['generateSummaryReport'])) {
             $types = "i";
             
             if ($categoryId > 0) {
-                if ($isNewSystem) {
-                    $docQuery .= " AND rf.center = ?";
-                    $params[] = $categoryName;
-                    $types .= "s";
-                } else {
-                    $docQuery .= " AND rf.category = ?";
-                    $params[] = $categoryName;
-                    $types .= "s";
-                }
+                $docQuery .= " AND rf.category = ?";
+                $params[] = $categoryName;
+                $types .= "s";
             }
             
             $docQuery .= " ORDER BY rf.title";
@@ -422,15 +507,45 @@ if(isset($_POST['generateSummaryReport'])) {
                     'title' => $row['title'] ?? 'Untitled',
                     'author' => $row['author'] ?? '',
                     'campus' => $row['campus'] ?? '',
-                    'category' => $row['category'] ?? '',
-                    'center' => $row['center'] ?? ''
+                    'category' => $row['category'] ?? ''
                 ];
             }
             $docStmt->close();
             
             if (empty($allDocuments)) {
-                throw new Exception('No documents found for this event' . ($categoryId > 0 ? ' and category/center' : ''));
+                throw new Exception('No documents found for this event' . ($categoryId > 0 ? ' and category' : ''));
             }
+            
+            // STEP 4.5: Deduplicate documents using fuzzy matching
+            $docIds = array_keys($allDocuments);
+            
+            // Get total scores for each document
+            $docIdPlaceholder = implode(',', array_fill(0, count($docIds), '?'));
+            $scoreSumQuery = "SELECT 
+                                doc_id,
+                                SUM(score) as total_score
+                              FROM score_board
+                              WHERE doc_id IN ($docIdPlaceholder)
+                              GROUP BY doc_id";
+            
+            $scoreSumStmt = $con->prepare($scoreSumQuery);
+            $docScores = [];
+            if ($scoreSumStmt) {
+                $types = str_repeat('i', count($docIds));
+                $scoreSumStmt->bind_param($types, ...$docIds);
+                $scoreSumStmt->execute();
+                $scoreSumResult = $scoreSumStmt->get_result();
+                
+                while ($row = $scoreSumResult->fetch_assoc()) {
+                    $docScores[$row['doc_id']] = (int)$row['total_score'];
+                }
+                $scoreSumStmt->close();
+            }
+            
+            // Deduplicate documents
+            $allDocuments = deduplicateDocuments($allDocuments, $docScores);
+            
+            error_log("After deduplication: " . count($allDocuments) . " documents remain");
             
             $docIds = array_keys($allDocuments);
             $docIdPlaceholder = implode(',', array_fill(0, count($docIds), '?'));
@@ -478,7 +593,6 @@ if(isset($_POST['generateSummaryReport'])) {
                 rf.author,
                 rf.campus,
                 rf.category,
-                rf.center,
                 sb.eval_id,
                 sb.score,
                 sb.criteria_id,
@@ -525,8 +639,7 @@ if(isset($_POST['generateSummaryReport'])) {
                             'title' => $row['title'] ?? 'Untitled',
                             'author' => $row['author'] ?? '',
                             'campus' => $row['campus'] ?? '',
-                            'category' => $row['category'] ?? '',
-                            'center' => $row['center'] ?? ''
+                            'category' => $row['category'] ?? ''
                         ],
                         'TotalScore' => 0,
                         'criteria' => []
@@ -568,8 +681,7 @@ if(isset($_POST['generateSummaryReport'])) {
                 ],
                 'category' => [
                     'name' => $categoryName,
-                    'type' => $systemType,
-                    'code' => $centerCode
+                    'type' => 'Category'
                 ],
                 'criteria' => $criteriaList,
                 'evaluators' => [],
@@ -664,7 +776,6 @@ if(isset($_POST['generateSummaryReport'])) {
                         $criteriaId = (int)$scoreItem['criteria_id'];
                         $score = (int)$scoreItem['score'];
                         
-                        // Store in scoresByDoc for easy lookup
                         if (!isset($scoresByDoc[$docId])) {
                             $scoresByDoc[$docId] = [];
                         }
@@ -681,7 +792,6 @@ if(isset($_POST['generateSummaryReport'])) {
                 
                 // BUILD CRITERIA ROWS
                 $evaluatorSheet['criteria_rows'] = [];
-                $addedCriteriaNames = [];
 
                 foreach ($criteriaList as $criterion) {
                     $criteriaId = (int)$criterion['id'];
@@ -693,10 +803,8 @@ if(isset($_POST['generateSummaryReport'])) {
                         'scores' => []
                     ];
                     
-                    // Get scores for each document for this criteria
                     foreach ($documentIds as $docId) {
                         $column = $documentColumns[$docId];
-                        // Get score from scoresByDoc
                         $score = isset($scoresByDoc[$docId][$criteriaId]) ? $scoresByDoc[$docId][$criteriaId] : 0;
                         $row['scores'][$column] = $score;
                     }
@@ -755,6 +863,8 @@ if(isset($_POST['generateSummaryReport'])) {
                 }
 
                 $evaluatorSheet['rank_row'] = $rankRow;
+                
+                // ADD THE EVALUATOR SHEET TO THE REPORT
                 $summaryReport['evaluators'][] = $evaluatorSheet;
             }
             
@@ -857,6 +967,7 @@ if(isset($_POST['generateSummaryReport'])) {
     exit();
 }
 
+
 function getEventName($con, $eventId) {
     $query = "SELECT name FROM event_list WHERE id = ?";
     $stmt = $con->prepare($query);
@@ -871,146 +982,6 @@ function getEventName($con, $eventId) {
     }
     
     return 'RDE Symposium';
-}
-
-function getEvalByCenter($con, $eventId, $categoryId) {
-    $response = [];
-    
-    if ($categoryId <= 0) {
-        return $response;
-    }
-    
-    // Get center details
-    $centerQuery = "SELECT name, code FROM center WHERE id = ?";
-    $centerStmt = $con->prepare($centerQuery);
-    $centerStmt->bind_param("i", $categoryId);
-    $centerStmt->execute();
-    $centerResult = $centerStmt->get_result();
-    
-    if (!$centerRow = $centerResult->fetch_assoc()) {
-        return $response;
-    }
-    
-    $centerName = $centerRow['name'];
-    $centerCode = $centerRow['code'];
-    $centerStmt->close();
-    
-    // Get all evaluators for this center/event
-    $evalQuery = "SELECT DISTINCT
-        e.id,
-        e.fullname
-    FROM evaluator e
-    WHERE e.eventid = ?
-    AND (e.center_id = ? OR e.center_id IS NULL OR e.center_id = 0)
-    ORDER BY e.fullname";
-    
-    $evalStmt = $con->prepare($evalQuery);
-    $evalStmt->bind_param("ii", $eventId, $categoryId);
-    $evalStmt->execute();
-    $evaluators = $evalStmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    $evalStmt->close();
-    
-    if (empty($evaluators)) {
-        return $response;
-    }
-    
-    $evaluatorIds = array_column($evaluators, 'id');
-    $evaluatorMap = [];
-    foreach ($evaluators as $eval) {
-        $evaluatorMap[$eval['id']] = $eval;
-    }
-    
-    // Get ALL documents with scores
-    $idPlaceholders = implode(',', array_fill(0, count($evaluatorIds), '?'));
-    
-    $docQuery = "SELECT 
-        rf.id,  
-        rf.title,
-        rf.author,
-        rf.campus,
-        rf.category,
-        rf.center,
-        sb.eval_id,
-        COALESCE(sb.score, 0) as score,
-        c.id as criteria_id,
-        c.name as criteria_name,
-        c.percentage
-    FROM researchfile rf
-    LEFT JOIN score_board sb ON rf.id = sb.doc_id  
-    LEFT JOIN criteria c ON sb.criteria_id = c.id
-    INNER JOIN endorsement e ON rf.endorsementid = e.id
-    WHERE sb.eval_id IN ($idPlaceholders)
-    AND rf.event_id = ?
-    AND (rf.center = ? OR rf.center LIKE ? OR rf.center LIKE ?)
-    AND e.status = 'accepted'
-    ORDER BY sb.eval_id, rf.id, c.id";
-    
-    $docStmt = $con->prepare($docQuery);
-    
-    $centerPattern1 = "%" . $centerName . "%";
-    $centerPattern2 = "%" . $centerCode . "%";
-    
-    $types = str_repeat('i', count($evaluatorIds)) . 'isss';
-    $params = array_merge($evaluatorIds, [$eventId, $centerName, $centerPattern1, $centerPattern2]);
-    
-    $docStmt->bind_param($types, ...$params);
-    $docStmt->execute();
-    $docResult = $docStmt->get_result();
-    
-    $docsByEval = [];
-    
-    while ($row = $docResult->fetch_assoc()) {
-        $evalId = $row['eval_id'];
-        $docId = (int)$row['id'];
-        
-        if ($row['criteria_id'] === null) {
-            continue;
-        }
-        
-        if (!isset($docsByEval[$evalId])) {
-            $docsByEval[$evalId] = [];
-        }
-        
-        if (!isset($docsByEval[$evalId][$docId])) {
-            $docsByEval[$evalId][$docId] = [
-                'file' => [
-                    'id' => $docId,
-                    'title' => $row['title'] ?? 'Untitled',
-                    'author' => $row['author'] ?? '',
-                    'campus' => $row['campus'] ?? '',
-                    'category' => $row['category'] ?? '',
-                    'center' => $row['center'] ?? ''
-                ],
-                'TotalScore' => 0,
-                'criteria' => []
-            ];
-        }
-        
-        $docsByEval[$evalId][$docId]['criteria'][] = [
-            'criteria_id' => (int)$row['criteria_id'],
-            'name' => $row['criteria_name'] ?? 'Unknown',
-            'percentage' => (int)$row['percentage'],
-            'score' => (int)$row['score']
-        ];
-        
-        $docsByEval[$evalId][$docId]['TotalScore'] += (int)$row['score'];
-    }
-    
-    $docStmt->close();
-    
-    foreach ($evaluatorMap as $evalId => $evaluator) {
-        if (isset($docsByEval[$evalId]) && !empty($docsByEval[$evalId])) {
-            $eval = new stdClass();
-            $eval->evaluator = [
-                'id' => (int)$evalId,
-                'fullname' => $evaluator['fullname']
-            ];
-            $eval->docs = array_values($docsByEval[$evalId]);
-            $response[] = $eval;
-        }
-    }
-    
-    return $response;
 }
 
 function getEvalByCategory($con, $eventId, $categoryId) {
@@ -1033,12 +1004,11 @@ function getEvalByCategory($con, $eventId, $categoryId) {
     $categoryName = $catRow['name'];
     $catStmt->close();
     
-    $evalQuery = "SELECT DISTINCT
-        e.id,
-        e.fullname
-    FROM evaluator e
-    WHERE e.eventid = ?
-    ORDER BY e.fullname";
+    // Get evaluators for this event
+    $evalQuery = "SELECT DISTINCT e.id, e.fullname
+                  FROM evaluator e
+                  WHERE e.eventid = ?
+                  ORDER BY e.fullname";
     
     $evalStmt = $con->prepare($evalQuery);
     $evalStmt->bind_param("i", $eventId);
@@ -1056,6 +1026,7 @@ function getEvalByCategory($con, $eventId, $categoryId) {
         $evaluatorMap[$eval['id']] = $eval;
     }
     
+    // Get documents for this event and category
     $idPlaceholders = implode(',', array_fill(0, count($evaluatorIds), '?'));
     
     $docQuery = "SELECT 
@@ -1064,7 +1035,6 @@ function getEvalByCategory($con, $eventId, $categoryId) {
         rf.author,
         rf.campus,
         rf.category,
-        rf.center,
         sb.eval_id,
         COALESCE(sb.score, 0) as score,
         c.id as criteria_id,
@@ -1076,16 +1046,13 @@ function getEvalByCategory($con, $eventId, $categoryId) {
     INNER JOIN endorsement e ON rf.endorsementid = e.id
     WHERE sb.eval_id IN ($idPlaceholders)
     AND rf.event_id = ?
-    AND (rf.category = ? OR rf.category LIKE ?)
+    AND rf.category = ?
     AND e.status = 'accepted'
     ORDER BY sb.eval_id, rf.id, c.id";
     
     $docStmt = $con->prepare($docQuery);
-    
-    $categoryPattern = "%" . $categoryName . "%";
-    
-    $types = str_repeat('i', count($evaluatorIds)) . 'iss';
-    $params = array_merge($evaluatorIds, [$eventId, $categoryName, $categoryPattern]);
+    $types = str_repeat('i', count($evaluatorIds)) . 'is';
+    $params = array_merge($evaluatorIds, [$eventId, $categoryName]);
     
     $docStmt->bind_param($types, ...$params);
     $docStmt->execute();
@@ -1112,8 +1079,7 @@ function getEvalByCategory($con, $eventId, $categoryId) {
                     'title' => $row['title'] ?? 'Untitled',
                     'author' => $row['author'] ?? '',
                     'campus' => $row['campus'] ?? '',
-                    'category' => $row['category'] ?? '',
-                    'center' => $row['center'] ?? ''
+                    'category' => $row['category'] ?? ''
                 ],
                 'TotalScore' => 0,
                 'criteria' => []
@@ -1147,7 +1113,7 @@ function getEvalByCategory($con, $eventId, $categoryId) {
     return $response;
 }
 
-// GET FINAL CONSOLIDATED RANK (1224 STANDARD)
+// GET FINAL CONSOLIDATED RANK (with deduplication)
 if(isset($_POST['getFinalRank'])) {
     $response = ['success' => false, 'data' => null, 'error' => ''];
     
@@ -1156,35 +1122,74 @@ if(isset($_POST['getFinalRank'])) {
         
         $eventId = $_POST['eventId'];
         $categoryId = $_POST['categoryId'];
-        $isNewSystem = ($eventId >= 13);
         
         try {
-            $evaluatorData = [];
-            if ($isNewSystem) {
-                $evaluatorData = getEvalByCenter($con, $eventId, $categoryId);
-            } else {
-                $evaluatorData = getEvalByCategory($con, $eventId, $categoryId);
-            }
+            // Get evaluator data using category
+            $evaluatorData = getEvalByCategory($con, $eventId, $categoryId);
             
             if (empty($evaluatorData)) {
                 throw new Exception('No evaluator data found');
             }
             
+            // Get all documents and their scores for deduplication
             $allDocuments = [];
+            $docScores = [];
             
             foreach ($evaluatorData as $evalItem) {
                 $docs = $evalItem->docs ?? $evalItem['docs'];
                 foreach ($docs as $doc) {
                     $docId = $doc->file['id'] ?? $doc['file']['id'];
+                    $docTitle = $doc->file['title'] ?? $doc['file']['title'];
+                    $docScore = $doc->TotalScore ?? $doc['TotalScore'];
+                    
                     if (!isset($allDocuments[$docId])) {
                         $allDocuments[$docId] = [
                             'id' => $docId,
-                            'title' => $doc->file['title'] ?? $doc['file']['title']
+                            'title' => $docTitle
                         ];
+                        $docScores[$docId] = $docScore;
+                    } else {
+                        // Keep the higher score if duplicate found
+                        if ($docScore > $docScores[$docId]) {
+                            $docScores[$docId] = $docScore;
+                        }
                     }
                 }
             }
             
+            // Deduplicate documents
+            $allDocuments = deduplicateDocuments($allDocuments, $docScores);
+            
+            error_log("getFinalRank - After deduplication: " . count($allDocuments) . " documents remain");
+            
+            // Rebuild evaluator data with deduplicated documents
+            $deduplicatedEvalData = [];
+            foreach ($evaluatorData as $evalItem) {
+                $eval = new stdClass();
+                $eval->evaluator = $evalItem->evaluator;
+                $eval->docs = [];
+                
+                $docs = $evalItem->docs ?? $evalItem['docs'];
+                foreach ($docs as $doc) {
+                    $docId = $doc->file['id'] ?? $doc['file']['id'];
+                    // Only keep documents that survived deduplication
+                    if (isset($allDocuments[$docId])) {
+                        $eval->docs[] = $doc;
+                    }
+                }
+                
+                if (!empty($eval->docs)) {
+                    $deduplicatedEvalData[] = $eval;
+                }
+            }
+            
+            $evaluatorData = $deduplicatedEvalData;
+            
+            if (empty($evaluatorData)) {
+                throw new Exception('No evaluator data found after deduplication');
+            }
+            
+            // Sort documents by title for consistent column order
             uasort($allDocuments, function($a, $b) {
                 return strcmp($a['title'], $b['title']);
             });
@@ -1335,7 +1340,7 @@ if(isset($_POST['getFinalRank'])) {
     exit();
 }
 
-// GET AVERAGE RANK ACROSS ALL EVALUATORS (FILTERED BY CATEGORY)
+// GET AVERAGE RANK ACROSS ALL EVALUATORS (with deduplication)
 if(isset($_POST['getAverageRank'])) {
     $response = ['success' => false, 'data' => null, 'error' => ''];
     
@@ -1344,35 +1349,22 @@ if(isset($_POST['getAverageRank'])) {
         
         $eventId = (int)$_POST['eventId'];
         $categoryId = isset($_POST['categoryId']) ? (int)$_POST['categoryId'] : 0;
-        $isNewSystem = ($eventId >= 13);
         
         try {
             $eventName = getEventName($con, $eventId);
             
-            // STEP 1: Get category/center name if specified
+            // STEP 1: Get category name if specified
             $categoryName = null;
             if ($categoryId > 0) {
-                if ($isNewSystem) {
-                    $centerQuery = "SELECT name FROM center WHERE id = ?";
-                    $centerStmt = $con->prepare($centerQuery);
-                    $centerStmt->bind_param("i", $categoryId);
-                    $centerStmt->execute();
-                    $centerResult = $centerStmt->get_result();
-                    if ($centerRow = $centerResult->fetch_assoc()) {
-                        $categoryName = $centerRow['name'];
-                    }
-                    $centerStmt->close();
-                } else {
-                    $catQuery = "SELECT name FROM category WHERE id = ?";
-                    $catStmt = $con->prepare($catQuery);
-                    $catStmt->bind_param("i", $categoryId);
-                    $catStmt->execute();
-                    $catResult = $catStmt->get_result();
-                    if ($catRow = $catResult->fetch_assoc()) {
-                        $categoryName = $catRow['name'];
-                    }
-                    $catStmt->close();
+                $catQuery = "SELECT name FROM category WHERE id = ?";
+                $catStmt = $con->prepare($catQuery);
+                $catStmt->bind_param("i", $categoryId);
+                $catStmt->execute();
+                $catResult = $catStmt->get_result();
+                if ($catRow = $catResult->fetch_assoc()) {
+                    $categoryName = $catRow['name'];
                 }
+                $catStmt->close();
             }
             
             // STEP 2: Get accepted documents for this event (filtered by category if specified)
@@ -1382,7 +1374,6 @@ if(isset($_POST['getAverageRank'])) {
                 rf.author,
                 rf.campus,
                 rf.category,
-                rf.center,
                 rf.event_id
             FROM researchfile rf
             INNER JOIN endorsement e ON rf.endorsementid = e.id
@@ -1394,11 +1385,7 @@ if(isset($_POST['getAverageRank'])) {
             
             // Add category filter if specified and found
             if ($categoryId > 0 && $categoryName !== null) {
-                if ($isNewSystem) {
-                    $docQuery .= " AND rf.center = ?";
-                } else {
-                    $docQuery .= " AND rf.category = ?";
-                }
+                $docQuery .= " AND rf.category = ?";
                 $params[] = $categoryName;
                 $types .= "s";
             }
@@ -1420,8 +1407,7 @@ if(isset($_POST['getAverageRank'])) {
                     'title' => $row['title'] ?? 'Untitled',
                     'author' => $row['author'] ?? '',
                     'campus' => $row['campus'] ?? '',
-                    'category' => $row['category'] ?? '',
-                    'center' => $row['center'] ?? ''
+                    'category' => $row['category'] ?? ''
                 ];
             }
             $docStmt->close();
@@ -1429,6 +1415,35 @@ if(isset($_POST['getAverageRank'])) {
             if (empty($allDocuments)) {
                 throw new Exception('No documents found for this event' . ($categoryId > 0 ? ' and selected category' : ''));
             }
+            
+            // STEP 2.5: Get total scores for each document for deduplication
+            $docIds = array_keys($allDocuments);
+            $docIdPlaceholder = implode(',', array_fill(0, count($docIds), '?'));
+            $scoreSumQuery = "SELECT 
+                                doc_id,
+                                SUM(score) as total_score
+                              FROM score_board
+                              WHERE doc_id IN ($docIdPlaceholder)
+                              GROUP BY doc_id";
+            
+            $scoreSumStmt = $con->prepare($scoreSumQuery);
+            $docScores = [];
+            if ($scoreSumStmt) {
+                $types = str_repeat('i', count($docIds));
+                $scoreSumStmt->bind_param($types, ...$docIds);
+                $scoreSumStmt->execute();
+                $scoreSumResult = $scoreSumStmt->get_result();
+                
+                while ($row = $scoreSumResult->fetch_assoc()) {
+                    $docScores[$row['doc_id']] = (int)$row['total_score'];
+                }
+                $scoreSumStmt->close();
+            }
+            
+            // Deduplicate documents
+            $allDocuments = deduplicateDocuments($allDocuments, $docScores);
+            
+            error_log("getAverageRank - After deduplication: " . count($allDocuments) . " documents remain");
             
             $docIds = array_keys($allDocuments);
             $docIdPlaceholder = implode(',', array_fill(0, count($docIds), '?'));
@@ -1598,7 +1613,6 @@ if(isset($_POST['getAverageRank'])) {
                         'author' => $doc['author'],
                         'campus' => $doc['campus'],
                         'category' => $doc['category'],
-                        'center' => $doc['center'],
                         'column' => $docColumns[$docId],
                         'final_ranks' => $ranks,
                         'total_rank_score' => $sum,
@@ -1634,7 +1648,6 @@ if(isset($_POST['getAverageRank'])) {
             
             // Get category info for response
             $categoryDisplayName = $categoryName ?? 'All Categories';
-            $categoryType = $isNewSystem ? 'Center' : 'Category';
             
             $response['success'] = true;
             $response['data'] = [
@@ -1644,7 +1657,7 @@ if(isset($_POST['getAverageRank'])) {
                 ],
                 'category' => [
                     'name' => $categoryDisplayName,
-                    'type' => $categoryType,
+                    'type' => 'Category',
                     'id' => $categoryId
                 ],
                 'documents' => $allDocuments,

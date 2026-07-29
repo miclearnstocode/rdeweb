@@ -361,13 +361,36 @@ export const Summary = (eventIdParam, categoryIdParam) => {
             text: `${data.category?.type}: ${data.category?.name || ''}`
         }))
 
+        // Check if we have evaluator data
+        const hasEvaluatorData = data.evaluators && Array.isArray(data.evaluators) && data.evaluators.length > 0
+        
+        if (!hasEvaluatorData) {
+            wrapper.appendChild($({
+                tag: 'div',
+                style: {
+                    padding: '40px',
+                    textAlign: 'center',
+                    color: '#64748b',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '10px',
+                    border: '1px dashed #cbd5e1',
+                    fontSize: '16px'
+                },
+                text: 'No evaluator data available for this category'
+            }))
+            contentDiv.appendChild(wrapper)
+            return contentDiv
+        }
+
         // Get document columns from the first evaluator
         let documentColumns = []
         let documentTitles = {}
         let maxTitleLength = 0
         
-        if (data.evaluators && data.evaluators.length > 0 && data.evaluators[0].documents) {
-            const documents = Object.values(data.evaluators[0].documents)
+        // Check if the first evaluator has documents
+        const firstEvaluator = data.evaluators[0]
+        if (firstEvaluator.documents) {
+            const documents = Object.values(firstEvaluator.documents)
             documents.sort((a, b) => a.column - b.column)
             
             documents.forEach(doc => {
@@ -389,321 +412,398 @@ export const Summary = (eventIdParam, categoryIdParam) => {
         const totalTableWidth = criteriaColWidth + (scoreColWidth * documentCount) + 40;
 
         // EVALUATOR SHEETS
-        if (data.evaluators && Array.isArray(data.evaluators)) {
-            data.evaluators.forEach((evaluatorSheet, evalIndex) => {
-                const evaluator = evaluatorSheet.evaluator
-                const headerColors = ['#e3f2fd', '#e8f5e9', '#fff3e0', '#fce4ec', '#f3e5f5']
-                const headerColor = headerColors[evalIndex % headerColors.length]
-                
-                // Evaluator Header
+        data.evaluators.forEach((evaluatorSheet, evalIndex) => {
+            const evaluator = evaluatorSheet.evaluator
+            const headerColors = ['#e3f2fd', '#e8f5e9', '#fff3e0', '#fce4ec', '#f3e5f5']
+            const headerColor = headerColors[evalIndex % headerColors.length]
+            
+            // Evaluator Header
+            wrapper.appendChild($({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginTop: evalIndex > 0 ? '32px' : '8px',
+                    marginBottom: '16px',
+                    padding: '12px 20px',
+                    backgroundColor: headerColor,
+                    borderRadius: '10px',
+                    border: '1px solid #e8ecf0'
+                },
+                child: [
+                    $({
+                        tag: 'div',
+                        style: {
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            backgroundColor: '#1976D2',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#ffffff',
+                            fontWeight: '600',
+                            fontSize: '14px',
+                            flexShrink: 0
+                        },
+                        text: evaluator.number || 'E'
+                    }),
+                    $({
+                        tag: 'div',
+                        style: {
+                            fontSize: '16px',
+                            fontWeight: '600',
+                            color: '#1a2a3a',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                        },
+                        text: `Evaluator ${evaluator.number}: ${evaluator.name}`
+                    })
+                ]
+            }))
+
+            // Get documents for this evaluator
+            const documents = Object.values(evaluatorSheet.documents || {})
+            documents.sort((a, b) => a.column - b.column)
+            
+            // If no documents, skip this evaluator
+            if (documents.length === 0) {
                 wrapper.appendChild($({
                     tag: 'div',
                     style: {
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        marginTop: evalIndex > 0 ? '32px' : '8px',
-                        marginBottom: '16px',
-                        padding: '12px 20px',
-                        backgroundColor: headerColor,
-                        borderRadius: '10px',
-                        border: '1px solid #e8ecf0'
+                        padding: '16px',
+                        textAlign: 'center',
+                        color: '#94a3b8',
+                        backgroundColor: '#f8fafc',
+                        borderRadius: '8px',
+                        border: '1px dashed #cbd5e1',
+                        marginBottom: '12px',
+                        fontSize: '13px'
                     },
-                    child: [
-                        $({
-                            tag: 'div',
-                            style: {
-                                width: '36px',
-                                height: '36px',
-                                borderRadius: '50%',
-                                backgroundColor: '#1976D2',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#ffffff',
-                                fontWeight: '600',
-                                fontSize: '14px',
-                                flexShrink: 0
-                            },
-                            text: evaluator.number || 'E'
-                        }),
-                        $({
-                            tag: 'div',
-                            style: {
-                                fontSize: '16px',
-                                fontWeight: '600',
-                                color: '#1a2a3a',
-                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                            },
-                            text: `Evaluator ${evaluator.number}: ${evaluator.name}`
-                        })
-                    ]
+                    text: 'No scored documents for this evaluator'
                 }))
+                return
+            }
 
-                const totalRowWidth = criteriaColWidth + (scoreColWidth * documentCount);
+            const totalRowWidth = criteriaColWidth + (scoreColWidth * documentCount);
 
-                const tableContainer = $({
-                    tag: 'div',
-                    style: {
-                        width: '100%',
-                        overflow: 'auto',
-                        borderRadius: '10px',
-                        border: '1px solid #e8ecf0',
-                        backgroundColor: '#ffffff',
-                        WebkitOverflowScrolling: 'touch',
-                        maxWidth: '100%'
-                    }
-                });
+            const tableContainer = $({
+                tag: 'div',
+                style: {
+                    width: '100%',
+                    overflow: 'auto',
+                    borderRadius: '10px',
+                    border: '1px solid #e8ecf0',
+                    backgroundColor: '#ffffff',
+                    WebkitOverflowScrolling: 'touch',
+                    maxWidth: '100%'
+                }
+            });
 
-                // Inner container to prevent shrinking
-                const tableInner = $({
-                    tag: 'div',
-                    style: {
-                        minWidth: `${totalRowWidth}px`,
-                        width: '100%'
-                    }
-                });
+            // Inner container to prevent shrinking
+            const tableInner = $({
+                tag: 'div',
+                style: {
+                    minWidth: `${totalRowWidth}px`,
+                    width: '100%'
+                }
+            });
 
-                // ===== HEADER ROW =====
-                const headerRow = $({
-                    tag: 'div',
-                    style: {
-                        display: 'flex',
-                        width: '100%',
-                        backgroundColor: headerColor,
-                        borderBottom: '2px solid #e8ecf0',
-                        fontWeight: '600'
-                    }
-                })
+            // ===== HEADER ROW =====
+            const headerRow = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    width: '100%',
+                    backgroundColor: headerColor,
+                    borderBottom: '2px solid #e8ecf0',
+                    fontWeight: '600'
+                }
+            })
 
+            headerRow.appendChild($({
+                tag: 'div',
+                style: {
+                    width: `${criteriaColWidth}px`,
+                    padding: '10px 14px',
+                    fontSize: '13px',
+                    color: '#1a2a3a',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    flexShrink: 0,
+                    borderRight: '1px solid rgba(0,0,0,0.08)',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                },
+                text: 'CRITERIA'
+            }))
+
+            documentColumns.forEach((col, colIndex) => {
                 headerRow.appendChild($({
                     tag: 'div',
                     style: {
-                        width: `${criteriaColWidth}px`,
-                        padding: '10px 14px',
+                        width: `${scoreColWidth}px`,
+                        padding: '10px 6px',
                         fontSize: '13px',
                         color: '#1a2a3a',
                         fontWeight: '600',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
+                        textAlign: 'center',
                         flexShrink: 0,
-                        borderRight: '1px solid rgba(0,0,0,0.08)',
+                        borderRight: colIndex < documentColumns.length - 1 ? '1px solid rgba(0,0,0,0.08)' : 'none',
                         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                     },
-                    text: 'CRITERIA'
+                    text: col
                 }))
+            })
+            tableInner.appendChild(headerRow)
 
-                documentColumns.forEach((col, colIndex) => {
-                    headerRow.appendChild($({
-                        tag: 'div',
-                        style: {
-                            width: `${scoreColWidth}px`,
-                            padding: '10px 6px',
-                            fontSize: '13px',
-                            color: '#1a2a3a',
-                            fontWeight: '600',
-                            textAlign: 'center',
-                            flexShrink: 0,
-                            borderRight: colIndex < documentColumns.length - 1 ? '1px solid rgba(0,0,0,0.08)' : 'none',
-                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                        },
-                        text: col
-                    }))
-                })
-                tableInner.appendChild(headerRow)
+            // ===== TITLE ROW =====
+            const titleRow = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    width: '100%',
+                    backgroundColor: '#fafbfc',
+                    borderBottom: '1px solid #e8ecf0'
+                }
+            })
 
-                // ===== TITLE ROW =====
-                const titleRow = $({
-                    tag: 'div',
-                    style: {
-                        display: 'flex',
-                        width: '100%',
-                        backgroundColor: '#fafbfc',
-                        borderBottom: '1px solid #e8ecf0'
-                    }
-                })
+            titleRow.appendChild($({
+                tag: 'div',
+                style: {
+                    width: `${criteriaColWidth}px`,
+                    padding: '8px 14px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: '#1976D2',
+                    flexShrink: 0,
+                    borderRight: '1px solid #e8ecf0',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                },
+                text: 'TITLE'
+            }))
 
+            documents.forEach((doc, docIndex) => {
                 titleRow.appendChild($({
                     tag: 'div',
                     style: {
-                        width: `${criteriaColWidth}px`,
-                        padding: '8px 14px',
-                        fontSize: '12px',
-                        fontWeight: '600',
+                        width: `${scoreColWidth}px`,
+                        padding: '8px 6px',
+                        textAlign: 'center',
+                        fontSize: scoreColWidth > 110 ? '11px' : '10px',
                         color: '#1976D2',
+                        fontWeight: '500',
                         flexShrink: 0,
-                        borderRight: '1px solid #e8ecf0',
+                        borderRight: docIndex < documents.length - 1 ? '1px solid #e8ecf0' : 'none',
+                        wordWrap: 'break-word',
+                        lineHeight: '1.3',
                         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                     },
-                    text: 'TITLE'
+                    att: { title: doc.title },
+                    text: doc.title 
                 }))
+            })
+            tableInner.appendChild(titleRow)
 
-                const documents = Object.values(evaluatorSheet.documents || {})
-                documents.sort((a, b) => a.column - b.column)
-                
-                documents.forEach((doc, docIndex) => {
-                    titleRow.appendChild($({
+            // ===== CRITERIA SCORE ROWS =====
+            if (evaluatorSheet.criteria_rows && Array.isArray(evaluatorSheet.criteria_rows)) {
+                evaluatorSheet.criteria_rows.forEach((criteriaRow, critIndex) => {
+                    const scoreRow = $({
                         tag: 'div',
                         style: {
-                            width: `${scoreColWidth}px`,
-                            padding: '8px 6px',
-                            textAlign: 'center',
-                            fontSize: scoreColWidth > 110 ? '11px' : '10px',
-                            color: '#1976D2',
+                            display: 'flex',
+                            width: '100%',
+                            backgroundColor: critIndex % 2 === 0 ? '#ffffff' : '#fafbfc',
+                            borderBottom: '1px solid #f0f2f5'
+                        }
+                    })
+
+                    const criteriaName = criteriaRow.percentage 
+                        ? `${criteriaRow.name}` 
+                        : criteriaRow.name
+                    
+                    scoreRow.appendChild($({
+                        tag: 'div',
+                        style: {
+                            width: `${criteriaColWidth}px`,
+                            padding: '8px 14px',
+                            fontSize: '13px',
+                            color: '#1a2a3a',
                             fontWeight: '500',
                             flexShrink: 0,
-                            borderRight: docIndex < documents.length - 1 ? '1px solid #e8ecf0' : 'none',
+                            borderRight: '1px solid #f0f2f5',
                             wordWrap: 'break-word',
-                            lineHeight: '1.3',
                             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                         },
-                        att: { title: doc.title },
-                        text: doc.title 
+                        att: { title: criteriaName },
+                        text: criteriaName
                     }))
-                })
-                tableInner.appendChild(titleRow)
 
-                // ===== CRITERIA SCORE ROWS =====
-                if (evaluatorSheet.criteria_rows && Array.isArray(evaluatorSheet.criteria_rows)) {
-                    evaluatorSheet.criteria_rows.forEach((criteriaRow, critIndex) => {
-                        const scoreRow = $({
-                            tag: 'div',
-                            style: {
-                                display: 'flex',
-                                width: '100%',
-                                backgroundColor: critIndex % 2 === 0 ? '#ffffff' : '#fafbfc',
-                                borderBottom: '1px solid #f0f2f5'
-                            }
-                        })
-
-                        const criteriaName = criteriaRow.percentage 
-                            ? `${criteriaRow.name}` 
-                            : criteriaRow.name
+                    const scores = criteriaRow.scores || {}
+                    
+                    documents.forEach((doc, docIndex) => {
+                        const score = scores[doc.column] !== undefined ? scores[doc.column] : 0
                         
                         scoreRow.appendChild($({
                             tag: 'div',
                             style: {
-                                width: `${criteriaColWidth}px`,
-                                padding: '8px 14px',
-                                fontSize: '13px',
+                                width: `${scoreColWidth}px`,
+                                padding: '8px 6px',
+                                textAlign: 'center',
+                                fontSize: '14px',
                                 color: '#1a2a3a',
-                                fontWeight: '500',
                                 flexShrink: 0,
-                                borderRight: '1px solid #f0f2f5',
-                                wordWrap: 'break-word',
+                                borderRight: docIndex < documents.length - 1 ? '1px solid #f0f2f5' : 'none',
                                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                             },
-                            att: { title: criteriaName },
-                            text: criteriaName
+                            text: score > 0 
+                                ? (Number.isInteger(score) ? score : score.toFixed(1)) 
+                                : '0'
                         }))
-
-                        const scores = criteriaRow.scores || {}
-                        
-                        documents.forEach((doc, docIndex) => {
-                            const score = scores[doc.column] !== undefined ? scores[doc.column] : 0
-                            
-                            scoreRow.appendChild($({
-                                tag: 'div',
-                                style: {
-                                    width: `${scoreColWidth}px`,
-                                    padding: '8px 6px',
-                                    textAlign: 'center',
-                                    fontSize: '14px',
-                                    color: '#1a2a3a',
-                                    flexShrink: 0,
-                                    borderRight: docIndex < documents.length - 1 ? '1px solid #f0f2f5' : 'none',
-                                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                                },
-                                text: score > 0 
-                                    ? (Number.isInteger(score) ? score : score.toFixed(1)) 
-                                    : '0'
-                            }))
-                        })
-                        
-                        tableInner.appendChild(scoreRow)
                     })
+                    
+                    tableInner.appendChild(scoreRow)
+                })
+            }
+            
+            // ===== TOTAL ROW =====
+            const totalRow = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    width: '100%',
+                    backgroundColor: '#f8fafc',
+                    borderTop: '2px solid #e8ecf0',
+                    fontWeight: '600'
                 }
-                
-                // ===== TOTAL ROW =====
-                const totalRow = $({
+            })
+
+            totalRow.appendChild($({
+                tag: 'div',
+                style: {
+                    width: `${criteriaColWidth}px`,
+                    padding: '10px 14px',
+                    fontSize: '14px',
+                    color: '#1a2a3a',
+                    fontWeight: '700',
+                    flexShrink: 0,
+                    borderRight: '1px solid #e8ecf0',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                },
+                text: 'Total'
+            }))
+
+            documents.forEach((doc, docIndex) => {
+                totalRow.appendChild($({
+                    tag: 'div',
+                    style: {
+                        width: `${scoreColWidth}px`,
+                        padding: '10px 6px',
+                        textAlign: 'center',
+                        fontSize: '15px',
+                        fontWeight: '700',
+                        color: '#1976D2',
+                        flexShrink: 0,
+                        borderRight: docIndex < documents.length - 1 ? '1px solid #e8ecf0' : 'none',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                    },
+                    text: (doc.total_score || 0).toFixed(1)
+                }))
+            })
+            tableInner.appendChild(totalRow)
+            
+            // ===== RANK ROW (per evaluator) =====
+            if (evaluatorSheet.rank_row) {
+                const rankRow = $({
                     tag: 'div',
                     style: {
                         display: 'flex',
                         width: '100%',
-                        backgroundColor: '#f8fafc',
-                        borderTop: '2px solid #e8ecf0',
+                        backgroundColor: '#fff8e1',
+                        borderTop: '1px solid #e8ecf0',
                         fontWeight: '600'
                     }
                 })
 
-                totalRow.appendChild($({
+                rankRow.appendChild($({
                     tag: 'div',
                     style: {
                         width: `${criteriaColWidth}px`,
                         padding: '10px 14px',
                         fontSize: '14px',
-                        color: '#1a2a3a',
+                        color: '#e65100',
                         fontWeight: '700',
                         flexShrink: 0,
                         borderRight: '1px solid #e8ecf0',
                         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                     },
-                    text: 'Total'
+                    text: 'Rank'
                 }))
 
                 documents.forEach((doc, docIndex) => {
-                    totalRow.appendChild($({
+                    const rankValue = evaluatorSheet.rank_row[doc.column] || ''
+                    const isTop = rankValue === 1 || rankValue === 2 || rankValue === 3
+                    const colors = { 1: '#f1c40f', 2: '#bdc3c7', 3: '#cd7f32' }
+                    
+                    rankRow.appendChild($({
                         tag: 'div',
                         style: {
                             width: `${scoreColWidth}px`,
                             padding: '10px 6px',
                             textAlign: 'center',
-                            fontSize: '15px',
+                            fontSize: '16px',
                             fontWeight: '700',
-                            color: '#1976D2',
+                            color: isTop ? '#1a2a3a' : '#64748b',
+                            backgroundColor: isTop ? (colors[rankValue] || 'transparent') : 'transparent',
+                            borderRadius: isTop ? '4px' : '0',
                             flexShrink: 0,
                             borderRight: docIndex < documents.length - 1 ? '1px solid #e8ecf0' : 'none',
                             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                         },
-                        text: (doc.total_score || 0).toFixed(1)
+                        text: rankValue
                     }))
                 })
-                tableInner.appendChild(totalRow)
+                tableInner.appendChild(rankRow)
+            }
+
+            // ===== FINAL CONSOLIDATED RANK ROW =====
+            if (finalRankData && finalRankData.final_rank_rows) {
+                const finalRankRowData = finalRankData.final_rank_rows[evaluator.id];
                 
-                // ===== RANK ROW (per evaluator) =====
-                if (evaluatorSheet.rank_row) {
-                    const rankRow = $({
+                if (finalRankRowData) {
+                    const finalRankRow = $({
                         tag: 'div',
                         style: {
                             display: 'flex',
                             width: '100%',
-                            backgroundColor: '#fff8e1',
-                            borderTop: '1px solid #e8ecf0',
-                            fontWeight: '600'
+                            backgroundColor: '#f3e5f5',
+                            borderTop: '2px solid #9b59b6',
+                            fontWeight: '600',
+                            marginTop: '2px'
                         }
-                    })
+                    });
 
-                    rankRow.appendChild($({
+                    finalRankRow.appendChild($({
                         tag: 'div',
                         style: {
                             width: `${criteriaColWidth}px`,
                             padding: '10px 14px',
-                            fontSize: '14px',
-                            color: '#e65100',
-                            fontWeight: '700',
+                            fontSize: '13px',
+                            color: '#4a235a',
+                            fontWeight: '600',
                             flexShrink: 0,
                             borderRight: '1px solid #e8ecf0',
                             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                         },
-                        text: 'Rank'
-                    }))
+                        text: 'Final Rank (1224)'
+                    }));
 
                     documents.forEach((doc, docIndex) => {
-                        const rankValue = evaluatorSheet.rank_row[doc.column] || ''
-                        const isTop = rankValue === 1 || rankValue === 2 || rankValue === 3
-                        const colors = { 1: '#f1c40f', 2: '#bdc3c7', 3: '#cd7f32' }
+                        const finalRank = finalRankRowData[doc.column] || '';
+                        const isTop = finalRank === 1 || finalRank === 2 || finalRank === 3;
+                        const colors = { 1: '#f1c40f', 2: '#bdc3c7', 3: '#cd7f32' };
                         
-                        rankRow.appendChild($({
+                        finalRankRow.appendChild($({
                             tag: 'div',
                             style: {
                                 width: `${scoreColWidth}px`,
@@ -711,88 +811,29 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                                 textAlign: 'center',
                                 fontSize: '16px',
                                 fontWeight: '700',
-                                color: isTop ? '#1a2a3a' : '#64748b',
-                                backgroundColor: isTop ? (colors[rankValue] || 'transparent') : 'transparent',
+                                color: isTop ? '#1a2a3a' : '#4a235a',
+                                backgroundColor: isTop ? (colors[finalRank] || '#f3e5f5') : 'transparent',
                                 borderRadius: isTop ? '4px' : '0',
                                 flexShrink: 0,
                                 borderRight: docIndex < documents.length - 1 ? '1px solid #e8ecf0' : 'none',
                                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                             },
-                            text: rankValue
-                        }))
-                    })
-                    tableInner.appendChild(rankRow)
-                }
-
-                // ===== FINAL CONSOLIDATED RANK ROW =====
-                if (finalRankData && finalRankData.final_rank_rows) {
-                    const finalRankRowData = finalRankData.final_rank_rows[evaluator.id];
-                    
-                    if (finalRankRowData) {
-                        const finalRankRow = $({
-                            tag: 'div',
-                            style: {
-                                display: 'flex',
-                                width: '100%',
-                                backgroundColor: '#f3e5f5',
-                                borderTop: '2px solid #9b59b6',
-                                fontWeight: '600',
-                                marginTop: '2px'
-                            }
-                        });
-
-                        finalRankRow.appendChild($({
-                            tag: 'div',
-                            style: {
-                                width: `${criteriaColWidth}px`,
-                                padding: '10px 14px',
-                                fontSize: '13px',
-                                color: '#4a235a',
-                                fontWeight: '600',
-                                flexShrink: 0,
-                                borderRight: '1px solid #e8ecf0',
-                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                            },
-                            text: 'Final Rank (1224)'
+                            text: finalRank
                         }));
+                    });
 
-                        documents.forEach((doc, docIndex) => {
-                            const finalRank = finalRankRowData[doc.column] || '';
-                            const isTop = finalRank === 1 || finalRank === 2 || finalRank === 3;
-                            const colors = { 1: '#f1c40f', 2: '#bdc3c7', 3: '#cd7f32' };
-                            
-                            finalRankRow.appendChild($({
-                                tag: 'div',
-                                style: {
-                                    width: `${scoreColWidth}px`,
-                                    padding: '10px 6px',
-                                    textAlign: 'center',
-                                    fontSize: '16px',
-                                    fontWeight: '700',
-                                    color: isTop ? '#1a2a3a' : '#4a235a',
-                                    backgroundColor: isTop ? (colors[finalRank] || '#f3e5f5') : 'transparent',
-                                    borderRadius: isTop ? '4px' : '0',
-                                    flexShrink: 0,
-                                    borderRight: docIndex < documents.length - 1 ? '1px solid #e8ecf0' : 'none',
-                                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                                },
-                                text: finalRank
-                            }));
-                        });
-
-                        tableInner.appendChild(finalRankRow);
-                    }
+                    tableInner.appendChild(finalRankRow);
                 }
+            }
 
-                // Append tableInner to tableContainer
-                tableContainer.appendChild(tableInner);
-                wrapper.appendChild(tableContainer);
-                wrapper.appendChild($({
-                    tag: 'div',
-                    style: { height: '8px' }
-                }))
-            })
-        }
+            // Append tableInner to tableContainer
+            tableContainer.appendChild(tableInner);
+            wrapper.appendChild(tableContainer);
+            wrapper.appendChild($({
+                tag: 'div',
+                style: { height: '8px' }
+            }))
+        })
         
         // ===== CRITERIA RANKINGS SECTION =====
         if (data.criteria_rankings && Object.keys(data.criteria_rankings).length > 0) {
@@ -827,141 +868,147 @@ export const Summary = (eventIdParam, categoryIdParam) => {
             
             const criteriaIds = Object.keys(data.criteria_rankings).sort((a, b) => parseInt(a) - parseInt(b))
             
-            criteriaIds.forEach((criteriaId, index) => {
-                const criteriaData = data.criteria_rankings[criteriaId]
-                const criteriaName = criteriaData.name
-                const rankings = criteriaData.rankings || []
-                
-                const rankMap = {}
-                const scoreMap = {}
-                rankings.forEach(item => {
-                    rankMap[item.column] = item.rank
-                    scoreMap[item.column] = item.total_score
-                })
-                
-                const headerColors = ['#e3f2fd', '#e8f5e9', '#fff3e0', '#fce4ec', '#f3e5f5']
-                const headerColor = headerColors[index % headerColors.length]
-                
-                // Criteria header
-                rankingsContainer.appendChild($({
-                    tag: 'div',
-                    style: {
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '10px 16px',
-                        backgroundColor: headerColor,
-                        borderBottom: '1px solid #e8ecf0',
-                        fontWeight: '600',
-                        fontSize: '14px',
-                        color: '#1a2a3a',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                    },
-                    text: criteriaName
-                }))
-                
-                // Ranking row
-                const criteriaRankRow = $({
-                    tag: 'div',
-                    style: {
-                        display: 'flex',
-                        width: '100%',
-                        backgroundColor: '#fafbfc',
-                        borderBottom: '1px solid #e8ecf0'
-                    }
-                })
-
-                criteriaRankRow.appendChild($({
-                    tag: 'div',
-                    style: {
-                        width: `${criteriaColWidth}px`,
-                        padding: '8px 14px',
-                        fontSize: '13px',
-                        fontWeight: '600',
-                        color: '#475569',
-                        flexShrink: 0,
-                        borderRight: '1px solid #e8ecf0',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-                    },
-                    text: 'RANK'
-                }))
-
-                documentColumns.forEach((col, colIndex) => {
-                    const rank = rankMap[col] !== undefined ? rankMap[col] : ''
-                    const isTop = rank === 1 || rank === 2 || rank === 3;
-                    const colors = { 1: '#f1c40f', 2: '#bdc3c7', 3: '#cd7f32' };
+            // Only show criteria rankings if we have document columns
+            if (documentColumns.length > 0) {
+                criteriaIds.forEach((criteriaId, index) => {
+                    const criteriaData = data.criteria_rankings[criteriaId]
+                    const criteriaName = criteriaData.name
+                    const rankings = criteriaData.rankings || []
                     
-                    criteriaRankRow.appendChild($({
+                    const rankMap = {}
+                    const scoreMap = {}
+                    rankings.forEach(item => {
+                        rankMap[item.column] = item.rank
+                        scoreMap[item.column] = item.total_score
+                    })
+                    
+                    const headerColors = ['#e3f2fd', '#e8f5e9', '#fff3e0', '#fce4ec', '#f3e5f5']
+                    const headerColor = headerColors[index % headerColors.length]
+                    
+                    // Criteria header
+                    rankingsContainer.appendChild($({
                         tag: 'div',
                         style: {
-                            width: `${scoreColWidth}px`,
-                            padding: '8px 6px',
-                            textAlign: 'center',
-                            fontSize: '15px',
-                            fontWeight: '700',
-                            color: isTop ? '#1a2a3a' : '#64748b',
-                            backgroundColor: isTop ? (colors[rank] || 'transparent') : 'transparent',
-                            borderRadius: isTop ? '4px' : '0',
-                            flexShrink: 0,
-                            borderRight: colIndex < documentColumns.length - 1 ? '1px solid #e8ecf0' : 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '10px 16px',
+                            backgroundColor: headerColor,
+                            borderBottom: '1px solid #e8ecf0',
+                            fontWeight: '600',
+                            fontSize: '14px',
+                            color: '#1a2a3a',
                             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                         },
-                        text: rank
+                        text: criteriaName
                     }))
-                })
-                rankingsContainer.appendChild(criteriaRankRow)
-                
-                // Score details row
-                if (rankings.length > 0) {
-                    const scoreDetailsRow = $({
+                    
+                    // Ranking row
+                    const criteriaRankRow = $({
                         tag: 'div',
                         style: {
                             display: 'flex',
                             width: '100%',
-                            backgroundColor: '#f8f9fa',
+                            backgroundColor: '#fafbfc',
                             borderBottom: '1px solid #e8ecf0'
                         }
                     })
 
-                    scoreDetailsRow.appendChild($({
+                    criteriaRankRow.appendChild($({
                         tag: 'div',
                         style: {
                             width: `${criteriaColWidth}px`,
-                            padding: '6px 14px',
-                            fontSize: '11px',
-                            color: '#94a3b8',
-                            fontStyle: 'italic',
+                            padding: '8px 14px',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            color: '#475569',
                             flexShrink: 0,
                             borderRight: '1px solid #e8ecf0',
                             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                         },
-                        text: 'Total Score'
+                        text: 'RANK'
                     }))
 
                     documentColumns.forEach((col, colIndex) => {
-                        const score = scoreMap[col] || 0
-                        scoreDetailsRow.appendChild($({
+                        const rank = rankMap[col] !== undefined ? rankMap[col] : ''
+                        const isTop = rank === 1 || rank === 2 || rank === 3;
+                        const colors = { 1: '#f1c40f', 2: '#bdc3c7', 3: '#cd7f32' };
+                        
+                        criteriaRankRow.appendChild($({
                             tag: 'div',
                             style: {
                                 width: `${scoreColWidth}px`,
-                                padding: '6px 6px',
+                                padding: '8px 6px',
                                 textAlign: 'center',
-                                fontSize: '11px',
-                                color: '#94a3b8',
+                                fontSize: '15px',
+                                fontWeight: '700',
+                                color: isTop ? '#1a2a3a' : '#64748b',
+                                backgroundColor: isTop ? (colors[rank] || 'transparent') : 'transparent',
+                                borderRadius: isTop ? '4px' : '0',
                                 flexShrink: 0,
                                 borderRight: colIndex < documentColumns.length - 1 ? '1px solid #e8ecf0' : 'none',
                                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                             },
-                            text: score.toFixed(1)
+                            text: rank
                         }))
                     })
-                    rankingsContainer.appendChild(scoreDetailsRow)
-                }
-            })
-            
-            wrapper.appendChild(rankingsContainer);
+                    rankingsContainer.appendChild(criteriaRankRow)
+                    
+                    // Score details row
+                    if (rankings.length > 0) {
+                        const scoreDetailsRow = $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                width: '100%',
+                                backgroundColor: '#f8f9fa',
+                                borderBottom: '1px solid #e8ecf0'
+                            }
+                        })
+
+                        scoreDetailsRow.appendChild($({
+                            tag: 'div',
+                            style: {
+                                width: `${criteriaColWidth}px`,
+                                padding: '6px 14px',
+                                fontSize: '11px',
+                                color: '#94a3b8',
+                                fontStyle: 'italic',
+                                flexShrink: 0,
+                                borderRight: '1px solid #e8ecf0',
+                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                            },
+                            text: 'Total Score'
+                        }))
+
+                        documentColumns.forEach((col, colIndex) => {
+                            const score = scoreMap[col] || 0
+                            scoreDetailsRow.appendChild($({
+                                tag: 'div',
+                                style: {
+                                    width: `${scoreColWidth}px`,
+                                    padding: '6px 6px',
+                                    textAlign: 'center',
+                                    fontSize: '11px',
+                                    color: '#94a3b8',
+                                    flexShrink: 0,
+                                    borderRight: colIndex < documentColumns.length - 1 ? '1px solid #e8ecf0' : 'none',
+                                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                                },
+                                text: score.toFixed(1)
+                            }))
+                        })
+                        rankingsContainer.appendChild(scoreDetailsRow)
+                    }
+                })
+                
+                wrapper.appendChild(rankingsContainer);
+            }
         }
 
-        wrapper.appendChild(createAverageRankSection(eventId, categoryId, documentColumns, data))
+        // Only add average rank section if we have documents
+        if (documentColumns.length > 0) {
+            wrapper.appendChild(createAverageRankSection(eventId, categoryId, documentColumns, data))
+        }
 
         contentDiv.appendChild(wrapper)
         return contentDiv

@@ -3807,7 +3807,6 @@ export const ResearchMain = () => {
                                     }
                                 });
 
-                                // Fetch categories/centers
                                 const req = new Request('/score_rank');
                                 req.Post([
                                     { name: 'scoreRank', value: '1' },
@@ -3816,13 +3815,14 @@ export const ResearchMain = () => {
                                 req.Json();
                                 req.Send().then(data => {
                                     if (data && data.items && data.items.length > 0) {
+                                        // Use categories from the response (not centers)
                                         data.items.forEach(val => {
                                             container.appendChild(LabelEvent(val.name, val.id));
                                         });
                                     } else {
                                         container.appendChild($({
                                             tag: 'div',
-                                            text: 'No categories/centers available',
+                                            text: 'No categories available',
                                             style: {
                                                 color: '#6c757d',
                                                 fontSize: '14px',
@@ -3883,7 +3883,7 @@ export const ResearchMain = () => {
                                         }),
                                         $({
                                             tag: 'h3',
-                                            text: 'Select a Category / Center',
+                                            text: 'Select a Category',
                                             style: {
                                                 fontSize: '22px',
                                                 fontWeight: '600',
@@ -3894,7 +3894,7 @@ export const ResearchMain = () => {
                                         }),
                                         $({
                                             tag: 'p',
-                                            text: 'Click on any category or center button above to view scores and rankings.',
+                                            text: 'Click on any category button above to view scores and rankings.',
                                             style: {
                                                 fontSize: '15px',
                                                 color: '#6c757d',
