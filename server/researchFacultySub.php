@@ -8,7 +8,6 @@ header('Content-Type: application/json; charset=utf-8');
 
 // Start output buffering with callback to catch errors
 ob_start(function ($buffer) {
-    // Check if the buffer contains HTML error messages
     if (
         strpos($buffer, '<b>Warning</b>') !== false ||
         strpos($buffer, '<b>Notice</b>') !== false ||
@@ -18,7 +17,6 @@ ob_start(function ($buffer) {
         // Log the error
         error_log("HTML error in output buffer: " . substr($buffer, 0, 500));
 
-        // Return a clean JSON error
         return json_encode([
             'status' => false,
             'message' => 'Server error occurred',
@@ -104,7 +102,7 @@ function uploadResearchToDrive($tempFilePath, $fileName, $eventName, $centerName
         }
 
         $fileSize = filesize($tempFilePath);
-        if ($fileSize > 10 * 1024 * 1024) {
+        if ($fileSize > 40 * 1024 * 1024) {
             throw new Exception("File too large: " . round($fileSize / 1024 / 1024, 2) . "MB");
         }
 
@@ -271,7 +269,7 @@ function uploadInHouseToDrive($tempFilePath, $fileName, $eventName, $centerName,
         }
 
         $fileSize = filesize($tempFilePath);
-        if ($fileSize > 10 * 1024 * 1024) {
+        if ($fileSize > 40 * 1024 * 1024) {
             throw new Exception("File too large: " . round($fileSize / 1024 / 1024, 2) . "MB");
         }
 
@@ -4112,7 +4110,7 @@ if (isset($_POST['editResearch'])) {
             if ($fileType !== 'application/pdf') {
                 throw new Exception("Research file must be a PDF");
             }
-            if (filesize($tempPath) > 10 * 1024 * 1024) {
+            if (filesize($tempPath) > 40 * 1024 * 1024) {
                 throw new Exception("Research file exceeds 10MB limit");
             }
 
@@ -4181,7 +4179,7 @@ if (isset($_POST['editResearch'])) {
             if ($fileType !== 'application/pdf') {
                 throw new Exception("Program file must be a PDF");
             }
-            if (filesize($tempPath) > 10 * 1024 * 1024) {
+            if (filesize($tempPath) > 40 * 1024 * 1024) {
                 throw new Exception("Program file exceeds 10MB limit");
             }
 
@@ -4243,8 +4241,8 @@ if (isset($_POST['editResearch'])) {
             if ($fileType !== 'application/pdf') {
                 throw new Exception("Certificate file must be a PDF");
             }
-            if (filesize($tempPath) > 10 * 1024 * 1024) {
-                throw new Exception("Certificate file exceeds 10MB limit");
+            if (filesize($tempPath) > 40 * 1024 * 1024) {
+                throw new Exception("Certificate file exceeds 40MB limit");
             }
 
             // Get old certificate file ID
@@ -4305,8 +4303,8 @@ if (isset($_POST['editResearch'])) {
             if ($fileType !== 'application/pdf') {
                 throw new Exception("Title certificate must be a PDF");
             }
-            if (filesize($tempPath) > 10 * 1024 * 1024) {
-                throw new Exception("Title certificate exceeds 10MB limit");
+            if (filesize($tempPath) > 40 * 1024 * 1024) {
+                throw new Exception("Title certificate exceeds 40MB limit");
             }
 
             // Get old title certificate file ID
@@ -4374,8 +4372,8 @@ if (isset($_POST['editResearch'])) {
             if ($fileType !== 'application/pdf') {
                 throw new Exception("Endorsement file must be a PDF");
             }
-            if (filesize($tempPath) > 10 * 1024 * 1024) {
-                throw new Exception("Endorsement file exceeds 10MB limit");
+            if (filesize($tempPath) > 40 * 1024 * 1024) {
+                throw new Exception("Endorsement file exceeds 40MB limit");
             }
 
             // Get current endorsement folder
@@ -6377,8 +6375,8 @@ if (isset($_POST['submitRevision'])) {
             exit();
         }
 
-        if ($fileSize > 10 * 1024 * 1024) { // 10MB limit
-            $response->message = "File size must not exceed 10MB.";
+        if ($fileSize > 40 * 1024 * 1024) { 
+            $response->message = "File size must not exceed 40MB.";
             echo json_encode($response);
             exit();
         }
@@ -7314,8 +7312,8 @@ if (isset($_POST['updatePoster'])) {
             throw new Exception("Only PDF files are allowed.");
         }
 
-        if ($file['size'] > 10 * 1024 * 1024) {
-            throw new Exception("File size exceeds 10MB limit.");
+        if ($file['size'] > 40 * 1024 * 1024) {
+            throw new Exception("File size exceeds 40MB limit.");
         }
 
         $con = new mysqli($host, $username, $pass, $dbName);

@@ -3420,7 +3420,8 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                             const researchers = item.researchers && Array.isArray(item.researchers)
                                                 ? item.researchers.join(', ')
                                                 : (item.researchers || '');
-
+                                            const titleFontSize = (item.title).length > 200 ? '17px' : '22px';
+                                            const titleMaxWidth = (item.title).length > 200 ? '95%' : '80%';
                                             content.innerHTML = \`
                                                 <div style="width: 80%; margin: 120px auto 0 auto; text-align: center;">
                                                     <div style="font-size: 42px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; text-shadow: 2px 2px 3px rgba(255,255,255,0.8);">
@@ -3429,7 +3430,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                     <div style="font-size: 16px; color: #333; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
                                                         PRESENTER
                                                     </div>
-                                                    <div style="font-size: 22px; font-weight: bold; color: #2c3e50; max-width: 80%; margin-left: auto; margin-right: auto; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+                                                    <div style="font-size: \${titleFontSize}; font-weight: bold; color: #2c3e50; max-width: \${titleMaxWidth}; margin-left: auto; margin-right: auto; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
                                                         \${item.title}
                                                     </div>
                                                     <div style="font-size: 18px; color: #333; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
@@ -3474,7 +3475,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
 
                     WinPrint.document.close();
                 };
-                
+                                
                 const printResearchSummary = (eventDetails, formData) => {
                     let loading = Waiting();
                     document.body.appendChild(loading);
