@@ -679,7 +679,8 @@ export const Content = (mainFrame, leftPDiv = null) => {
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'flex-end',
-                        padding: '20px'
+                        padding: '20px',
+                        flexShrink: 0
                     },
                     child: [
                         $({
@@ -699,7 +700,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                         }
                                         let WinPrint = window.open('', '_blank', 'toolbar=0,scrollbars=0,status=0');
                                         if (WinPrint) {
-                                            WinPrint.document.write('<html><head><title>Print Comments</title><link rel="stylesheet" media="print" href="/client/component/otherComponent/style/review.css"></head><body>')
+                                            WinPrint.document.write('<html><head><title>Print Comments</title><link rel="stylesheet" media="print" href="/client/component/otherComponent/style/comment.css"></head><body>')
                                             WinPrint.document.write(printPage.innerHTML);
                                             WinPrint.document.write('</body></html>');
                                             WinPrint.document.close();
@@ -733,17 +734,20 @@ export const Content = (mainFrame, leftPDiv = null) => {
                 style: {
                     flex: '1',
                     height: '100%',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    width: '100%',
                     overflowY: 'auto',
+                    overflowX: 'hidden',
                     userSelect: 'text',
                     padding: '20px',
-                    backgroundColor: '#f8f9fa'
+                    backgroundColor: '#e8e8e8',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '20px'
                 },
                 child: [
+                    // The Print component renders A4 pages directly
                     Print({
-                        title: title || 'Untitled',
+                        doc_title: doc_title || title || 'Untitled',
                         campus: campus || 'N/A',
                         author: author || 'Unknown',
                         category: category || 'Uncategorized',
@@ -773,7 +777,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                 },
                 elementHandler: (overlay) => {
                     getComment(overlay)
-               
+            
                     overlay.addEventListener('click', (e) => {
                         if (e.target === overlay) {
                             closeModal()
@@ -792,12 +796,12 @@ export const Content = (mainFrame, leftPDiv = null) => {
                     $({
                         tag: 'div',
                         style: {
-                            width: '90%',
-                            maxWidth: '1200px',
-                            height: '85vh',
+                            width: '95%',
+                            maxWidth: '1100px',
+                            height: '90vh',
                             backgroundColor: '#ffffff',
                             borderRadius: '16px',
-                            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
+                            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
                             display: 'flex',
                             overflow: 'hidden'
                         },
@@ -1003,6 +1007,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
 
     const tools = () => {
         let toolBox
+
         const printPane = () => {
             let filter = null
             let category = null
@@ -1293,11 +1298,9 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                         form.append('eventType', filter);
                                         
                                         // Use the category variable from getCategory
-                                        // This contains the value from the select element
                                         if (category && category !== 'Print All Category' && category !== '-- Select Category --') {
                                             form.append('categoryId', category);
                                             
-                                            // Also get the category name from the select element for display
                                             const categorySelect = document.querySelector('#printPanelCategorySelect');
                                             if (categorySelect) {
                                                 const selectedOption = categorySelect.options[categorySelect.selectedIndex];
@@ -1323,11 +1326,11 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                             print.innerHTML = '';
                                             
                                             if (data && data.length > 0) {
-                                                // Display each document with its comments
+                                                // Display each document with its comments using the Print component
                                                 data.forEach(doc => {
                                                     if (doc.comments && doc.comments.length > 0) {
                                                         print.appendChild(Print({
-                                                            title: doc.title,
+                                                            doc_title: doc.doc_title,
                                                             review: doc.comments,
                                                             category: doc.category,
                                                             campus: doc.campus,
@@ -1357,7 +1360,6 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                     font-weight: 500;
                                                 `;
                                                 
-                                                // Get category name for display
                                                 let categoryLabel = '';
                                                 if (category && category !== 'Print All Category' && category !== '-- Select Category --') {
                                                     const categorySelect = document.querySelector('#printPanelCategorySelect');
@@ -1407,6 +1409,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     }
                                 }
                             }),
+                            // ===== UPDATED PRINT BUTTON =====
                             $({
                                 tag: 'div',
                                 style: {
@@ -1459,100 +1462,117 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     method: () => {
                                         const nodes = print.childNodes;
                                         if (!nodes || nodes.length === 0) {
-                                            alert('No content to print. Please load data first.')
-                                            return
+                                            alert('No content to print. Please load data first.');
+                                            return;
                                         }
-                                        
-                                        let WinPrint = window.open('', '_blank', 'toolbar=0,scrollbars=0,status=0');
-                                        if (!WinPrint) {
-                                            alert('Popup blocked! Please allow popups for this site.')
-                                            return
-                                        }
-                                        
-                                        let htmlContent = `
-                                            <!DOCTYPE html>
-                                            <html>
-                                            <head>
-                                                <title>Print Comments</title>
-                                                <style>
-                                                    body {
-                                                        margin: 0;
-                                                        padding: 0;
-                                                        font-family: Arial, sans-serif;
-                                                        -webkit-print-color-adjust: exact !important;
-                                                        print-color-adjust: exact !important;
-                                                    }
-                                                    @page {
-                                                        margin: 0;
-                                                        size: letter;
-                                                    }
-                                                    .page-container {
-                                                        position: relative;
-                                                        width: 100%;
-                                                        height: 100vh;
-                                                        page-break-after: always;
-                                                        page-break-inside: avoid;
-                                                    }
-                                                    .page-container:last-child {
-                                                        page-break-after: auto;
-                                                    }
-                                                    .page-background {
-                                                        position: absolute;
-                                                        top: 0;
-                                                        left: 0;
-                                                        width: 100%;
-                                                        height: 100%;
-                                                        z-index: 0;
-                                                    }
-                                                    .page-background img {
-                                                        width: 100%;
-                                                        height: 100%;
-                                                        object-fit: fill;
-                                                        display: block;
-                                                    }
-                                                    .page-content {
-                                                        position: absolute;
-                                                        top: 95px;
-                                                        left: 0.75in;
-                                                        right: 0.75in;
-                                                        bottom: 93px;
-                                                        z-index: 1;
-                                                        overflow: visible;
-                                                    }
-                                                    * {
-                                                        box-sizing: border-box;
-                                                    }
-                                                </style>
-                                            </head>
-                                            <body>
-                                        `;
-                                        
-                                        for (let x = 0; x < nodes.length; x++) {
+
+                                        const printContainer = document.getElementById('commentPDF');
+                                        if (printContainer && printContainer.innerHTML) {
+                                            // Use the Print component's rendered content
+                                            let WinPrint = window.open('', '_blank', 'toolbar=0,scrollbars=0,status=0');
+                                            if (!WinPrint) {
+                                                alert('Popup blocked! Please allow popups for this site.');
+                                                return;
+                                            }
+
+                                            // Get the full rendered HTML from the Print component
+                                            const printHTML = printContainer.outerHTML || printContainer.innerHTML;
+
+                                            WinPrint.document.write(`
+                                                <!DOCTYPE html>
+                                                <html>
+                                                <head>
+                                                    <title>Print Comments</title>
+                                                    <link rel="stylesheet" href="/client/component/otherComponent/style/comment.css">
+                                                    <style>
+                                                        body {
+                                                            margin: 0;
+                                                            padding: 0;
+                                                            background: white;
+                                                            -webkit-print-color-adjust: exact !important;
+                                                            print-color-adjust: exact !important;
+                                                        }
+                                                        @page {
+                                                            margin: 0;
+                                                            size: A4 portrait;
+                                                        }
+                                                        * {
+                                                            box-sizing: border-box;
+                                                        }
+                                                        /* Ensure images print properly */
+                                                        img {
+                                                            -webkit-print-color-adjust: exact !important;
+                                                            print-color-adjust: exact !important;
+                                                        }
+                                                    </style>
+                                                </head>
+                                                <body>
+                                                    ${printContainer.outerHTML || printContainer.innerHTML}
+                                                </body>
+                                                </html>
+                                            `);
+
+                                            WinPrint.document.close();
+
+                                            WinPrint.onload = function() {
+                                                setTimeout(() => {
+                                                    WinPrint.focus();
+                                                    WinPrint.print();
+                                                    // Don't close immediately - let user close manually
+                                                }, 1000);
+                                            };
+                                        } else {
+                                            // Fallback: Use the raw nodes
+                                            let WinPrint = window.open('', '_blank', 'toolbar=0,scrollbars=0,status=0');
+                                            if (!WinPrint) {
+                                                alert('Popup blocked! Please allow popups for this site.');
+                                                return;
+                                            }
+
+                                            let htmlContent = `
+                                                <!DOCTYPE html>
+                                                <html>
+                                                <head>
+                                                    <title>Print Comments</title>
+                                                    <link rel="stylesheet" href="/client/component/otherComponent/style/comment.css">
+                                                    <style>
+                                                        body {
+                                                            margin: 0;
+                                                            padding: 0;
+                                                            font-family: Arial, sans-serif;
+                                                            -webkit-print-color-adjust: exact !important;
+                                                            print-color-adjust: exact !important;
+                                                        }
+                                                        @page {
+                                                            margin: 0;
+                                                            size: A4 portrait;
+                                                        }
+                                                        * {
+                                                            box-sizing: border-box;
+                                                        }
+                                                    </style>
+                                                </head>
+                                                <body>
+                                            `;
+
+                                            for (let x = 0; x < nodes.length; x++) {
+                                                htmlContent += nodes[x].outerHTML || nodes[x].innerHTML || '';
+                                            }
+
                                             htmlContent += `
-                                                <div class="page-container">
-                                                    <div class="page-background">
-                                                        <img src="/client/images/header.png" alt="Header and Footer">
-                                                    </div>
-                                                    <div class="page-content">
-                                                        ${nodes[x].innerHTML}
-                                                    </div>
-                                                </div>`;
+                                                </body>
+                                                </html>`;
+
+                                            WinPrint.document.write(htmlContent);
+                                            WinPrint.document.close();
+
+                                            WinPrint.onload = function() {
+                                                setTimeout(() => {
+                                                    WinPrint.focus();
+                                                    WinPrint.print();
+                                                }, 1000);
+                                            };
                                         }
-                                        
-                                        htmlContent += `
-                                            </body>
-                                            </html>`;
-                                        
-                                        WinPrint.document.write(htmlContent);
-                                        WinPrint.document.close();
-                                        
-                                        WinPrint.onload = function() {
-                                            setTimeout(() => {
-                                                WinPrint.focus();
-                                                WinPrint.print();
-                                                WinPrint.close();
-                                            }, 1000);
-                                        };
                                     }
                                 }
                             }),

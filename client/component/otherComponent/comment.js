@@ -1,6 +1,6 @@
 import { $ } from '../../lib/lib.js'
 
-export const Print = ({ doc_title, review, category, campus, center, date, author, coauthor, presenter, paper_trail_no, all, getHandler }) => {
+export const Print = ({ doc_title, review, category, campus, center, date, author, coauthor, presenter, paper_trail_no, total_word_count, all, getHandler }) => {
     const details = () => {
         const tdData = ({ data, width }) => {
             const getme = (el) => {
@@ -195,12 +195,49 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
         return pageWrapper
     }
 
-    // Helper function to count words in HTML content
-    const countWords = (html) => {
-        const temp = document.createElement('div')
-        temp.innerHTML = html
-        const text = temp.textContent || temp.innerText || ''
-        return text.trim().split(/\s+/).length
+    // Helper function to check if text already has bullet formatting
+    const hasBulletFormatting = (text) => {
+        if (!text) return false
+        const lines = text.split('\n').filter(line => line.trim() !== '')
+        if (lines.length === 0) return false
+        
+        // Check if at least one line starts with a bullet or number
+        const bulletPattern = /^[\s]*[•\-*]\s/
+        const numberPattern = /^[\s]*\d+[\.\)]\s/
+        
+        return lines.some(line => bulletPattern.test(line) || numberPattern.test(line))
+    }
+
+    // Helper function to format comment text - preserves existing bullets
+    const formatComment = (text) => {
+        if (!text) return ''
+        
+        // Clean the text - normalize line breaks and remove excessive spaces
+        let cleanText = text
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim()
+        
+        // If text already has bullet formatting, preserve it
+        if (hasBulletFormatting(cleanText)) {
+            return cleanText
+        }
+        
+        // Split by new lines and convert to bullet points
+        const lines = cleanText.split('\n').filter(line => line.trim() !== '')
+        
+        if (lines.length <= 1) {
+            // Single line - return as is
+            return cleanText
+        }
+        
+        // Convert to bullet list
+        return lines.map(line => {
+            // Remove any existing bullet markers
+            let cleanLine = line.replace(/^[\s]*[•\-*]\s*/, '').replace(/^[\s]*\d+[\.\)]\s*/, '').trim()
+            return '• ' + cleanLine
+        }).join('\n')
     }
 
     const getCont = (el) => {
@@ -283,11 +320,14 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
                         const comments = extractComments(val)
                         if (comments.length > 0) {
                             comments.forEach(comment => {
-                                const cleanValue = comment.value.toString().replace(/\n/g, '<br>')
+                                // Format the comment - preserves existing bullets if present
+                                const formattedValue = formatComment(comment.value)
+                                const cleanValue = formattedValue.replace(/\n/g, '<br>')
+                                
                                 commentHTML += `
                                     <div style="margin-bottom: 2mm;">
                                         <div style="font-weight: bold; font-size: 10pt; color: #37474f; margin-bottom: 0.5mm;">${comment.label}:</div>
-                                        <div style="font-size: 10pt; line-height: 1.5; color: #263238; padding: 1mm 3mm; word-break: break-word; white-space: pre-wrap;">
+                                        <div style="font-size: 10pt; line-height: 1.6; color: #263238; padding-left: 3mm; word-break: break-word; text-align: left;">
                                             ${cleanValue}
                                         </div>
                                     </div>
@@ -319,11 +359,13 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
                 const comments = extractComments(review)
                 if (comments.length > 0) {
                     comments.forEach(comment => {
-                        const cleanValue = comment.value.toString().replace(/\n/g, '<br>')
+                        const formattedValue = formatComment(comment.value)
+                        const cleanValue = formattedValue.replace(/\n/g, '<br>')
+                        
                         commentHTML += `
                             <div style="margin-bottom: 2mm;">
                                 <div style="font-weight: bold; font-size: 10pt; color: #37474f; margin-bottom: 0.5mm;">${comment.label}:</div>
-                                <div style="font-size: 10pt; line-height: 1.5; color: #263238; padding: 1mm 3mm; word-break: break-word; white-space: pre-wrap;">
+                                <div style="font-size: 10pt; line-height: 1.6; color: #263238; padding-left: 3mm; word-break: break-word; text-align: left;">
                                     ${cleanValue}
                                 </div>
                             </div>
@@ -365,7 +407,35 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
         // Combine: Details only ONCE, then comments
         const fullContent = detailsWithHr + commentsHTML
 
-        // Page break logic with footer protection
+        // ===== USE TOTAL_WORD_COUNT FROM API =====
+        let totalWords = total_word_count || 0
+        
+        if (totalWords === 0) {
+            const tempDiv = document.createElement('div')
+            tempDiv.innerHTML = fullContent
+            const text = tempDiv.textContent || tempDiv.innerText || ''
+            totalWords = text.trim().split(/\s+/).length
+        }
+        
+        // ===== DYNAMIC maxHeightPx based on total words =====
+        let maxHeightPx
+        let minPageHeightPx = 500
+        
+        if (totalWords <= 500) {
+            maxHeightPx = 950
+            minPageHeightPx = 600
+        } else if (totalWords <= 700) {
+            maxHeightPx = 900
+            minPageHeightPx = 550
+        } else if (totalWords <= 1000) {
+            maxHeightPx = 850
+            minPageHeightPx = 500
+        } else {
+            maxHeightPx = 800
+            minPageHeightPx = 450
+        }
+
+        // ===== Page break logic =====
         const tempDiv = document.createElement('div')
         tempDiv.style.cssText = `
             position: absolute;
@@ -382,19 +452,9 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
         document.body.appendChild(tempDiv)
 
         const children = Array.from(tempDiv.childNodes)
-        
-        // ===== FIXED: Footer protection =====
-        // A4 = 297mm = ~1122px at 96dpi
-        // Header = 144px, Footer = 144px
-        // Footer protection zone = 144px (reserve space for footer)
-        // Available content height = 1122 - 144 (header) - 144 (footer) - 60 (padding) = 774px
-        // But we want to break BEFORE content hits the footer zone
-        const maxHeightPx = 850  // Reduced to ensure content doesn't hit footer
-        const minPageHeightPx = 400
         const pages = []
         let currentPageContent = ''
         let currentHeightPx = 0
-        let currentWordCount = 0
 
         for (let child of children) {
             const clone = child.cloneNode(true)
@@ -415,45 +475,25 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
             document.body.appendChild(measureDiv)
             
             const elementHeightPx = measureDiv.offsetHeight || 50
-            const elementHTML = child.outerHTML || child.textContent || ''
-            const wordCount = countWords(elementHTML)
             document.body.removeChild(measureDiv)
             
-            // Check if adding this element would exceed max height OR exceed word limit (500 words per page)
-            const wouldExceed = currentHeightPx + elementHeightPx > maxHeightPx
-            const wouldExceedWords = currentWordCount + wordCount > 500
-            
-            // If element is too tall or exceeds word limit
-            if ((elementHeightPx > maxHeightPx || wordCount > 500) && currentPageContent) {
-                pages.push(currentPageContent)
-                currentPageContent = child.outerHTML || child.textContent || ''
-                currentHeightPx = elementHeightPx
-                currentWordCount = wordCount
-            } 
-            else if ((wouldExceed || wouldExceedWords) && currentPageContent) {
-                // Check if current content is substantial enough for its own page
-                if (currentHeightPx >= minPageHeightPx && currentWordCount >= 100) {
-                    // Current page has enough content - push it
+            if (currentHeightPx + elementHeightPx > maxHeightPx && currentPageContent) {
+                if (currentHeightPx >= minPageHeightPx) {
                     pages.push(currentPageContent)
                     currentPageContent = child.outerHTML || child.textContent || ''
                     currentHeightPx = elementHeightPx
-                    currentWordCount = wordCount
                 } else {
-                    // Current page doesn't have enough content - keep adding to it
                     currentPageContent += child.outerHTML || child.textContent || ''
                     currentHeightPx += elementHeightPx
-                    currentWordCount += wordCount
                 }
             } else {
                 currentPageContent += child.outerHTML || child.textContent || ''
                 currentHeightPx += elementHeightPx
-                currentWordCount += wordCount
             }
         }
 
         if (currentPageContent) {
-            // Check if the last page has very little content or words
-            if ((currentHeightPx < minPageHeightPx || currentWordCount < 100) && pages.length > 0) {
+            if (currentHeightPx < minPageHeightPx && pages.length > 0) {
                 const lastPageIndex = pages.length - 1;
                 pages[lastPageIndex] = pages[lastPageIndex] + currentPageContent;
             } else {
@@ -467,7 +507,6 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
             pages.push(fullContent)
         }
 
-        // Render each page as a separate A4 card
         pages.forEach((pageContent, index) => {
             const pageElement = createFullPage(pageContent, index + 1, pages.length)
             el.appendChild(pageElement)
@@ -486,7 +525,6 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
         att: {
             id: 'commentPDF'
         },
-        externalStyle: '/client/component/otherComponent/style/comment.css',
         elementHandler: getCont
     })
 }

@@ -1,66 +1,7 @@
-/* Comment.css - For A4 Paper Printing with Header/Footer */
-
-/* A4 Paper Dimensions: 210mm × 297mm (8.27in × 11.69in) */
-/*header.png is 2480px × 3508px which matches A4 at 300 DPI */
-
-.empty-header, .empty-footer {
-    height: 100px;
-    width: 100%;
-}
-
-.header, .footer {
-    position: fixed;
-    height: 100%;
-    width: 100%;
-    pointer-events: none;
-    z-index: 1;
-}
-
-.header {
-    top: 0;
-    left: 0;
-    background-image: url("/client/images/header.png");
-    background-size: 100% 100%;
-    background-position: center;
-    background-repeat: no-repeat;
-}
-
-.footer {
-    bottom: 0;
-    left: 0;
-    background-image: url("/client/images/header.png");
-    background-size: 100% 100%;
-    background-position: center;
-    background-repeat: no-repeat;
-    transform: rotate(180deg); /* Rotate for footer if using same image */
-}
-
-.printContainer {
-    width: 210mm; /* A4 width */
-    min-height: 297mm; /* A4 height */
-    margin: 0 auto;
-    position: relative;
-    z-index: 2;
-}
-
-.contentPrinter {
-    padding: 20mm 15mm 20mm 15mm; /* Top, Right, Bottom, Left */
-    margin-top: 30mm; /* Space for header */
-    margin-bottom: 30mm; /* Space for footer */
-    background: transparent;
-    position: relative;
-    z-index: 3;
-}
-
-.commentStyle {
-    width: 8.5in;
-    height: 1in;
-}
-
-.commentStyle img {
-    height: 100%;
-    width: 100%;
-    object-fit: contain;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 /* Print-specific styles */
@@ -70,103 +11,134 @@
 }
 
 @media print {
-    body, html {
+    html, body {
         margin: 0;
         padding: 0;
-        width: 210mm;
-        height: 297mm;
+        width: 100%;
+        min-height: 100vh;
+        background: white;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 
     body * {
         visibility: hidden;
     }
 
-    .printContainer, 
-    .printContainer *,
-    .contentPrinter,
-    .contentPrinter * {
-        visibility: visible;
+    /* Show only print content */
+    #commentPDF,
+    #commentPDF * {
+        visibility: visible !important;
     }
 
-    .printContainer {
+    #commentPDF {
         position: absolute;
         top: 0;
         left: 0;
-        width: 100% !important;
-        height: 100% !important;
+        width: 210mm !important;
+        min-height: 297mm !important;
         margin: 0 !important;
         padding: 0 !important;
-    }
-
-    .header, .footer {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
+        border: none !important;
+        overflow: visible !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
-        accent-color: exact !important;
+        background: white !important;
     }
 
-    .contentPrinter {
-        position: relative;
-        margin-top: 40mm !important; /* Adjust based on your header.png design */
-        margin-bottom: 40mm !important; /* Adjust based on your header.png design */
-        min-height: calc(297mm - 80mm); /* Full height minus header/footer */
+    /* Each page wrapper */
+    #commentPDF > div {
+        page-break-after: always;
         page-break-inside: avoid;
+        position: relative !important;
+        width: 210mm !important;
+        min-height: 297mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
     }
 
-    /* Page breaks for comments */
-    .comment-section {
-        page-break-inside: avoid;
+    #commentPDF > div:last-child {
+        page-break-after: auto;
     }
 
-    .page-break {
-        page-break-before: always;
-    }
-
-    /* Ensure proper scaling */
-    img {
+    /* Header images */
+    #commentPDF img {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
         max-width: 100% !important;
-        height: auto !important;
+        display: block !important;
+        visibility: visible !important;
     }
 
-    /* Remove any borders for print */
-    * {
-        border-color: #000 !important;
-        color: #000 !important;
-        background-color: transparent !important;
+    /* Force header and footer images to print */
+    #commentPDF > div > div:first-child img,
+    #commentPDF > div > div:last-child img {
+        visibility: visible !important;
+        display: block !important;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
     }
-    
-    /* Print optimization */
-    a {
-        color: #000 !important;
-        text-decoration: none !important;
+
+    /* Content area */
+    #commentPDF > div > div:nth-child(2) {
+        padding: 4mm 12mm 6mm 12mm !important;
+        min-height: 230mm !important;
+        background: white !important;
+        overflow: visible !important;
+    }
+
+    /* Tables and content */
+    .print-table, 
+    #commentPDF table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+
+    #commentPDF table td {
+        padding: 1.5mm 2mm !important;
+        border-bottom: 1px solid #ddd !important;
+        font-size: 10pt !important;
     }
 }
 
-/* Non-print styles for screen display */
+/* Screen display styles */
 @media screen {
-    .printContainer {
-        background: white;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    #commentPDF {
         margin: 20px auto;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+        border-radius: 4px;
+        max-width: 210mm;
+        min-height: 297mm;
+        background: white;
+        transform: scale(0.9);
+        transform-origin: top center;
     }
     
-    .contentPrinter {
-        background: white;
+    @media (max-width: 800px) {
+        #commentPDF {
+            transform: scale(0.65);
+            transform-origin: top center;
+        }
+    }
+    
+    @media (max-width: 600px) {
+        #commentPDF {
+            transform: scale(0.45);
+            transform-origin: top center;
+        }
     }
 }
 
-/* Utility classes for print layout */
+/* Utility classes */
 .print-only {
     display: none;
 }
 
 @media print {
     .print-only {
-        display: block;
+        display: block !important;
     }
     
     .no-print {
@@ -174,7 +146,7 @@
     }
 }
 
-/* Content styling for comments */
+/* Content styling */
 .comment-content {
     font-family: 'Arial', 'Helvetica', sans-serif;
     font-size: 11pt;
@@ -182,70 +154,23 @@
     color: #000;
 }
 
-.comment-title {
-    font-size: 14pt;
-    font-weight: bold;
-    margin-bottom: 5mm;
-    text-align: center;
-}
-
 .comment-section {
-    margin-bottom: 8mm;
+    margin-bottom: 5mm;
     page-break-inside: avoid;
 }
 
 .comment-section h3 {
-    font-size: 12pt;
+    font-size: 11pt;
     font-weight: bold;
-    margin-bottom: 3mm;
+    margin-bottom: 2mm;
     color: #2c3e50;
     border-bottom: 1px solid #ddd;
     padding-bottom: 1mm;
 }
 
 .comment-text {
-    font-size: 11pt;
-    line-height: 1;
+    font-size: 10pt;
+    line-height: 1.4;
     white-space: pre-wrap;
     word-wrap: break-word;
-}
-
-/* Table styling for print */
-.print-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 5mm 0;
-}
-
-.print-table td {
-    padding: 2mm;
-    border: 1px solid #ddd;
-    vertical-align: top;
-}
-
-.print-table th {
-    background-color: #f5f5f5;
-    font-weight: bold;
-    padding: 3mm 2mm;
-    border: 1px solid #ddd;
-}
-
-/* Signature area for print */
-.signature-area {
-    margin-top: 20mm;
-    padding-top: 10mm;
-    border-top: 1px solid #000;
-}
-
-.signature-line {
-    width: 50%;
-    border-bottom: 1px solid #000;
-    margin: 15mm auto 2mm auto;
-    text-align: center;
-}
-
-.signature-label {
-    text-align: center;
-    font-size: 10pt;
-    font-style: italic;
 }

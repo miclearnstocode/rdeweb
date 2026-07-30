@@ -51,6 +51,7 @@ if(isset($_POST['commentRequest'])){
         $query = "SELECT 
             c.resid,
             c.evalid,
+            c.title,
             c.intro,
             c.abstract,
             c.objective,
@@ -104,10 +105,16 @@ if(isset($_POST['commentRequest'])){
             while ($val = $result->fetch_assoc()) {
                 $resid = $val['resid'];
                 
+                // ===== FIX: Proper title selection =====
+                // If final_symposium_title has a value, use it; otherwise use title
+                $docTitle = !empty($val['final_symposium_title']) 
+                    ? $val['final_symposium_title'] 
+                    : $val['title'];
+                
                 if (!isset($groupedComments[$resid])) {
                     $groupedComments[$resid] = [
                         'resid' => $val['resid'],
-                        'title' => $val['final_symposium_title'] ?? $val['title'] ?? 'Untitled',
+                        'doc_title' => $docTitle,
                         'category' => $val['category_name'] ?? $val['category'] ?? '',
                         'category_id' => $val['category_id'] ?? '',
                         'center' => $val['center'] ?? '',
@@ -119,12 +126,14 @@ if(isset($_POST['commentRequest'])){
                         'file' => $val['file'] ?? '',
                         'drive_view_url' => $val['drive_view_url'] ?? '',
                         'paper_trail_no' => $val['paper_trail_no'] ?? '',
-                        'comments' => []
+                        'comments' => [],
+                        'total_word_count' => 0 // Initialize total word count
                     ];
                 }
                 
                 // Add comment if it exists
                 $comment = [];
+                if (!empty($val['title'])) $comment['title'] = $val['title'];
                 if (!empty($val['intro'])) $comment['intro'] = $val['intro'];
                 if (!empty($val['abstract'])) $comment['abstract'] = $val['abstract'];
                 if (!empty($val['objective'])) $comment['objective'] = $val['objective'];
@@ -141,6 +150,48 @@ if(isset($_POST['commentRequest'])){
                 }
             }
             
+            // Calculate total word count for each document
+            foreach ($groupedComments as $resid => &$docData) {
+                $totalWords = 0;
+                foreach ($docData['comments'] as $comment) {
+                    // Combine all comment fields into one string
+                    $commentText = '';
+                    $fields = ['title', 'intro', 'abstract', 'objective', 'methodology', 'results', 'recommendation', 'literature', 'other'];
+                    foreach ($fields as $field) {
+                        if (!empty($comment[$field])) {
+                            // Strip HTML tags before counting words
+                            $cleanText = strip_tags($comment[$field]);
+                            $commentText .= ' ' . $cleanText;
+                        }
+                    }
+                    // Add evaluator name to word count
+                    if (!empty($comment['evaluator_name'])) {
+                        $commentText .= ' ' . strip_tags($comment['evaluator_name']);
+                    }
+                    // Count words
+                    $totalWords += str_word_count($commentText);
+                }
+                // Add document title words
+                if (!empty($docData['doc_title'])) {
+                    $totalWords += str_word_count(strip_tags($docData['doc_title']));
+                }
+                // Add author words
+                if (!empty($docData['author'])) {
+                    $totalWords += str_word_count(strip_tags($docData['author']));
+                }
+                // Add campus words
+                if (!empty($docData['campus'])) {
+                    $totalWords += str_word_count(strip_tags($docData['campus']));
+                }
+                // Add category words
+                if (!empty($docData['category'])) {
+                    $totalWords += str_word_count(strip_tags($docData['category']));
+                }
+                
+                $docData['total_word_count'] = $totalWords;
+            }
+            unset($docData); // Break reference
+            
             // Convert to array and filter out documents with no comments
             $response = array_values(array_filter($groupedComments, function($doc) {
                 return !empty($doc['comments']);
@@ -156,6 +207,7 @@ if(isset($_POST['commentRequest'])){
     echo json_encode($response);
     exit();
 }
+
 
 if(isset($_POST['reqCommentIndiv2'])){
     $response = new stdClass();
