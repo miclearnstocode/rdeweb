@@ -411,11 +411,26 @@ export const Summary = (eventIdParam, categoryIdParam) => {
         
         const totalTableWidth = criteriaColWidth + (scoreColWidth * documentCount) + 40;
 
+        // Helper function to get zero-score document IDs for an evaluator
+        const getZeroScoreDocuments = (evaluatorSheet) => {
+            const zeroScoreDocs = [];
+            const documents = Object.values(evaluatorSheet.documents || {});
+            documents.forEach(doc => {
+                if (doc.total_score === 0 || doc.total_score === 0.0) {
+                    zeroScoreDocs.push(doc.id);
+                }
+            });
+            return zeroScoreDocs;
+        };
+
         // EVALUATOR SHEETS
         data.evaluators.forEach((evaluatorSheet, evalIndex) => {
             const evaluator = evaluatorSheet.evaluator
             const headerColors = ['#e3f2fd', '#e8f5e9', '#fff3e0', '#fce4ec', '#f3e5f5']
             const headerColor = headerColors[evalIndex % headerColors.length]
+            
+            // Get zero-score documents for this evaluator
+            const zeroScoreDocIds = getZeroScoreDocuments(evaluatorSheet);
             
             // Evaluator Header
             wrapper.appendChild($({
@@ -584,6 +599,7 @@ export const Summary = (eventIdParam, categoryIdParam) => {
             }))
 
             documents.forEach((doc, docIndex) => {
+                const isZeroScore = zeroScoreDocIds.includes(doc.id);
                 titleRow.appendChild($({
                     tag: 'div',
                     style: {
@@ -591,13 +607,15 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                         padding: '8px 6px',
                         textAlign: 'center',
                         fontSize: scoreColWidth > 110 ? '11px' : '10px',
-                        color: '#1976D2',
-                        fontWeight: '500',
+                        color: isZeroScore ? '#721c24' : '#1976D2',
+                        fontWeight: isZeroScore ? '700' : '500',
                         flexShrink: 0,
                         borderRight: docIndex < documents.length - 1 ? '1px solid #e8ecf0' : 'none',
                         wordWrap: 'break-word',
                         lineHeight: '1.3',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                        backgroundColor: isZeroScore ? '#f8d7da' : 'transparent',
+                        borderRadius: isZeroScore ? '4px' : '0'
                     },
                     att: { title: doc.title },
                     text: doc.title 
@@ -643,6 +661,7 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                     
                     documents.forEach((doc, docIndex) => {
                         const score = scores[doc.column] !== undefined ? scores[doc.column] : 0
+                        const isZeroScore = zeroScoreDocIds.includes(doc.id);
                         
                         scoreRow.appendChild($({
                             tag: 'div',
@@ -651,10 +670,13 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                                 padding: '8px 6px',
                                 textAlign: 'center',
                                 fontSize: '14px',
-                                color: '#1a2a3a',
+                                color: isZeroScore ? '#721c24' : '#1a2a3a',
                                 flexShrink: 0,
                                 borderRight: docIndex < documents.length - 1 ? '1px solid #f0f2f5' : 'none',
-                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                                backgroundColor: isZeroScore ? '#f8d7da' : 'transparent',
+                                borderRadius: isZeroScore ? '4px' : '0',
+                                fontWeight: isZeroScore ? '700' : '400'
                             },
                             text: score > 0 
                                 ? (Number.isInteger(score) ? score : score.toFixed(1)) 
@@ -694,6 +716,9 @@ export const Summary = (eventIdParam, categoryIdParam) => {
             }))
 
             documents.forEach((doc, docIndex) => {
+                const isZeroScore = zeroScoreDocIds.includes(doc.id);
+                const totalScore = doc.total_score || 0;
+                
                 totalRow.appendChild($({
                     tag: 'div',
                     style: {
@@ -702,12 +727,14 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                         textAlign: 'center',
                         fontSize: '15px',
                         fontWeight: '700',
-                        color: '#1976D2',
+                        color: isZeroScore ? '#721c24' : '#1976D2',
                         flexShrink: 0,
                         borderRight: docIndex < documents.length - 1 ? '1px solid #e8ecf0' : 'none',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                        backgroundColor: isZeroScore ? '#f8d7da' : 'transparent',
+                        borderRadius: isZeroScore ? '4px' : '0'
                     },
-                    text: (doc.total_score || 0).toFixed(1)
+                    text: totalScore.toFixed(1)
                 }))
             })
             tableInner.appendChild(totalRow)
@@ -743,6 +770,7 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                 documents.forEach((doc, docIndex) => {
                     const rankValue = evaluatorSheet.rank_row[doc.column] || ''
                     const isTop = rankValue === 1 || rankValue === 2 || rankValue === 3
+                    const isZeroScore = zeroScoreDocIds.includes(doc.id);
                     const colors = { 1: '#f1c40f', 2: '#bdc3c7', 3: '#cd7f32' }
                     
                     rankRow.appendChild($({
@@ -753,9 +781,9 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                             textAlign: 'center',
                             fontSize: '16px',
                             fontWeight: '700',
-                            color: isTop ? '#1a2a3a' : '#64748b',
-                            backgroundColor: isTop ? (colors[rankValue] || 'transparent') : 'transparent',
-                            borderRadius: isTop ? '4px' : '0',
+                            color: isZeroScore ? '#721c24' : (isTop ? '#1a2a3a' : '#64748b'),
+                            backgroundColor: isZeroScore ? '#f8d7da' : (isTop ? (colors[rankValue] || 'transparent') : 'transparent'),
+                            borderRadius: (isZeroScore || isTop) ? '4px' : '0',
                             flexShrink: 0,
                             borderRight: docIndex < documents.length - 1 ? '1px solid #e8ecf0' : 'none',
                             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
@@ -801,6 +829,7 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                     documents.forEach((doc, docIndex) => {
                         const finalRank = finalRankRowData[doc.column] || '';
                         const isTop = finalRank === 1 || finalRank === 2 || finalRank === 3;
+                        const isZeroScore = zeroScoreDocIds.includes(doc.id);
                         const colors = { 1: '#f1c40f', 2: '#bdc3c7', 3: '#cd7f32' };
                         
                         finalRankRow.appendChild($({
@@ -811,9 +840,9 @@ export const Summary = (eventIdParam, categoryIdParam) => {
                                 textAlign: 'center',
                                 fontSize: '16px',
                                 fontWeight: '700',
-                                color: isTop ? '#1a2a3a' : '#4a235a',
-                                backgroundColor: isTop ? (colors[finalRank] || '#f3e5f5') : 'transparent',
-                                borderRadius: isTop ? '4px' : '0',
+                                color: isZeroScore ? '#721c24' : (isTop ? '#1a2a3a' : '#4a235a'),
+                                backgroundColor: isZeroScore ? '#f8d7da' : (isTop ? (colors[finalRank] || '#f3e5f5') : 'transparent'),
+                                borderRadius: (isZeroScore || isTop) ? '4px' : '0',
                                 flexShrink: 0,
                                 borderRight: docIndex < documents.length - 1 ? '1px solid #e8ecf0' : 'none',
                                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
@@ -1013,6 +1042,17 @@ export const Summary = (eventIdParam, categoryIdParam) => {
         contentDiv.appendChild(wrapper)
         return contentDiv
     }
+
+    const getZeroScoreDocuments = (evaluatorSheet) => {
+        const zeroScoreDocs = [];
+        const documents = Object.values(evaluatorSheet.documents || {});
+        documents.forEach(doc => {
+            if (doc.total_score === 0 || doc.total_score === 0.0) {
+                zeroScoreDocs.push(doc.id);
+            }
+        });
+        return zeroScoreDocs;
+    };
 
     const createAverageRankSection = (eventId, categoryId, documentColumns, summaryData) => {
         const container = $({
