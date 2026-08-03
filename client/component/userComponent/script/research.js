@@ -799,9 +799,6 @@ export const Research = () => {
                 // Check if it's empty or null - treat as pending
                 let isPending = statusText.includes('pending') || statusText === '' || statusText === '—' || statusText === 'pending proposal'
 
-                // For debugging - log what we're seeing
-                console.log('Status text:', statusText, 'isPending:', isPending)
-
                 if (status === 'all') {
                     row.style.display = ''
                 } else if (status === 'pending') {
@@ -1195,12 +1192,478 @@ export const Research = () => {
 
         return container;
     }
-    // View Comments Modal with Print functionality
+
+    // View Comments
     const viewComments = (doc) => {
         let commentsBody
         let commentsData = []
         let modalInstance = null
         let isRejected = false
+        let printContainerRef = null
+        let footerContainerRef = null
+
+        // Helper to strip HTML tags and clean text
+        const cleanText = (html) => {
+            if (!html) return '';
+            let text = html.replace(/<[^>]*>/g, '');
+            text = text.replace(/&nbsp;/g, ' ');
+            text = text.replace(/&amp;/g, '&');
+            text = text.replace(/&lt;/g, '<');
+            text = text.replace(/&gt;/g, '>');
+            text = text.replace(/&quot;/g, '"');
+            text = text.replace(/&#39;/g, "'");
+            text = text.replace(/\s+/g, ' ').trim();
+            return text;
+        };
+
+        // Print from the rendered canvas - captures ONLY the A4 pages
+        const printCommentsFromCanvas = () => {
+            // Get ALL .comment-page elements from the canvas
+            const allPages = document.querySelectorAll('.comment-page');
+            
+            if (allPages.length === 0) {
+                AlertModal({
+                    title: 'No Pages',
+                    message: 'No pages to print.'
+                });
+                return;
+            }
+
+            console.log('Total pages found:', allPages.length);
+
+            // Build HTML with ONLY the pages (no UI elements)
+            let pagesHTML = '';
+            allPages.forEach((page, index) => {
+                const clone = page.cloneNode(true);
+                const pageNum = clone.querySelector('.page-number');
+                if (pageNum) {
+                    pageNum.textContent = `Page ${index + 1} of ${allPages.length}`;
+                }
+                pagesHTML += clone.outerHTML;
+            });
+
+            // Create print window - clean with no UI
+            const printWindow = window.open('', '_blank', 'width=900,height=700,toolbar=0,scrollbars=1,status=0');
+            if (!printWindow) {
+                AlertModal({
+                    title: 'Popup Blocked',
+                    message: 'Please allow popups to print comments.'
+                });
+                return;
+            }
+
+            const totalPages = allPages.length;
+            const docTitle = doc.title || doc.doc_title || 'Document';
+
+            // Write ONLY the pages to the print window - no UI elements
+            printWindow.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Review Comments - ' + docTitle + '</title>');
+            printWindow.document.write(`
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    
+                    html, body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: white !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                        width: 100% !important;
+                        height: 100% !important;
+                    }
+
+                    @page {
+                        margin: 0;
+                        size: A4 portrait;
+                    }
+
+                    @media print {
+                        html, body {
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            background: white !important;
+                            -webkit-print-color-adjust: exact !important;
+                            print-color-adjust: exact !important;
+                        }
+
+                        .comment-page {
+                            page-break-after: always !important;
+                            page-break-inside: avoid !important;
+                            box-shadow: none !important;
+                            border-radius: 0 !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                            width: 100% !important;
+                            height: 29.7cm !important;
+                            overflow: hidden !important;
+                            position: relative !important;
+                            background: white !important;
+                            display: flex !important;
+                            flex-direction: column !important;
+                        }
+
+                        .comment-page:last-child {
+                            page-break-after: auto !important;
+                        }
+
+                        .page-background {
+                            position: absolute !important;
+                            top: 0 !important;
+                            left: 0 !important;
+                            right: 0 !important;
+                            bottom: 0 !important;
+                            z-index: 1 !important;
+                            pointer-events: none !important;
+                            overflow: hidden !important;
+                        }
+
+                        .page-background img {
+                            width: 100% !important;
+                            height: 100% !important;
+                            object-fit: cover !important;
+                            object-position: center center !important;
+                            display: block !important;
+                        }
+
+                        .page-content {
+                            position: relative !important;
+                            z-index: 2 !important;
+                            padding: 4cm 1.5cm 4cm 1.5cm !important;
+                            width: 100% !important;
+                            min-height: 29.7cm !important;
+                            box-sizing: border-box !important;
+                            background: transparent !important;
+                            text-align: justify !important;
+                        }
+
+                        .page-number {
+                            position: absolute !important;
+                            bottom: 4cm !important;
+                            right: 1.5cm !important;
+                            font-size: 10pt !important;
+                            color: #666 !important;
+                            z-index: 3 !important;
+                            font-weight: normal !important;
+                        }
+
+                        .content-inner {
+                            height: 100% !important;
+                            overflow: hidden !important;
+                        }
+
+                        table {
+                            width: 100% !important;
+                            border-collapse: collapse !important;
+                            font-size: 10pt !important;
+                            font-family: Arial, sans-serif !important;
+                        }
+                        td {
+                            padding: 2mm 3mm !important;
+                            border-bottom: 1px solid #e0e0e0 !important;
+                            font-size: 10pt !important;
+                            font-family: Arial, sans-serif !important;
+                        }
+                        hr {
+                            border: none !important;
+                            border-top: 1.5px solid #c0c0c0 !important;
+                            margin: 4mm 0 6mm 0 !important;
+                        }
+                        .evaluator-block {
+                            margin-bottom: 5mm !important;
+                            page-break-inside: avoid !important;
+                        }
+                        .evaluator-name {
+                            font-size: 12pt !important;
+                            font-weight: bold !important;
+                            color: #1a237e !important;
+                            margin-bottom: 2mm !important;
+                            border-bottom: 2px solid #1a237e !important;
+                            padding-bottom: 1mm !important;
+                        }
+                        .comment-block {
+                            margin-bottom: 2mm !important;
+                        }
+                        .comment-label {
+                            font-weight: bold !important;
+                            font-size: 10pt !important;
+                            color: #37474f !important;
+                            margin-bottom: 0.5mm !important;
+                        }
+                        .comment-text {
+                            font-size: 10pt !important;
+                            line-height: 1.6 !important;
+                            color: #263238 !important;
+                            padding-left: 3mm !important;
+                            word-break: break-word !important;
+                            text-align: left !important;
+                        }
+                        .no-comments {
+                            padding: 2mm 3mm !important;
+                            color: #6c757d !important;
+                            font-style: italic !important;
+                            font-size: 10pt !important;
+                            text-align: center !important;
+                        }
+
+                        *::-webkit-scrollbar {
+                            display: none !important;
+                            width: 0px !important;
+                            height: 0px !important;
+                        }
+                    }
+
+                    @media screen {
+                        body {
+                            padding: 20px;
+                            background: #e8ecf0;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            gap: 24px;
+                        }
+
+                        .comment-page {
+                            width: 21cm !important;
+                            height: 29.7cm !important;
+                            margin: 0 auto !important;
+                            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15) !important;
+                            border-radius: 4px !important;
+                            background: white !important;
+                            position: relative !important;
+                            overflow: hidden !important;
+                            flex-shrink: 0 !important;
+                        }
+
+                        .page-background {
+                            position: absolute !important;
+                            top: 0 !important;
+                            left: 0 !important;
+                            right: 0 !important;
+                            bottom: 0 !important;
+                            z-index: 1 !important;
+                            pointer-events: none !important;
+                            overflow: hidden !important;
+                        }
+
+                        .page-background img {
+                            width: 100% !important;
+                            height: 100% !important;
+                            object-fit: cover !important;
+                            object-position: center center !important;
+                            display: block !important;
+                        }
+
+                        .page-content {
+                            position: relative !important;
+                            z-index: 2 !important;
+                            padding: 4cm 1.5cm 4cm 1.5cm !important;
+                            width: 100% !important;
+                            min-height: 29.7cm !important;
+                            box-sizing: border-box !important;
+                            background: transparent !important;
+                            text-align: justify !important;
+                        }
+
+                        .page-number {
+                            position: absolute !important;
+                            bottom: 4cm !important;
+                            right: 1.5cm !important;
+                            font-size: 10pt !important;
+                            color: #666 !important;
+                            z-index: 3 !important;
+                            font-weight: normal !important;
+                        }
+
+                        .content-inner {
+                            height: 100% !important;
+                            overflow: hidden !important;
+                        }
+
+                        table {
+                            width: 100% !important;
+                            border-collapse: collapse !important;
+                            font-size: 10pt !important;
+                            font-family: Arial, sans-serif !important;
+                        }
+                        td {
+                            padding: 2mm 3mm !important;
+                            border-bottom: 1px solid #e0e0e0 !important;
+                            font-size: 10pt !important;
+                            font-family: Arial, sans-serif !important;
+                        }
+                        hr {
+                            border: none !important;
+                            border-top: 1.5px solid #c0c0c0 !important;
+                            margin: 4mm 0 6mm 0 !important;
+                        }
+                        .evaluator-block {
+                            margin-bottom: 5mm !important;
+                            page-break-inside: avoid !important;
+                        }
+                        .evaluator-name {
+                            font-size: 12pt !important;
+                            font-weight: bold !important;
+                            color: #1a237e !important;
+                            margin-bottom: 2mm !important;
+                            border-bottom: 2px solid #1a237e !important;
+                            padding-bottom: 1mm !important;
+                        }
+                        .comment-block {
+                            margin-bottom: 2mm !important;
+                        }
+                        .comment-label {
+                            font-weight: bold !important;
+                            font-size: 10pt !important;
+                            color: #37474f !important;
+                            margin-bottom: 0.5mm !important;
+                        }
+                        .comment-text {
+                            font-size: 10pt !important;
+                            line-height: 1.6 !important;
+                            color: #263238 !important;
+                            padding-left: 3mm !important;
+                            word-break: break-word !important;
+                            text-align: left !important;
+                        }
+                        .no-comments {
+                            padding: 2mm 3mm !important;
+                            color: #6c757d !important;
+                            font-style: italic !important;
+                            font-size: 10pt !important;
+                            text-align: center !important;
+                        }
+                    }
+                </style>
+            `);
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(pagesHTML);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+
+            printWindow.onload = function() {
+                const images = printWindow.document.querySelectorAll('img');
+                let loaded = 0;
+                const total = images.length;
+                
+                const doPrint = () => {
+                    setTimeout(() => {
+                        printWindow.focus();
+                        printWindow.print();
+                    }, 500);
+                };
+                
+                if (total === 0) {
+                    doPrint();
+                } else {
+                    images.forEach(img => {
+                        if (img.complete) {
+                            loaded++;
+                        } else {
+                            img.onload = () => {
+                                loaded++;
+                                if (loaded === total) doPrint();
+                            };
+                            img.onerror = () => {
+                                loaded++;
+                                if (loaded === total) doPrint();
+                            };
+                        }
+                    });
+                    if (loaded === total) doPrint();
+                }
+            };
+        };
+
+        // Update footer to show/hide print button
+        const updateFooterWithPrintButton = () => {
+            if (!footerContainerRef) return;
+            
+            // Clear footer
+            footerContainerRef.innerHTML = '';
+            
+            // Always show Print button if there are comments and not rejected
+            if (commentsData && commentsData.length > 0 && !isRejected) {
+                const printBtn = $({
+                    tag: 'button',
+                    style: {
+                        padding: '10px 24px',
+                        backgroundColor: '#28a745',
+                        border: 'none',
+                        borderRadius: '10px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 4px rgba(40, 167, 69, 0.2)'
+                    },
+                    child: [
+                        $({ tag: 'i', att: { className: 'fas fa-print' }, style: { fontSize: '14px' } }),
+                        $({ tag: 'span', text: 'Print Comments' })
+                    ],
+                    event: {
+                        type: 'click',
+                        method: () => {
+                            if (modalInstance && modalInstance.closeModal) {
+                                modalInstance.closeModal();
+                            }
+                            printCommentsFromCanvas();
+                        },
+                        type2: 'mouseenter',
+                        method2: (e) => {
+                            e.currentTarget.style.backgroundColor = '#218838';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(40, 167, 69, 0.3)';
+                        },
+                        type3: 'mouseleave',
+                        method3: (e) => {
+                            e.currentTarget.style.backgroundColor = '#28a745';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(40, 167, 69, 0.2)';
+                        }
+                    }
+                });
+                footerContainerRef.appendChild(printBtn);
+            }
+
+            // Always show Close button
+            const closeBtn = $({
+                tag: 'button',
+                text: 'Close',
+                style: {
+                    padding: '10px 28px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '10px',
+                    color: '#475569',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                },
+                event: {
+                    type: 'click',
+                    method: () => {
+                        if (modalInstance && modalInstance.closeModal) {
+                            modalInstance.closeModal();
+                        }
+                    },
+                    type2: 'mouseenter',
+                    method2: (e) => {
+                        e.currentTarget.style.backgroundColor = '#f1f5f9';
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                    },
+                    type3: 'mouseleave',
+                    method3: (e) => {
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                    }
+                }
+            });
+            footerContainerRef.appendChild(closeBtn);
+        };
 
         // Build the content for the modal
         const buildContent = () => {
@@ -1210,181 +1673,176 @@ export const Research = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     height: '100%',
-                    minHeight: '400px'
+                    minHeight: '500px',
+                    backgroundColor: '#e8ecf0',
+                    padding: '20px',
+                    overflow: 'auto'
                 }
-            })
+            });
 
-            // Comments Body Container
             commentsBody = $({
                 tag: 'div',
+                id: 'commentsCanvasContainer',
                 style: {
                     flex: 1,
-                    overflow: 'auto',
-                    minHeight: '300px'
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '24px',
+                    padding: '10px 0',
+                    minHeight: '400px'
                 }
-            })
+            });
 
             // Show loading state
             commentsBody.appendChild($({
                 tag: 'div',
-                style: { textAlign: 'center', padding: '40px', color: '#888' },
+                style: { 
+                    textAlign: 'center', 
+                    padding: '60px 20px', 
+                    color: '#94a3b8',
+                    fontFamily: 'Inter, sans-serif'
+                },
                 child: [
-                    $({ tag: 'i', att: { className: 'fas fa-spinner fa-pulse' }, style: { fontSize: '24px', marginBottom: '12px', display: 'block' } }),
-                    $({ tag: 'div', text: 'Loading...' })
+                    $({ 
+                        tag: 'i', 
+                        att: { className: 'fas fa-spinner fa-pulse' }, 
+                        style: { fontSize: '32px', color: '#1976D2', marginBottom: '16px', display: 'block' } 
+                    }),
+                    $({ tag: 'div', text: 'Loading comments...', style: { fontSize: '14px' } })
                 ]
-            }))
+            }));
 
-            container.appendChild(commentsBody)
-            return container
-        }
+            container.appendChild(commentsBody);
+            return container;
+        };
 
-        // Build footer with Print and Close buttons
+        // Build footer
         const buildFooter = ({ closeModal }) => {
-            const footerContainer = $({
+            footerContainerRef = $({
                 tag: 'div',
                 style: {
                     display: 'flex',
                     justifyContent: 'flex-end',
                     gap: '12px',
-                    width: '100%'
+                    width: '100%',
+                    padding: '8px 0'
                 }
             });
-
-            // Only show print button if it's not rejected
-            if (!isRejected) {
-                const printBtn = $({
-                    tag: 'button',
-                    style: {
-                        padding: '8px 20px',
-                        backgroundColor: '#2196F3',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                    },
-                    child: [
-                        $({ tag: 'i', att: { className: 'fas fa-print' }, style: { fontSize: '14px' } }),
-                        $({ tag: 'span', text: 'Print Comments' })
-                    ],
-                    event: {
-                        type: 'click',
-                        method: () => {
-                            if (modalInstance) {
-                                modalInstance.close();
-                            }
-                            printComments()
-                        }
-                    }
-                });
-                footerContainer.appendChild(printBtn);
-            }
-
+            
+            // Show loading state in footer - just close button initially
             const closeBtn = $({
                 tag: 'button',
                 text: 'Close',
                 style: {
-                    padding: '8px 24px',
-                    backgroundColor: '#444',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: '#fff',
-                    cursor: 'pointer'
+                    padding: '10px 28px',
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e8ecf0',
+                    borderRadius: '10px',
+                    color: '#475569',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
                 },
                 event: {
                     type: 'click',
-                    method: () => closeModal()
+                    method: () => closeModal(),
+                    type2: 'mouseenter',
+                    method2: (e) => {
+                        e.currentTarget.style.backgroundColor = '#f1f5f9';
+                        e.currentTarget.style.borderColor = '#cbd5e1';
+                    },
+                    type3: 'mouseleave',
+                    method3: (e) => {
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                        e.currentTarget.style.borderColor = '#e8ecf0';
+                    }
                 }
             });
-
-            footerContainer.appendChild(closeBtn);
-            return footerContainer;
+            footerContainerRef.appendChild(closeBtn);
+            
+            return footerContainerRef;
         };
 
-        // Create individual comment card for modal display
-        const createCommentCard = (comment) => {
-            const card = $({
-                tag: 'div',
-                style: {
-                    backgroundColor: '#2a2a2a',
-                    borderRadius: '8px',
-                    padding: '16px',
-                    marginBottom: '16px',
-                    borderLeft: `4px solid ${comment.evalName ? '#2196F3' : '#FF9800'}`
+        // Display comments in A4 canvas using the Print component
+        const displayCommentsInCanvas = (data) => {
+            commentsBody.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                commentsBody.appendChild($({
+                    tag: 'div',
+                    style: { 
+                        textAlign: 'center', 
+                        padding: '60px 20px', 
+                        color: '#94a3b8',
+                        fontFamily: 'Inter, sans-serif',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '16px',
+                        width: '100%',
+                        maxWidth: '21cm',
+                        margin: '0 auto'
+                    },
+                    child: [
+                        $({ 
+                            tag: 'i', 
+                            att: { className: 'fas fa-comments' }, 
+                            style: { fontSize: '48px', color: '#cbd5e1', marginBottom: '16px', display: 'block' } 
+                        }),
+                        $({ 
+                            tag: 'div', 
+                            text: 'No comments available for this document',
+                            style: { fontSize: '16px', fontWeight: '500', color: '#64748b' }
+                        }),
+                        $({ 
+                            tag: 'div', 
+                            text: 'Evaluators have not yet provided feedback on this submission.',
+                            style: { fontSize: '13px', color: '#94a3b8', marginTop: '8px' }
+                        })
+                    ]
+                }));
+                updateFooterWithPrintButton();
+                return;
+            }
+
+            // Prepare review data for the Print component
+            const reviewData = data.map(comment => {
+                const cleanComment = {
+                    evaluator_name: comment.evalName || 'Evaluator'
+                };
+                
+                if (comment.title) cleanComment.title = cleanText(comment.title);
+                if (comment.intro) cleanComment.intro = cleanText(comment.intro);
+                if (comment.abstract) cleanComment.abstract = cleanText(comment.abstract);
+                if (comment.objective) cleanComment.objective = cleanText(comment.objective);
+                if (comment.methodology) cleanComment.methodology = cleanText(comment.methodology);
+                if (comment.results) cleanComment.results = cleanText(comment.results);
+                if (comment.recommendation) cleanComment.recommendation = cleanText(comment.recommendation);
+                if (comment.literature) cleanComment.literature = cleanText(comment.literature);
+                if (comment.other) cleanComment.other = cleanText(comment.other);
+                
+                return cleanComment;
+            });
+
+            const docTitle = doc.title || doc.doc_title || 'Document';
+
+            // Create the Print component
+            const printComponent = Print({
+                doc_title: docTitle,
+                review: reviewData,
+                category: doc.category || 'N/A',
+                campus: doc.campus || 'N/A',
+                author: doc.author || 'N/A',
+                all: true,
+                getHandler: (el) => {
+                    printContainerRef = el;
                 }
             });
 
-            // Evaluator info
-            const evaluatorInfo = $({
-                tag: 'div',
-                style: {
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '12px',
-                    paddingBottom: '8px',
-                    borderBottom: '1px solid rgba(255,255,255,0.1)'
-                },
-                child: [
-                    $({
-                        tag: 'div',
-                        style: { display: 'flex', alignItems: 'center', gap: '8px' },
-                        child: [
-                            $({ tag: 'i', att: { className: 'fas fa-user-circle' }, style: { color: '#2196F3', fontSize: '16px' } }),
-                            $({ tag: 'span', text: comment.evalName || 'Evaluator', style: { color: '#fff', fontWeight: '500' } })
-                        ]
-                    }),
-                    comment.date ? $({
-                        tag: 'span',
-                        text: new Date(comment.date).toLocaleDateString(),
-                        style: { color: '#888', fontSize: '12px' }
-                    }) : null
-                ]
-            });
-
-            card.appendChild(evaluatorInfo);
-
-            // Comment sections
-            const sections = [
-                { title: 'Title', content: comment.title, icon: 'fa-heading' },
-                { title: 'Introduction', content: comment.intro, icon: 'fa-book-open' },
-                { title: 'Abstract', content: comment.abstract, icon: 'fa-paragraph' },
-                { title: 'Objective', content: comment.objective, icon: 'fa-bullseye' },
-                { title: 'Methodology', content: comment.methodology, icon: 'fa-flask' },
-                { title: 'Results and Discussion', content: comment.results, icon: 'fa-chart-line' },
-                { title: 'Recommendation and Conclusion', content: comment.recommendation, icon: 'fa-lightbulb' },
-                { title: 'Literature', content: comment.literature, icon: 'fa-book' },
-                { title: 'Other Comments', content: comment.other, icon: 'fa-comment' }
-            ];
-
-            sections.forEach(section => {
-                if (section.content && section.content.trim() !== '') {
-                    const sectionEl = $({
-                        tag: 'div',
-                        style: { marginBottom: '12px' },
-                        child: [
-                            $({
-                                tag: 'div',
-                                style: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' },
-                                child: [
-                                    $({ tag: 'i', att: { className: `fas ${section.icon}` }, style: { color: '#FF9800', fontSize: '12px' } }),
-                                    $({ tag: 'span', text: section.title, style: { color: '#FF9800', fontSize: '13px', fontWeight: '500' } })
-                                ]
-                            }),
-                            $({
-                                tag: 'div',
-                                style: { color: '#ccc', fontSize: '13px', lineHeight: '1.5', whiteSpace: 'pre-wrap' },
-                                text: section.content
-                            })
-                        ]
-                    });
-                    card.appendChild(sectionEl);
-                }
-            });
-
-            return card;
+            commentsBody.appendChild(printComponent);
+            
+            // Update footer with print button
+            updateFooterWithPrintButton();
         };
 
         // Display rejection reason
@@ -1394,36 +1852,52 @@ export const Research = () => {
             const container = $({
                 tag: 'div',
                 style: {
-                    padding: '20px'
+                    width: '21cm',
+                    minHeight: '29.7cm',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '8px',
+                    padding: '4cm 1.5cm 4cm 1.5cm',
+                    margin: '0 auto',
+                    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.15)',
+                    position: 'relative',
+                    overflow: 'hidden'
                 },
                 child: [
-                    // Warning banner
                     $({
                         tag: 'div',
                         style: {
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            marginBottom: '20px',
-                            padding: '16px',
-                            backgroundColor: '#fff3cd',
-                            borderRadius: '8px',
-                            borderLeft: '4px solid #ffc107'
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            zIndex: 1,
+                            pointerEvents: 'none',
+                            overflow: 'hidden'
                         },
                         child: [
-                            $({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { color: '#856404', fontSize: '24px' } }),
-                            $({ tag: 'span', text: 'This document has been rejected', style: { color: '#856404', fontWeight: 'bold', fontSize: '16px' } })
+                            $({
+                                tag: 'img',
+                                att: {
+                                    src: '/client/images/header.png',
+                                    alt: 'Background'
+                                },
+                                style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    objectPosition: 'center center',
+                                    display: 'block'
+                                }
+                            })
                         ]
                     }),
-                    // Rejection reason
                     $({
                         tag: 'div',
                         style: {
-                            backgroundColor: '#2a2a2a',
-                            borderRadius: '8px',
-                            padding: '20px',
-                            marginBottom: '16px',
-                            borderLeft: '4px solid #dc3545'
+                            position: 'relative',
+                            zIndex: 2,
+                            padding: '0'
                         },
                         child: [
                             $({
@@ -1431,47 +1905,88 @@ export const Research = () => {
                                 style: {
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '8px',
-                                    marginBottom: '12px',
-                                    paddingBottom: '8px',
-                                    borderBottom: '1px solid rgba(255,255,255,0.1)'
+                                    gap: '14px',
+                                    marginBottom: '20px',
+                                    padding: '16px 20px',
+                                    backgroundColor: '#FEF3E2',
+                                    borderRadius: '12px',
+                                    borderLeft: '4px solid #FF9800'
                                 },
                                 child: [
-                                    $({ tag: 'i', att: { className: 'fas fa-times-circle' }, style: { color: '#dc3545', fontSize: '18px' } }),
-                                    $({ tag: 'span', text: 'Rejection Reason', style: { color: '#dc3545', fontWeight: 'bold', fontSize: '15px' } })
+                                    $({ 
+                                        tag: 'i', 
+                                        att: { className: 'fas fa-exclamation-triangle' }, 
+                                        style: { color: '#E65100', fontSize: '22px' } 
+                                    }),
+                                    $({ 
+                                        tag: 'span', 
+                                        text: 'This document has been rejected', 
+                                        style: { color: '#E65100', fontWeight: '600', fontSize: '15px' } 
+                                    })
                                 ]
                             }),
                             $({
                                 tag: 'div',
                                 style: {
-                                    color: '#ddd',
-                                    fontSize: '14px',
-                                    lineHeight: '1.6',
-                                    whiteSpace: 'pre-wrap',
-                                    padding: '8px 12px',
-                                    backgroundColor: 'rgba(255,255,255,0.05)',
-                                    borderRadius: '4px'
+                                    backgroundColor: '#f8f9fa',
+                                    borderRadius: '12px',
+                                    padding: '20px 24px',
+                                    border: '1px solid #e8ecf0'
                                 },
-                                text: data.reason || 'No reason provided'
-                            })
-                        ]
-                    }),
-                    // Rejection details
-                    $({
-                        tag: 'div',
-                        style: {
-                            display: 'flex',
-                            gap: '20px',
-                            fontSize: '13px',
-                            color: '#888',
-                            padding: '8px 4px'
-                        },
-                        child: [
-                            data.date ? $({
-                                tag: 'span',
                                 child: [
-                                    $({ tag: 'strong', text: 'Date: ', style: { color: '#aaa' } }),
-                                    $({ tag: 'span', text: new Date(data.date).toLocaleString() })
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '10px',
+                                            marginBottom: '12px',
+                                            paddingBottom: '10px',
+                                            borderBottom: '1px solid #e8ecf0'
+                                        },
+                                        child: [
+                                            $({ 
+                                                tag: 'i', 
+                                                att: { className: 'fas fa-times-circle' }, 
+                                                style: { color: '#dc3545', fontSize: '18px' } 
+                                            }),
+                                            $({ 
+                                                tag: 'span', 
+                                                text: 'Rejection Reason', 
+                                                style: { color: '#dc3545', fontWeight: '600', fontSize: '14px' } 
+                                            })
+                                        ]
+                                    }),
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            color: '#334155',
+                                            fontSize: '14px',
+                                            lineHeight: '1.7',
+                                            whiteSpace: 'pre-wrap',
+                                            padding: '8px 4px'
+                                        },
+                                        text: cleanText(data.reason) || 'No reason provided'
+                                    })
+                                ]
+                            }),
+                            data.date ? $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    gap: '20px',
+                                    fontSize: '13px',
+                                    color: '#94a3b8',
+                                    padding: '12px 4px 0 4px'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        child: [
+                                            $({ tag: 'strong', text: 'Date: ', style: { color: '#64748b' } }),
+                                            $({ tag: 'span', text: new Date(data.date).toLocaleString() })
+                                        ]
+                                    })
                                 ]
                             }) : null
                         ]
@@ -1480,198 +1995,16 @@ export const Research = () => {
             });
 
             commentsBody.appendChild(container);
+            // No print button for rejected documents
+            updateFooterWithPrintButton();
         };
-
-        // Display comments in modal
-        const displayComments = (data, docInfo) => {
-            commentsBody.innerHTML = '';
-
-            if (!data || data.length === 0) {
-                commentsBody.appendChild($({
-                    tag: 'div',
-                    style: { textAlign: 'center', padding: '40px', color: '#888' },
-                    child: [
-                        $({ tag: 'i', att: { className: 'fas fa-comments' }, style: { fontSize: '32px', marginBottom: '12px', display: 'block' } }),
-                        $({ tag: 'div', text: 'No comments available for this document' })
-                    ]
-                }));
-                return;
-            }
-
-            data.forEach(comment => {
-                const commentCard = createCommentCard(comment);
-                commentsBody.appendChild(commentCard);
-            });
-        };
-
-        // Print comments using the Print component
-        const printComments = () => {
-            if (!commentsData || commentsData.length === 0) {
-                AlertModal({
-                    title: 'No Comments',
-                    message: 'No comments available to print'
-                });
-                return;
-            }
-
-            const printContainer = $({
-                tag: 'div',
-                style: {
-                    padding: '20px',
-                    backgroundColor: 'white'
-                }
-            });
-
-            const headerInfo = $({
-                tag: 'div',
-                style: {
-                    textAlign: 'center',
-                    marginBottom: '20px',
-                    paddingBottom: '15px',
-                    borderBottom: '2px solid #333'
-                },
-                child: [
-                    $({ tag: 'h1', text: 'Review Comments', style: { marginBottom: '10px' } }),
-                    $({ tag: 'p', text: `Document: ${doc.title}`, style: { fontSize: '14px', margin: '5px 0' } }),
-                    $({ tag: 'p', text: `Author: ${doc.author} | Campus: ${doc.campus || 'N/A'} | Category: ${doc.category || 'N/A'}`, style: { fontSize: '14px', margin: '5px 0' } })
-                ]
-            });
-            printContainer.appendChild(headerInfo);
-
-            commentsData.forEach((comment, index) => {
-                if (index > 0) {
-                    printContainer.appendChild($({
-                        tag: 'div',
-                        style: { pageBreakBefore: 'always' }
-                    }));
-                }
-
-                const commentDiv = $({
-                    tag: 'div',
-                    style: {
-                        marginBottom: '25px',
-                        padding: '15px',
-                        border: '1px solid #ddd',
-                        borderRadius: '8px',
-                        pageBreakInside: 'avoid'
-                    }
-                });
-
-                if (comment.evalName) {
-                    commentDiv.appendChild($({
-                        tag: 'div',
-                        style: {
-                            fontSize: '16px',
-                            fontWeight: 'bold',
-                            color: '#2196F3',
-                            marginBottom: '10px',
-                            paddingBottom: '8px',
-                            borderBottom: '1px solid #eee'
-                        },
-                        text: `Evaluator: ${comment.evalName}`
-                    }));
-                }
-
-                const sections = [
-                    { title: 'Title', content: comment.title },
-                    { title: 'Introduction', content: comment.intro },
-                    { title: 'Abstract', content: comment.abstract },
-                    { title: 'Objective', content: comment.objective },
-                    { title: 'Methodology', content: comment.methodology },
-                    { title: 'Results and Discussion', content: comment.results },
-                    { title: 'Recommendation and Conclusion', content: comment.recommendation },
-                    { title: 'Literature', content: comment.literature },
-                    { title: 'Other Comments', content: comment.other }
-                ];
-
-                sections.forEach(section => {
-                    if (section.content && section.content.trim() !== '') {
-                        const sectionEl = $({
-                            tag: 'div',
-                            style: { marginBottom: '12px' },
-                            child: [
-                                $({
-                                    tag: 'div',
-                                    style: { fontWeight: 'bold', color: '#FF9800', marginBottom: '3px' },
-                                    text: section.title + ':'
-                                }),
-                                $({
-                                    tag: 'div',
-                                    style: {
-                                        marginLeft: '10px',
-                                        whiteSpace: 'pre-wrap',
-                                        lineHeight: '1.6'
-                                    },
-                                    text: section.content
-                                })
-                            ]
-                        });
-                        commentDiv.appendChild(sectionEl);
-                    }
-                });
-
-                printContainer.appendChild(commentDiv);
-            });
-
-            const printComponent = Print({
-                title: doc.title,
-                category: doc.category || 'N/A',
-                campus: doc.campus || 'N/A',
-                author: doc.author || 'N/A',
-                date: doc.date || new Date().toLocaleDateString(),
-                review: commentsData,
-                all: true,
-                getHandler: (el) => {
-                    const style = document.createElement('style');
-                    style.textContent = `
-                        @media print {
-                            body {
-                                margin: 0;
-                                padding: 0;
-                                background: white;
-                            }
-                            .comment-card {
-                                page-break-inside: avoid;
-                                break-inside: avoid;
-                            }
-                        }
-                    `;
-                    if (el.querySelector('head')) {
-                        el.querySelector('head').appendChild(style);
-                    } else {
-                        el.appendChild(style);
-                    }
-                }
-            });
-
-            const printWindow = window.open('', '_blank', 'width=800,height=600,toolbar=yes,scrollbars=yes');
-            if (!printWindow) {
-                alert('Please allow popups to print comments.');
-                return;
-            }
-
-            const tempDiv = document.createElement('div');
-            tempDiv.appendChild(printComponent);
-            const printHtml = tempDiv.innerHTML;
-
-            printWindow.document.write('<!DOCTYPE html><html><head><title>Review Comments - ' + doc.title + '</title></head><body>');
-            printWindow.document.write(printHtml);
-            printWindow.document.write('</body></html>');
-            printWindow.document.close();
-
-            setTimeout(() => {
-                printWindow.print();
-                printWindow.close();
-            }, 500);
-        };
-
 
         // Load comments from API
         const loadComments = async () => {
             try {
                 const form = new FormData();
                 form.append('commentRequest', 'true');
-                form.append('docId', doc.id);
+                form.append('docId', doc.id || doc.docId);
 
                 const response = await fetch('/uploadFacultyDocs', {
                     method: 'POST',
@@ -1682,7 +2015,7 @@ export const Research = () => {
                     const data = await response.json();
                     commentsData = data;
                     isRejected = false;
-                    displayComments(data, doc);
+                    displayCommentsInCanvas(data);
                 } else {
                     throw new Error('Failed to load comments');
                 }
@@ -1691,12 +2024,36 @@ export const Research = () => {
                 commentsBody.innerHTML = '';
                 commentsBody.appendChild($({
                     tag: 'div',
-                    style: { textAlign: 'center', padding: '40px', color: '#f44336' },
+                    style: { 
+                        textAlign: 'center', 
+                        padding: '60px 20px', 
+                        color: '#dc3545',
+                        fontFamily: 'Inter, sans-serif',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '16px',
+                        width: '100%',
+                        maxWidth: '21cm',
+                        margin: '0 auto'
+                    },
                     child: [
-                        $({ tag: 'i', att: { className: 'fas fa-exclamation-triangle' }, style: { fontSize: '32px', marginBottom: '12px', display: 'block' } }),
-                        $({ tag: 'div', text: 'Error loading data: ' + error.message })
+                        $({ 
+                            tag: 'i', 
+                            att: { className: 'fas fa-exclamation-triangle' }, 
+                            style: { fontSize: '48px', color: '#dc3545', marginBottom: '16px', display: 'block' } 
+                        }),
+                        $({ 
+                            tag: 'div', 
+                            text: 'Error loading comments',
+                            style: { fontSize: '16px', fontWeight: '500' }
+                        }),
+                        $({ 
+                            tag: 'div', 
+                            text: error.message || 'Please try again later.',
+                            style: { fontSize: '13px', color: '#6c757d', marginTop: '8px' }
+                        })
                     ]
                 }));
+                updateFooterWithPrintButton();
             }
         };
 
@@ -1705,7 +2062,7 @@ export const Research = () => {
             try {
                 const form = new FormData();
                 form.append('rejectedComments', 'true');
-                form.append('docId', doc.id);
+                form.append('docId', doc.id || doc.docId);
 
                 const response = await fetch('/uploadFacultyDocs', {
                     method: 'POST',
@@ -1730,10 +2087,10 @@ export const Research = () => {
 
         // Create and open the modal
         modalInstance = CustomModal({
-            title: isRejected ? 'Rejection Reason' : doc.title,
+            title: isRejected ? 'Rejection Reason' : (doc.title || doc.doc_title || 'Review Comments'),
             content: buildContent,
             footer: buildFooter,
-            size: 'large',
+            size: 'full',
             onClose: () => {
                 commentsData = [];
                 isRejected = false;
@@ -1745,7 +2102,7 @@ export const Research = () => {
         setTimeout(() => {
             checkDocumentStatus();
         }, 100);
-    }
+    };
 
     const createTableRow = (doc) => {
         const row = $({ tag: 'tr', style: { borderBottom: '1px solid rgba(255,255,255,0.1)' } })

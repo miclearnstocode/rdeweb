@@ -263,8 +263,8 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
 
         // Calculate available space for content
         const HEADER_HEIGHT_CM = 4;
-        const FOOTER_HEIGHT_CM = 3.81; // 1.5 inches
-        const PAGE_HEIGHT_CM = 29.7;
+        const FOOTER_HEIGHT_CM = 3.30;
+        const PAGE_HEIGHT_CM = 31;
         const AVAILABLE_HEIGHT_CM = PAGE_HEIGHT_CM - HEADER_HEIGHT_CM - FOOTER_HEIGHT_CM;
 
         // More accurate height measurement
