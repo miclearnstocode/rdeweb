@@ -1,6 +1,6 @@
 import { $ } from '../../lib/lib.js'
 
-export const Print = ({ doc_title, review, category, campus, center, date, author, coauthor, presenter, paper_trail_no, total_word_count, all, getHandler }) => {
+export const Print = ({ doc_title, review, category, campus, center, date, author, coauthor, presenter, paper_trail_no, total_word_count, all, getHandler, startPage = 1, globalTotalPages = null }) => {
     const details = () => {
         const tdData = ({ data, width }) => {
             const getme = (el) => {
@@ -87,162 +87,20 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
         })
     }
 
-    const createFullPage = (contentHTML, pageNumber, totalPages) => {
-        const pageWrapper = document.createElement('div')
-        pageWrapper.style.cssText = `
-            position: relative;
-            width: 210mm;
-            height: 297mm;
-            min-height: 297mm;
-            max-height: 297mm;
-            background-color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            page-break-after: always;
-            page-break-inside: avoid;
-            margin: 0 auto;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            border-radius: 3px;
-            flex-shrink: 0;
-        `
-
-        const headerDiv = document.createElement('div')
-        headerDiv.style.cssText = `
-            width: 100%;
-            height: 144px;
-            flex-shrink: 0;
-            background-color: #ffffff;
-            position: relative;
-            z-index: 1;
-            overflow: hidden;
-        `
-        const headerImg = document.createElement('img')
-        headerImg.src = '/client/images/header1.png'
-        headerImg.style.cssText = `
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            object-position: center;
-            display: block;
-        `
-        headerImg.onerror = function() {
-            this.style.display = 'none'
-            headerDiv.style.backgroundColor = '#f8f9fa'
-            headerDiv.style.borderBottom = '2px solid #1a237e'
-        }
-        headerDiv.appendChild(headerImg)
-        pageWrapper.appendChild(headerDiv)
-
-        const contentDiv = document.createElement('div')
-        contentDiv.style.cssText = `
-            flex: 1;
-            padding: 6mm 12mm 6mm 12mm;
-            box-sizing: border-box;
-            background-color: #ffffff;
-            position: static;
-            z-index: 1;
-            overflow: visible;
-        `
-        contentDiv.innerHTML = contentHTML
-        pageWrapper.appendChild(contentDiv)
-
-        const footerDiv = document.createElement('div')
-        footerDiv.style.cssText = `
-            width: 100%;
-            height: 144px;
-            flex-shrink: 0;
-            background-color: #ffffff;
-            position: relative;
-            z-index: 1;
-            overflow: hidden;
-        `
-        const footerImg = document.createElement('img')
-        footerImg.src = '/client/images/Footer.png'
-        footerImg.style.cssText = `
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            object-position: center;
-            display: block;
-        `
-        footerImg.onerror = function() {
-            this.style.display = 'none'
-            footerDiv.style.backgroundColor = '#f8f9fa'
-            footerDiv.style.borderTop = '2px solid #1a237e'
-        }
-        footerDiv.appendChild(footerImg)
-        pageWrapper.appendChild(footerDiv)
-
-        if (totalPages > 1) {
-            const pageNumDiv = document.createElement('div')
-            pageNumDiv.style.cssText = `
-                position: absolute;
-                bottom: 8mm;
-                right: 12mm;
-                font-size: 9pt;
-                color: #6c757d;
-                z-index: 3;
-                font-family: Arial, sans-serif;
-                background: rgba(255,255,255,0.8);
-                padding: 1mm 4mm;
-                border-radius: 3px;
-            `
-            pageNumDiv.textContent = `Page ${pageNumber} of ${totalPages}`
-            pageWrapper.appendChild(pageNumDiv)
-        }
-
-        return pageWrapper
-    }
-
-    // Helper function to check if text already has bullet formatting
-    const hasBulletFormatting = (text) => {
-        if (!text) return false
-        const lines = text.split('\n').filter(line => line.trim() !== '')
-        if (lines.length === 0) return false
-        
-        // Check if at least one line starts with a bullet or number
-        const bulletPattern = /^[\s]*[•\-*]\s/
-        const numberPattern = /^[\s]*\d+[\.\)]\s/
-        
-        return lines.some(line => bulletPattern.test(line) || numberPattern.test(line))
-    }
-
-    // Helper function to format comment text - preserves existing bullets
     const formatComment = (text) => {
         if (!text) return ''
         
-        // Clean the text - normalize line breaks and remove excessive spaces
         let cleanText = text
             .replace(/\r\n/g, '\n')
             .replace(/\r/g, '\n')
             .replace(/\n{3,}/g, '\n\n')
             .trim()
         
-        // If text already has bullet formatting, preserve it
-        if (hasBulletFormatting(cleanText)) {
-            return cleanText
-        }
-        
-        // Split by new lines and convert to bullet points
-        const lines = cleanText.split('\n').filter(line => line.trim() !== '')
-        
-        if (lines.length <= 1) {
-            // Single line - return as is
-            return cleanText
-        }
-        
-        // Convert to bullet list
-        return lines.map(line => {
-            // Remove any existing bullet markers
-            let cleanLine = line.replace(/^[\s]*[•\-*]\s*/, '').replace(/^[\s]*\d+[\.\)]\s*/, '').trim()
-            return '• ' + cleanLine
-        }).join('\n')
+        return cleanText
     }
 
     const getCont = (el) => {
         getHandler(el)
-
         el.innerHTML = ''
 
         // Build content
@@ -311,8 +169,8 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
                         const evaluatorName = val.evaluator_name || val.evalName || `Evaluator ${index + 1}`
                         
                         let commentHTML = `
-                            <div style="margin-bottom: 5mm; page-break-inside: avoid;">
-                                <div style="font-size: 12pt; font-weight: bold; color: #1a237e; margin-bottom: 2mm; border-bottom: 2px solid #1a237e; padding-bottom: 1mm;">
+                            <div class="evaluator-block" style="margin-bottom: 5mm; page-break-inside: avoid;">
+                                <div class="evaluator-name" style="font-size: 12pt; font-weight: bold; color: #1a237e; margin-bottom: 2mm; border-bottom: 2px solid #1a237e; padding-bottom: 1mm;">
                                     ${evaluatorName}
                                 </div>
                         `
@@ -320,14 +178,13 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
                         const comments = extractComments(val)
                         if (comments.length > 0) {
                             comments.forEach(comment => {
-                                // Format the comment - preserves existing bullets if present
                                 const formattedValue = formatComment(comment.value)
                                 const cleanValue = formattedValue.replace(/\n/g, '<br>')
                                 
                                 commentHTML += `
-                                    <div style="margin-bottom: 2mm;">
-                                        <div style="font-weight: bold; font-size: 10pt; color: #37474f; margin-bottom: 0.5mm;">${comment.label}:</div>
-                                        <div style="font-size: 10pt; line-height: 1.6; color: #263238; padding-left: 3mm; word-break: break-word; text-align: left;">
+                                    <div class="comment-block" style="margin-bottom: 2mm;">
+                                        <div class="comment-label" style="font-weight: bold; font-size: 10pt; color: #37474f; margin-bottom: 0.5mm;">${comment.label}:</div>
+                                        <div class="comment-text" style="font-size: 10pt; line-height: 1.6; color: #263238; padding-left: 3mm; word-break: break-word; text-align: left;">
                                             ${cleanValue}
                                         </div>
                                     </div>
@@ -335,7 +192,7 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
                             })
                         } else {
                             commentHTML += `
-                                <div style="padding: 2mm 3mm; color: #6c757d; font-style: italic; font-size: 10pt; text-align: center;">
+                                <div class="no-comments" style="padding: 2mm 3mm; color: #6c757d; font-style: italic; font-size: 10pt; text-align: center;">
                                     No comments provided.
                                 </div>
                             `
@@ -350,8 +207,8 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
                 const evaluatorName = review.evaluator_name || review.evalName || 'Evaluator'
                 
                 let commentHTML = `
-                    <div style="margin-bottom: 5mm; page-break-inside: avoid;">
-                        <div style="font-size: 12pt; font-weight: bold; color: #1a237e; margin-bottom: 2mm; border-bottom: 2px solid #1a237e; padding-bottom: 1mm;">
+                    <div class="evaluator-block" style="margin-bottom: 5mm; page-break-inside: avoid;">
+                        <div class="evaluator-name" style="font-size: 12pt; font-weight: bold; color: #1a237e; margin-bottom: 2mm; border-bottom: 2px solid #1a237e; padding-bottom: 1mm;">
                             ${evaluatorName}
                         </div>
                 `
@@ -363,9 +220,9 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
                         const cleanValue = formattedValue.replace(/\n/g, '<br>')
                         
                         commentHTML += `
-                            <div style="margin-bottom: 2mm;">
-                                <div style="font-weight: bold; font-size: 10pt; color: #37474f; margin-bottom: 0.5mm;">${comment.label}:</div>
-                                <div style="font-size: 10pt; line-height: 1.6; color: #263238; padding-left: 3mm; word-break: break-word; text-align: left;">
+                            <div class="comment-block" style="margin-bottom: 2mm;">
+                                <div class="comment-label" style="font-weight: bold; font-size: 10pt; color: #37474f; margin-bottom: 0.5mm;">${comment.label}:</div>
+                                <div class="comment-text" style="font-size: 10pt; line-height: 1.6; color: #263238; padding-left: 3mm; word-break: break-word; text-align: left;">
                                     ${cleanValue}
                                 </div>
                             </div>
@@ -373,7 +230,7 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
                     })
                 } else {
                     commentHTML += `
-                        <div style="padding: 2mm 3mm; color: #6c757d; font-style: italic; font-size: 10pt; text-align: center;">
+                        <div class="no-comments" style="padding: 2mm 3mm; color: #6c757d; font-style: italic; font-size: 10pt; text-align: center;">
                             No comments provided.
                         </div>
                     `
@@ -404,113 +261,322 @@ export const Print = ({ doc_title, review, category, campus, center, date, autho
             `
         }
 
-        // Combine: Details only ONCE, then comments
-        const fullContent = detailsWithHr + commentsHTML
+        // Calculate available space for content
+        const HEADER_HEIGHT_CM = 4;
+        const FOOTER_HEIGHT_CM = 3.81; // 1.5 inches
+        const PAGE_HEIGHT_CM = 29.7;
+        const AVAILABLE_HEIGHT_CM = PAGE_HEIGHT_CM - HEADER_HEIGHT_CM - FOOTER_HEIGHT_CM;
 
-        // ===== USE TOTAL_WORD_COUNT FROM API =====
-        let totalWords = total_word_count || 0
-        
-        if (totalWords === 0) {
-            const tempDiv = document.createElement('div')
-            tempDiv.innerHTML = fullContent
-            const text = tempDiv.textContent || tempDiv.innerText || ''
-            totalWords = text.trim().split(/\s+/).length
-        }
-        
-        // ===== DYNAMIC maxHeightPx based on total words =====
-        let maxHeightPx
-        let minPageHeightPx = 500
-        
-        if (totalWords <= 500) {
-            maxHeightPx = 950
-            minPageHeightPx = 600
-        } else if (totalWords <= 700) {
-            maxHeightPx = 900
-            minPageHeightPx = 550
-        } else if (totalWords <= 1000) {
-            maxHeightPx = 850
-            minPageHeightPx = 500
-        } else {
-            maxHeightPx = 800
-            minPageHeightPx = 450
-        }
-
-        // ===== Page break logic =====
-        const tempDiv = document.createElement('div')
-        tempDiv.style.cssText = `
-            position: absolute;
-            visibility: hidden;
-            width: 180mm;
-            font-size: 11pt;
-            font-family: 'Arial', 'Helvetica', sans-serif;
-            line-height: 1.5;
-            padding: 0;
-            left: -9999px;
-            top: 0;
-        `
-        tempDiv.innerHTML = fullContent
-        document.body.appendChild(tempDiv)
-
-        const children = Array.from(tempDiv.childNodes)
-        const pages = []
-        let currentPageContent = ''
-        let currentHeightPx = 0
-
-        for (let child of children) {
-            const clone = child.cloneNode(true)
-            
+        // More accurate height measurement
+        const measureHeight = (html) => {
             const measureDiv = document.createElement('div')
             measureDiv.style.cssText = `
                 position: absolute;
                 visibility: hidden;
-                width: 180mm;
-                font-size: 11pt;
+                width: 18cm;
+                font-size: 10pt;
                 font-family: 'Arial', 'Helvetica', sans-serif;
-                line-height: 1.5;
+                line-height: 1.6;
                 padding: 0;
                 left: -9999px;
                 top: 0;
+                box-sizing: border-box;
+                overflow: hidden;
             `
-            measureDiv.appendChild(clone)
+            measureDiv.innerHTML = `<div style="padding: 0;">${html}</div>`
             document.body.appendChild(measureDiv)
-            
-            const elementHeightPx = measureDiv.offsetHeight || 50
+            const heightPx = measureDiv.offsetHeight || 0
+            const heightCM = heightPx / 37.8
             document.body.removeChild(measureDiv)
+            return heightCM
+        }
+
+        // Measure details section height (only for first page)
+        const detailsHeightCM = measureHeight(detailsWithHr)
+        const firstPageCommentsAvailable = AVAILABLE_HEIGHT_CM - detailsHeightCM
+        const subsequentPageCommentsAvailable = AVAILABLE_HEIGHT_CM
+
+        // Helper to split content by evaluator blocks
+        const splitIntoEvaluatorBlocks = (html) => {
+            const tempDiv = document.createElement('div')
+            tempDiv.innerHTML = html
+            const blocks = []
+            const children = Array.from(tempDiv.childNodes)
             
-            if (currentHeightPx + elementHeightPx > maxHeightPx && currentPageContent) {
-                if (currentHeightPx >= minPageHeightPx) {
-                    pages.push(currentPageContent)
-                    currentPageContent = child.outerHTML || child.textContent || ''
-                    currentHeightPx = elementHeightPx
-                } else {
-                    currentPageContent += child.outerHTML || child.textContent || ''
-                    currentHeightPx += elementHeightPx
+            let currentBlock = ''
+            for (let child of children) {
+                const childHTML = child.outerHTML || child.textContent || ''
+                currentBlock += childHTML
+                // Check if this is a complete evaluator block
+                if (childHTML.includes('evaluator-block') || 
+                    (childHTML.includes('</div>') && childHTML.includes('evaluator-name'))) {
+                    blocks.push(currentBlock)
+                    currentBlock = ''
                 }
+            }
+            if (currentBlock) {
+                blocks.push(currentBlock)
+            }
+            return blocks
+        }
+
+        // Get evaluator blocks
+        const evaluatorBlocks = splitIntoEvaluatorBlocks(commentsHTML)
+        
+        if (evaluatorBlocks.length === 0) {
+            // Fallback: treat as single block
+            evaluatorBlocks.push(commentsHTML)
+        }
+
+        // Paginate content
+        const pages = []
+        let currentPageContent = ''
+        let currentHeightCM = 0
+        let isFirstPage = true
+
+        const getBlockHeight = (html) => {
+            const testDiv = document.createElement('div')
+            testDiv.style.cssText = `
+                position: absolute;
+                visibility: hidden;
+                width: 18cm;
+                font-size: 10pt;
+                font-family: 'Arial', 'Helvetica', sans-serif;
+                line-height: 1.6;
+                padding: 0;
+                left: -9999px;
+                top: 0;
+                box-sizing: border-box;
+            `
+            testDiv.innerHTML = html
+            document.body.appendChild(testDiv)
+            const height = testDiv.offsetHeight / 37.8
+            document.body.removeChild(testDiv)
+            return height
+        }
+
+        for (let block of evaluatorBlocks) {
+            const blockHeight = getBlockHeight(block) || 0.5
+            const maxAvailable = isFirstPage ? firstPageCommentsAvailable : subsequentPageCommentsAvailable
+
+            // If this block alone is larger than the page, split it
+            if (blockHeight > maxAvailable) {
+                // Check if current page has content
+                if (currentPageContent) {
+                    pages.push(currentPageContent)
+                    currentPageContent = ''
+                    currentHeightCM = 0
+                    isFirstPage = false
+                }
+
+                // Split the block into smaller pieces
+                const tempBlockDiv = document.createElement('div')
+                tempBlockDiv.innerHTML = block
+                
+                // Get individual comment blocks within the evaluator block
+                const commentBlocks = []
+                const blockChildren = Array.from(tempBlockDiv.childNodes)
+                
+                for (let child of blockChildren) {
+                    const childHTML = child.outerHTML || child.textContent || ''
+                    if (childHTML.trim()) {
+                        commentBlocks.push(childHTML)
+                    }
+                }
+
+                // Distribute comment blocks across pages
+                let tempPageContent = ''
+                let tempHeight = 0
+                const tempMaxHeight = isFirstPage ? firstPageCommentsAvailable : subsequentPageCommentsAvailable
+
+                for (let commentBlock of commentBlocks) {
+                    const commentHeight = getBlockHeight(commentBlock) || 0.3
+                    
+                    // Check if adding this comment exceeds the page
+                    if (tempHeight + commentHeight > tempMaxHeight && tempPageContent) {
+                        // Finalize current page
+                        pages.push(tempPageContent)
+                        tempPageContent = commentBlock
+                        tempHeight = commentHeight
+                        isFirstPage = false
+                    } else {
+                        tempPageContent += commentBlock
+                        tempHeight += commentHeight
+                    }
+                }
+
+                // Add remaining content
+                if (tempPageContent) {
+                    if (tempHeight < tempMaxHeight * 0.3 && pages.length > 0) {
+                        // Merge with previous page if too small
+                        const lastIndex = pages.length - 1
+                        pages[lastIndex] = pages[lastIndex] + tempPageContent
+                    } else {
+                        pages.push(tempPageContent)
+                    }
+                }
+                
+                currentPageContent = ''
+                currentHeightCM = 0
+                isFirstPage = false
             } else {
-                currentPageContent += child.outerHTML || child.textContent || ''
-                currentHeightPx += elementHeightPx
+                // Regular block fits in current page or needs new page
+                const maxHeight = isFirstPage ? firstPageCommentsAvailable : subsequentPageCommentsAvailable
+                
+                if (currentHeightCM + blockHeight > maxHeight && currentPageContent) {
+                    // Save current page and start new one
+                    pages.push(currentPageContent)
+                    currentPageContent = block
+                    currentHeightCM = blockHeight
+                    isFirstPage = false
+                } else {
+                    currentPageContent += block
+                    currentHeightCM += blockHeight
+                }
             }
         }
 
+        // Add remaining content
         if (currentPageContent) {
-            if (currentHeightPx < minPageHeightPx && pages.length > 0) {
-                const lastPageIndex = pages.length - 1;
-                pages[lastPageIndex] = pages[lastPageIndex] + currentPageContent;
+            const maxHeight = isFirstPage ? firstPageCommentsAvailable : subsequentPageCommentsAvailable
+            if (currentHeightCM < maxHeight * 0.3 && pages.length > 0) {
+                const lastIndex = pages.length - 1
+                pages[lastIndex] = pages[lastIndex] + currentPageContent
             } else {
-                pages.push(currentPageContent);
+                pages.push(currentPageContent)
             }
         }
 
-        document.body.removeChild(tempDiv)
-
+        // If no pages were created, use the original content
         if (pages.length === 0) {
-            pages.push(fullContent)
+            pages.push(commentsHTML)
         }
 
+        // Use global total pages if provided
+        const totalPages = globalTotalPages !== null ? globalTotalPages : pages.length;
+        
         pages.forEach((pageContent, index) => {
-            const pageElement = createFullPage(pageContent, index + 1, pages.length)
-            el.appendChild(pageElement)
-        })
+            // ONLY include details on the FIRST page
+            let fullContent;
+            if (index === 0) {
+                // First page: details + comments
+                fullContent = detailsWithHr + pageContent;
+            } else {
+                // Subsequent pages: ONLY comments (no details)
+                fullContent = pageContent;
+            }
+            
+            const contentWithWrapper = `
+                <div style="padding: 0; margin: 0; width: 100%;">
+                    ${fullContent}
+                </div>
+            `;
+            
+            const globalPageNumber = startPage + index;
+            
+            // Create background image element
+            const bgImg = $({
+                tag: 'img',
+                att: {
+                    src: '/client/images/header.png',
+                    className: 'background-img',
+                    alt: 'Page background'
+                },
+                style: {
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'center center',
+                    display: 'block',
+                    margin: 0,
+                    padding: 0
+                }
+            });
+
+            const bgDiv = $({
+                tag: 'div',
+                att: { className: 'page-background' },
+                style: {
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    width: '100%',
+                    height: '100%',
+                    zIndex: 1,
+                    pointerEvents: 'none',
+                    overflow: 'hidden',
+                    margin: 0,
+                    padding: 0
+                },
+                child: [bgImg]
+            });
+
+            let pageNumEl = null;
+            if (totalPages > 1) {
+                pageNumEl = $({
+                    tag: 'div',
+                    att: { className: 'page-number' },
+                    style: {
+                        position: 'absolute',
+                        bottom: '3.81cm',
+                        right: '1.5cm',
+                        fontSize: '10pt',
+                        color: '#666',
+                        zIndex: 3,
+                        fontWeight: 'normal'
+                    },
+                    text: `Page ${globalPageNumber} of ${totalPages}`
+                });
+            }
+
+            const contentInner = $({
+                tag: 'div',
+                att: { className: 'content-inner' },
+                style: {
+                    height: '100%',
+                    overflow: 'hidden',
+                    position: 'relative'
+                },
+                html: contentWithWrapper
+            });
+
+            const contentDiv = $({
+                tag: 'div',
+                att: { className: 'page-content' },
+                style: {
+                    position: 'relative',
+                    zIndex: 2,
+                    padding: '4cm 1.5cm 3.81cm 1.5cm',
+                    width: '100%',
+                    height: '100%',
+                    boxSizing: 'border-box',
+                    backgroundColor: 'transparent',
+                    textAlign: 'justify',
+                    overflow: 'hidden'
+                },
+                child: [contentInner, pageNumEl].filter(Boolean)
+            });
+
+            const pageElement = $({
+                tag: 'div',
+                att: { className: 'comment-page print-page' },
+                style: {
+                    position: 'relative',
+                    width: '21cm',
+                    height: '29.7cm',
+                    margin: '0 auto',
+                    backgroundColor: 'transparent',
+                    pageBreakAfter: index < pages.length - 1 ? 'always' : 'avoid',
+                    overflow: 'hidden',
+                    boxSizing: 'border-box'
+                },
+                child: [bgDiv, contentDiv]
+            });
+
+            el.appendChild(pageElement);
+        });
     }
 
     return $({

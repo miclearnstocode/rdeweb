@@ -38,6 +38,7 @@ if(isset($_POST['commentRequest'])){
     $eventType = $_POST['eventType'] ?? '';
     $categoryId = $_POST['categoryId'] ?? '';
     $categoryName = $_POST['categoryName'] ?? '';
+    $isPrintAll = $_POST['isPrintAll'] ?? false; 
     
     // If no event selected, return error
     if (empty($eventType) || $eventType === '-- Select Event type --') {
@@ -86,11 +87,13 @@ if(isset($_POST['commentRequest'])){
         $params = [$eventType];
         $types = "s";
         
-        if (!empty($categoryId) && $categoryId !== 'Print All Category' && $categoryId !== '-- Select Category --') {
+        // If "Print All Category" is selected OR isPrintAll is true, DON'T filter by category
+        if ($categoryId !== 'Print All Category' && !$isPrintAll && !empty($categoryId) && $categoryId !== '-- Select Category --') {
             $query .= " AND cat.id = ?";
             $params[] = $categoryId;
             $types .= "s";
         }
+        // Otherwise, don't add category filter - get ALL categories
         
         $query .= " ORDER BY r.title, c.date DESC";
         
@@ -105,11 +108,12 @@ if(isset($_POST['commentRequest'])){
             while ($val = $result->fetch_assoc()) {
                 $resid = $val['resid'];
                 
-                // ===== FIX: Proper title selection =====
-                // If final_symposium_title has a value, use it; otherwise use title
-                $docTitle = !empty($val['final_symposium_title']) 
-                    ? $val['final_symposium_title'] 
-                    : $val['title'];
+                // Use final_symposium_title if available, otherwise use title
+                if (!empty($val['final_symposium_title'])) {
+                    $docTitle = $val['final_symposium_title'];
+                } else {
+                    $docTitle = $val['title'];
+                }
                 
                 if (!isset($groupedComments[$resid])) {
                     $groupedComments[$resid] = [
@@ -126,12 +130,12 @@ if(isset($_POST['commentRequest'])){
                         'file' => $val['file'] ?? '',
                         'drive_view_url' => $val['drive_view_url'] ?? '',
                         'paper_trail_no' => $val['paper_trail_no'] ?? '',
+                        'final_symposium_title' => $val['final_symposium_title'] ?? '',
                         'comments' => [],
-                        'total_word_count' => 0 // Initialize total word count
+                        'total_word_count' => 0
                     ];
                 }
                 
-                // Add comment if it exists
                 $comment = [];
                 if (!empty($val['title'])) $comment['title'] = $val['title'];
                 if (!empty($val['intro'])) $comment['intro'] = $val['intro'];
@@ -154,45 +158,36 @@ if(isset($_POST['commentRequest'])){
             foreach ($groupedComments as $resid => &$docData) {
                 $totalWords = 0;
                 foreach ($docData['comments'] as $comment) {
-                    // Combine all comment fields into one string
                     $commentText = '';
                     $fields = ['title', 'intro', 'abstract', 'objective', 'methodology', 'results', 'recommendation', 'literature', 'other'];
                     foreach ($fields as $field) {
                         if (!empty($comment[$field])) {
-                            // Strip HTML tags before counting words
                             $cleanText = strip_tags($comment[$field]);
                             $commentText .= ' ' . $cleanText;
                         }
                     }
-                    // Add evaluator name to word count
                     if (!empty($comment['evaluator_name'])) {
                         $commentText .= ' ' . strip_tags($comment['evaluator_name']);
                     }
-                    // Count words
                     $totalWords += str_word_count($commentText);
                 }
-                // Add document title words
                 if (!empty($docData['doc_title'])) {
                     $totalWords += str_word_count(strip_tags($docData['doc_title']));
                 }
-                // Add author words
                 if (!empty($docData['author'])) {
                     $totalWords += str_word_count(strip_tags($docData['author']));
                 }
-                // Add campus words
                 if (!empty($docData['campus'])) {
                     $totalWords += str_word_count(strip_tags($docData['campus']));
                 }
-                // Add category words
                 if (!empty($docData['category'])) {
                     $totalWords += str_word_count(strip_tags($docData['category']));
                 }
                 
                 $docData['total_word_count'] = $totalWords;
             }
-            unset($docData); // Break reference
+            unset($docData);
             
-            // Convert to array and filter out documents with no comments
             $response = array_values(array_filter($groupedComments, function($doc) {
                 return !empty($doc['comments']);
             }));
@@ -207,7 +202,6 @@ if(isset($_POST['commentRequest'])){
     echo json_encode($response);
     exit();
 }
-
 
 if(isset($_POST['reqCommentIndiv2'])){
     $response = new stdClass();
@@ -231,79 +225,149 @@ if(isset($_POST['reqCommentIndiv2'])){
             exit();
         }
         
-        $comName = $_POST['comName'] ?? '';
         $docId = $_POST['docId'] ?? '';
-        $evalId = $_SESSION['userId'];
         
         // Validate inputs
-        if (empty($comName) || empty($docId)) {
-            $response->message = 'Missing required parameters';
+        if (empty($docId)) {
+            $response->message = 'Missing document ID';
             echo json_encode($response);
             exit();
         }
         
-        // Map section names to database columns
-        $columnMap = [
-            'title' => 'title',
-            'abstract' => 'abstract',
-            'intro' => 'intro',
-            'objective' => 'objective',
-            'methodology' => 'methodology',
-            'results' => 'results',
-            'recommendation' => 'recommendation',
-            'literature' => 'literature',
-            'other' => 'other'
-        ];
+        // Establish database connection
+        $cons = new mysqli($host, $username, $pass, $dbName);
         
-        if (isset($columnMap[$comName])) {
-            $column = $columnMap[$comName];
-            $query = "SELECT comments.$column as data, comments.isCommented, comments.evID 
-                     FROM comments 
-                     WHERE comments.resid = ? AND comments.evalid = ?";
-            
-            $cons = new mysqli($host, $username, $pass, $dbName);
-            
-            if ($cons->connect_error) {
-                error_log('Database connection failed: ' . $cons->connect_error);
-                $response->message = 'Database connection failed';
-                echo json_encode($response);
-                exit();
-            }
-            
-            $statement = $cons->prepare($query);
-            
-            if (!$statement) {
-                error_log('Prepare failed: ' . $cons->error);
-                $response->message = 'Query preparation failed';
-                echo json_encode($response);
-                exit();
-            }
-            
-            $statement->bind_param("ss", $docId, $evalId);
-            
-            if (!$statement->execute()) {
-                error_log('Execute failed: ' . $statement->error);
-                $response->message = 'Query execution failed';
-                echo json_encode($response);
-                exit();
-            }
-            
-            $result = $statement->get_result();
-            
-            while ($val = $result->fetch_assoc()) {
-                $response->name = $comName;
-                // Return the data as-is (with HTML tags) - the frontend will render it
-                $response->data = $val['data'] ?? '';
-                $response->isCommented = (int)($val['isCommented'] ?? 0);
-                $response->evID = $val['evID'] ?? null;
-                $response->message = 'Comment loaded';
-            }
-            
-            $statement->close();
-            $cons->close();
-        } else {
-            $response->message = 'Invalid section name';
+        if ($cons->connect_error) {
+            error_log('Database connection failed: ' . $cons->connect_error);
+            $response->message = 'Database connection failed';
+            echo json_encode($response);
+            exit();
         }
+        
+        // Fetch ALL comments for the given resid (docId)
+        $query = "SELECT 
+            c.title,
+            c.intro,
+            c.abstract,
+            c.objective,
+            c.methodology,
+            c.results,
+            c.recommendation,
+            c.literature,
+            c.other,
+            c.isCommented,
+            c.evID,
+            c.date,
+            c.resid,
+            e.fullname as evaluator_name,
+            r.title as doc_title,
+            r.category,
+            r.center,
+            r.campus,
+            r.author,
+            r.coauthor,
+            r.presenter,
+            r.event,
+            r.file,
+            r.drive_view_url,
+            r.paper_trail_no,
+            r.final_symposium_title
+        FROM comments c
+        LEFT JOIN evaluator e ON e.id = c.evalid
+        LEFT JOIN researchfile r ON r.id = c.resid
+        WHERE c.resid = ?
+        ORDER BY c.date DESC, c.evalid";
+        
+        $statement = $cons->prepare($query);
+        
+        if (!$statement) {
+            error_log('Prepare failed: ' . $cons->error);
+            $response->message = 'Query preparation failed';
+            echo json_encode($response);
+            exit();
+        }
+        
+        $statement->bind_param("s", $docId);
+        
+        if (!$statement->execute()) {
+            error_log('Execute failed: ' . $statement->error);
+            $response->message = 'Query execution failed';
+            echo json_encode($response);
+            exit();
+        }
+        
+        $result = $statement->get_result();
+        
+        // Build the response with all comments
+        $comments = [];
+        $hasComments = false;
+        $docInfo = null;
+        
+        while ($val = $result->fetch_assoc()) {
+            $hasComments = true;
+            
+            // Store document info once
+            if ($docInfo === null) {
+                $docInfo = [
+                    'resid' => $val['resid'],
+                    'doc_title' => !empty($val['final_symposium_title']) ? $val['final_symposium_title'] : $val['doc_title'],
+                    'category' => $val['category'] ?? '',
+                    'center' => $val['center'] ?? '',
+                    'campus' => $val['campus'] ?? '',
+                    'author' => $val['author'] ?? '',
+                    'coauthor' => $val['coauthor'] ?? '',
+                    'presenter' => $val['presenter'] ?? '',
+                    'event' => $val['event'] ?? '',
+                    'file' => $val['file'] ?? '',
+                    'drive_view_url' => $val['drive_view_url'] ?? '',
+                    'paper_trail_no' => $val['paper_trail_no'] ?? '',
+                ];
+            }
+            
+            // Build comment object
+            $comment = [
+                'evaluator_name' => $val['evaluator_name'] ?? 'Unknown Evaluator',
+                'date' => $val['date'] ?? '',
+                'evID' => $val['evID'] ?? null,
+                'isCommented' => (int)($val['isCommented'] ?? 0)
+            ];
+            
+            $fields = ['title', 'intro', 'abstract', 'objective', 'methodology', 'results', 'recommendation', 'literature', 'other'];
+            foreach ($fields as $field) {
+                if (!empty($val[$field]) && trim($val[$field]) !== '' && trim($val[$field]) !== 'N/A') {
+                    $comment[$field] = $val[$field];
+                }
+            }
+            
+            // Only add if there's at least one comment field
+            $hasCommentContent = false;
+            foreach ($fields as $field) {
+                if (isset($comment[$field]) && !empty($comment[$field])) {
+                    $hasCommentContent = true;
+                    break;
+                }
+            }
+            
+            if ($hasCommentContent) {
+                $comments[] = $comment;
+            }
+        }
+        
+        $statement->close();
+        $cons->close();
+        
+        if ($hasComments && !empty($comments)) {
+            // Return the full comment data
+            $response->data = $comments;
+            $response->doc_info = $docInfo;
+            $response->isCommented = 1;
+            $response->message = 'Comments loaded successfully';
+            $response->total_comments = count($comments);
+        } else {
+            $response->message = 'No comments found for this document';
+            $response->data = [];
+        }
+        
     } catch (Exception $e) {
         error_log('Exception in reqCommentIndiv2: ' . $e->getMessage());
         $response->message = 'Server error: ' . $e->getMessage();
