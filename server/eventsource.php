@@ -65,8 +65,7 @@ function normalizeString($string) {
 function isSimilarString($str1, $str2, $threshold = 80) {
     $str1 = normalizeString($str1);
     $str2 = normalizeString($str2);
-    
-    // If exactly the same after normalization, they're duplicates
+
     if ($str1 === $str2) {
         return true;
     }
@@ -78,27 +77,17 @@ function isSimilarString($str1, $str2, $threshold = 80) {
     if ($maxLength === 0) {
         return true;
     }
-    
-    // Calculate similarity percentage
+
     $similarity = (1 - $distance / $maxLength) * 100;
     
     return $similarity >= $threshold;
 }
 
 function normalizeAuthorName($name) {
-    // Remove titles
     $name = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $name);
-    
-    // Remove suffixes
     $name = preg_replace('/\s*(Ph\.?D\.?|MD|DVM|JD|LLB|LLM|RN|CPA|CMA|CFA|PE|Arch|Ed\.?D\.?|DBA|MPH|MS|MA|MBA|MFT|DrPH|PharmD|PT|OT|ECE|MCS|MAED|EDD)\s*/i', '', $name);
-    
-    // Convert to lowercase
     $name = strtolower($name);
-    
-    // Remove special characters
     $name = preg_replace('/[^a-z0-9\s]/', '', $name);
-    
-    // Remove extra spaces
     $name = preg_replace('/\s+/', ' ', $name);
     
     return trim($name);
@@ -577,6 +566,174 @@ if (isset($_POST['requestEventRDE'])) {
         exit;
     }
 
+    ob_clean();
+    echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+// Search Documents - no event selection required
+if (isset($_POST['searchDocuments'])) {
+    ob_clean();
+    
+    $searchTerm = $_POST['searchTerm'] ?? '';
+    $page = max(1, (int)($_POST['page'] ?? 1));
+    $limit = max(1, min(50, (int)($_POST['limit'] ?? 10)));
+    $offset = ($page - 1) * $limit;
+    
+    $res = [
+        'data' => [],
+        'hasMore' => false,
+        'total' => 0,
+        'currentPage' => $page,
+        'totalPages' => 0
+    ];
+    
+    try {
+        $con = new mysqli($host, $username, $pass, $dbName);
+        
+        if ($con->connect_error) {
+            throw new Exception('Database connection failed: ' . $con->connect_error);
+        }
+        
+        mysqli_report(MYSQLI_REPORT_OFF);
+        $con->set_charset('utf8mb4');
+        
+        // Build search conditions
+        $searchConditions = [];
+        $params = [];
+        $types = "";
+        
+        if (!empty($searchTerm)) {
+            $searchTerm = '%' . $con->real_escape_string($searchTerm) . '%';
+            $searchConditions[] = "(rf.title LIKE ? OR rf.final_symposium_title LIKE ? OR rf.author LIKE ? OR rf.presenter LIKE ? OR rf.coauthor LIKE ? OR rf.category LIKE ? OR rf.center LIKE ? OR endorsement.campus LIKE ? OR endorsement.event LIKE ?)";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+            $types .= "sssssssss";
+        }
+        
+        $whereClause = "";
+        if (!empty($searchConditions)) {
+            $whereClause = "AND (" . implode(" OR ", $searchConditions) . ")";
+        }
+        
+        // Count query
+        $countSql = "
+            SELECT COUNT(*) as total
+            FROM researchfile rf
+            INNER JOIN endorsement ON endorsement.id = rf.endorsementid
+            WHERE (endorsement.status = 'accepted' OR rf.status = 'accepted')
+            {$whereClause}";
+        
+        $countStmt = $con->prepare($countSql);
+        
+        if (!$countStmt) {
+            throw new Exception('Prepare count failed: ' . $con->error);
+        }
+        
+        if (!empty($params)) {
+            $countStmt->bind_param($types, ...$params);
+        }
+        
+        $countStmt->execute();
+        $countResult = $countStmt->get_result();
+        $countRow = $countResult->fetch_assoc();
+        $total = (int)($countRow['total'] ?? 0);
+        
+        $countResult->free();
+        $countStmt->close();
+        
+        $res['total'] = $total;
+        $res['totalPages'] = $total > 0 ? (int)ceil($total / $limit) : 0;
+        
+        if ($total > 0) {
+            // Data query
+            $sql = "
+                SELECT
+                    rf.id,
+                    rf.senderid,
+                    rf.author,
+                    rf.title,
+                    rf.final_symposium_title,
+                    rf.file,
+                    rf.drive_view_url,
+                    rf.drive_file_id,
+                    rf.drive_download_url,
+                    rf.status,
+                    rf.category,
+                    rf.center,
+                    rf.presenter,
+                    rf.coauthor,
+                    endorsement.campus,
+                    endorsement.event,
+                    endorsement.date,
+                    endorsement.id AS endorsId
+                FROM researchfile rf
+                INNER JOIN endorsement ON endorsement.id = rf.endorsementid
+                WHERE (endorsement.status = 'accepted' OR rf.status = 'accepted')
+                {$whereClause}
+                ORDER BY rf.id DESC
+                LIMIT ? OFFSET ?";
+            
+            $stmt = $con->prepare($sql);
+            
+            if (!$stmt) {
+                throw new Exception('Prepare data statement failed: ' . $con->error);
+            }
+            
+            // Add limit and offset to params
+            $allParams = array_merge($params, [$limit, $offset]);
+            $allTypes = $types . "ii";
+            
+            if (!empty($allParams)) {
+                $stmt->bind_param($allTypes, ...$allParams);
+            }
+            
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $data = [];
+            
+            while ($row = $result->fetch_assoc()) {
+                if (!empty($row['drive_view_url'])) {
+                    $row['file'] = $row['drive_view_url'];
+                } elseif (empty($row['file']) && !empty($row['drive_file_id'])) {
+                    $row['file'] = 'https://drive.google.com/file/d/' . $row['drive_file_id'] . '/preview';
+                }
+                $data[] = $row;
+            }
+            
+            $res['data'] = $data;
+            $res['hasMore'] = ($page * $limit) < $total;
+            
+            $result->free();
+            $stmt->close();
+        }
+        
+        $con->close();
+        
+    } catch (Exception $e) {
+        error_log("searchDocuments Error: " . $e->getMessage());
+        error_log("Error trace: " . $e->getTraceAsString());
+        
+        ob_clean();
+        echo json_encode([
+            'error' => true,
+            'message' => $e->getMessage(),
+            'data' => [],
+            'total' => 0,
+            'currentPage' => $page,
+            'totalPages' => 0,
+            'hasMore' => false
+        ]);
+        exit;
+    }
+    
     ob_clean();
     echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;

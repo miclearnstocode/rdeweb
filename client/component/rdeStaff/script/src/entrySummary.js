@@ -57,7 +57,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
             form.append('getAcceptanceLetterData', '1');
             form.append('eventId', eventId);
             
-            fetch('/acceptance-letter', {
+            fetch('/getresearch', {
                 method: 'POST',
                 body: form
             })
@@ -75,7 +75,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
         });
     };
 
-    const ResearchDocs = ({category, center,file, docId, title, author, eventTYpe, deleteRequest, campus,endorseId, mainFrame}) => {
+    const ResearchDocs = ({doc_title, category, center,file, docId, title, author, eventTYpe, deleteRequest, campus,endorseId, mainFrame}) => {
         const resDetails = () => {
             const details = (label, data) => {
                 return $({
@@ -346,7 +346,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                 onClick: async () => {
                                                     try {
                                                         const form = new FormData()
-                                                        form.append('commentRequest', 'true')
+                                                        form.append('reqCommentIndiv2', 'true')
                                                         form.append('docId', docId)
                                                         
                                                         const response = await fetch('/comments', {
@@ -368,13 +368,16 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                         
                                                         const data = await response.json()
                                                         
-                                                        if (data && (Array.isArray(data) || typeof data === 'object')) {
+                                                        // Check if we have valid data
+                                                        if (data && data.data && Array.isArray(data.data) && data.data.length > 0) {
                                                             const commentsModal = comments(data)
                                                             if (mainFrame && typeof mainFrame.appendChild === 'function') {
                                                                 mainFrame.appendChild(commentsModal)
                                                             } else {
                                                                 document.body.appendChild(commentsModal)
                                                             }
+                                                        } else if (data && data.message) {
+                                                            alert(data.message || 'No comments available for this document.')
                                                         } else {
                                                             alert('No comments data available')
                                                         }
@@ -385,7 +388,6 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                 },
                                                 color: '#0d6efd'
                                             }),
-
                                             // Open File Button
                                             actionButtonModern({
                                                 icon: 'fa-regular fa-folder-open',
@@ -609,7 +611,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
             })
         }
 
-        const comments = (Review) => {
+        const comments = (response) => {
             let comm
             const getComment = (el) => {
                 comm = el
@@ -693,22 +695,43 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     label: 'Print Comments',
                                     icon: 'fa-solid fa-print',
                                     onClick: () => {
-                                        const printPage = document.getElementById('commentPDF')
-                                        if (!printPage || !printPage.innerHTML) {
-                                            alert('No content to print')
-                                            return
+                                        const printPages = document.querySelectorAll('.comment-page');
+                                        if (!printPages || printPages.length === 0) {
+                                            alert('No content to print');
+                                            return;
                                         }
                                         let WinPrint = window.open('', '_blank', 'toolbar=0,scrollbars=0,status=0');
                                         if (WinPrint) {
-                                            WinPrint.document.write('<html><head><title>Print Comments</title><link rel="stylesheet" media="print" href="/client/component/otherComponent/style/comment.css"></head><body>')
-                                            WinPrint.document.write(printPage.innerHTML);
+                                            let combinedHTML = '';
+                                            // Get all comment-page elements and their styles
+                                            const allPages = document.querySelectorAll('.comment-page');
+                                            allPages.forEach(page => {
+                                                combinedHTML += page.outerHTML;
+                                            });
+                                            
+                                            // Also get the print wrapper if it exists
+                                            const wrappers = document.querySelectorAll('.doc-print-wrapper');
+                                            wrappers.forEach(wrapper => {
+                                                // Only add if not already included
+                                                if (!combinedHTML.includes(wrapper.outerHTML)) {
+                                                    combinedHTML += wrapper.outerHTML;
+                                                }
+                                            });
+                                            
+                                            WinPrint.document.write('<html><head><title>Print Comments</title>');
+                                            WinPrint.document.write('<link rel="stylesheet" href="/client/component/otherComponent/style/comment.css">');
+                                            WinPrint.document.write('</head><body>');
+                                            WinPrint.document.write(combinedHTML);
                                             WinPrint.document.write('</body></html>');
                                             WinPrint.document.close();
-                                            WinPrint.focus();
-                                            WinPrint.print();
-                                            WinPrint.close();
+                                            WinPrint.onload = function() {
+                                                setTimeout(() => {
+                                                    WinPrint.focus();
+                                                    WinPrint.print();
+                                                }, 500);
+                                            };
                                         } else {
-                                            alert('Popup blocked! Please allow popups for this site.')
+                                            alert('Popup blocked! Please allow popups for this site.');
                                         }
                                     },
                                     color: '#0d6efd'
@@ -727,7 +750,55 @@ export const Content = (mainFrame, leftPDiv = null) => {
                 })
             }
             
-            const isValidReview = Review && (Array.isArray(Review) ? Review.length > 0 : Object.keys(Review).length > 0)
+            // Extract data from response
+            const docInfo = response.doc_info || {};
+            const commentsData = response.data || [];
+            
+            // Check if we have valid comment data
+            const hasComments = commentsData && commentsData.length > 0;
+            
+            // Get document details from doc_info or from the first comment's doc_info
+            const docTitle = docInfo.doc_title || docInfo.title || 'Untitled';
+            const campus = docInfo.campus || 'N/A';
+            const author = docInfo.author || 'Unknown';
+            const category = docInfo.category || 'Uncategorized';
+            const center = docInfo.center || '';
+            const coauthor = docInfo.coauthor || '';
+            const presenter = docInfo.presenter || '';
+            const paper_trail_no = docInfo.paper_trail_no || '';
+            
+            // Format comments for the Print component
+            let formattedComments = [];
+            
+            if (hasComments) {
+                // Map the comment data to the format expected by Print component
+                commentsData.forEach(comment => {
+                    // Create a comment object with all fields
+                    const commentObj = {
+                        evaluator_name: comment.evaluator_name || 'Unknown Evaluator',
+                        date: comment.date || '',
+                        evID: comment.evID || null,
+                        isCommented: comment.isCommented || 0
+                    };
+                    
+                    // Add all comment fields that have content
+                    const fields = ['title', 'intro', 'abstract', 'objective', 'methodology', 'results', 'recommendation', 'literature', 'other'];
+                    let hasContent = false;
+                    
+                    fields.forEach(field => {
+                        if (comment[field] && comment[field].toString().trim() !== '' && 
+                            comment[field].toString().trim() !== 'N/A' && 
+                            comment[field].toString().trim() !== 'n/a') {
+                            commentObj[field] = comment[field];
+                            hasContent = true;
+                        }
+                    });
+                    
+                    if (hasContent) {
+                        formattedComments.push(commentObj);
+                    }
+                });
+            }
             
             const print = $({
                 tag: 'div',
@@ -747,18 +818,23 @@ export const Content = (mainFrame, leftPDiv = null) => {
                 child: [
                     // The Print component renders A4 pages directly
                     Print({
-                        doc_title: doc_title || title || 'Untitled',
-                        campus: campus || 'N/A',
-                        author: author || 'Unknown',
-                        category: category || 'Uncategorized',
+                        doc_title: docTitle,
+                        campus: campus,
+                        author: author,
+                        category: category,
+                        center: center,
+                        coauthor: coauthor,
+                        presenter: presenter,
+                        paper_trail_no: paper_trail_no,
                         date: new Date().toLocaleDateString(),
-                        review: isValidReview ? Review : { error: 'No review data available' },
+                        review: hasComments ? formattedComments : { error: 'No review data available' },
+                        all: true,
                         getHandler: (el) => {
-                            printBody = el
+                            printBody = el;
                         }
                     })
                 ]
-            })
+            });
             
             return $({
                 tag: 'div',
@@ -905,7 +981,198 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     },
                                     event: {
                                         type: 'input',
-                                        method: searchEvent
+                                        method: (e) => {
+                                            const searchTerm = e.target.value.trim();
+                                            
+                                            if (searchTerm.length === 0) {
+                                                // If search is empty, reload the current event filter
+                                                const eventSelect = document.getElementById('eventSelectFilter');
+                                                if (eventSelect) {
+                                                    const eventId = eventSelect.value || '0';
+                                                    // Call the loadDocuments function from Filter
+                                                    if (typeof loadDocuments === 'function') {
+                                                        loadDocuments(eventId, 1);
+                                                    } else {
+                                                        // Fallback: reload page
+                                                        location.reload();
+                                                    }
+                                                }
+                                                return;
+                                            }
+                                            
+                                            // Show loading state
+                                            if (researchBody) {
+                                                researchBody.innerHTML = '';
+                                                researchBody.appendChild($({
+                                                    tag: 'div',
+                                                    att: { id: 'searchLoadingIndicator' },
+                                                    style: {
+                                                        textAlign: 'center',
+                                                        padding: '40px',
+                                                        color: '#6c757d',
+                                                        fontSize: '14px',
+                                                        backgroundColor: '#ffffff',
+                                                        borderRadius: '12px',
+                                                        margin: '20px',
+                                                        border: '1px solid #f0f0f0',
+                                                        fontFamily: 'Inter, sans-serif'
+                                                    },
+                                                    child: [
+                                                        $({
+                                                            tag: 'div',
+                                                            style: {
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                alignItems: 'center',
+                                                                gap: '12px'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'span',
+                                                                    att: { className: 'fa-solid fa-spinner fa-pulse' },
+                                                                    style: { fontSize: '24px', color: '#0d6efd' }
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    text: 'Searching...'
+                                                                })
+                                                            ]
+                                                        })
+                                                    ]
+                                                }));
+                                            }
+                                            
+                                            // Perform search
+                                            const formData = new FormData();
+                                            formData.append('searchDocuments', '1');
+                                            formData.append('searchTerm', searchTerm);
+                                            
+                                            fetch('/eventRequest', {
+                                                method: 'POST',
+                                                body: formData
+                                            })
+                                            .then(response => {
+                                                if (!response.ok) {
+                                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                                }
+                                                return response.json();
+                                            })
+                                            .then(response => {
+                                                const loadingIndicator = document.getElementById('searchLoadingIndicator');
+                                                if (loadingIndicator && loadingIndicator.parentNode) {
+                                                    loadingIndicator.remove();
+                                                }
+                                                
+                                                if (response.error) {
+                                                    showSearchError('Server error: ' + response.error);
+                                                    return;
+                                                }
+                                                
+                                                if (!response.data || !Array.isArray(response.data)) {
+                                                    showSearchError('Invalid response format from server');
+                                                    return;
+                                                }
+                                                
+                                                const data = response.data;
+                                                
+                                                if (researchBody) {
+                                                    researchBody.innerHTML = '';
+                                                }
+                                                
+                                                if (data.length === 0) {
+                                                    if (researchBody) {
+                                                        researchBody.appendChild($({
+                                                            tag: 'div',
+                                                            style: {
+                                                                textAlign: 'center',
+                                                                padding: '60px 20px',
+                                                                color: '#6c757d',
+                                                                fontSize: '14px',
+                                                                backgroundColor: '#ffffff',
+                                                                borderRadius: '12px',
+                                                                margin: '20px',
+                                                                border: '1px solid #f0f0f0',
+                                                                fontFamily: 'Inter, sans-serif'
+                                                            },
+                                                            child: [
+                                                                $({
+                                                                    tag: 'span',
+                                                                    att: { className: 'fa-solid fa-search' },
+                                                                    style: { fontSize: '48px', color: '#adb5bd', marginBottom: '16px', display: 'block' }
+                                                                }),
+                                                                $({
+                                                                    tag: 'div',
+                                                                    text: `No documents found for "${searchTerm}"`
+                                                                })
+                                                            ]
+                                                        }));
+                                                    }
+                                                } else {
+                                                    // Show search results
+                                                    const resultsHeader = $({
+                                                        tag: 'div',
+                                                        style: {
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            padding: '12px 16px',
+                                                            color: '#0d6efd',
+                                                            fontSize: '13px',
+                                                            backgroundColor: '#f8f9fa',
+                                                            borderRadius: '10px',
+                                                            margin: '0 0 16px 0',
+                                                            fontFamily: 'Inter, sans-serif',
+                                                            fontWeight: '500'
+                                                        },
+                                                        child: [
+                                                            $({
+                                                                tag: 'div',
+                                                                style: { display: 'flex', alignItems: 'center', gap: '8px' },
+                                                                child: [
+                                                                    $({ tag: 'span', att: { className: 'fa-solid fa-search' }, style: { fontSize: '12px' } }),
+                                                                    $({ tag: 'span', text: `Search results for "${searchTerm}"` })
+                                                                ]
+                                                            }),
+                                                            $({
+                                                                tag: 'div',
+                                                                style: { display: 'flex', alignItems: 'center', gap: '8px' },
+                                                                child: [
+                                                                    $({ tag: 'span', att: { className: 'fa-solid fa-file-lines' }, style: { fontSize: '12px' } }),
+                                                                    $({ tag: 'span', text: `${data.length} result(s) found` })
+                                                                ]
+                                                            })
+                                                        ]
+                                                    });
+                                                    
+                                                    if (researchBody) {
+                                                        researchBody.appendChild(resultsHeader);
+                                                        
+                                                        data.forEach((val, index) => {
+                                                            researchBody.appendChild(ResearchDocs({
+                                                                category: val.category,
+                                                                center: val.center,
+                                                                title: val.final_symposium_title || val.title,
+                                                                author: val.author,
+                                                                file: val.file,
+                                                                eventTYpe: val.event,
+                                                                campus: val.campus,
+                                                                deleteRequest: val.deletestate,
+                                                                docId: val.id,
+                                                                endorseId: val.endorsId,
+                                                                mainFrame: mainFrame 
+                                                            }));
+                                                        });
+                                                    }
+                                                }
+                                            })
+                                            .catch(error => {
+                                                const loadingIndicator = document.getElementById('searchLoadingIndicator');
+                                                if (loadingIndicator && loadingIndicator.parentNode) {
+                                                    loadingIndicator.remove();
+                                                }
+                                                showSearchError('Error: ' + error.message);
+                                            });
+                                        }
                                     },
                                     style: {
                                         backgroundColor: 'transparent',
@@ -920,7 +1187,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                         fontWeight: '400'
                                     },
                                     elementHandler: (el) => {
-                                        serch = el
+                                        serch = el;
                                     }
                                 }),
                                 $({
@@ -939,27 +1206,34 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     event: {
                                         type: 'click',
                                         method: (e) => {
-                                            e.stopPropagation()
+                                            e.stopPropagation();
                                             if (serch) {
-                                                serch.value = ''
-                                                const inputEvent = new Event('input', { bubbles: true })
-                                                serch.dispatchEvent(inputEvent)
+                                                serch.value = '';
+                                                // Trigger reload of current event
+                                                const eventSelect = document.getElementById('eventSelectFilter');
+                                                if (eventSelect) {
+                                                    const eventId = eventSelect.value || '0';
+                                                    if (typeof loadDocuments === 'function') {
+                                                        loadDocuments(eventId, 1);
+                                                    } else {
+                                                        location.reload();
+                                                    }
+                                                }
                                             }
-                                            e.target.style.display = 'none'
+                                            e.target.style.display = 'none';
                                         }
                                     },
                                     elementHandler: (clearBtn) => {
                                         if (serch) {
-                                            const originalOnInput = searchEvent
+                                            const originalOnInput = serch.oninput;
                                             const newOnInput = (e) => {
                                                 if (e.target.value.length > 0) {
-                                                    clearBtn.style.display = 'block'
+                                                    clearBtn.style.display = 'block';
                                                 } else {
-                                                    clearBtn.style.display = 'none'
+                                                    clearBtn.style.display = 'none';
                                                 }
-                                                if (originalOnInput) originalOnInput(e)
-                                            }
-                                            serch.addEventListener('input', newOnInput)
+                                            };
+                                            serch.addEventListener('input', newOnInput);
                                         }
                                     }
                                 })
@@ -969,35 +1243,63 @@ export const Content = (mainFrame, leftPDiv = null) => {
                     event: {
                         type: 'click',
                         method: () => {
-                            if (serch) serch.focus()
+                            if (serch) serch.focus();
                         }
                     }
-                })
+                });
                 
-                const searchInputField = searchContainer.querySelector('.searchInput')
+                const searchInputField = searchContainer.querySelector('.searchInput');
                 if (searchInputField) {
                     searchInputField.addEventListener('focus', () => {
-                        searchContainer.style.borderColor = '#0d6efd'
-                        searchContainer.style.boxShadow = '0 0 0 3px rgba(13,110,253,0.1)'
-                        const searchIcon = searchContainer.querySelector('.fa-magnifying-glass')
-                        if (searchIcon) searchIcon.style.color = '#0d6efd'
-                    })
+                        searchContainer.style.borderColor = '#0d6efd';
+                        searchContainer.style.boxShadow = '0 0 0 3px rgba(13,110,253,0.1)';
+                        const searchIcon = searchContainer.querySelector('.fa-magnifying-glass');
+                        if (searchIcon) searchIcon.style.color = '#0d6efd';
+                    });
                     
                     searchInputField.addEventListener('blur', () => {
-                        searchContainer.style.borderColor = '#e9ecef'
-                        searchContainer.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)'
-                        const searchIcon = searchContainer.querySelector('.fa-magnifying-glass')
-                        if (searchIcon) searchIcon.style.color = '#adb5bd'
-                    })
+                        searchContainer.style.borderColor = '#e9ecef';
+                        searchContainer.style.boxShadow = '0 1px 2px rgba(0,0,0,0.03)';
+                        const searchIcon = searchContainer.querySelector('.fa-magnifying-glass');
+                        if (searchIcon) searchIcon.style.color = '#adb5bd';
+                    });
                 }
                 
-                el.appendChild(searchContainer)
+                el.appendChild(searchContainer);
                 
                 if (tools) {
-                    el.appendChild(tools)
+                    el.appendChild(tools);
                 }
             }
-        }))
+        }));
+    }
+
+    function showSearchError(message) {
+        if (researchBody) {
+            researchBody.innerHTML = '';
+            researchBody.appendChild($({
+                tag: 'div',
+                style: {
+                    textAlign: 'center',
+                    padding: '60px 20px',
+                    color: '#dc3545',
+                    fontSize: '14px',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '12px',
+                    margin: '20px',
+                    border: '1px solid #ffe5e5',
+                    fontFamily: 'Inter, sans-serif'
+                },
+                child: [
+                    $({
+                        tag: 'span',
+                        att: { className: 'fa-solid fa-circle-exclamation' },
+                        style: { fontSize: '48px', color: '#dc3545', marginBottom: '16px', display: 'block' }
+                    }),
+                    $({ tag: 'div', text: message })
+                ]
+            }));
+        }
     }
 
     let printerPanel
@@ -1177,14 +1479,17 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                             }));
                                             
                                             // Fetch categories from the category table
-                                            const req = new Request('/comments');
-                                            req.Post([{
-                                                name: 'getCategories',
-                                                value: '1'
-                                            }]);
-                                            req.Json();
-                                            req.Send().then(data => {
-                                                if (data && Array.isArray(data)) {
+                                            const formData = new FormData();
+                                            formData.append('getCategories', 'true');
+                                            
+                                            try {
+                                                const response = await fetch('/comments', {
+                                                    method: 'POST',
+                                                    body: formData
+                                                });
+                                                const data = await response.json();
+                                                
+                                                if (data && Array.isArray(data) && data.length > 0) {
                                                     data.forEach(val => {
                                                         el.appendChild($({
                                                             tag: 'option',
@@ -1201,37 +1506,21 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                         }));
                                                     });
                                                 }
-                                            }).catch(err => {
+                                            } catch (err) {
                                                 console.error('Error loading categories:', err);
-                                                // Fallback: Add hardcoded categories if fetch fails
-                                                const fallbackCategories = [
-                                                    'Social Science',
-                                                    'Natural / Biological',
-                                                    'Food',
-                                                    'Development',
-                                                    'Extension'
-                                                ];
-                                                fallbackCategories.forEach(name => {
-                                                    el.appendChild($({
-                                                        tag: 'option',
-                                                        text: name,
-                                                        att: {
-                                                            value: name
-                                                        },
-                                                        style: {
-                                                            backgroundColor: '#ffffff',
-                                                            color: '#2c3e50',
-                                                            height: '36px',
-                                                            fontSize: '14px'
-                                                        }
-                                                    }));
-                                                });
-                                            });
+                                            }
                                         },
                                         event: {
                                             type: 'change',
-                                            method: (event) => {
-                                                getCategory(event.target.value);
+                                            method: async (event) => {
+                                                const selectedValue = event.target.value;
+                                                const selectedText = event.target.options[event.target.selectedIndex]?.text || '';
+                                                
+                                                // Store the selected category name
+                                                window.selectedCategoryName = selectedText;
+                                                
+                                                // Call getCategory with the value
+                                                getCategory(selectedValue);
                                             }
                                         }
                                     })
@@ -1297,8 +1586,9 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                         form.append('commentRequest', 'true');
                                         form.append('eventType', filter);
                                         
-                                        // Use the category variable from getCategory
-                                        if (category && category !== 'Print All Category' && category !== '-- Select Category --') {
+                                        const isPrintAll = category === 'Print All Category';
+                                        
+                                        if (category && category !== 'Print All Category' && category !== '-- Select Category --' && category !== '') {
                                             form.append('categoryId', category);
                                             
                                             const categorySelect = document.querySelector('#printPanelCategorySelect');
@@ -1310,13 +1600,36 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                             }
                                         }
                                         
+                                        if (isPrintAll) {
+                                            form.append('isPrintAll', 'true');
+                                        }
+                                        
                                         // Show loading state
-                                        print.innerHTML = `
-                                            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:60px 40px;color:#6c757d;">
-                                                <span class="fa-solid fa-spinner fa-pulse" style="font-size:40px;color:#0d6efd;margin-bottom:16px;"></span>
-                                                <p style="font-family:Inter,sans-serif;font-size:15px;">Loading comments...</p>
-                                            </div>
-                                        `;
+                                        print.innerHTML = '';
+                                        print.appendChild($({
+                                            tag: 'div',
+                                            style: {
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                height: '100%',
+                                                padding: '60px 40px',
+                                                color: '#6c757d'
+                                            },
+                                            child: [
+                                                $({
+                                                    tag: 'span',
+                                                    att: { className: 'fa-solid fa-spinner fa-pulse' },
+                                                    style: { fontSize: '40px', color: '#0d6efd', marginBottom: '16px' }
+                                                }),
+                                                $({
+                                                    tag: 'p',
+                                                    text: 'Loading comments...',
+                                                    style: { fontFamily: 'Inter, sans-serif', fontSize: '15px' }
+                                                })
+                                            ]
+                                        }));
                                         
                                         await fetch('/comments', {
                                             method: 'POST',
@@ -1326,10 +1639,45 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                             print.innerHTML = '';
                                             
                                             if (data && data.length > 0) {
+                                                // Track campuses for the count display
+                                                const campuses = new Set();
+                                                const categories = new Set();
+                                                
                                                 // Display each document with its comments using the Print component
-                                                data.forEach(doc => {
+                                                data.forEach((doc, index) => {
                                                     if (doc.comments && doc.comments.length > 0) {
-                                                        print.appendChild(Print({
+                                                        if (doc.campus) campuses.add(doc.campus);
+                                                        if (doc.category) categories.add(doc.category);
+                                                        
+                                                        // Create a wrapper for each document
+                                                        const docWrapper = document.createElement('div');
+                                                        docWrapper.style.cssText = `
+                                                            margin-bottom: 40px;
+                                                            border-bottom: 2px solid #e9ecef;
+                                                            padding-bottom: 20px;
+                                                        `;
+                                                        
+                                                        // Add document header
+                                                        const header = document.createElement('div');
+                                                        header.style.cssText = `
+                                                            padding: 12px 16px;
+                                                            background: #f8f9fa;
+                                                            border-radius: 8px;
+                                                            margin-bottom: 16px;
+                                                            font-family: Inter, sans-serif;
+                                                        `;
+                                                        header.innerHTML = `
+                                                            <div style="font-weight:600;font-size:16px;color:#1a2a3a;">${doc.doc_title || 'Untitled'}</div>
+                                                            <div style="font-size:13px;color:#6c757d;margin-top:4px;">
+                                                                <span>Campus: ${doc.campus || 'N/A'}</span> | 
+                                                                <span>Category: ${doc.category || 'N/A'}</span> | 
+                                                                <span>Author: ${doc.author || 'N/A'}</span>
+                                                            </div>
+                                                        `;
+                                                        docWrapper.appendChild(header);
+                                                        
+                                                        // Add the Print component for this document
+                                                        const printComponent = Print({
                                                             doc_title: doc.doc_title,
                                                             review: doc.comments,
                                                             category: doc.category,
@@ -1343,7 +1691,10 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                             getHandler: (el) => {
                                                                 samp = el;
                                                             }
-                                                        }));
+                                                        });
+                                                        
+                                                        docWrapper.appendChild(printComponent);
+                                                        print.appendChild(docWrapper);
                                                     }
                                                 });
                                                 
@@ -1358,10 +1709,14 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                     font-size: 14px;
                                                     color: #0d6efd;
                                                     font-weight: 500;
+                                                    display: flex;
+                                                    flex-wrap: wrap;
+                                                    gap: 8px 20px;
+                                                    align-items: center;
                                                 `;
                                                 
                                                 let categoryLabel = '';
-                                                if (category && category !== 'Print All Category' && category !== '-- Select Category --') {
+                                                if (category && category !== 'Print All Category' && category !== '-- Select Category --' && category !== '') {
                                                     const categorySelect = document.querySelector('#printPanelCategorySelect');
                                                     if (categorySelect) {
                                                         const selectedOption = categorySelect.options[categorySelect.selectedIndex];
@@ -1369,14 +1724,22 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                             categoryLabel = ` for "${selectedOption.text}"`;
                                                         }
                                                     }
+                                                } else if (isPrintAll) {
+                                                    categoryLabel = ' for ALL Categories';
                                                 }
                                                 
-                                                countDiv.textContent = `📄 Found ${data.length} document(s) with comments${categoryLabel}`;
+                                                countDiv.innerHTML = `
+                                                    <span>📄 Found ${data.length} document(s) with comments${categoryLabel}</span>
+                                                    <span style="font-size:12px;color:#495057;">Campuses: ${Array.from(campuses).join(', ') || 'N/A'}</span>
+                                                    <span style="font-size:12px;color:#495057;">Categories: ${Array.from(categories).join(', ') || 'N/A'}</span>
+                                                `;
                                                 print.prepend(countDiv);
                                                 
                                             } else {
                                                 let categoryLabel = 'the selected event';
-                                                if (category && category !== 'Print All Category' && category !== '-- Select Category --') {
+                                                if (isPrintAll) {
+                                                    categoryLabel = 'ALL Categories';
+                                                } else if (category && category !== 'Print All Category' && category !== '-- Select Category --' && category !== '') {
                                                     const categorySelect = document.querySelector('#printPanelCategorySelect');
                                                     if (categorySelect) {
                                                         const selectedOption = categorySelect.options[categorySelect.selectedIndex];
@@ -1386,30 +1749,73 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                     }
                                                 }
                                                 
-                                                print.innerHTML = `
-                                                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:60px 40px;color:#6c757d;">
-                                                        <span class="fa-solid fa-comment-slash" style="font-size:48px;color:#ced4da;margin-bottom:16px;"></span>
-                                                        <h3 style="font-family:Inter,sans-serif;font-size:20px;color:#2c3e50;margin-bottom:8px;">No Comments Found</h3>
-                                                        <p style="font-family:Inter,sans-serif;font-size:15px;max-width:400px;text-align:center;line-height:1.6;">
-                                                            No comments found for ${categoryLabel}.
-                                                        </p>
-                                                    </div>
-                                                `;
+                                                print.innerHTML = '';
+                                                print.appendChild($({
+                                                    tag: 'div',
+                                                    style: {
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        height: '100%',
+                                                        padding: '60px 40px',
+                                                        color: '#6c757d'
+                                                    },
+                                                    child: [
+                                                        $({
+                                                            tag: 'span',
+                                                            att: { className: 'fa-solid fa-comment-slash' },
+                                                            style: { fontSize: '48px', color: '#ced4da', marginBottom: '16px' }
+                                                        }),
+                                                        $({
+                                                            tag: 'h3',
+                                                            text: 'No Comments Found',
+                                                            style: { fontFamily: 'Inter, sans-serif', fontSize: '20px', color: '#2c3e50', marginBottom: '8px' }
+                                                        }),
+                                                        $({
+                                                            tag: 'p',
+                                                            text: `No comments found for ${categoryLabel}.`,
+                                                            style: { fontFamily: 'Inter, sans-serif', fontSize: '15px', maxWidth: '400px', textAlign: 'center', lineHeight: '1.6' }
+                                                        })
+                                                    ]
+                                                }));
                                             }
                                         })
                                         .catch(err => {
-                                            print.innerHTML = `
-                                                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:60px 40px;color:#dc3545;">
-                                                    <span class="fa-solid fa-triangle-exclamation" style="font-size:48px;margin-bottom:16px;"></span>
-                                                    <h3 style="font-family:Inter,sans-serif;font-size:20px;">Error Loading Comments</h3>
-                                                    <p style="font-family:Inter,sans-serif;font-size:15px;">${err.message || 'Please try again.'}</p>
-                                                </div>
-                                            `;
+                                            print.innerHTML = '';
+                                            print.appendChild($({
+                                                tag: 'div',
+                                                style: {
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    height: '100%',
+                                                    padding: '60px 40px',
+                                                    color: '#dc3545'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'span',
+                                                        att: { className: 'fa-solid fa-triangle-exclamation' },
+                                                        style: { fontSize: '48px', marginBottom: '16px' }
+                                                    }),
+                                                    $({
+                                                        tag: 'h3',
+                                                        text: 'Error Loading Comments',
+                                                        style: { fontFamily: 'Inter, sans-serif', fontSize: '20px' }
+                                                    }),
+                                                    $({
+                                                        tag: 'p',
+                                                        text: err.message || 'Please try again.',
+                                                        style: { fontFamily: 'Inter, sans-serif', fontSize: '15px' }
+                                                    })
+                                                ]
+                                            }));
                                         });
                                     }
                                 }
                             }),
-                            // ===== UPDATED PRINT BUTTON =====
                             $({
                                 tag: 'div',
                                 style: {
@@ -1446,7 +1852,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                         tag: 'div',
                                         style: {
                                             height: 'fit-content',
-                                            width: '100% ',
+                                            width: '100%',
                                             fontFamily: 'Inter, sans-serif',
                                             margin: 'auto',
                                             marginLeft: '8px',
@@ -1460,119 +1866,396 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 event: {
                                     type: 'click',
                                     method: () => {
-                                        const nodes = print.childNodes;
-                                        if (!nodes || nodes.length === 0) {
-                                            alert('No content to print. Please load data first.');
+                                        // Get ALL .comment-page elements from the ENTIRE document
+                                        const allPages = document.querySelectorAll('.comment-page');
+                                        
+                                        if (allPages.length === 0) {
+                                            alert('No pages to print. Please load data first.');
                                             return;
                                         }
 
-                                        const printContainer = document.getElementById('commentPDF');
-                                        if (printContainer && printContainer.innerHTML) {
-                                            // Use the Print component's rendered content
-                                            let WinPrint = window.open('', '_blank', 'toolbar=0,scrollbars=0,status=0');
-                                            if (!WinPrint) {
-                                                alert('Popup blocked! Please allow popups for this site.');
-                                                return;
-                                            }
+                                        console.log('Total pages found:', allPages.length);
+                                        console.log('Pages:', allPages);
 
-                                            // Get the full rendered HTML from the Print component
-                                            const printHTML = printContainer.outerHTML || printContainer.innerHTML;
-
-                                            WinPrint.document.write(`
-                                                <!DOCTYPE html>
-                                                <html>
-                                                <head>
-                                                    <title>Print Comments</title>
-                                                    <link rel="stylesheet" href="/client/component/otherComponent/style/comment.css">
-                                                    <style>
-                                                        body {
-                                                            margin: 0;
-                                                            padding: 0;
-                                                            background: white;
-                                                            -webkit-print-color-adjust: exact !important;
-                                                            print-color-adjust: exact !important;
-                                                        }
-                                                        @page {
-                                                            margin: 0;
-                                                            size: A4 portrait;
-                                                        }
-                                                        * {
-                                                            box-sizing: border-box;
-                                                        }
-                                                        /* Ensure images print properly */
-                                                        img {
-                                                            -webkit-print-color-adjust: exact !important;
-                                                            print-color-adjust: exact !important;
-                                                        }
-                                                    </style>
-                                                </head>
-                                                <body>
-                                                    ${printContainer.outerHTML || printContainer.innerHTML}
-                                                </body>
-                                                </html>
-                                            `);
-
-                                            WinPrint.document.close();
-
-                                            WinPrint.onload = function() {
-                                                setTimeout(() => {
-                                                    WinPrint.focus();
-                                                    WinPrint.print();
-                                                    // Don't close immediately - let user close manually
-                                                }, 1000);
-                                            };
-                                        } else {
-                                            // Fallback: Use the raw nodes
-                                            let WinPrint = window.open('', '_blank', 'toolbar=0,scrollbars=0,status=0');
-                                            if (!WinPrint) {
-                                                alert('Popup blocked! Please allow popups for this site.');
-                                                return;
-                                            }
-
-                                            let htmlContent = `
-                                                <!DOCTYPE html>
-                                                <html>
-                                                <head>
-                                                    <title>Print Comments</title>
-                                                    <link rel="stylesheet" href="/client/component/otherComponent/style/comment.css">
-                                                    <style>
-                                                        body {
-                                                            margin: 0;
-                                                            padding: 0;
-                                                            font-family: Arial, sans-serif;
-                                                            -webkit-print-color-adjust: exact !important;
-                                                            print-color-adjust: exact !important;
-                                                        }
-                                                        @page {
-                                                            margin: 0;
-                                                            size: A4 portrait;
-                                                        }
-                                                        * {
-                                                            box-sizing: border-box;
-                                                        }
-                                                    </style>
-                                                </head>
-                                                <body>
-                                            `;
-
-                                            for (let x = 0; x < nodes.length; x++) {
-                                                htmlContent += nodes[x].outerHTML || nodes[x].innerHTML || '';
-                                            }
-
-                                            htmlContent += `
-                                                </body>
-                                                </html>`;
-
-                                            WinPrint.document.write(htmlContent);
-                                            WinPrint.document.close();
-
-                                            WinPrint.onload = function() {
-                                                setTimeout(() => {
-                                                    WinPrint.focus();
-                                                    WinPrint.print();
-                                                }, 1000);
-                                            };
+                                        // Get ALL document wrappers and their content
+                                        const allWrappers = document.querySelectorAll('.doc-print-wrapper');
+                                        
+                                        // Build HTML with ALL content - preserve the original structure
+                                        let contentHTML = '';
+                                        
+                                        // Option 1: Use the wrapper approach - this preserves the document structure
+                                        allWrappers.forEach(wrapper => {
+                                            contentHTML += wrapper.outerHTML;
+                                        });
+                                        
+                                        // Option 2: If no wrappers, use individual pages
+                                        if (!contentHTML) {
+                                            allPages.forEach((page, index) => {
+                                                const clone = page.cloneNode(true);
+                                                const pageNum = clone.querySelector('.page-number');
+                                                if (pageNum) {
+                                                    pageNum.textContent = `Page ${index + 1} of ${allPages.length}`;
+                                                }
+                                                contentHTML += clone.outerHTML;
+                                            });
                                         }
+
+                                        // Create print window
+                                        const printWindow = window.open('', '_blank', 'width=800,height=600,toolbar=0,scrollbars=1,status=0');
+                                        if (!printWindow) {
+                                            alert('Popup blocked! Please allow popups for this site.');
+                                            return;
+                                        }
+
+                                        const totalPages = allPages.length;
+
+                                        // Get the actual CSS from the main page
+                                        const styles = document.querySelector('style[comment-print]');
+                                        const styleContent = styles ? styles.innerHTML : '';
+
+                                        printWindow.document.write(`
+                                            <!DOCTYPE html>
+                                            <html>
+                                            <head>
+                                                <title>Print Comments - ${totalPages} pages</title>
+                                                <meta charset="UTF-8">
+                                                <style>
+                                                    /* CRITICAL: These styles MUST match the screen styles */
+                                                    * {
+                                                        margin: 0;
+                                                        padding: 0;
+                                                        box-sizing: border-box;
+                                                    }
+
+                                                    html, body {
+                                                        margin: 0 !important;
+                                                        padding: 0 !important;
+                                                        background: white !important;
+                                                        -webkit-print-color-adjust: exact !important;
+                                                        print-color-adjust: exact !important;
+                                                        width: 100% !important;
+                                                        height: 100% !important;
+                                                    }
+
+                                                    @page {
+                                                        margin: 0;
+                                                        size: A4 portrait;
+                                                    }
+
+                                                    /* Screen preview styles - MUST match the main page */
+                                                    @media screen {
+                                                        body {
+                                                            padding: 20px;
+                                                            background: #e8ecf0;
+                                                            display: flex;
+                                                            flex-direction: column;
+                                                            align-items: center;
+                                                            gap: 24px;
+                                                        }
+
+                                                        .doc-print-wrapper {
+                                                            width: 100%;
+                                                            max-width: 21cm;
+                                                            margin: 0 auto;
+                                                        }
+
+                                                        .comment-page {
+                                                            width: 21cm !important;
+                                                            height: 29.7cm !important;
+                                                            margin: 0 auto !important;
+                                                            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15) !important;
+                                                            border-radius: 4px !important;
+                                                            background: white !important;
+                                                            position: relative !important;
+                                                            overflow: hidden !important;
+                                                            flex-shrink: 0 !important;
+                                                        }
+
+                                                        .page-background {
+                                                            position: absolute !important;
+                                                            top: 0 !important;
+                                                            left: 0 !important;
+                                                            right: 0 !important;
+                                                            bottom: 0 !important;
+                                                            z-index: 1 !important;
+                                                            pointer-events: none !important;
+                                                            overflow: hidden !important;
+                                                        }
+
+                                                        .page-background img {
+                                                            width: 100% !important;
+                                                            height: 100% !important;
+                                                            object-fit: cover !important;
+                                                            object-position: center center !important;
+                                                            display: block !important;
+                                                        }
+
+                                                        .page-content {
+                                                            position: relative !important;
+                                                            z-index: 2 !important;
+                                                            padding: 4cm 1.5cm 4cm 1.5cm !important;
+                                                            width: 100% !important;
+                                                            min-height: 29.7cm !important;
+                                                            box-sizing: border-box !important;
+                                                            background: transparent !important;
+                                                            text-align: justify !important;
+                                                        }
+
+                                                        .page-number {
+                                                            position: absolute !important;
+                                                            bottom: 4cm !important;
+                                                            right: 1.5cm !important;
+                                                            font-size: 10pt !important;
+                                                            color: #666 !important;
+                                                            z-index: 3 !important;
+                                                            font-weight: normal !important;
+                                                        }
+
+                                                        .content-inner {
+                                                            height: 100% !important;
+                                                            overflow: hidden !important;
+                                                        }
+
+                                                        table {
+                                                            width: 100% !important;
+                                                            border-collapse: collapse !important;
+                                                            font-size: 10pt !important;
+                                                            font-family: Arial, sans-serif !important;
+                                                        }
+                                                        td {
+                                                            padding: 2mm 3mm !important;
+                                                            border-bottom: 1px solid #e0e0e0 !important;
+                                                            font-size: 10pt !important;
+                                                            font-family: Arial, sans-serif !important;
+                                                        }
+                                                        hr {
+                                                            border: none !important;
+                                                            border-top: 1.5px solid #c0c0c0 !important;
+                                                            margin: 4mm 0 6mm 0 !important;
+                                                        }
+                                                        .evaluator-block {
+                                                            margin-bottom: 5mm !important;
+                                                            page-break-inside: avoid !important;
+                                                        }
+                                                        .evaluator-name {
+                                                            font-size: 12pt !important;
+                                                            font-weight: bold !important;
+                                                            color: #1a237e !important;
+                                                            margin-bottom: 2mm !important;
+                                                            border-bottom: 2px solid #1a237e !important;
+                                                            padding-bottom: 1mm !important;
+                                                        }
+                                                        .comment-block {
+                                                            margin-bottom: 2mm !important;
+                                                        }
+                                                        .comment-label {
+                                                            font-weight: bold !important;
+                                                            font-size: 10pt !important;
+                                                            color: #37474f !important;
+                                                            margin-bottom: 0.5mm !important;
+                                                        }
+                                                        .comment-text {
+                                                            font-size: 10pt !important;
+                                                            line-height: 1.6 !important;
+                                                            color: #263238 !important;
+                                                            padding-left: 3mm !important;
+                                                            word-break: break-word !important;
+                                                            text-align: left !important;
+                                                        }
+                                                        .no-comments {
+                                                            padding: 2mm 3mm !important;
+                                                            color: #6c757d !important;
+                                                            font-style: italic !important;
+                                                            font-size: 10pt !important;
+                                                            text-align: center !important;
+                                                        }
+                                                    }
+
+                                                    /* Print styles */
+                                                    @media print {
+                                                        html, body {
+                                                            margin: 0 !important;
+                                                            padding: 0 !important;
+                                                            background: white !important;
+                                                            -webkit-print-color-adjust: exact !important;
+                                                            print-color-adjust: exact !important;
+                                                        }
+
+                                                        .doc-print-wrapper {
+                                                            display: block !important;
+                                                            margin: 0 !important;
+                                                            padding: 0 !important;
+                                                            border: none !important;
+                                                        }
+
+                                                        .comment-page {
+                                                            page-break-after: always !important;
+                                                            page-break-inside: avoid !important;
+                                                            box-shadow: none !important;
+                                                            border-radius: 0 !important;
+                                                            margin: 0 !important;
+                                                            padding: 0 !important;
+                                                            width: 100% !important;
+                                                            height: 29.7cm !important;
+                                                            overflow: hidden !important;
+                                                            position: relative !important;
+                                                            background: white !important;
+                                                            display: flex !important;
+                                                            flex-direction: column !important;
+                                                        }
+
+                                                        .comment-page:last-child {
+                                                            page-break-after: auto !important;
+                                                        }
+
+                                                        .page-background {
+                                                            position: absolute !important;
+                                                            top: 0 !important;
+                                                            left: 0 !important;
+                                                            right: 0 !important;
+                                                            bottom: 0 !important;
+                                                            z-index: 1 !important;
+                                                            pointer-events: none !important;
+                                                            overflow: hidden !important;
+                                                        }
+
+                                                        .page-background img {
+                                                            width: 100% !important;
+                                                            height: 100% !important;
+                                                            object-fit: cover !important;
+                                                            object-position: center center !important;
+                                                            display: block !important;
+                                                        }
+
+                                                        .page-content {
+                                                            position: relative !important;
+                                                            z-index: 2 !important;
+                                                            padding: 4cm 1.5cm 4cm 1.5cm !important;
+                                                            width: 100% !important;
+                                                            min-height: 29.7cm !important;
+                                                            box-sizing: border-box !important;
+                                                            background: transparent !important;
+                                                            text-align: justify !important;
+                                                        }
+
+                                                        .page-number {
+                                                            position: absolute !important;
+                                                            bottom: 4cm !important;
+                                                            right: 1.5cm !important;
+                                                            font-size: 10pt !important;
+                                                            color: #666 !important;
+                                                            z-index: 3 !important;
+                                                            font-weight: normal !important;
+                                                        }
+
+                                                        .content-inner {
+                                                            height: 100% !important;
+                                                            overflow: hidden !important;
+                                                        }
+
+                                                        table {
+                                                            width: 100% !important;
+                                                            border-collapse: collapse !important;
+                                                            font-size: 10pt !important;
+                                                            font-family: Arial, sans-serif !important;
+                                                        }
+                                                        td {
+                                                            padding: 2mm 3mm !important;
+                                                            border-bottom: 1px solid #e0e0e0 !important;
+                                                            font-size: 10pt !important;
+                                                            font-family: Arial, sans-serif !important;
+                                                        }
+                                                        hr {
+                                                            border: none !important;
+                                                            border-top: 1.5px solid #c0c0c0 !important;
+                                                            margin: 4mm 0 6mm 0 !important;
+                                                        }
+                                                        .evaluator-block {
+                                                            margin-bottom: 5mm !important;
+                                                            page-break-inside: avoid !important;
+                                                        }
+                                                        .evaluator-name {
+                                                            font-size: 12pt !important;
+                                                            font-weight: bold !important;
+                                                            color: #1a237e !important;
+                                                            margin-bottom: 2mm !important;
+                                                            border-bottom: 2px solid #1a237e !important;
+                                                            padding-bottom: 1mm !important;
+                                                        }
+                                                        .comment-block {
+                                                            margin-bottom: 2mm !important;
+                                                        }
+                                                        .comment-label {
+                                                            font-weight: bold !important;
+                                                            font-size: 10pt !important;
+                                                            color: #37474f !important;
+                                                            margin-bottom: 0.5mm !important;
+                                                        }
+                                                        .comment-text {
+                                                            font-size: 10pt !important;
+                                                            line-height: 1.6 !important;
+                                                            color: #263238 !important;
+                                                            padding-left: 3mm !important;
+                                                            word-break: break-word !important;
+                                                            text-align: left !important;
+                                                        }
+                                                        .no-comments {
+                                                            padding: 2mm 3mm !important;
+                                                            color: #6c757d !important;
+                                                            font-style: italic !important;
+                                                            font-size: 10pt !important;
+                                                            text-align: center !important;
+                                                        }
+
+                                                        *::-webkit-scrollbar {
+                                                            display: none !important;
+                                                            width: 0px !important;
+                                                            height: 0px !important;
+                                                        }
+                                                    }
+                                                </style>
+                                                <style>
+                                                    /* Additional inline styles to ensure ALL content is visible */
+                                                    .comment-page {
+                                                        display: flex !important;
+                                                        flex-direction: column !important;
+                                                    }
+                                                    .page-background {
+                                                        display: block !important;
+                                                    }
+                                                    .page-background img {
+                                                        display: block !important;
+                                                    }
+                                                    .page-content {
+                                                        display: block !important;
+                                                    }
+                                                    .content-inner {
+                                                        display: block !important;
+                                                    }
+                                                    /* Ensure all tables and content render */
+                                                    table, tr, td {
+                                                        display: table !important;
+                                                    }
+                                                </style>
+                                            </head>
+                                            <body>
+                                                ${contentHTML}
+                                            </body>
+                                            </html>
+                                        `);
+
+                                        printWindow.document.close();
+
+                                        printWindow.onload = function() {
+                                            // Log to confirm all pages are loaded
+                                            const loadedPages = printWindow.document.querySelectorAll('.comment-page');
+                                            console.log('Pages loaded in print window:', loadedPages.length);
+                                            
+                                            setTimeout(() => {
+                                                printWindow.focus();
+                                                printWindow.print();
+                                            }, 1500);
+                                        };
                                     }
                                 }
                             }),
@@ -4147,7 +4830,10 @@ export const Content = (mainFrame, leftPDiv = null) => {
             let isLoading = false;
             let hasMore = true;
             let totalDocuments = 0;
-            
+
+            window.loadDocuments = function(eventId, page) {
+                loadDocuments(eventId, page);
+            };
             return $({
                 tag: 'div',
                 style: {
