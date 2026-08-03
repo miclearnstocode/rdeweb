@@ -54,15 +54,12 @@ function getCenterCode($centerName)
 
     $centerMapping = [
         'Crop Science Research & Developement Center' => 'CSRDC',
-        'Crop Science Research & Development Center' => 'CSRDC',
         'Livestock Research & Development Center' => 'LRDC',
         'Fisheries Research & Development Center' => 'FRDC',
-        'Food and Industrial Technology Research & Development Center' => 'FIRDC',
-        'Food and Industrial Technology Research & Developm...' => 'FITRDC',
+        'Food and Industrial Technology Research & Development Center' => 'FITRDC',
         'Social Science Research & Development Center' => 'SSRDC',
         'Machinery and Agricultural Technology Engineering Center' => 'MATEC',
         'Coconut Research and Development Center' => 'CocoRDC',
-        'Coconut Research and Development Center (Coco RDC)' => 'CocoRDC',
         'Extension' => 'Extension'
     ];
 
@@ -4990,9 +4987,6 @@ if (isset($_POST['researchReviewed'])) {
 
             $con->query("SET SESSION sql_mode = ''");
 
-            // ============================================================
-            // STEP 1: Get the logged-in user's account details
-            // ============================================================
             $userQuery = "SELECT usertype, campus, center FROM account_detail WHERE id = ?";
             $userStmt = $con->prepare($userQuery);
             $userStmt->bind_param("i", $userId);
@@ -5013,10 +5007,6 @@ if (isset($_POST['researchReviewed'])) {
             $isResearchChair = strpos(strtolower($userType), 'research chair') !== false;
             $isExtensionChair = strpos(strtolower($userType), 'extension chair') !== false;
             $isCenterDirector = strpos(strtolower($userType), 'center director') !== false;
-
-            // ============================================================
-            // STEP 2: Build the query based on user type
-            // ============================================================
             
             $campusFilter = '';
             $centerFilter = '';
@@ -5026,12 +5016,9 @@ if (isset($_POST['researchReviewed'])) {
                 // Research/Extension Chair - show papers from their campus
                 if (!empty($userCampus)) {
                     $campusFilter = "AND e.campus = '" . $con->real_escape_string($userCampus) . "'";
-                } else {
-                    // Fallback: if no campus set, show nothing
-                    $campusFilter = "AND 1=0";
                 }
             } elseif ($isCenterDirector) {
-                // Center Director - show all papers (no filter)
+                // Center Director - filter by center on researchfile table only
                 if (!empty($userCenter)) {
                     $centerFilter = "AND rf.center = '" . $con->real_escape_string($userCenter) . "'";
                 }
@@ -5040,9 +5027,6 @@ if (isset($_POST['researchReviewed'])) {
                 $senderFilter = "AND e.senderid = " . (int)$userId;
             }
 
-            // ============================================================
-            // STEP 3: Get ALL endorsements (not just the user's own)
-            // ============================================================
             $queryEndorsement = "SELECT * FROM endorsement e 
                                  WHERE 1=1 
                                  $campusFilter 
@@ -5056,9 +5040,6 @@ if (isset($_POST['researchReviewed'])) {
             $endorseStmt->execute();
             $endorseResult = $endorseStmt->get_result();
 
-            // ============================================================
-            // STEP 4: Collect all research documents for duplicate detection
-            // ============================================================
             $allResearchDocs = [];
             $endorsementMap = [];
 
@@ -5112,6 +5093,7 @@ if (isset($_POST['researchReviewed'])) {
                 LEFT JOIN event_list el ON rf.event_id = el.id
                 LEFT JOIN local_inhouse li ON rf.id = li.research_id
                 WHERE rf.endorsementid = ?
+                $centerFilter
                 ORDER BY rf.id DESC";
 
                 $researchStmt = $con->prepare($researchQuery);
@@ -5200,13 +5182,11 @@ if (isset($_POST['researchReviewed'])) {
                 }
             }
 
-            // ============================================================
-            // STEP 5: Apply Fuzzy Duplicate Detection
-            // ============================================================
             $response->list = applyFuzzyDuplicateDetection($response->list);
-
+            
             // ============================================================
-            // STEP 6: Get Student Papers (with campus filter for chairs)
+            // Student Papers - Only for Research/Extension Chairs
+            // (Center Directors don't manage student papers)
             // ============================================================
             $studentCampusFilter = '';
             $studentSenderFilter = '';
@@ -5217,83 +5197,81 @@ if (isset($_POST['researchReviewed'])) {
                 } else {
                     $studentCampusFilter = "AND 1=0";
                 }
-            } elseif (!$isCenterDirector) {
-                $studentSenderFilter = "AND srp.senderid = " . (int)$userId;
-            }
-
-            $queryStudentPapers = "SELECT 
-                srp.id,
-                srp.senderid,
-                srp.event_id,
-                srp.author,
-                srp.coauthor,
-                srp.presenter,
-                srp.date_started,
-                srp.date_completed,
-                srp.title,
-                srp.event,
-                srp.status,
-                srp.paper_type,
-                srp.category,
-                srp.campus,
-                srp.research_file_view_url,
-                srp.endorsement_file_view_url,
-                srp.created_at,
-                srp.updated_at,
-                el.name as event_name,
-                el.date_of_presentation
-            FROM student_research_papers srp
-            LEFT JOIN event_list el ON srp.event_id = el.id
-            WHERE 1=1
-            $studentCampusFilter
-            $studentSenderFilter
-            ORDER BY srp.created_at DESC";
-
-            $studentStmt = $con->prepare($queryStudentPapers);
-            if (!$studentStmt) {
-                throw new Exception("Student papers query prepare failed: " . $con->error);
-            }
-            $studentStmt->execute();
-            $studentResult = $studentStmt->get_result();
-
-            while ($row = $studentResult->fetch_assoc()) {
-                $eventName = !empty($row['event_name']) ? $row['event_name'] : ($row['event'] ?? 'Uncategorized');
-
-                $studentEndorsement = new stdClass();
-                $studentEndorsement->type = 'student';
-                $studentEndorsement->id = $row['id'] ?? 0;
-                $studentEndorsement->eventType = $eventName;
-                $studentEndorsement->date = $row['created_at'] ?? date('Y-m-d H:i:s');
-                $studentEndorsement->status = $row['status'] ?? 'pending';
-                $studentEndorsement->endorsementFile = $row['endorsement_file_view_url'] ?? null;
-                $studentEndorsement->drive_file_id = null;
-                $studentEndorsement->drive_download_url = null;
-                $studentEndorsement->campus = $row['campus'] ?? '';
-                $studentEndorsement->senderid = $row['senderid'] ?? 0;
-                $studentEndorsement->ResearchDocs = [];
-
-                $researchDoc = new stdClass();
-                $researchDoc->docId = $row['id'] ?? 0;
-                $researchDoc->author = $row['author'] ?? '';
-                $researchDoc->coauthor = $row['coauthor'] ?? '';
-                $researchDoc->presenter = $row['presenter'] ?? '';
-                $researchDoc->title = $row['title'] ?? '';
-                $researchDoc->category = $row['category'] ?? '';
-                $researchDoc->campus = $row['campus'] ?? '';
-                $researchDoc->status = $row['status'] ?? 'pending';
-                $researchDoc->paper_type = $row['paper_type'] ?? 'undergraduate';
-                $researchDoc->event = $row['event'] ?? '';
-                $researchDoc->event_name = $eventName;
-                $researchDoc->event_id = $row['event_id'] ?? null;
-                $researchDoc->date_started = $row['date_started'] ?? null;
-                $researchDoc->date_completed = $row['date_completed'] ?? null;
-                $researchDoc->date_of_presentation = $row['date_of_presentation'] ?? null;
-                $researchDoc->type = 'student';
-                $researchDoc->researchFile = $row['research_file_view_url'] ?? null;
-                $researchDoc->endorsementFile = $row['endorsement_file_view_url'] ?? null;
                 
-                $studentEndorsement->ResearchDocs[] = $researchDoc;
-                $response->list[] = $studentEndorsement;
+                $queryStudentPapers = "SELECT 
+                    srp.id,
+                    srp.senderid,
+                    srp.event_id,
+                    srp.author,
+                    srp.coauthor,
+                    srp.presenter,
+                    srp.date_started,
+                    srp.date_completed,
+                    srp.title,
+                    srp.event,
+                    srp.status,
+                    srp.paper_type,
+                    srp.category,
+                    srp.campus,
+                    srp.research_file_view_url,
+                    srp.endorsement_file_view_url,
+                    srp.created_at,
+                    srp.updated_at,
+                    el.name as event_name,
+                    el.date_of_presentation
+                FROM student_research_papers srp
+                LEFT JOIN event_list el ON srp.event_id = el.id
+                WHERE 1=1
+                $studentCampusFilter
+                $studentSenderFilter
+                ORDER BY srp.created_at DESC";
+
+                $studentStmt = $con->prepare($queryStudentPapers);
+                if (!$studentStmt) {
+                    throw new Exception("Student papers query prepare failed: " . $con->error);
+                }
+                $studentStmt->execute();
+                $studentResult = $studentStmt->get_result();
+
+                while ($row = $studentResult->fetch_assoc()) {
+                    $eventName = !empty($row['event_name']) ? $row['event_name'] : ($row['event'] ?? 'Uncategorized');
+
+                    $studentEndorsement = new stdClass();
+                    $studentEndorsement->type = 'student';
+                    $studentEndorsement->id = $row['id'] ?? 0;
+                    $studentEndorsement->eventType = $eventName;
+                    $studentEndorsement->date = $row['created_at'] ?? date('Y-m-d H:i:s');
+                    $studentEndorsement->status = $row['status'] ?? 'pending';
+                    $studentEndorsement->endorsementFile = $row['endorsement_file_view_url'] ?? null;
+                    $studentEndorsement->drive_file_id = null;
+                    $studentEndorsement->drive_download_url = null;
+                    $studentEndorsement->campus = $row['campus'] ?? '';
+                    $studentEndorsement->senderid = $row['senderid'] ?? 0;
+                    $studentEndorsement->ResearchDocs = [];
+
+                    $researchDoc = new stdClass();
+                    $researchDoc->docId = $row['id'] ?? 0;
+                    $researchDoc->author = $row['author'] ?? '';
+                    $researchDoc->coauthor = $row['coauthor'] ?? '';
+                    $researchDoc->presenter = $row['presenter'] ?? '';
+                    $researchDoc->title = $row['title'] ?? '';
+                    $researchDoc->category = $row['category'] ?? '';
+                    $researchDoc->campus = $row['campus'] ?? '';
+                    $researchDoc->status = $row['status'] ?? 'pending';
+                    $researchDoc->paper_type = $row['paper_type'] ?? 'undergraduate';
+                    $researchDoc->event = $row['event'] ?? '';
+                    $researchDoc->event_name = $eventName;
+                    $researchDoc->event_id = $row['event_id'] ?? null;
+                    $researchDoc->date_started = $row['date_started'] ?? null;
+                    $researchDoc->date_completed = $row['date_completed'] ?? null;
+                    $researchDoc->date_of_presentation = $row['date_of_presentation'] ?? null;
+                    $researchDoc->type = 'student';
+                    $researchDoc->researchFile = $row['research_file_view_url'] ?? null;
+                    $researchDoc->endorsementFile = $row['endorsement_file_view_url'] ?? null;
+                    
+                    $studentEndorsement->ResearchDocs[] = $researchDoc;
+                    $response->list[] = $studentEndorsement;
+                }
             }
 
             $con->close();
@@ -5302,8 +5280,20 @@ if (isset($_POST['researchReviewed'])) {
             throw new Exception("Database connection failed");
         }
         
+        // ============================================================
+        // FIX: Set the correct user identifier based on user type
+        // ============================================================
         $response->user_type = $userType;
-        $response->user_campus = $userCampus;
+        
+        if ($isCenterDirector) {
+            // Center Director - use center, not campus
+            $response->user_center = $userCenter;
+            // Remove user_campus if empty or set to null
+            unset($response->user_campus);
+        } else {
+            // Other users - use campus
+            $response->user_campus = $userCampus;
+        }
         
     } catch (Exception $e) {
         error_log("researchReviewed error: " . $e->getMessage());

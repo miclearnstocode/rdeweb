@@ -2076,6 +2076,287 @@ export const ResearchMain = () => {
             const viewStudentDocs = () => {
                 // Details Panel (Left side - 70%)
                 const DetailsPanel = () => {
+                const researchBot = ({ dataURLResearch, title, titleLabel, category, author, coAuthor, presenter, center, campus, programFile, certificateFile, titleCertificateFile, inhouseSource, localInhouseData, paperTrailNo, fundsource }) => {
+                    const labelDetails = (label, data, highlight = false) => {
+                        return $({
+                            tag: 'div',
+                            style: {
+                                display: 'flex',
+                                marginBottom: '12px',
+                                padding: '8px',
+                                backgroundColor: highlight ? '#fff3cd' : '#f8f9fa',
+                                borderRadius: '8px',
+                                border: highlight ? '1px solid #ffc107' : 'none'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    text: `${label}:`,
+                                    style: {
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontWeight: '600',
+                                        color: highlight ? '#856404' : '#0d6efd',
+                                        fontSize: '13px',
+                                        minWidth: '120px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'span',
+                                    text: data || 'N/A',
+                                    style: {
+                                        fontFamily: 'Inter, sans-serif',
+                                        color: highlight ? '#856404' : '#2c3e50',
+                                        fontSize: '13px',
+                                        flex: '1'
+                                    }
+                                })
+                            ]
+                        });
+                    }
+
+                    const CoAuthorList = () => {
+                        let coauthors = []
+                        try {
+                            if (coAuthor && coAuthor !== '[]' && coauthor !== 'null') {  // FIX: use coauthor variable, not coAuthor
+                                coauthors = JSON.parse(coAuthor)
+                            }
+                        } catch (e) {
+                            coauthors = []
+                        }
+
+                        if (coauthors.length === 0) return null
+
+                        return $({
+                            tag: 'div',
+                            style: {
+                                marginBottom: '12px',
+                                padding: '8px',
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '8px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    text: 'Co-Authors:',
+                                    style: {
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontWeight: '600',
+                                        color: '#0d6efd',
+                                        fontSize: '13px',
+                                        minWidth: '120px',
+                                        display: 'block',
+                                        marginBottom: '8px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    style: { marginLeft: '120px' },
+                                    elementHandler: (el) => {
+                                        coauthors.forEach(val => {
+                                            el.appendChild($({
+                                                tag: 'div',
+                                                text: `• ${val}`,
+                                                style: {
+                                                    fontFamily: 'Inter, sans-serif',
+                                                    color: '#2c3e50',
+                                                    fontSize: '13px',
+                                                    marginBottom: '4px'
+                                                }
+                                            }))
+                                        })
+                                    }
+                                })
+                            ]
+                        })
+                    }
+
+                    const isResearchExtension = !center || center === '' || center === 'Extension (Extension)' || center === 'Extension'
+                    const locationLabel = isResearchExtension ? 'Campus' : 'Center'
+                    const locationValue = isResearchExtension ? (campus || 'N/A') : (center || 'N/A')
+
+                    // Build research details array - filter out null values
+                    const researchDetails = [
+                        labelDetails(titleLabel || "Title", title),
+                        labelDetails("Author", author),
+                        CoAuthorList(),
+                        labelDetails("Presenter", presenter),
+                        (locationValue && locationValue !== 'N/A' && locationValue !== '') ? labelDetails(locationLabel, locationValue) : null,
+                        labelDetails("Category", category),
+                        (fundsource && fundsource !== '' && fundsource !== 'N/A') ? labelDetails("Fund Source", fundsource) : null
+                    ].filter(item => item !== null);
+
+                        // If this is a symposium submission with in-house source, add the source info
+                        if (inhouseSource) {
+                            researchDetails.push(
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        marginTop: '16px',
+                                        padding: '12px 16px',
+                                        backgroundColor: '#e3f2fd',
+                                        borderRadius: '8px',
+                                        borderLeft: '4px solid #1976D2'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                marginBottom: '8px'
+                                            },
+                                            child: [
+                                                $({
+                                                    tag: 'span',
+                                                    att: { className: 'fa-solid fa-link' },
+                                                    style: { color: '#1976D2', fontSize: '14px' }
+                                                }),
+                                                $({
+                                                    tag: 'span',
+                                                    text: 'Source University In-House Review:',
+                                                    style: {
+                                                        fontFamily: 'Inter, sans-serif',
+                                                        fontWeight: '600',
+                                                        color: '#1976D2',
+                                                        fontSize: '13px'
+                                                    }
+                                                }),
+                                                $({
+                                                    tag: 'span',
+                                                    text: paperTrailNo || 'N/A',
+                                                    style: {
+                                                        fontFamily: 'monospace',
+                                                        fontSize: '12px',
+                                                        color: '#1976D2',
+                                                        backgroundColor: '#bbdefb',
+                                                        padding: '2px 8px',
+                                                        borderRadius: '4px'
+                                                    }
+                                                })
+                                            ]
+                                        }),
+                                        labelDetails("In-House Title", inhouseSource.title || 'N/A', true),
+                                        labelDetails("In-House Event", inhouseSource.event || inhouseSource.event_name || 'N/A', true),
+                                        labelDetails("In-House Author", inhouseSource.author || 'N/A', true)
+                                    ]
+                                })
+                            )
+                        }
+
+                        // If this is a local in-house submission, show local data
+                        if (localInhouseData) {
+                            researchDetails.push(
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        marginTop: '16px',
+                                        padding: '12px 16px',
+                                        backgroundColor: '#e8f5e9',
+                                        borderRadius: '8px',
+                                        borderLeft: '4px solid #4caf50'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'div',
+                                            style: {
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                marginBottom: '8px'
+                                            },
+                                            child: [
+                                                $({
+                                                    tag: 'span',
+                                                    att: { className: 'fa-solid fa-file-lines' },
+                                                    style: { color: '#4caf50', fontSize: '14px' }
+                                                }),
+                                                $({
+                                                    tag: 'span',
+                                                    text: 'Source Local In-House Review:',
+                                                    style: {
+                                                        fontFamily: 'Inter, sans-serif',
+                                                        fontWeight: '600',
+                                                        color: '#4caf50',
+                                                        fontSize: '13px'
+                                                    }
+                                                }),
+                                                ...(localInhouseData.paper_trail_no ? [
+                                                    $({
+                                                        tag: 'span',
+                                                        text: localInhouseData.paper_trail_no,
+                                                        style: {
+                                                            fontFamily: 'monospace',
+                                                            fontSize: '12px',
+                                                            color: '#4caf50',
+                                                            backgroundColor: '#c8e6c9',
+                                                            padding: '2px 8px',
+                                                            borderRadius: '4px'
+                                                        }
+                                                    })
+                                                ] : [])
+                                            ]
+                                        }),
+                                        labelDetails("Document Title", localInhouseData.document_title || 'N/A', true),
+                                        labelDetails("Local Event", localInhouseData.local_eventname || 'N/A', true),
+                                        labelDetails("Main Author", localInhouseData.main_author || 'N/A', true),
+                                        labelDetails("Campus", localInhouseData.campus || 'N/A', true),
+                                        labelDetails("Category", localInhouseData.category || 'N/A', true)
+                                    ]
+                                })
+                            )
+                        }
+
+                        // Add paper trail number display
+                        if (paperTrailNo && !inhouseSource && !localInhouseData) {
+                            researchDetails.push(
+                                $({
+                                    tag: 'div',
+                                    style: {
+                                        marginTop: '8px',
+                                        padding: '4px 12px',
+                                        backgroundColor: '#f8f9fa',
+                                        borderRadius: '4px',
+                                        display: 'inline-block'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'span',
+                                            text: 'Paper Trail No: ',
+                                            style: {
+                                                fontFamily: 'Inter, sans-serif',
+                                                fontWeight: '500',
+                                                color: '#6c757d',
+                                                fontSize: '12px'
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            text: paperTrailNo,
+                                            style: {
+                                                fontFamily: 'monospace',
+                                                fontSize: '12px',
+                                                color: '#2c3e50'
+                                            }
+                                        })
+                                    ]
+                                })
+                            )
+                        }
+
+                        return $({
+                            tag: 'div',
+                            style: {
+                                width: '100%',
+                                padding: '20px',
+                                marginBottom: '16px',
+                                backgroundColor: '#ffffff',
+                                borderRadius: '12px',
+                                border: '1px solid #e9ecef'
+                            },
+                            child: researchDetails
+                        })
+                    }
                     const labelDetails = (label, data) => {
                         return $({
                             tag: 'div',
@@ -2399,28 +2680,21 @@ export const ResearchMain = () => {
                             }
                         })
 
-                        research.forEach(val => {
-                            // Determine if this has a final_symposium_title
-                            const displayTitle = val.final_symposium_title || val.title;
-                            const titleLabel = val.final_symposium_title ? 'New Title' : 'Title';
-                            
-                            holder.appendChild(researchBot({
-                                dataURLResearch: val.file,
-                                title: displayTitle,
-                                titleLabel: titleLabel, // Pass the label
-                                category: val.category,
-                                author: val.author,
-                                coAuthor: val.coauthor,
-                                presenter: val.presenter,
-                                center: val.center,
-                                campus: val.campus || val.local_campus,
-                                programFile: val.programFile,
-                                certificateFile: val.certificateFile,
-                                inhouseSource: val.inhouse_source,
-                                localInhouseData: val.local_inhouse_data || (val.document_title ? val : null),
-                                paperTrailNo: val.paper_trail_no
-                            }))
-                        })
+                        // Use the document props directly instead of undefined 'research' variable
+                        const displayTitle = title;;
+                        
+                        holder.appendChild(researchBot({
+                            dataURLResearch: research_file,
+                            title: displayTitle,
+                            category: category,
+                            author: author,
+                            coAuthor: coauthor,
+                            presenter: presenter,
+                            campus: campus,
+                            inhouseSource: null,
+                            localInhouseData: null,
+                            paperTrailNo: null
+                        }))
 
                         el.appendChild(holder)
                         el.appendChild(Controller())
