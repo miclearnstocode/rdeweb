@@ -376,7 +376,7 @@ export const ScoreBoard = ({ resId, eventId, center, categoryId, userType }) => 
             $({
                 tag: 'div',
                 style: {
-                    padding: '14px 20px',
+                    padding: '14px 20px 22px',
                     backgroundColor: '#f8fafc',
                     borderBottom: '2px solid #8b5cf6',
                     textAlign: 'center',
@@ -400,6 +400,8 @@ export const ScoreBoard = ({ resId, eventId, center, categoryId, userType }) => 
                             fontWeight: '600',
                             color: '#0f172a',
                             letterSpacing: '0.5px',
+                            marginTop: '4px',
+                            display: 'inline-block',
                             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
                         }
                     })
