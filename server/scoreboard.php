@@ -49,7 +49,7 @@ if (isset($_POST['scoreboard_req'])) {
             
             $userId = $_SESSION['userId'];
             
-            // Get the docId (researchfile.id)
+            // Get the docId
             if (!isset($_POST['docId'])) {
                 echo json_encode(['error' => 'Document ID not provided']);
                 exit();
@@ -57,168 +57,342 @@ if (isset($_POST['scoreboard_req'])) {
             
             $docId = $_POST['docId'];
             
-            // First, get the evaluator's center_id from evaluator table
-            $evalQuery = "SELECT center_id FROM evaluator WHERE id = ?";
-            $evalStmt = $con->prepare($evalQuery);
-            if (!$evalStmt) {
-                throw new Exception("Failed to prepare evaluator query: " . $con->error);
+            // Get eventId from request (if provided)
+            $eventIdFromRequest = isset($_POST['eventId']) ? intval($_POST['eventId']) : null;
+            
+            // ============================================================
+            // STEP 1: Check student_research_papers FIRST
+            // ============================================================
+            $studentQuery = "SELECT 
+                srp.event_id, 
+                srp.event, 
+                srp.category,
+                srp.status
+            FROM student_research_papers srp
+            WHERE srp.id = ?";
+            
+            $studentStmt = $con->prepare($studentQuery);
+            if ($studentStmt) {
+                $studentStmt->bind_param("i", $docId);
+                $studentStmt->execute();
+                $studentResult = $studentStmt->get_result();
+                
+                if ($row = $studentResult->fetch_assoc()) {
+                    // Document found in student_research_papers
+                    $eventId = $row['event_id'];
+                    $eventName = $row['event'] ?? '';
+                    $categoryName = $row['category'] ?? '';
+                    $docStatus = $row['status'];
+                    $sourceTable = 'student_research_papers';
+                    
+                    error_log("Scoreboard - Found in student_research_papers: Doc ID $docId, Event ID $eventId, Category: $categoryName");
+                    
+                    $studentStmt->close();
+                    
+                    // Get the evaluator's center_id
+                    $evalQuery = "SELECT center_id FROM evaluator WHERE id = ?";
+                    $evalStmt = $con->prepare($evalQuery);
+                    if (!$evalStmt) {
+                        throw new Exception("Failed to prepare evaluator query: " . $con->error);
+                    }
+                    $evalStmt->bind_param("i", $userId);
+                    $evalStmt->execute();
+                    $evalResult = $evalStmt->get_result();
+                    
+                    if (!$evalRow = $evalResult->fetch_assoc()) {
+                        echo json_encode(['error' => 'Evaluator not found']);
+                        exit();
+                    }
+                    
+                    $centerId = $evalRow['center_id'];
+                    $evalStmt->close();
+                    
+                    // Determine if it's a Symposium
+                    $isSymposium = false;
+                    if (!empty($eventName) && stripos($eventName, 'symposium') !== false) {
+                        $isSymposium = true;
+                    }
+                    
+                    // Get criteria based on event type
+                    if ($isSymposium) {
+                        // SYMPOSIUM: Use category
+                        $categoryId = getCategoryId($categoryName);
+                        
+                        if (empty($categoryId)) {
+                            // If category is not mapped, get all criteria for the event
+                            $query = "SELECT 
+                                criteria.id as criteria_id, 
+                                criteria.name, 
+                                criteria.description, 
+                                criteria.percentage 
+                            FROM criteria
+                            WHERE criteria.event_id = ?
+                            ORDER BY criteria.id";
+                            
+                            $statement = $con->prepare($query);
+                            if ($statement) {
+                                $statement->bind_param("i", $eventId);
+                                $statement->execute();
+                                $result = $statement->get_result();
+                                
+                                while ($val = $result->fetch_assoc()) {
+                                    $response[] = $val;
+                                }
+                                $statement->close();
+                            }
+                        } else if (in_array($categoryId, [1, 2, 3, 4])) {
+                            // Research categories (1-4) share criteria
+                            $query = "SELECT 
+                                criteria.id as criteria_id, 
+                                criteria.name, 
+                                criteria.description, 
+                                criteria.percentage 
+                            FROM criteria
+                            WHERE criteria.event_id = ? 
+                            AND criteria.category_id IN (1, 2, 3, 4)
+                            ORDER BY criteria.id";
+                            
+                            $statement = $con->prepare($query);
+                            if ($statement) {
+                                $statement->bind_param("i", $eventId);
+                                $statement->execute();
+                                $result = $statement->get_result();
+                                
+                                while ($val = $result->fetch_assoc()) {
+                                    $response[] = $val;
+                                }
+                                $statement->close();
+                            }
+                        } else if ($categoryId == 5) {
+                            // Extension criteria
+                            $query = "SELECT 
+                                criteria.id as criteria_id, 
+                                criteria.name, 
+                                criteria.description, 
+                                criteria.percentage 
+                            FROM criteria
+                            WHERE criteria.event_id = ? 
+                            AND criteria.category_id = 5
+                            ORDER BY criteria.id";
+                            
+                            $statement = $con->prepare($query);
+                            if ($statement) {
+                                $statement->bind_param("i", $eventId);
+                                $statement->execute();
+                                $result = $statement->get_result();
+                                
+                                while ($val = $result->fetch_assoc()) {
+                                    $response[] = $val;
+                                }
+                                $statement->close();
+                            }
+                        } else {
+                            // Fallback: try to get criteria for this category
+                            $query = "SELECT 
+                                criteria.id as criteria_id, 
+                                criteria.name, 
+                                criteria.description, 
+                                criteria.percentage 
+                            FROM criteria
+                            WHERE criteria.event_id = ? 
+                            AND criteria.category_id = ?
+                            ORDER BY criteria.id";
+                            
+                            $statement = $con->prepare($query);
+                            if ($statement) {
+                                $statement->bind_param("ii", $eventId, $categoryId);
+                                $statement->execute();
+                                $result = $statement->get_result();
+                                
+                                while ($val = $result->fetch_assoc()) {
+                                    $response[] = $val;
+                                }
+                                $statement->close();
+                            }
+                        }
+                    } else {
+                        // IN-HOUSE: Use center_id
+                        $query = "SELECT 
+                            criteria.id as criteria_id, 
+                            criteria.name, 
+                            criteria.description, 
+                            criteria.percentage 
+                        FROM criteria
+                        WHERE criteria.event_id = ? 
+                        AND criteria.center_id = ?
+                        ORDER BY criteria.id";
+                        
+                        $statement = $con->prepare($query);
+                        if ($statement) {
+                            $statement->bind_param("ii", $eventId, $centerId);
+                            $statement->execute();
+                            $result = $statement->get_result();
+                            
+                            while ($val = $result->fetch_assoc()) {
+                                $response[] = $val;
+                            }
+                            $statement->close();
+                        }
+                    }
+                    
+                    $con->close();
+                    
+                    // Ensure we always return a valid JSON array
+                    if (!is_array($response)) {
+                        $response = [];
+                    }
+                    echo json_encode($response);
+                    exit();
+                }
+                $studentStmt->close();
             }
-            $evalStmt->bind_param("i", $userId);
-            $evalStmt->execute();
-            $evalResult = $evalStmt->get_result();
             
-            if (!$evalRow = $evalResult->fetch_assoc()) {
-                echo json_encode(['error' => 'Evaluator not found']);
-                exit();
-            }
-            
-            $centerId = $evalRow['center_id'];
-            
-            // Get the researchfile details - use 'category' column (not 'category_id')
+            // ============================================================
+            // STEP 2: If not found in student, check researchfile
+            // ============================================================
             $eventQuery = "SELECT rf.event_id, rf.event, rf.category 
                           FROM researchfile rf
                           WHERE rf.id = ?";
             $eventStmt = $con->prepare($eventQuery);
-            if (!$eventStmt) {
-                throw new Exception("Failed to prepare event query: " . $con->error);
-            }
-            $eventStmt->bind_param("i", $docId);
-            $eventStmt->execute();
-            $eventResult = $eventStmt->get_result();
-            
-            if (!$eventRow = $eventResult->fetch_assoc()) {
-                echo json_encode(['error' => 'Research file not found']);
-                exit();
-            }
-            
-            $eventId = $eventRow['event_id'];
-            $categoryName = $eventRow['category'] ?? '';
-            $eventName = $eventRow['event'] ?? '';
-            
-            // If event_id is NULL, try to get it from event name
-            if (empty($eventId) && !empty($eventName)) {
-                $eventNameQuery = "SELECT id FROM event_list WHERE name = ? LIMIT 1";
-                $eventNameStmt = $con->prepare($eventNameQuery);
-                if ($eventNameStmt) {
-                    $eventNameStmt->bind_param("s", $eventName);
-                    $eventNameStmt->execute();
-                    $eventNameResult = $eventNameStmt->get_result();
-                    
-                    if ($eventNameRow = $eventNameResult->fetch_assoc()) {
-                        $eventId = $eventNameRow['id'];
-                    }
-                }
-            }
-            
-            // Determine if it's a Symposium or In-House based on event name
-            $isSymposium = false;
-            if (!empty($eventName)) {
-                // Check if event name contains 'symposium' (case-insensitive)
-                if (stripos($eventName, 'symposium') !== false) {
-                    $isSymposium = true;
-                }
-            } else if (!empty($eventId)) {
-                // If event name is empty, get it from event_list
-                $eventNameQuery = "SELECT name FROM event_list WHERE id = ? LIMIT 1";
-                $eventNameStmt = $con->prepare($eventNameQuery);
-                if ($eventNameStmt) {
-                    $eventNameStmt->bind_param("i", $eventId);
-                    $eventNameStmt->execute();
-                    $eventNameResult = $eventNameStmt->get_result();
-                    
-                    if ($eventNameRow = $eventNameResult->fetch_assoc()) {
-                        $eventName = $eventNameRow['name'];
-                        if (stripos($eventName, 'symposium') !== false) {
-                            $isSymposium = true;
-                        }
-                    }
-                }
-            }
-            
-            // Get criteria based on event_id and event type
-            if (empty($eventId)) {
-                echo json_encode(['error' => 'Event not found for this document']);
-                exit();
-            }
-            
-            if ($isSymposium) {
-                // SYMPOSIUM: Use category
-                // Map category name to ID
-                $categoryId = getCategoryId($categoryName);
+            if ($eventStmt) {
+                $eventStmt->bind_param("i", $docId);
+                $eventStmt->execute();
+                $eventResult = $eventStmt->get_result();
                 
-                if (empty($categoryId)) {
-                    // If category is not mapped, try to get all criteria for the event
-                    $query = "SELECT 
-                        criteria.id as criteria_id, 
-                        criteria.name, 
-                        criteria.description, 
-                        criteria.percentage 
-                    FROM criteria
-                    WHERE criteria.event_id = ?
-                    ORDER BY criteria.id";
+                if ($row = $eventResult->fetch_assoc()) {
+                    // Document found in researchfile
+                    $eventId = $row['event_id'];
+                    $eventName = $row['event'] ?? '';
+                    $categoryName = $row['category'] ?? '';
+                    $sourceTable = 'researchfile';
                     
-                    $statement = $con->prepare($query);
-                    if ($statement) {
-                        $statement->bind_param("i", $eventId);
-                        $statement->execute();
-                        $result = $statement->get_result();
-                        
-                        while ($val = $result->fetch_assoc()) {
-                            $response[] = $val;
-                        }
-                        $statement->close();
+                    error_log("Scoreboard - Found in researchfile: Doc ID $docId, Event ID $eventId, Category: $categoryName");
+                    
+                    $eventStmt->close();
+                    
+                    // Get the evaluator's center_id
+                    $evalQuery = "SELECT center_id FROM evaluator WHERE id = ?";
+                    $evalStmt = $con->prepare($evalQuery);
+                    if (!$evalStmt) {
+                        throw new Exception("Failed to prepare evaluator query: " . $con->error);
                     }
-                } else {
-                    // Research categories (1-4) share criteria
-                    // Extension (5) has its own criteria
-                    if (in_array($categoryId, [1, 2, 3, 4])) {
-                        // Show criteria from ALL research categories (1-4)
-                        $query = "SELECT 
-                            criteria.id as criteria_id, 
-                            criteria.name, 
-                            criteria.description, 
-                            criteria.percentage 
-                        FROM criteria
-                        WHERE criteria.event_id = ? 
-                        AND criteria.category_id IN (1, 2, 3, 4)
-                        ORDER BY criteria.id";
+                    $evalStmt->bind_param("i", $userId);
+                    $evalStmt->execute();
+                    $evalResult = $evalStmt->get_result();
+                    
+                    if (!$evalRow = $evalResult->fetch_assoc()) {
+                        echo json_encode(['error' => 'Evaluator not found']);
+                        exit();
+                    }
+                    
+                    $centerId = $evalRow['center_id'];
+                    $evalStmt->close();
+                    
+                    // Determine if it's a Symposium
+                    $isSymposium = false;
+                    if (!empty($eventName) && stripos($eventName, 'symposium') !== false) {
+                        $isSymposium = true;
+                    }
+                    
+                    // Get criteria based on event type
+                    if ($isSymposium) {
+                        // SYMPOSIUM: Use category
+                        $categoryId = getCategoryId($categoryName);
                         
-                        $statement = $con->prepare($query);
-                        if ($statement) {
-                            $statement->bind_param("i", $eventId);
-                            $statement->execute();
-                            $result = $statement->get_result();
+                        if (empty($categoryId)) {
+                            // If category is not mapped, get all criteria for the event
+                            $query = "SELECT 
+                                criteria.id as criteria_id, 
+                                criteria.name, 
+                                criteria.description, 
+                                criteria.percentage 
+                            FROM criteria
+                            WHERE criteria.event_id = ?
+                            ORDER BY criteria.id";
                             
-                            while ($val = $result->fetch_assoc()) {
-                                $response[] = $val;
+                            $statement = $con->prepare($query);
+                            if ($statement) {
+                                $statement->bind_param("i", $eventId);
+                                $statement->execute();
+                                $result = $statement->get_result();
+                                
+                                while ($val = $result->fetch_assoc()) {
+                                    $response[] = $val;
+                                }
+                                $statement->close();
                             }
-                            $statement->close();
-                        }
-                    } else if ($categoryId == 5) {
-                        // Show only Extension criteria
-                        $query = "SELECT 
-                            criteria.id as criteria_id, 
-                            criteria.name, 
-                            criteria.description, 
-                            criteria.percentage 
-                        FROM criteria
-                        WHERE criteria.event_id = ? 
-                        AND criteria.category_id = 5
-                        ORDER BY criteria.id";
-                        
-                        $statement = $con->prepare($query);
-                        if ($statement) {
-                            $statement->bind_param("i", $eventId);
-                            $statement->execute();
-                            $result = $statement->get_result();
+                        } else if (in_array($categoryId, [1, 2, 3, 4])) {
+                            // Research categories (1-4) share criteria
+                            $query = "SELECT 
+                                criteria.id as criteria_id, 
+                                criteria.name, 
+                                criteria.description, 
+                                criteria.percentage 
+                            FROM criteria
+                            WHERE criteria.event_id = ? 
+                            AND criteria.category_id IN (1, 2, 3, 4)
+                            ORDER BY criteria.id";
                             
-                            while ($val = $result->fetch_assoc()) {
-                                $response[] = $val;
+                            $statement = $con->prepare($query);
+                            if ($statement) {
+                                $statement->bind_param("i", $eventId);
+                                $statement->execute();
+                                $result = $statement->get_result();
+                                
+                                while ($val = $result->fetch_assoc()) {
+                                    $response[] = $val;
+                                }
+                                $statement->close();
                             }
-                            $statement->close();
+                        } else if ($categoryId == 5) {
+                            // Extension criteria
+                            $query = "SELECT 
+                                criteria.id as criteria_id, 
+                                criteria.name, 
+                                criteria.description, 
+                                criteria.percentage 
+                            FROM criteria
+                            WHERE criteria.event_id = ? 
+                            AND criteria.category_id = 5
+                            ORDER BY criteria.id";
+                            
+                            $statement = $con->prepare($query);
+                            if ($statement) {
+                                $statement->bind_param("i", $eventId);
+                                $statement->execute();
+                                $result = $statement->get_result();
+                                
+                                while ($val = $result->fetch_assoc()) {
+                                    $response[] = $val;
+                                }
+                                $statement->close();
+                            }
+                        } else {
+                            // Fallback: try to get criteria for this category
+                            $query = "SELECT 
+                                criteria.id as criteria_id, 
+                                criteria.name, 
+                                criteria.description, 
+                                criteria.percentage 
+                            FROM criteria
+                            WHERE criteria.event_id = ? 
+                            AND criteria.category_id = ?
+                            ORDER BY criteria.id";
+                            
+                            $statement = $con->prepare($query);
+                            if ($statement) {
+                                $statement->bind_param("ii", $eventId, $categoryId);
+                                $statement->execute();
+                                $result = $statement->get_result();
+                                
+                                while ($val = $result->fetch_assoc()) {
+                                    $response[] = $val;
+                                }
+                                $statement->close();
+                            }
                         }
                     } else {
-                        // Fallback: try to get any criteria for this category
+                        // IN-HOUSE: Use center_id
                         $query = "SELECT 
                             criteria.id as criteria_id, 
                             criteria.name, 
@@ -226,12 +400,12 @@ if (isset($_POST['scoreboard_req'])) {
                             criteria.percentage 
                         FROM criteria
                         WHERE criteria.event_id = ? 
-                        AND criteria.category_id = ?
+                        AND criteria.center_id = ?
                         ORDER BY criteria.id";
                         
                         $statement = $con->prepare($query);
                         if ($statement) {
-                            $statement->bind_param("ii", $eventId, $categoryId);
+                            $statement->bind_param("ii", $eventId, $centerId);
                             $statement->execute();
                             $result = $statement->get_result();
                             
@@ -241,36 +415,25 @@ if (isset($_POST['scoreboard_req'])) {
                             $statement->close();
                         }
                     }
-                }
-            } else {
-                // IN-HOUSE: Use center_id
-                $query = "SELECT 
-                    criteria.id as criteria_id, 
-                    criteria.name, 
-                    criteria.description, 
-                    criteria.percentage 
-                FROM criteria
-                WHERE criteria.event_id = ? 
-                AND criteria.center_id = ?
-                ORDER BY criteria.id";
-                
-                $statement = $con->prepare($query);
-                if ($statement) {
-                    $statement->bind_param("ii", $eventId, $centerId);
-                    $statement->execute();
-                    $result = $statement->get_result();
                     
-                    while ($val = $result->fetch_assoc()) {
-                        $response[] = $val;
+                    $con->close();
+                    
+                    // Ensure we always return a valid JSON array
+                    if (!is_array($response)) {
+                        $response = [];
                     }
-                    $statement->close();
+                    echo json_encode($response);
+                    exit();
                 }
+                $eventStmt->close();
             }
             
-            // Close connections
-            if (isset($evalStmt)) $evalStmt->close();
-            if (isset($eventStmt)) $eventStmt->close();
-            $con->close();
+            // ============================================================
+            // STEP 3: Document not found in either table
+            // ============================================================
+            error_log("Scoreboard - Document not found: Doc ID $docId");
+            echo json_encode(['error' => 'Document not found in either table']);
+            exit();
             
         } else {
             throw new Exception("Could not connect to database");
@@ -280,13 +443,6 @@ if (isset($_POST['scoreboard_req'])) {
         echo json_encode(['error' => $e->getMessage()]);
         exit();
     }
-    
-    // Ensure we always return a valid JSON array
-    if (!is_array($response)) {
-        $response = [];
-    }
-    echo json_encode($response);
-    exit();
 }
 
 if (isset($_POST['scoreReq'])) {
@@ -314,7 +470,61 @@ if (isset($_POST['scoreReq'])) {
                 exit();
             }
             
-            // Check if evaluator has abstained from this document
+            // ============================================================
+            // STEP 1: Check student_research_papers FIRST
+            // ============================================================
+            $sourceTable = 'student_research_papers';
+            $eventId = null;
+            $isStudent = false;
+            
+            // Check student_research_papers first (since undergrad/grad are students)
+            $checkQuery = "SELECT event_id, event FROM student_research_papers WHERE id = ?";
+            $checkStmt = $con->prepare($checkQuery);
+            if ($checkStmt) {
+                $checkStmt->bind_param("i", $docId);
+                $checkStmt->execute();
+                $checkResult = $checkStmt->get_result();
+                if ($row = $checkResult->fetch_assoc()) {
+                    $eventId = $row['event_id'];
+                    $eventName = $row['event'];
+                    $isStudent = true;
+                    $sourceTable = 'student_research_papers';
+                }
+                $checkStmt->close();
+            }
+            
+            // ============================================================
+            // STEP 2: If not found in student, check researchfile (faculty)
+            // ============================================================
+            if (empty($eventId)) {
+                $checkQuery = "SELECT event_id, event FROM researchfile WHERE id = ?";
+                $checkStmt = $con->prepare($checkQuery);
+                if ($checkStmt) {
+                    $checkStmt->bind_param("i", $docId);
+                    $checkStmt->execute();
+                    $checkResult = $checkStmt->get_result();
+                    if ($row = $checkResult->fetch_assoc()) {
+                        $eventId = $row['event_id'];
+                        $eventName = $row['event'];
+                        $isStudent = false;
+                        $sourceTable = 'researchfile';
+                    }
+                    $checkStmt->close();
+                }
+            }
+            
+            // If no event_id found, return empty
+            if (empty($eventId)) {
+                error_log("ScoreReq - No event_id found for document ID: $docId");
+                echo json_encode([]);
+                exit();
+            }
+            
+            error_log("ScoreReq - Document ID: $docId, Source: $sourceTable, Event ID: $eventId, Is Student: " . ($isStudent ? 'Yes' : 'No'));
+            
+            // ============================================================
+            // STEP 3: Check if evaluator has abstained
+            // ============================================================
             $checkQuery = "SELECT EXISTS(SELECT 1 FROM abstain WHERE eval_id = ? AND doc_id = ?) as Total";
             $stm = $con->prepare($checkQuery);
             if ($stm) {
@@ -324,19 +534,26 @@ if (isset($_POST['scoreReq'])) {
                 $r1 = $res->fetch_assoc();
                 
                 if ($r1 && $r1['Total'] === 0) {
-                    // Get the score if it exists
+                    // ============================================================
+                    // STEP 4: Get the score - verify criteria belongs to the correct event
+                    // ============================================================
                     $query = "SELECT 
                         score_board.score, 
                         score_board.id as scoreId, 
-                        score_board.criteria_id 
+                        score_board.criteria_id,
+                        criteria.event_id,
+                        criteria.category_id,
+                        criteria.center_id
                     FROM score_board
+                    LEFT JOIN criteria ON criteria.id = score_board.criteria_id
                     WHERE score_board.doc_id = ? 
                     AND score_board.criteria_id = ? 
-                    AND score_board.eval_id = ?";
+                    AND score_board.eval_id = ?
+                    AND criteria.event_id = ?";
                     
                     $statement = $con->prepare($query);
                     if ($statement) {
-                        $statement->bind_param("iii", $docId, $criteriaId, $userId);
+                        $statement->bind_param("iiii", $docId, $criteriaId, $userId, $eventId);
                         $statement->execute();
                         $result = $statement->get_result();
                         
@@ -360,7 +577,6 @@ if (isset($_POST['scoreReq'])) {
     echo json_encode($response);
     exit();
 }
-
 if (isset($_POST['scoreSave'])) {
     $response = new stdClass();
     $response->status = false;

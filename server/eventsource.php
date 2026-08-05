@@ -739,21 +739,14 @@ if (isset($_POST['searchDocuments'])) {
     exit;
 }
 
-// Collect Entries for Evaluators
 if(isset($_POST['collectEntries'])){
-    $count = 0;
     $response = new stdClass();
     $response->count = 0;
-    $response->userType = '';
-    $response->categoryCounts = [];
-    $response->totalUnique = 0;
-    $response->totalDuplicateCount = 0;
-    $response->hasDuplicates = false;
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $userId = $_SESSION['userId'] ?? '';
         $centerId = $_SESSION['centerId'] ?? '';
-        $eventId = $_SESSION['eventId'] ?? '';
+        $eventIds = $_SESSION['eventIds'] ?? [];
         $userType = 'none';
         $centerFilter = '';
         $categoryIds = [];
@@ -805,285 +798,143 @@ if(isset($_POST['collectEntries'])){
             }
         }
         
-        $response->userType = $userType;
+        // If no event IDs, return 0
+        if (empty($eventIds)) {
+            error_log("No event IDs found");
+            $con->close();
+            ob_clean();
+            echo json_encode($response);
+            exit();
+        }
         
-        // Fetch all papers first, then apply duplicate detection
-        $allPapers = [];
+        // Convert event IDs to integers
+        $eventIds = array_map('intval', $eventIds);
+        $eventIds = array_filter($eventIds, function($id) {
+            return $id > 0;
+        });
+        $eventIds = array_values($eventIds);
         
-        if ($userType === 'center' && !empty($centerFilter) && !empty($eventId)) {
-            // Fetch all papers for this center
-            $query = "SELECT 
-                        rf.id,
-                        rf.title,
-                        rf.final_symposium_title,
-                        rf.author,
-                        rf.coauthor,
-                        rf.presenter,
-                        rf.category,
-                        rf.center,
-                        rf.campus,
-                        rf.event_id,
-                        category.name as category_name
-                      FROM researchfile rf
-                      LEFT JOIN endorsement ON rf.endorsementid = endorsement.id
-                      LEFT JOIN category ON rf.category = category.name
-                      LEFT JOIN event_list ON rf.event_id = event_list.id
-                      WHERE endorsement.status = 'accepted' 
-                      AND rf.center = ? 
-                      AND event_list.id = ?";
-
-            $statement = $con->prepare($query);
-            if ($statement) {
-                $statement->bind_param("ss", $centerFilter, $eventId);
-                $statement->execute();
-                $result = $statement->get_result();
-                
-                while ($row = $result->fetch_assoc()) {
-                    $allPapers[] = $row;
-                }
-                
-                $result->free();
-                $statement->close();
+        if (empty($eventIds)) {
+            error_log("No valid event IDs after filtering");
+            $con->close();
+            ob_clean();
+            echo json_encode($response);
+            exit();
+        }
+        
+        $eventPlaceholders = implode(',', array_fill(0, count($eventIds), '?'));
+        $totalCount = 0;
+        
+        // ============================================================
+        // COUNT 1: Researchfile papers (faculty/staff)
+        // ============================================================
+        $rfWhereConditions = [];
+        $rfParams = [];
+        $rfTypes = "";
+        
+        // Event filter
+        $rfWhereConditions[] = "rf.event_id IN ($eventPlaceholders)";
+        foreach ($eventIds as $eid) {
+            $rfParams[] = $eid;
+            $rfTypes .= "i";
+        }
+        
+        // Category filter
+        if ($userType === 'category' && !empty($categoryIds)) {
+            $catPlaceholders = implode(',', array_fill(0, count($categoryIds), '?'));
+            $rfWhereConditions[] = "rf.category IN (SELECT name FROM category WHERE id IN ($catPlaceholders))";
+            foreach ($categoryIds as $cid) {
+                $rfParams[] = $cid;
+                $rfTypes .= "i";
             }
-            
-        } else if ($userType === 'category' && !empty($categoryIds) && !empty($eventId)) {
-            // Fetch all papers for these categories
-            $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
-            
-            $query = "SELECT 
-                        rf.id,
-                        rf.title,
-                        rf.final_symposium_title,
-                        rf.author,
-                        rf.coauthor,
-                        rf.presenter,
-                        rf.category,
-                        rf.center,
-                        rf.campus,
-                        rf.event_id,
-                        category.name as category_name
-                      FROM researchfile rf
-                      LEFT JOIN endorsement ON rf.endorsementid = endorsement.id
-                      LEFT JOIN category ON rf.category = category.name
-                      LEFT JOIN event_list ON rf.event_id = event_list.id
-                      WHERE category.id IN ($placeholders)
-                      AND endorsement.status = 'accepted'
-                      AND event_list.id = ?";
-
-            $statement = $con->prepare($query);
-            if ($statement) {
-                $types = str_repeat("i", count($categoryIds)) . "s";
-                $params = array_merge($categoryIds, [$eventId]);
-                $statement->bind_param($types, ...$params);
-                $statement->execute();
-                $result = $statement->get_result();
-                
-                while ($row = $result->fetch_assoc()) {
-                    $allPapers[] = $row;
-                }
-                
-                $result->free();
-                $statement->close();
+        } else if ($userType === 'center' && !empty($centerFilter)) {
+            $rfWhereConditions[] = "rf.center = ?";
+            $rfParams[] = $centerFilter;
+            $rfTypes .= "s";
+        }
+        
+        $rfWhereConditions[] = "rf.status = 'accepted'";
+        
+        $rfWhereClause = !empty($rfWhereConditions) ? "WHERE " . implode(" AND ", $rfWhereConditions) : "";
+        
+        $rfCountQuery = "SELECT COUNT(DISTINCT rf.id) as count 
+                        FROM researchfile rf
+                        LEFT JOIN endorsement ON rf.endorsementid = endorsement.id
+                        $rfWhereClause";
+        
+        error_log("Researchfile Count Query: " . $rfCountQuery);
+        
+        $rfStmt = $con->prepare($rfCountQuery);
+        if ($rfStmt) {
+            if (!empty($rfParams)) {
+                $rfStmt->bind_param($rfTypes, ...$rfParams);
             }
+            $rfStmt->execute();
+            $rfResult = $rfStmt->get_result();
             
-        } else if ($userType === 'center' && empty($centerFilter)) {
-            $centerFromSession = $_SESSION['center'] ?? '';
-            if (!empty($centerFromSession) && !empty($eventId)) {
-                $query = "SELECT 
-                            rf.id,
-                            rf.title,
-                            rf.final_symposium_title,
-                            rf.author,
-                            rf.coauthor,
-                            rf.presenter,
-                            rf.category,
-                            rf.center,
-                            rf.campus,
-                            rf.event_id,
-                            category.name as category_name
-                          FROM researchfile rf
-                          LEFT JOIN endorsement ON rf.endorsementid = endorsement.id
-                          LEFT JOIN category ON rf.category = category.name
-                          LEFT JOIN event_list ON rf.event_id = event_list.id
-                          WHERE endorsement.status = 'accepted' 
-                          AND (rf.center = ? OR rf.center LIKE ? OR UPPER(rf.center) = UPPER(?))
-                          AND event_list.id = ?";
-
-                $statement = $con->prepare($query);
-                if ($statement) {
-                    $centerLike = "%$centerFromSession%";
-                    $centerUpper = strtoupper($centerFromSession);
-                    $statement->bind_param("ssss", $centerFromSession, $centerLike, $centerUpper, $eventId);
-                    $statement->execute();
-                    $result = $statement->get_result();
-                    
-                    while ($row = $result->fetch_assoc()) {
-                        $allPapers[] = $row;
-                    }
-                    
-                    $result->free();
-                    $statement->close();
-                }
+            if ($row = $rfResult->fetch_assoc()) {
+                $totalCount += (int)$row['count'];
+            }
+            $rfStmt->close();
+        }
+        
+        // ============================================================
+        // COUNT 2: Student research papers
+        // ============================================================
+        $srWhereConditions = [];
+        $srParams = [];
+        $srTypes = "";
+        
+        // Event filter
+        $srWhereConditions[] = "srp.event_id IN ($eventPlaceholders)";
+        foreach ($eventIds as $eid) {
+            $srParams[] = $eid;
+            $srTypes .= "i";
+        }
+        
+        // Category filter (student papers use category name directly)
+        if ($userType === 'category' && !empty($categoryNames)) {
+            $catNames = array_values($categoryNames);
+            $catNamePlaceholders = implode(',', array_fill(0, count($catNames), '?'));
+            $srWhereConditions[] = "srp.category IN ($catNamePlaceholders)";
+            foreach ($catNames as $catName) {
+                $srParams[] = $catName;
+                $srTypes .= "s";
             }
         }
         
-        // --- DUPLICATE DETECTION ---
-        $uniquePapers = [];
-        $duplicateGroups = [];
+        // Student papers status - only pending or accepted
+        $srWhereConditions[] = "srp.status IN ('pending', 'accepted')";
         
-        // Helper function to get all authors from a paper
-        $getAllAuthors = function($paper) {
-            $authors = [];
-            
-            if (!empty($paper['author'])) {
-                $cleanedAuthor = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $paper['author']);
-                $authorList = array_map('trim', explode(',', $cleanedAuthor));
-                $authors = array_merge($authors, $authorList);
-            }
-            
-            if (!empty($paper['presenter'])) {
-                $cleanedPresenter = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $paper['presenter']);
-                $authors[] = trim($cleanedPresenter);
-            }
-            
-            if (!empty($paper['coauthor'])) {
-                $coauthorData = $paper['coauthor'];
-                if (is_string($coauthorData)) {
-                    if (strpos($coauthorData, '[') === 0) {
-                        $coauthorArray = json_decode($coauthorData, true);
-                        if (is_array($coauthorArray)) {
-                            foreach ($coauthorArray as $coauthor) {
-                                $cleaned = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $coauthor);
-                                $authors[] = trim($cleaned);
-                            }
-                        }
-                    } else {
-                        $coauthorList = array_map('trim', explode(',', $coauthorData));
-                        $authors = array_merge($authors, $coauthorList);
-                    }
-                } else if (is_array($coauthorData)) {
-                    foreach ($coauthorData as $coauthor) {
-                        $cleaned = preg_replace('/\b(Dr\.|Prof\.|Professor|Asso\.|Assoc\.|Asst\.|Mr\.|Mrs\.|Ms\.)\s*/i', '', $coauthor);
-                        $authors[] = trim($cleaned);
-                    }
-                }
-            }
-            
-            $authors = array_filter($authors);
-            $authors = array_unique($authors);
-            return $authors;
-        };
+        $srWhereClause = !empty($srWhereConditions) ? "WHERE " . implode(" AND ", $srWhereConditions) : "";
         
-        // First pass: Group by title similarity and author similarity
-        foreach ($allPapers as $paper) {
-            $displayTitle = !empty($paper['final_symposium_title']) 
-                ? $paper['final_symposium_title'] 
-                : $paper['title'];
-            
-            $isDuplicate = false;
-            $duplicateGroupId = null;
-            
-            // Check against existing unique papers
-            foreach ($uniquePapers as $key => $uniquePaper) {
-                $uniqueDisplayTitle = !empty($uniquePaper['final_symposium_title']) 
-                    ? $uniquePaper['final_symposium_title'] 
-                    : $uniquePaper['title'];
-                
-                // Check if title is similar
-                $titleSimilar = isSimilarString($displayTitle, $uniqueDisplayTitle, 75);
-                
-                if ($titleSimilar) {
-                    // Get all authors for both papers
-                    $authors1 = $getAllAuthors($paper);
-                    $authors2 = $getAllAuthors($uniquePaper);
-                    
-                    // Check if authors are similar
-                    if (areAuthorsSimilar($authors1, $authors2, 70)) {
-                        $isDuplicate = true;
-                        $duplicateGroupId = $key;
-                        break;
-                    }
-                }
+        $srCountQuery = "SELECT COUNT(*) as count 
+                        FROM student_research_papers srp
+                        $srWhereClause";
+        
+        error_log("Student Count Query: " . $srCountQuery);
+        
+        $srStmt = $con->prepare($srCountQuery);
+        if ($srStmt) {
+            if (!empty($srParams)) {
+                $srStmt->bind_param($srTypes, ...$srParams);
             }
+            $srStmt->execute();
+            $srResult = $srStmt->get_result();
             
-            if ($isDuplicate && $duplicateGroupId !== null) {
-                // This is a duplicate - add to duplicate group
-                if (!isset($duplicateGroups[$duplicateGroupId])) {
-                    $duplicateGroups[$duplicateGroupId] = [
-                        'original' => $uniquePapers[$duplicateGroupId],
-                        'duplicates' => []
-                    ];
-                }
-                $duplicateGroups[$duplicateGroupId]['duplicates'][] = $paper;
-            } else {
-                // This is a unique paper
-                $uniquePapers[] = $paper;
+            if ($row = $srResult->fetch_assoc()) {
+                $totalCount += (int)$row['count'];
             }
+            $srStmt->close();
         }
         
-        // Count unique papers by category
-        $categoryCounts = [];
-        foreach ($uniquePapers as $paper) {
-            $categoryName = $paper['category'] ?? 'Uncategorized';
-            $catId = null;
-            
-            // Try to find category ID
-            if (!empty($categoryIds)) {
-                foreach ($categoryIds as $id) {
-                    if (isset($categoryNames[$id]) && $categoryNames[$id] === $categoryName) {
-                        $catId = $id;
-                        break;
-                    }
-                }
-            }
-            
-            if (!isset($categoryCounts[$categoryName])) {
-                $categoryCounts[$categoryName] = [
-                    'id' => $catId,
-                    'name' => $categoryName,
-                    'count' => 0,
-                    'paperIds' => []
-                ];
-            }
-            $categoryCounts[$categoryName]['count']++;
-            $categoryCounts[$categoryName]['paperIds'][] = $paper['id'];
-        }
-        
-        // Convert to response format
-        foreach ($categoryCounts as $categoryName => $catData) {
-            if ($catData['id'] !== null) {
-                $response->categoryCounts[$catData['id']] = [
-                    'id' => $catData['id'],
-                    'name' => $catData['name'],
-                    'count' => $catData['count'],
-                    'paperIds' => $catData['paperIds']
-                ];
-            }
-        }
-        
-        // Set the total count (only unique papers)
-        $totalPapers = count($allPapers);
-        $totalUnique = count($uniquePapers);
-        $totalDuplicates = $totalPapers - $totalUnique;
-        
-        error_log("=== DUPLICATE DETECTION RESULTS (collectEntries) ===");
-        error_log("Total papers found: $totalPapers");
-        error_log("Unique papers: $totalUnique");
-        error_log("Duplicate papers removed: $totalDuplicates");
-        error_log("Duplicate groups: " . count($duplicateGroups));
-        
-        $response->count = $totalUnique;
-        $response->totalUnique = $totalUnique;
-        $response->totalDuplicateCount = $totalDuplicates;
-        $response->hasDuplicates = count($duplicateGroups) > 0;
-        $response->duplicateGroups = $duplicateGroups;
-        $response->allPapers = $allPapers; // Keep original for reference
-        $response->uniquePapers = $uniquePapers; // Keep unique for reference
+        $response->count = (int)$totalCount;
+        error_log("Total papers count: " . $totalCount);
         
         $con->close();
     }
 
-    // Return as JSON
+    // Return as JSON - simplified response
     ob_clean();
     echo json_encode($response);
     exit();

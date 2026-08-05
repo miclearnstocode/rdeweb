@@ -16,6 +16,11 @@ export const EntryView = ({ docId, title, eventId, centerId, categoryId, userTyp
         comment: false,
         score: false
     }
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlEventId = urlParams.get('eventId');
+    
+    // Use the passed eventId or the one from URL
+    const finalEventId = eventId || urlEventId;
 
     // Clean up previous instance if it exists
     const cleanup = () => {
@@ -298,11 +303,9 @@ export const EntryView = ({ docId, title, eventId, centerId, categoryId, userTyp
                 },
                 elementHandler: (el) => {
                     mainPanel = el;
-                    console.log('File URL:', cleanFile);
                     
                     // Handle load error
                     el.onerror = function() {
-                        console.error('Failed to load file:', cleanFile);
                         // Try using embed as fallback
                         const parent = this.parentNode;
                         const embed = document.createElement('embed');
@@ -429,6 +432,7 @@ export const EntryView = ({ docId, title, eventId, centerId, categoryId, userTyp
                         CommentBoard({
                             title: docTitle,
                             docId: docId,
+                            eventId: finalEventId, 
                             closeState: CloseState
                         })
                     ]

@@ -137,39 +137,31 @@ if (isset($_POST['evaluatorRegister'])) {
         $pass = password_hash(trim($_POST['password']), PASSWORD_DEFAULT);
         $fullname = trim($_POST['fullname']);
         $center = isset($_POST['center']) && !empty($_POST['center']) ? trim($_POST['center']) : null;
-        $eventType = trim($_POST['eventTYpe']);
+        
+        // Handle multiple event IDs
+        $eventIdsString = isset($_POST['eventIds']) ? trim($_POST['eventIds']) : '';
         $registrationType = isset($_POST['registrationType']) ? $_POST['registrationType'] : 'center';
         
-        // Handle categories - ensure they're integers
+        // Handle categories
         $categories = [];
         if (isset($_POST['categories']) && !empty($_POST['categories'])) {
-            // If categories is a JSON string
             if (is_string($_POST['categories'])) {
                 $categories = json_decode($_POST['categories'], true);
-            } 
-            // If categories is an array
-            else if (is_array($_POST['categories'])) {
+            } else if (is_array($_POST['categories'])) {
                 $categories = $_POST['categories'];
-            }
-            // If categories is a comma-separated string
-            else if (is_string($_POST['categories']) && strpos($_POST['categories'], ',') !== false) {
+            } else if (is_string($_POST['categories']) && strpos($_POST['categories'], ',') !== false) {
                 $categories = explode(',', $_POST['categories']);
             }
-            
-            // Ensure all categories are integers
             $categories = array_map('intval', $categories);
-            // Remove any empty or zero values
             $categories = array_filter($categories, function($id) {
                 return $id > 0;
             });
-            // Re-index the array
             $categories = array_values($categories);
         }
 
-        // Debug log
         error_log("Registration Type: " . $registrationType);
+        error_log("Event IDs: " . $eventIdsString);
         error_log("Categories: " . print_r($categories, true));
-        error_log("Categories count: " . count($categories));
 
         $id = round(microtime(true) * 1000) . '';
 
@@ -177,21 +169,20 @@ if (isset($_POST['evaluatorRegister'])) {
         $con->begin_transaction();
 
         try {
-            // Query without category field
             if ($center) {
                 $newQuery = "INSERT INTO `evaluator` 
-                (evaluator.fullname, evaluator.username, evaluator.password, evaluator.eventid, evaluator.center_id) 
+                (evaluator.fullname, evaluator.username, evaluator.password, evaluator.event_ids, evaluator.center_id) 
                 VALUES (?, ?, ?, ?, ?)";
                 
                 $stmt = $con->prepare($newQuery);
-                $stmt->bind_param("sssss", $fullname, $user, $pass, $eventType, $center);
+                $stmt->bind_param("sssss", $fullname, $user, $pass, $eventIdsString, $center);
             } else {
                 $newQuery = "INSERT INTO `evaluator` 
-                (evaluator.fullname, evaluator.username, evaluator.password, evaluator.eventid) 
+                (evaluator.fullname, evaluator.username, evaluator.password, evaluator.event_ids) 
                 VALUES (?, ?, ?, ?)";
                 
                 $stmt = $con->prepare($newQuery);
-                $stmt->bind_param("ssss", $fullname, $user, $pass, $eventType);
+                $stmt->bind_param("ssss", $fullname, $user, $pass, $eventIdsString);
             }
 
             logMemoryUsage('evaluatorRegister - Before Query Execution');
@@ -201,13 +192,11 @@ if (isset($_POST['evaluatorRegister'])) {
                 
                 // If category-based registration, insert into evaluator_categories
                 if ($registrationType === 'category' && !empty($categories)) {
-                    // First, validate that all category IDs exist
                     $placeholders = implode(',', array_fill(0, count($categories), '?'));
                     $checkQuery = "SELECT id FROM category WHERE id IN ($placeholders)";
                     $checkStmt = $con->prepare($checkQuery);
                     
                     if ($checkStmt) {
-                        // Prepare types for bind_param
                         $types = str_repeat('i', count($categories));
                         $checkStmt->bind_param($types, ...$categories);
                         $checkStmt->execute();
@@ -219,13 +208,11 @@ if (isset($_POST['evaluatorRegister'])) {
                         }
                         $checkStmt->close();
                         
-                        // Check if all categories are valid
                         if (count($validCategories) !== count($categories)) {
                             $invalidCategories = array_diff($categories, $validCategories);
                             throw new Exception("Invalid category IDs: " . implode(', ', $invalidCategories) . ". Valid IDs are: 1,2,3,4,5");
                         }
                         
-                        // Now insert the valid categories
                         $categoryInsertQuery = "INSERT INTO `evaluator_categories` (evaluator_id, category_id) VALUES (?, ?)";
                         $categoryStmt = $con->prepare($categoryInsertQuery);
                         
@@ -252,6 +239,7 @@ if (isset($_POST['evaluatorRegister'])) {
                 $response->status = true;
                 $response->message = 'Evaluator Account is Registered Successfully';
                 $response->evaluatorId = $evaluatorId;
+                $response->eventIds = $eventIdsString;
                 $response->categoriesAdded = count($categories);
             } else {
                 throw new Exception($stmt->error);
@@ -295,17 +283,13 @@ if (isset($_POST['auth'])) {
             evaluator.fullname,
             evaluator.password,
             evaluator.center_id,
-            center.name as center_name,
-            evaluator.eventid,
-            event_list.name as event_name
+            evaluator.event_ids,
+            center.name as center_name
             FROM
             evaluator
             LEFT JOIN
             center
             ON center.id = evaluator.center_id
-            LEFT JOIN
-            event_list
-            ON event_list.id = evaluator.eventid
             WHERE evaluator.username = ?";
 
         logMemoryUsage('auth - Before Prepare Statement');
@@ -320,16 +304,13 @@ if (isset($_POST['auth'])) {
             logMemoryUsage('auth - After Execute');
 
             if ($statement->num_rows > 0) {
-                $statement->bind_result($id, $acnem, $pass, $centerId, $centerName, $evId, $evName);
+                $statement->bind_result($id, $acnem, $pass, $centerId, $eventIds, $centerName);
                 $statement->fetch();
 
                 if (password_verify($password, $pass)) {
                     $response->message = '/evaluator';
                     
                     $_SESSION['isLog'] = serialize(new Auth(true, $_POST['userType'], $username, $centerName, $id, $acnem,'',$acnem,''));
-                    
-                    $_SESSION['eventTYpe'] = $evName;
-                    $_SESSION['eventId'] = $evId;
                     $_SESSION['login'] = true;
                     $_SESSION['userId'] = $id;
                     $_SESSION['userName'] = $username;
@@ -342,7 +323,15 @@ if (isset($_POST['auth'])) {
                     $_SESSION['userEmail'] = '';
                     $_SESSION['userType'] = 'EVALUATOR';
 
-                    // Get categories for this evaluator (if any)
+                    // Store event IDs as array in session
+                    $eventIdArray = [];
+                    if (!empty($eventIds)) {
+                        $eventIdArray = array_map('intval', explode(',', $eventIds));
+                    }
+                    $_SESSION['eventIds'] = $eventIdArray;
+                    $_SESSION['eventIdsString'] = $eventIds;
+
+                    // Get categories for this evaluator
                     $categoryQuery = "SELECT c.id, c.name 
                                      FROM evaluator_categories ec 
                                      JOIN category c ON ec.category_id = c.id 
@@ -360,6 +349,11 @@ if (isset($_POST['auth'])) {
                     $_SESSION['hasCategories'] = !empty($categories);
                     $_SESSION['userType'] = !empty($centerId) ? 'center' : 'category';
                     $catStmt->close();
+
+                    // Set first event ID for backward compatibility
+                    if (!empty($eventIdArray)) {
+                        $_SESSION['eventId'] = $eventIdArray[0];
+                    }
 
                     $response->status = true;
                     logMemoryUsage('auth - Login Successful');
@@ -561,10 +555,14 @@ if (isset($_POST['evalLeb'])) {
     $res->categoryIds = [];
     $res->categories = [];
     $res->displayCenter = '';
-    $res->event = $_SESSION['eventTYpe'] ?? '';
-    $res->eventId = $_SESSION['eventId'] ?? '';
+    $res->event = $_SESSION['eventIdsString'] ?? '';
+    $res->eventIds = $_SESSION['eventIds'] ?? [];
     $res->userName = $_SESSION['userName'] ?? '';
     $res->userFullname = $_SESSION['userFulname'] ?? '';
+    $res->totalUnique = 0;
+    $res->totalDuplicateCount = 0;
+    $res->hasDuplicates = false;
+    $res->duplicateGroups = [];
     
     try {
         $con = new mysqli($host, $username, $pass, $dbName);
@@ -572,12 +570,17 @@ if (isset($_POST['evalLeb'])) {
             throw new Exception("Database connection failed: " . $con->connect_error);
         }
         
-        // Get evaluator's center and categories
         $userId = $_SESSION['userId'] ?? '';
         $centerId = $_SESSION['centerId'] ?? '';
+        $eventIds = $_SESSION['eventIds'] ?? [];
         $categories = [];
         $categoryNames = [];
         $categoryIds = [];
+        
+        // Log the event IDs for debugging
+        error_log("=== evalLeb Debug ===");
+        error_log("Event IDs from session: " . print_r($eventIds, true));
+        error_log("Event IDs count: " . count($eventIds));
         
         // Get categories for this evaluator
         if (!empty($userId)) {
@@ -602,21 +605,18 @@ if (isset($_POST['evalLeb'])) {
         
         // Determine user type
         if (!empty($centerId)) {
-            // Center-based evaluator
             $res->userType = 'center';
             $res->centerId = $centerId;
             $res->categoryIds = [];
             $res->categories = [];
             $res->displayCenter = '';
             
-            // Fetch center details
             $query = "SELECT name, code FROM center WHERE id = ?";
             $stmt = $con->prepare($query);
             if ($stmt) {
                 $stmt->bind_param("s", $centerId);
                 $stmt->execute();
                 $result = $stmt->get_result();
-                
                 if ($row = $result->fetch_assoc()) {
                     $res->displayCenter = $row['name'] . " (" . $row['code'] . ")";
                     $res->centerName = $row['name'];
@@ -625,7 +625,6 @@ if (isset($_POST['evalLeb'])) {
                 $stmt->close();
             }
         } else if (!empty($categories)) {
-            // Category-based evaluator
             $res->userType = 'category';
             $res->categoryIds = $categoryIds;
             $res->categories = $categories;
@@ -633,7 +632,6 @@ if (isset($_POST['evalLeb'])) {
             $res->displayCenter = 'Category: ' . implode(', ', $categoryNames);
             $res->categoryNames = $categoryNames;
         } else {
-            // No access
             $res->userType = 'none';
             $res->papers = [];
             ob_clean();
@@ -642,35 +640,29 @@ if (isset($_POST['evalLeb'])) {
             exit();
         }
         
-        // Build query to get papers - USE rf.id directly
-        $whereConditions = [];
-        $params = [];
-        $types = "";
+        // Store event IDs in response for frontend
+        $res->eventIds = $eventIds;
         
-        if ($res->userType === 'center' && !empty($centerId)) {
-            // Get center name for filtering
-            $centerNameQuery = "SELECT name FROM center WHERE id = ?";
-            $centerStmt = $con->prepare($centerNameQuery);
-            $centerStmt->bind_param("s", $centerId);
-            $centerStmt->execute();
-            $centerResult = $centerStmt->get_result();
-            $centerRow = $centerResult->fetch_assoc();
-            $centerName = $centerRow['name'] ?? $centerId;
-            $centerStmt->close();
+        // Convert and filter event IDs
+        if (!empty($eventIds)) {
+            $eventIds = array_map('intval', $eventIds);
+            $eventIds = array_filter($eventIds, function($id) {
+                return $id > 0;
+            });
+            $eventIds = array_values($eventIds);
             
-            // Use rf.center which is a string column
-            $whereConditions[] = "rf.center = ?";
-            $params[] = $centerName;
-            $types .= "s";
-        } else if ($res->userType === 'category' && !empty($categoryNames)) {
-            // Use rf.category which is a string column
-            $placeholders = implode(',', array_fill(0, count($categoryNames), '?'));
-            $whereConditions[] = "rf.category IN ($placeholders)";
-            foreach ($categoryNames as $catName) {
-                $params[] = $catName;
-                $types .= "s";
+            error_log("Filtered Event IDs: " . print_r($eventIds, true));
+            
+            if (empty($eventIds)) {
+                error_log("No valid event IDs found after filtering");
+                $res->papers = [];
+                ob_clean();
+                echo json_encode($res);
+                ob_end_flush();
+                exit();
             }
         } else {
+            error_log("No event IDs in session");
             $res->papers = [];
             ob_clean();
             echo json_encode($res);
@@ -678,57 +670,194 @@ if (isset($_POST['evalLeb'])) {
             exit();
         }
         
-        // Add event filter - use rf.event_id
-        if (!empty($res->eventId)) {
-            $whereConditions[] = "rf.event_id = ?";
-            $params[] = $res->eventId;
-            $types .= "i";
-        }
+        // ============================================================
+        // Since the frontend makes separate calls for each event,
+        // we need to return papers for ALL events in this single call
+        // ============================================================
         
-        // Add status filter - only accepted papers
-        $whereConditions[] = "rf.status = 'accepted'";
-        
-        $whereClause = !empty($whereConditions) ? "WHERE " . implode(" AND ", $whereConditions) : "";
-        
-        // Query to get all papers with their data - USE rf.id
-        $query = "SELECT 
-                    rf.id,
-                    rf.title,
-                    rf.final_symposium_title,
-                    rf.author,
-                    rf.presenter,
-                    rf.coauthor,
-                    rf.center,
-                    rf.category,
-                    rf.event_id,
-                    rf.status
-                  FROM researchfile rf
-                  $whereClause
-                  ORDER BY rf.id ASC";
-        
-        $stmt = $con->prepare($query);
-        if (!$stmt) {
-            throw new Exception("Failed to prepare query: " . $con->error);
-        }
-        
-        if (!empty($params)) {
-            $stmt->bind_param($types, ...$params);
-        }
-        
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        // Get all papers first
         $allPapers = [];
-        while ($row = $result->fetch_assoc()) {
-            $allPapers[] = $row;
+        
+        // Loop through each event ID and query both tables
+        foreach ($eventIds as $eventId) {
+            error_log("Processing event ID: " . $eventId);
+            
+            // ------------------------------------------------------------
+            // QUERY 1: Get papers from researchfile table (faculty/staff)
+            // ------------------------------------------------------------
+            $researchfileWhereConditions = [];
+            $researchfileParams = [];
+            $researchfileTypes = "";
+            
+            // Single event filter for researchfile
+            $researchfileWhereConditions[] = "rf.event_id = ?";
+            $researchfileParams[] = $eventId;
+            $researchfileTypes .= "i";
+            
+            // Add center or category filter for researchfile
+            if ($res->userType === 'center' && !empty($centerId)) {
+                $centerNameQuery = "SELECT name FROM center WHERE id = ?";
+                $centerStmt = $con->prepare($centerNameQuery);
+                $centerStmt->bind_param("s", $centerId);
+                $centerStmt->execute();
+                $centerResult = $centerStmt->get_result();
+                $centerRow = $centerResult->fetch_assoc();
+                $centerName = $centerRow['name'] ?? $centerId;
+                $centerStmt->close();
+                
+                $researchfileWhereConditions[] = "rf.center = ?";
+                $researchfileParams[] = $centerName;
+                $researchfileTypes .= "s";
+            } else if ($res->userType === 'category' && !empty($categoryNames)) {
+                $placeholders = implode(',', array_fill(0, count($categoryNames), '?'));
+                $researchfileWhereConditions[] = "rf.category IN ($placeholders)";
+                foreach ($categoryNames as $catName) {
+                    $researchfileParams[] = $catName;
+                    $researchfileTypes .= "s";
+                }
+            }
+            
+            $researchfileWhereConditions[] = "rf.status = 'accepted'";
+            
+            $researchfileWhereClause = !empty($researchfileWhereConditions) ? "WHERE " . implode(" AND ", $researchfileWhereConditions) : "";
+            
+            $researchfileQuery = "SELECT 
+                        rf.id,
+                        rf.title,
+                        rf.final_symposium_title,
+                        rf.author,
+                        rf.presenter,
+                        rf.coauthor,
+                        rf.center,
+                        rf.category,
+                        rf.event_id,
+                        rf.status,
+                        'researchfile' as source_table
+                      FROM researchfile rf
+                      $researchfileWhereClause";
+            
+            error_log("evalLeb Researchfile Query for event $eventId: " . $researchfileQuery);
+            error_log("evalLeb Researchfile Params: " . print_r($researchfileParams, true));
+            
+            $researchfileStmt = $con->prepare($researchfileQuery);
+            if ($researchfileStmt) {
+                if (!empty($researchfileParams)) {
+                    $researchfileStmt->bind_param($researchfileTypes, ...$researchfileParams);
+                }
+                
+                $researchfileStmt->execute();
+                $researchfileResult = $researchfileStmt->get_result();
+                
+                while ($row = $researchfileResult->fetch_assoc()) {
+                    $allPapers[] = $row;
+                }
+                $researchfileStmt->close();
+            }
+            
+            // ------------------------------------------------------------
+            // QUERY 2: Get papers from student_research_papers table
+            // ------------------------------------------------------------
+            $studentWhereConditions = [];
+            $studentParams = [];
+            $studentTypes = "";
+            
+            // Single event filter for student papers
+            $studentWhereConditions[] = "srp.event_id = ?";
+            $studentParams[] = $eventId;
+            $studentTypes .= "i";
+            
+            // Add category filter for student papers (using category name directly)
+            if ($res->userType === 'category' && !empty($categoryNames)) {
+                $catPlaceholders = implode(',', array_fill(0, count($categoryNames), '?'));
+                $studentWhereConditions[] = "srp.category IN ($catPlaceholders)";
+                foreach ($categoryNames as $catName) {
+                    $studentParams[] = $catName;
+                    $studentTypes .= "s";
+                }
+                error_log("Student category filter for event $eventId: " . print_r($categoryNames, true));
+            }
+            
+            // Student papers status - only pending or accepted
+            $studentWhereConditions[] = "srp.status IN ('pending', 'accepted')";
+            
+            $studentWhereClause = !empty($studentWhereConditions) ? "WHERE " . implode(" AND ", $studentWhereConditions) : "";
+            
+            $studentQuery = "SELECT 
+                                srp.id,
+                                srp.title,
+                                NULL as final_symposium_title,
+                                srp.author,
+                                srp.presenter,
+                                srp.coauthor,
+                                NULL as center,
+                                srp.category,
+                                srp.event_id,
+                                srp.status,
+                                'student_research_papers' as source_table
+                              FROM student_research_papers srp
+                              $studentWhereClause
+                              ORDER BY srp.id ASC";
+            
+            error_log("evalLeb Student Query for event $eventId: " . $studentQuery);
+            error_log("evalLeb Student Params: " . print_r($studentParams, true));
+            error_log("evalLeb Student Types: " . $studentTypes);
+            
+            $studentStmt = $con->prepare($studentQuery);
+            if ($studentStmt) {
+                if (!empty($studentParams)) {
+                    $studentStmt->bind_param($studentTypes, ...$studentParams);
+                }
+                
+                $studentStmt->execute();
+                $studentResult = $studentStmt->get_result();
+                
+                while ($row = $studentResult->fetch_assoc()) {
+                    $allPapers[] = $row;
+                }
+                $studentStmt->close();
+            }
+            
+            error_log("Papers found for event $eventId so far: " . count($allPapers));
         }
-        $stmt->close();
+        
+        // Count papers by source
+        $researchfileCount = 0;
+        $studentCount = 0;
+        foreach ($allPapers as $paper) {
+            if ($paper['source_table'] === 'researchfile') {
+                $researchfileCount++;
+            } else if ($paper['source_table'] === 'student_research_papers') {
+                $studentCount++;
+            }
+        }
+        
+        error_log("Total papers from all events: " . count($allPapers));
+        error_log("Researchfile papers: " . $researchfileCount);
+        error_log("Student papers: " . $studentCount);
+        error_log("Student paper categories: " . print_r(array_column($allPapers, 'category'), true));
+        
+        // If no papers found, return early with empty list
+        if (empty($allPapers)) {
+            error_log("No papers found for this evaluator");
+            $res->papers = [];
+            $res->totalUnique = 0;
+            $res->totalDuplicateCount = 0;
+            $res->hasDuplicates = false;
+            $res->duplicateGroups = [];
+            $res->source_breakdown = [
+                'researchfile' => 0,
+                'student_research_papers' => 0,
+                'total' => 0
+            ];
+            $res->message = 'No papers found for your assigned categories and events';
+            ob_clean();
+            echo json_encode($res);
+            ob_end_flush();
+            exit();
+        }
         
         // --- DUPLICATE DETECTION ---
         $uniquePapers = [];
         $duplicateGroups = [];
-        $paperIds = [];
         
         // Helper function to get all authors from a paper
         $getAllAuthors = function($paper) {
@@ -844,7 +973,7 @@ if (isset($_POST['evalLeb'])) {
                 }
             }
             
-            // Check if evaluator has comments for this paper
+            // Check if evaluator has comments
             $hasComment = false;
             $commentData = null;
             
@@ -887,7 +1016,7 @@ if (isset($_POST['evalLeb'])) {
                 $commentStmt->close();
             }
             
-            // Check if evaluator has scores for this paper
+            // Check if evaluator has scores
             $hasScore = false;
             $scoreQuery = "SELECT 
                                 COUNT(*) as score_count,
@@ -910,7 +1039,6 @@ if (isset($_POST['evalLeb'])) {
                 $scoreStmt->close();
             }
             
-            // Build paper object with original rf.id
             $paperObj = new stdClass();
             $paperObj->id = (int)$paper['id'];
             $paperObj->title = !empty($paper['final_symposium_title']) ? $paper['final_symposium_title'] : $paper['title'];
@@ -919,7 +1047,7 @@ if (isset($_POST['evalLeb'])) {
             $paperObj->author = $paper['author'];
             $paperObj->presenter = $paper['presenter'];
             $paperObj->coauthor = $paper['coauthor'];
-            $paperObj->center = $paper['center'];
+            $paperObj->center = $paper['center'] ?? '';
             $paperObj->category = $paper['category'];
             $paperObj->category_id = $categoryId;
             $paperObj->category_name = $categoryName;
@@ -928,6 +1056,7 @@ if (isset($_POST['evalLeb'])) {
             $paperObj->hasComment = $hasComment;
             $paperObj->hasScore = $hasScore;
             $paperObj->comment_data = $commentData;
+            $paperObj->source_table = $paper['source_table'] ?? 'unknown';
             
             // Add duplicate information
             if (isset($duplicateGroups[$index])) {
@@ -950,7 +1079,6 @@ if (isset($_POST['evalLeb'])) {
         // Mark duplicate papers that are not originals
         foreach ($duplicateGroups as $group) {
             foreach ($group['duplicates'] as $dupPaper) {
-                // Create a paper object for the duplicate (marked as duplicate)
                 $dupObj = new stdClass();
                 $dupObj->id = (int)$dupPaper['id'];
                 $dupObj->title = !empty($dupPaper['final_symposium_title']) ? $dupPaper['final_symposium_title'] : $dupPaper['title'];
@@ -959,15 +1087,16 @@ if (isset($_POST['evalLeb'])) {
                 $dupObj->author = $dupPaper['author'];
                 $dupObj->presenter = $dupPaper['presenter'];
                 $dupObj->coauthor = $dupPaper['coauthor'];
-                $dupObj->center = $dupPaper['center'];
+                $dupObj->center = $dupPaper['center'] ?? '';
                 $dupObj->category = $dupPaper['category'];
-                $dupObj->category_id = null; // Will be filled if needed
+                $dupObj->category_id = null;
                 $dupObj->category_name = null;
                 $dupObj->event_id = $dupPaper['event_id'];
                 $dupObj->status = $dupPaper['status'];
-                $dupObj->hasComment = false; // Will be filled if needed
+                $dupObj->hasComment = false;
                 $dupObj->hasScore = false;
                 $dupObj->comment_data = null;
+                $dupObj->source_table = $dupPaper['source_table'] ?? 'unknown';
                 $dupObj->isDuplicate = true;
                 $dupObj->hasDuplicates = false;
                 $dupObj->duplicateCount = 0;
@@ -986,6 +1115,11 @@ if (isset($_POST['evalLeb'])) {
         $res->totalDuplicateCount = count($allPapers) - count($uniquePapers);
         $res->hasDuplicates = count($duplicateGroups) > 0;
         $res->duplicateGroups = $duplicateGroups;
+        $res->source_breakdown = [
+            'researchfile' => $researchfileCount,
+            'student_research_papers' => $studentCount,
+            'total' => count($allPapers)
+        ];
         $res->message = 'Successfully loaded ' . count($processedPapers) . ' papers (' . count($uniquePapers) . ' unique, ' . (count($allPapers) - count($uniquePapers)) . ' duplicates)';
         
         logMemoryUsage('evalLeb - End');
@@ -1004,7 +1138,6 @@ if (isset($_POST['evalLeb'])) {
     ob_end_flush();
     exit();
 }
-
 
 if (isset($_POST['resetEvaluatorPassword'])) {
     logMemoryUsage('resetEvaluatorPassword - Start');

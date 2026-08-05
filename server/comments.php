@@ -12,6 +12,50 @@ $con = new mysqli($host, $username, $pass, $dbName);
 
 header('Content-Type: application/json; charset=utf-8');
 
+function isStudentEvent($eventName, $eventId = null) {
+    if (!empty($eventName)) {
+        $lowerEventName = strtolower($eventName);
+        if (strpos($lowerEventName, 'undergraduate') !== false || 
+            strpos($lowerEventName, 'graduate') !== false ||
+            strpos($lowerEventName, 'student') !== false) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function getDocumentSource($con, $docId) {
+    // Check researchfile first
+    $query = "SELECT event_id, event FROM researchfile WHERE id = ?";
+    $stmt = $con->prepare($query);
+    if ($stmt) {
+        $stmt->bind_param("i", $docId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $stmt->close();
+            return ['source' => 'researchfile', 'event_id' => $row['event_id'], 'event' => $row['event']];
+        }
+        $stmt->close();
+    }
+    
+    // Check student_research_papers
+    $query = "SELECT event_id, event FROM student_research_papers WHERE id = ?";
+    $stmt = $con->prepare($query);
+    if ($stmt) {
+        $stmt->bind_param("i", $docId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $stmt->close();
+            return ['source' => 'student_research_papers', 'event_id' => $row['event_id'], 'event' => $row['event']];
+        }
+        $stmt->close();
+    }
+    
+    return null;
+}
+
 if(isset($_POST['getCategories'])){
     $response = [];
     
@@ -49,53 +93,287 @@ if(isset($_POST['commentRequest'])){
     $response = [];
     
     if($con){
-        $query = "SELECT 
-            c.resid,
-            c.evalid,
-            c.title,
-            c.intro,
-            c.abstract,
-            c.objective,
-            c.methodology,
-            c.results,
-            c.recommendation,
-            c.literature,
-            c.other,
-            c.isCommented,
-            c.date,
-            e.fullname as evaluator_name,
-            r.category,
-            r.center,
-            r.campus,
-            r.title,
-            r.author,
-            r.coauthor,
-            r.presenter,
-            r.event,
-            r.file,
-            r.drive_view_url,
-            r.paper_trail_no,
-            r.final_symposium_title,
-            cat.id as category_id,
-            cat.name as category_name
-        FROM comments c
-        LEFT JOIN evaluator e ON e.id = c.evalid
-        LEFT JOIN researchfile r ON r.id = c.resid
-        LEFT JOIN category cat ON cat.name = r.category
-        WHERE r.event = ?";
+        // ============================================================
+        // STEP 1: Determine if the event is a student event
+        // ============================================================
+        // Check if eventType is a numeric ID or a name
+        $isNumericEvent = is_numeric($eventType);
+        $eventId = null;
+        $eventName = null;
         
-        $params = [$eventType];
-        $types = "s";
-        
-        // If "Print All Category" is selected OR isPrintAll is true, DON'T filter by category
-        if ($categoryId !== 'Print All Category' && !$isPrintAll && !empty($categoryId) && $categoryId !== '-- Select Category --') {
-            $query .= " AND cat.id = ?";
-            $params[] = $categoryId;
-            $types .= "s";
+        if ($isNumericEvent) {
+            // It's an event ID - get the event name from event_list
+            $eventId = (int)$eventType;
+            $eventNameQuery = "SELECT name FROM event_list WHERE id = ?";
+            $eventNameStmt = $con->prepare($eventNameQuery);
+            if ($eventNameStmt) {
+                $eventNameStmt->bind_param("i", $eventId);
+                $eventNameStmt->execute();
+                $eventNameResult = $eventNameStmt->get_result();
+                if ($row = $eventNameResult->fetch_assoc()) {
+                    $eventName = $row['name'];
+                }
+                $eventNameStmt->close();
+            }
+        } else {
+            // It's an event name
+            $eventName = $eventType;
+            // Try to get the event ID from event_list
+            $eventIdQuery = "SELECT id FROM event_list WHERE name = ?";
+            $eventIdStmt = $con->prepare($eventIdQuery);
+            if ($eventIdStmt) {
+                $eventIdStmt->bind_param("s", $eventType);
+                $eventIdStmt->execute();
+                $eventIdResult = $eventIdStmt->get_result();
+                if ($row = $eventIdResult->fetch_assoc()) {
+                    $eventId = (int)$row['id'];
+                }
+                $eventIdStmt->close();
+            }
         }
-        // Otherwise, don't add category filter - get ALL categories
         
-        $query .= " ORDER BY r.title, c.date DESC";
+        error_log("commentRequest - Event ID: $eventId, Event Name: $eventName, Is Numeric: " . ($isNumericEvent ? 'Yes' : 'No'));
+        
+        // ============================================================
+        // STEP 2: Determine if it's a student event by checking both tables
+        // ============================================================
+        $isStudent = false;
+        
+        // Check if there are student papers with this event name or ID
+        if (!empty($eventName)) {
+            $studentCheckQuery = "SELECT COUNT(*) as count FROM student_research_papers WHERE event = ? OR event_id = ?";
+            $studentCheckStmt = $con->prepare($studentCheckQuery);
+            if ($studentCheckStmt) {
+                $studentCheckStmt->bind_param("si", $eventName, $eventId);
+                $studentCheckStmt->execute();
+                $studentCheckResult = $studentCheckStmt->get_result();
+                if ($row = $studentCheckResult->fetch_assoc()) {
+                    if ($row['count'] > 0) {
+                        $isStudent = true;
+                        error_log("commentRequest - Student event detected with $row['count'] papers");
+                    }
+                }
+                $studentCheckStmt->close();
+            }
+        }
+        
+        // If not detected as student, check faculty papers
+        if (!$isStudent && !empty($eventName)) {
+            $facultyCheckQuery = "SELECT COUNT(*) as count FROM researchfile WHERE event = ? OR event_id = ?";
+            $facultyCheckStmt = $con->prepare($facultyCheckQuery);
+            if ($facultyCheckStmt) {
+                $facultyCheckStmt->bind_param("si", $eventName, $eventId);
+                $facultyCheckStmt->execute();
+                $facultyCheckResult = $facultyCheckStmt->get_result();
+                if ($row = $facultyCheckResult->fetch_assoc()) {
+                    if ($row['count'] > 0) {
+                        $isStudent = false;
+                        error_log("commentRequest - Faculty event detected with $row['count'] papers");
+                    }
+                }
+                $facultyCheckStmt->close();
+            }
+        }
+        
+        // ============================================================
+        // STEP 3: Build the query based on event type
+        // ============================================================
+        if ($isStudent) {
+            // For student events, query from student_research_papers
+            // Use event_id if available, otherwise use event name
+            if ($eventId) {
+                $query = "SELECT 
+                    c.resid,
+                    c.evalid,
+                    c.title,
+                    c.intro,
+                    c.abstract,
+                    c.objective,
+                    c.methodology,
+                    c.results,
+                    c.recommendation,
+                    c.literature,
+                    c.other,
+                    c.isCommented,
+                    c.date,
+                    e.fullname as evaluator_name,
+                    srp.category,
+                    NULL as center,
+                    srp.campus,
+                    srp.title as doc_title,
+                    srp.author,
+                    srp.coauthor,
+                    srp.presenter,
+                    srp.event,
+                    NULL as file,
+                    srp.research_file_view_url as drive_view_url,
+                    NULL as paper_trail_no,
+                    NULL as final_symposium_title,
+                    cat.id as category_id,
+                    cat.name as category_name
+                FROM comments c
+                LEFT JOIN evaluator e ON e.id = c.evalid
+                LEFT JOIN student_research_papers srp ON srp.id = c.resid
+                LEFT JOIN category cat ON cat.name = srp.category
+                WHERE srp.event_id = ?";
+                
+                $params = [$eventId];
+                $types = "i";
+            } else {
+                $query = "SELECT 
+                    c.resid,
+                    c.evalid,
+                    c.title,
+                    c.intro,
+                    c.abstract,
+                    c.objective,
+                    c.methodology,
+                    c.results,
+                    c.recommendation,
+                    c.literature,
+                    c.other,
+                    c.isCommented,
+                    c.date,
+                    e.fullname as evaluator_name,
+                    srp.category,
+                    NULL as center,
+                    srp.campus,
+                    srp.title as doc_title,
+                    srp.author,
+                    srp.coauthor,
+                    srp.presenter,
+                    srp.event,
+                    NULL as file,
+                    srp.research_file_view_url as drive_view_url,
+                    NULL as paper_trail_no,
+                    NULL as final_symposium_title,
+                    cat.id as category_id,
+                    cat.name as category_name
+                FROM comments c
+                LEFT JOIN evaluator e ON e.id = c.evalid
+                LEFT JOIN student_research_papers srp ON srp.id = c.resid
+                LEFT JOIN category cat ON cat.name = srp.category
+                WHERE srp.event = ?";
+                
+                $params = [$eventName];
+                $types = "s";
+            }
+            
+            // Add category filter if needed
+            if ($categoryId !== 'Print All Category' && !$isPrintAll && !empty($categoryId) && $categoryId !== '-- Select Category --') {
+                // If categoryId is numeric, use cat.id; if it's a name, use cat.name
+                if (is_numeric($categoryId)) {
+                    $query .= " AND cat.id = ?";
+                    $params[] = (int)$categoryId;
+                    $types .= "i";
+                } else {
+                    $query .= " AND cat.name = ?";
+                    $params[] = $categoryId;
+                    $types .= "s";
+                }
+            }
+            
+            $query .= " ORDER BY srp.title, c.date DESC";
+            
+        } else {
+            // For faculty events, query from researchfile
+            if ($eventId) {
+                $query = "SELECT 
+                    c.resid,
+                    c.evalid,
+                    c.title,
+                    c.intro,
+                    c.abstract,
+                    c.objective,
+                    c.methodology,
+                    c.results,
+                    c.recommendation,
+                    c.literature,
+                    c.other,
+                    c.isCommented,
+                    c.date,
+                    e.fullname as evaluator_name,
+                    r.category,
+                    r.center,
+                    r.campus,
+                    r.title as doc_title,
+                    r.author,
+                    r.coauthor,
+                    r.presenter,
+                    r.event,
+                    r.file,
+                    r.drive_view_url,
+                    r.paper_trail_no,
+                    r.final_symposium_title,
+                    cat.id as category_id,
+                    cat.name as category_name
+                FROM comments c
+                LEFT JOIN evaluator e ON e.id = c.evalid
+                LEFT JOIN researchfile r ON r.id = c.resid
+                LEFT JOIN category cat ON cat.name = r.category
+                WHERE r.event_id = ?";
+                
+                $params = [$eventId];
+                $types = "i";
+            } else {
+                $query = "SELECT 
+                    c.resid,
+                    c.evalid,
+                    c.title,
+                    c.intro,
+                    c.abstract,
+                    c.objective,
+                    c.methodology,
+                    c.results,
+                    c.recommendation,
+                    c.literature,
+                    c.other,
+                    c.isCommented,
+                    c.date,
+                    e.fullname as evaluator_name,
+                    r.category,
+                    r.center,
+                    r.campus,
+                    r.title as doc_title,
+                    r.author,
+                    r.coauthor,
+                    r.presenter,
+                    r.event,
+                    r.file,
+                    r.drive_view_url,
+                    r.paper_trail_no,
+                    r.final_symposium_title,
+                    cat.id as category_id,
+                    cat.name as category_name
+                FROM comments c
+                LEFT JOIN evaluator e ON e.id = c.evalid
+                LEFT JOIN researchfile r ON r.id = c.resid
+                LEFT JOIN category cat ON cat.name = r.category
+                WHERE r.event = ?";
+                
+                $params = [$eventName];
+                $types = "s";
+            }
+            
+            // Add category filter if needed
+            if ($categoryId !== 'Print All Category' && !$isPrintAll && !empty($categoryId) && $categoryId !== '-- Select Category --') {
+                if (is_numeric($categoryId)) {
+                    $query .= " AND cat.id = ?";
+                    $params[] = (int)$categoryId;
+                    $types .= "i";
+                } else {
+                    $query .= " AND cat.name = ?";
+                    $params[] = $categoryId;
+                    $types .= "s";
+                }
+            }
+            
+            $query .= " ORDER BY r.title, c.date DESC";
+        }
+        
+        error_log("commentRequest - Query: " . $query);
+        error_log("commentRequest - Params: " . print_r($params, true));
+        error_log("commentRequest - Types: " . $types);
         
         $statement = $con->prepare($query);
         if ($statement) {
@@ -108,12 +386,8 @@ if(isset($_POST['commentRequest'])){
             while ($val = $result->fetch_assoc()) {
                 $resid = $val['resid'];
                 
-                // Use final_symposium_title if available, otherwise use title
-                if (!empty($val['final_symposium_title'])) {
-                    $docTitle = $val['final_symposium_title'];
-                } else {
-                    $docTitle = $val['title'];
-                }
+                // Use doc_title directly
+                $docTitle = $val['doc_title'] ?? 'Untitled';
                 
                 if (!isset($groupedComments[$resid])) {
                     $groupedComments[$resid] = [
@@ -131,6 +405,7 @@ if(isset($_POST['commentRequest'])){
                         'drive_view_url' => $val['drive_view_url'] ?? '',
                         'paper_trail_no' => $val['paper_trail_no'] ?? '',
                         'final_symposium_title' => $val['final_symposium_title'] ?? '',
+                        'source_table' => $isStudent ? 'student_research_papers' : 'researchfile',
                         'comments' => [],
                         'total_word_count' => 0
                     ];
@@ -148,6 +423,7 @@ if(isset($_POST['commentRequest'])){
                 if (!empty($val['other'])) $comment['other'] = $val['other'];
                 $comment['evaluator_name'] = $val['evaluator_name'] ?? 'Unknown Evaluator';
                 $comment['date'] = $val['date'] ?? '';
+                $comment['source_table'] = $isStudent ? 'student_research_papers' : 'researchfile';
                 
                 if (count($comment) > 2) {
                     $groupedComments[$resid]['comments'][] = $comment;
@@ -211,6 +487,9 @@ if(isset($_POST['reqCommentIndiv2'])){
     $response->evID = null;
     $response->status = 'success';
     $response->message = 'No comments found';
+    $response->comments = []; // Add this for multiple comments
+    $response->source_table = '';
+    $response->doc_info = null;
     
     try {
         // Check if session exists
@@ -226,6 +505,8 @@ if(isset($_POST['reqCommentIndiv2'])){
         }
         
         $docId = $_POST['docId'] ?? '';
+        $comName = $_POST['comName'] ?? ''; // This is the section name (title, intro, etc.)
+        $eventId = $_POST['eventId'] ?? null;
         
         // Validate inputs
         if (empty($docId)) {
@@ -244,39 +525,90 @@ if(isset($_POST['reqCommentIndiv2'])){
             exit();
         }
         
-        // Fetch ALL comments for the given resid (docId)
-        $query = "SELECT 
-            c.title,
-            c.intro,
-            c.abstract,
-            c.objective,
-            c.methodology,
-            c.results,
-            c.recommendation,
-            c.literature,
-            c.other,
-            c.isCommented,
-            c.evID,
-            c.date,
-            c.resid,
-            e.fullname as evaluator_name,
-            r.title as doc_title,
-            r.category,
-            r.center,
-            r.campus,
-            r.author,
-            r.coauthor,
-            r.presenter,
-            r.event,
-            r.file,
-            r.drive_view_url,
-            r.paper_trail_no,
-            r.final_symposium_title
-        FROM comments c
-        LEFT JOIN evaluator e ON e.id = c.evalid
-        LEFT JOIN researchfile r ON r.id = c.resid
-        WHERE c.resid = ?
-        ORDER BY c.date DESC, c.evalid";
+        // Determine which table the document belongs to
+        $docSource = getDocumentSource($cons, $docId);
+        
+        if (!$docSource) {
+            $response->message = 'Document not found';
+            echo json_encode($response);
+            exit();
+        }
+        
+        $isStudent = isStudentEvent($docSource['event']);
+        $response->source_table = $isStudent ? 'student_research_papers' : 'researchfile';
+        
+        // Build query based on source table
+        if ($isStudent) {
+            // Student document - query with student_research_papers
+            $query = "SELECT 
+                c.title,
+                c.intro,
+                c.abstract,
+                c.objective,
+                c.methodology,
+                c.results,
+                c.recommendation,
+                c.literature,
+                c.other,
+                c.isCommented,
+                c.evID,
+                c.date,
+                c.resid,
+                e.fullname as evaluator_name,
+                srp.title as doc_title,
+                srp.category,
+                NULL as center,
+                srp.campus,
+                srp.author,
+                srp.coauthor,
+                srp.presenter,
+                srp.event,
+                NULL as file,
+                srp.research_file_view_url as drive_view_url,
+                NULL as paper_trail_no,
+                NULL as final_symposium_title,
+                srp.status as doc_status
+            FROM comments c
+            LEFT JOIN evaluator e ON e.id = c.evalid
+            LEFT JOIN student_research_papers srp ON srp.id = c.resid
+            WHERE c.resid = ?
+            ORDER BY c.date DESC, c.evalid";
+        } else {
+            // Faculty document - query with researchfile
+            $query = "SELECT 
+                c.title,
+                c.intro,
+                c.abstract,
+                c.objective,
+                c.methodology,
+                c.results,
+                c.recommendation,
+                c.literature,
+                c.other,
+                c.isCommented,
+                c.evID,
+                c.date,
+                c.resid,
+                e.fullname as evaluator_name,
+                r.title as doc_title,
+                r.final_symposium_title,
+                r.category,
+                r.center,
+                r.campus,
+                r.author,
+                r.coauthor,
+                r.presenter,
+                r.event,
+                r.file,
+                r.drive_view_url,
+                r.paper_trail_no,
+                r.status as doc_status
+            FROM comments c
+            LEFT JOIN evaluator e ON e.id = c.evalid
+            LEFT JOIN researchfile r ON r.id = c.resid
+            WHERE c.resid = ?
+            ORDER BY c.date DESC, c.evalid";
+        }
         
         $statement = $cons->prepare($query);
         
@@ -302,6 +634,7 @@ if(isset($_POST['reqCommentIndiv2'])){
         $comments = [];
         $hasComments = false;
         $docInfo = null;
+        $allCommentData = [];
         
         while ($val = $result->fetch_assoc()) {
             $hasComments = true;
@@ -310,7 +643,8 @@ if(isset($_POST['reqCommentIndiv2'])){
             if ($docInfo === null) {
                 $docInfo = [
                     'resid' => $val['resid'],
-                    'doc_title' => !empty($val['final_symposium_title']) ? $val['final_symposium_title'] : $val['doc_title'],
+                    'doc_title' => $val['doc_title'] ?? 'Untitled',
+                    'final_symposium_title' => $val['final_symposium_title'] ?? null,
                     'category' => $val['category'] ?? '',
                     'center' => $val['center'] ?? '',
                     'campus' => $val['campus'] ?? '',
@@ -321,35 +655,59 @@ if(isset($_POST['reqCommentIndiv2'])){
                     'file' => $val['file'] ?? '',
                     'drive_view_url' => $val['drive_view_url'] ?? '',
                     'paper_trail_no' => $val['paper_trail_no'] ?? '',
+                    'doc_status' => $val['doc_status'] ?? '',
+                    'source_type' => $isStudent ? 'student' : 'faculty'
                 ];
             }
             
-            // Build comment object
-            $comment = [
-                'evaluator_name' => $val['evaluator_name'] ?? 'Unknown Evaluator',
-                'date' => $val['date'] ?? '',
-                'evID' => $val['evID'] ?? null,
-                'isCommented' => (int)($val['isCommented'] ?? 0)
-            ];
-            
-            $fields = ['title', 'intro', 'abstract', 'objective', 'methodology', 'results', 'recommendation', 'literature', 'other'];
-            foreach ($fields as $field) {
-                if (!empty($val[$field]) && trim($val[$field]) !== '' && trim($val[$field]) !== 'N/A') {
-                    $comment[$field] = $val[$field];
-                }
+            // Get the specific section content based on comName
+            $sectionContent = '';
+            if (!empty($comName) && isset($val[$comName])) {
+                $sectionContent = $val[$comName] ?? '';
             }
             
-            // Only add if there's at least one comment field
-            $hasCommentContent = false;
-            foreach ($fields as $field) {
-                if (isset($comment[$field]) && !empty($comment[$field])) {
-                    $hasCommentContent = true;
-                    break;
+            // If comName is not specified or is 'all', get all sections
+            if (empty($comName) || $comName === 'all') {
+                // Build comment object with all sections
+                $comment = [
+                    'evaluator_name' => $val['evaluator_name'] ?? 'Unknown Evaluator',
+                    'date' => $val['date'] ?? '',
+                    'evID' => $val['evID'] ?? null,
+                    'isCommented' => (int)($val['isCommented'] ?? 0)
+                ];
+                
+                $fields = ['title', 'intro', 'abstract', 'objective', 'methodology', 'results', 'recommendation', 'literature', 'other'];
+                foreach ($fields as $field) {
+                    if (!empty($val[$field]) && trim($val[$field]) !== '' && trim($val[$field]) !== 'N/A') {
+                        $comment[$field] = $val[$field];
+                    }
                 }
-            }
-            
-            if ($hasCommentContent) {
-                $comments[] = $comment;
+                
+                // Check if there's any comment content
+                $hasCommentContent = false;
+                foreach ($fields as $field) {
+                    if (isset($comment[$field]) && !empty($comment[$field])) {
+                        $hasCommentContent = true;
+                        break;
+                    }
+                }
+                
+                if ($hasCommentContent) {
+                    $comments[] = $comment;
+                }
+            } else {
+                // Get specific section content
+                if (!empty($sectionContent) && trim($sectionContent) !== '' && trim($sectionContent) !== 'N/A') {
+                    // This is a comment for a specific section
+                    $commentData = [
+                        'evaluator_name' => $val['evaluator_name'] ?? 'Unknown Evaluator',
+                        'date' => $val['date'] ?? '',
+                        'evID' => $val['evID'] ?? null,
+                        'isCommented' => (int)($val['isCommented'] ?? 0),
+                        $comName => $sectionContent
+                    ];
+                    $comments[] = $commentData;
+                }
             }
         }
         
@@ -363,6 +721,23 @@ if(isset($_POST['reqCommentIndiv2'])){
             $response->isCommented = 1;
             $response->message = 'Comments loaded successfully';
             $response->total_comments = count($comments);
+            $response->source_type = $isStudent ? 'student' : 'faculty';
+            
+            // If comName is specified, also return the specific section content
+            if (!empty($comName) && $comName !== 'all') {
+                // Find the latest comment for this section
+                $latestComment = null;
+                foreach ($comments as $comment) {
+                    if (isset($comment[$comName]) && !empty($comment[$comName])) {
+                        $latestComment = $comment[$comName];
+                        break;
+                    }
+                }
+                if ($latestComment !== null) {
+                    $response->data = $latestComment;
+                    $response->name = $comName;
+                }
+            }
         } else {
             $response->message = 'No comments found for this document';
             $response->data = [];
@@ -431,33 +806,69 @@ if(isset($_POST['queueCommentForEmail'])){
             throw new Exception('Database connection failed: ' . $cons->connect_error);
         }
         
-        // Get comments and research data
-        $checkQuery = "SELECT 
-            c.resid, 
-            c.evalid, 
-            c.intro, 
-            c.abstract, 
-            c.objective, 
-            c.methodology, 
-            c.results, 
-            c.recommendation, 
-            c.literature, 
-            c.other,
-            r.author,
-            r.coauthor,
-            r.presenter,
-            r.title,
-            r.final_symposium_title,
-            r.campus,
-            r.event_id,
-            r.event,
-            r.senderid,
-            a.id as acceptance_id,
-            a.date_to_be_held
-        FROM comments c
-        LEFT JOIN researchfile r ON c.resid = r.id
-        LEFT JOIN acceptance_letter_data a ON r.event_id = a.event_id
-        WHERE c.resid = ? AND c.evalid = ?";
+        // Determine which table the document belongs to
+        $docSource = getDocumentSource($cons, $docId);
+        $isStudent = false;
+        
+        if ($docSource) {
+            $isStudent = isStudentEvent($docSource['event'], $docSource['event_id']);
+        }
+        
+        // Get comments and document data based on source
+        if ($isStudent) {
+            // Student document
+            $checkQuery = "SELECT 
+                c.resid, 
+                c.evalid, 
+                c.intro, 
+                c.abstract, 
+                c.objective, 
+                c.methodology, 
+                c.results, 
+                c.recommendation, 
+                c.literature, 
+                c.other,
+                srp.author,
+                srp.coauthor,
+                srp.presenter,
+                srp.title,
+                srp.event_id,
+                srp.event,
+                NULL as senderid,
+                NULL as acceptance_id,
+                NULL as date_to_be_held
+            FROM comments c
+            LEFT JOIN student_research_papers srp ON c.resid = srp.id
+            WHERE c.resid = ? AND c.evalid = ?";
+        } else {
+            // Faculty document
+            $checkQuery = "SELECT 
+                c.resid, 
+                c.evalid, 
+                c.intro, 
+                c.abstract, 
+                c.objective, 
+                c.methodology, 
+                c.results, 
+                c.recommendation, 
+                c.literature, 
+                c.other,
+                r.author,
+                r.coauthor,
+                r.presenter,
+                r.title,
+                r.final_symposium_title,
+                r.campus,
+                r.event_id,
+                r.event,
+                r.senderid,
+                a.id as acceptance_id,
+                a.date_to_be_held
+            FROM comments c
+            LEFT JOIN researchfile r ON c.resid = r.id
+            LEFT JOIN acceptance_letter_data a ON r.event_id = a.event_id
+            WHERE c.resid = ? AND c.evalid = ?";
+        }
         
         $stmt = $cons->prepare($checkQuery);
         $stmt->bind_param("si", $docId, $evalId);
@@ -501,47 +912,74 @@ if(isset($_POST['queueCommentForEmail'])){
         $evaluator = $evalResult->fetch_assoc();
         $evalStmt->close();
         
-        $senderId = $commentData['senderid'] ?? 0;
-        $chairEmails = [];
-        $chairName = '';
+        // Get author emails - for student papers, use presenter/author directly
+        $authorEmails = [];
+        $authorName = '';
         
-        if (!empty($senderId)) {
-            $chairQuery = "SELECT email, fullName, campus FROM account_detail WHERE id = ?";
-            $chairStmt = $cons->prepare($chairQuery);
-            $chairStmt->bind_param("i", $senderId);
-            $chairStmt->execute();
-            $chairResult = $chairStmt->get_result();
+        if ($isStudent) {
+            // For student papers, use presenter as the contact
+            if (!empty($commentData['presenter'])) {
+                $authorName = $commentData['presenter'];
+            } elseif (!empty($commentData['author'])) {
+                $authorName = $commentData['author'];
+            }
             
-            while ($row = $chairResult->fetch_assoc()) {
-                if (!empty($row['email'])) {
-                    $chairEmails[] = $row['email'];
-                    $chairName = $row['fullName'] ?? 'Research Chair';
+            // Get email from account_detail
+            if (!empty($authorName)) {
+                $authQuery = "SELECT email FROM account_detail WHERE fullName = ? AND (usertype = 'Research Chair' OR usertype = 'User')";
+                $authStmt = $cons->prepare($authQuery);
+                $authStmt->bind_param("s", $authorName);
+                $authStmt->execute();
+                $authResult = $authStmt->get_result();
+                while ($row = $authResult->fetch_assoc()) {
+                    if (!empty($row['email'])) {
+                        $authorEmails[] = $row['email'];
+                    }
                 }
+                $authStmt->close();
             }
-            $chairStmt->close();
-        }
-        
-        // If no email from senderid, try author name
-        if (empty($chairEmails) && !empty($commentData['author'])) {
-            $chairQuery = "SELECT email, fullName FROM account_detail WHERE fullName = ? AND (usertype = 'Research Chair' OR usertype = 'User')";
-            $chairStmt = $cons->prepare($chairQuery);
-            $chairStmt->bind_param("s", $commentData['author']);
-            $chairStmt->execute();
-            $chairResult = $chairStmt->get_result();
-            while ($row = $chairResult->fetch_assoc()) {
-                if (!empty($row['email'])) {
-                    $chairEmails[] = $row['email'];
-                    if (empty($chairName)) $chairName = $row['fullName'];
+        } else {
+            // For faculty papers, use senderid
+            $senderId = $commentData['senderid'] ?? 0;
+            
+            if (!empty($senderId)) {
+                $chairQuery = "SELECT email, fullName, campus FROM account_detail WHERE id = ?";
+                $chairStmt = $cons->prepare($chairQuery);
+                $chairStmt->bind_param("i", $senderId);
+                $chairStmt->execute();
+                $chairResult = $chairStmt->get_result();
+                
+                while ($row = $chairResult->fetch_assoc()) {
+                    if (!empty($row['email'])) {
+                        $authorEmails[] = $row['email'];
+                        $authorName = $row['fullName'] ?? 'Research Chair';
+                    }
                 }
+                $chairStmt->close();
             }
-            $chairStmt->close();
+            
+            // If no email from senderid, try author name
+            if (empty($authorEmails) && !empty($commentData['author'])) {
+                $authQuery = "SELECT email, fullName FROM account_detail WHERE fullName = ? AND (usertype = 'Research Chair' OR usertype = 'User')";
+                $authStmt = $cons->prepare($authQuery);
+                $authStmt->bind_param("s", $commentData['author']);
+                $authStmt->execute();
+                $authResult = $authStmt->get_result();
+                while ($row = $authResult->fetch_assoc()) {
+                    if (!empty($row['email'])) {
+                        $authorEmails[] = $row['email'];
+                        if (empty($authorName)) $authorName = $row['fullName'];
+                    }
+                }
+                $authStmt->close();
+            }
         }
         
-        if (empty($chairEmails)) {
-            throw new Exception('No Research Chair email found to notify');
+        if (empty($authorEmails)) {
+            throw new Exception('No author email found to notify');
         }
         
-        $chairEmails = array_unique($chairEmails);
+        $authorEmails = array_unique($authorEmails);
         
         $acceptanceId = $commentData['acceptance_id'] ?? null;
         $eventDateRaw = $commentData['date_to_be_held'] ?? null;
@@ -559,13 +997,10 @@ if(isset($_POST['queueCommentForEmail'])){
                 $time = str_replace('at ', '', $time);
                 $time = trim($time);
                 
-                // Build date string: "July 30, 2026 8:00 AM"
                 $dateStr = "$month $dayEnd, $year $time";
                 error_log("Formatted date string: $dateStr");
                 
-                // Parse using DateTime
                 $eventDateTime = new DateTime($dateStr);
-                // Add 1 day after the event
                 $eventDateTime->modify('+1 day');
                 $scheduledDate = $eventDateTime->format('Y-m-d H:i:s');
                 error_log("Scheduled date (after +1 day): $scheduledDate");
@@ -583,7 +1018,6 @@ if(isset($_POST['queueCommentForEmail'])){
             }
         }
         
-        // Fallback if no date found
         if (empty($scheduledDate)) {
             $scheduledDate = date('Y-m-d H:i:s', strtotime('+1 day'));
             error_log("Using fallback date: $scheduledDate");
@@ -615,7 +1049,7 @@ if(isset($_POST['queueCommentForEmail'])){
         
         // Insert into email_queue
         $queuedCount = 0;
-        foreach ($chairEmails as $email) {
+        foreach ($authorEmails as $email) {
             if (empty($email)) continue;
             
             // Check if already queued
@@ -649,7 +1083,7 @@ if(isset($_POST['queueCommentForEmail'])){
             
             if ($insertStmt->execute()) {
                 $queuedCount++;
-                error_log("Queued email for doc $docId to Research Chair: $email on $scheduledDate");
+                error_log("Queued email for doc $docId to Author: $email on $scheduledDate");
             } else {
                 error_log("Failed to insert email_queue: " . $insertStmt->error);
             }
@@ -658,7 +1092,7 @@ if(isset($_POST['queueCommentForEmail'])){
         
         // Log to email_log
         if ($queuedCount > 0) {
-            foreach ($chairEmails as $email) {
+            foreach ($authorEmails as $email) {
                 $logQuery = "INSERT INTO email_log 
                              (document_id, evaluator_id, author_email, sent_date, email_type, status) 
                              VALUES (?, ?, ?, NOW(), 'comment_queued', 0)";
@@ -673,6 +1107,7 @@ if(isset($_POST['queueCommentForEmail'])){
         $response->message = "Comments saved";
         $response->queued = $queuedCount;
         $response->scheduled_date = $scheduledDate;
+        $response->source_type = $isStudent ? 'student' : 'faculty';
         
         $cons->close();
         

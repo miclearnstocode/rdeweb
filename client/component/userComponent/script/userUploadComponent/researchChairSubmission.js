@@ -4,8 +4,8 @@ let currentPaperType = 'undergraduate';
 let formData = {};
 
 // ============== HELPER FUNCTIONS ==============
-const undergraduateCategories = ['Social Science', 'Natural/Biological', 'Food', 'Developmental']
-const graduateCategories = ['Social Science', 'Natural/Biological', 'Food and Development']
+const undergraduateCategories = ['Social Science', 'Natural / Biological', 'Food', 'Development']
+const graduateCategories = ['Social Science', 'Natural / Biological', 'Food', 'Development']
 const campuses = ['Roxas City Main', 'Sigma', 'Dayao', 'Dumarao', 'Burias', 'Mambusao', 'Pontevedra', 'Pilar', 'Tapaz']
 
 const capitalizeFirstLetter = (str) => {

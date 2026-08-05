@@ -1,6 +1,7 @@
 import { $, Waiting } from '../../../lib/lib.js'
 
-export const CommentBoard = ({ title, docId, closeState }) => {
+//to do: add a format times new roman font 12 all.
+export const CommentBoard = ({ title, docId, closeState, eventId}) => {
     // Data storage
     const data = {
         title: '',
@@ -25,8 +26,7 @@ export const CommentBoard = ({ title, docId, closeState }) => {
         literature: '',
         other: ''
     };
-    let documentTitle = title || 'Loading...';
-    let eventId = null;
+    let documentTitle = title;
     let eventName = null;
     closeState({ base: baseData, raw: data });
 
@@ -73,9 +73,15 @@ export const CommentBoard = ({ title, docId, closeState }) => {
             }
             
             const data = await response.json();
+            console.log('getEventInfo response:', data);
+            
             if (data.status) {
                 eventId = data.event_id;
                 eventName = data.event_name;
+                sourceTable = data.source_table; 
+                console.log('Event info loaded:', { eventId, eventName, sourceTable, docStatus: data.doc_status });
+            } else {
+                console.error('Failed to get event info:', data.message);
             }
         } catch (error) {
             console.error('Error fetching event info:', error);
@@ -714,13 +720,13 @@ export const CommentBoard = ({ title, docId, closeState }) => {
             }
         });
 
-        // Load saved data - FIXED to properly render HTML content
+        // Load saved data - FIXED to properly handle multiple comments
         (async () => {
             let loading = null
             try {
                 const form = new FormData();
                 form.append('reqCommentIndiv2', '1');
-                form.append('comName', section.id);
+                form.append('comName', section.id); // Pass the section name
                 form.append('docId', docId);
 
                 loading = Waiting()
@@ -753,12 +759,62 @@ export const CommentBoard = ({ title, docId, closeState }) => {
 
                 if (loading) loading.remove()
 
-                if (val && val.name) {
-                    baseData[val.name] = val.data || '';
-                    data[val.name] = val.data || '';
-                    // IMPORTANT: Use innerHTML to render HTML tags
-                    contentArea.innerHTML = val.data || '';
-                    closeState({ base: { ...baseData }, raw: { ...data } });
+                // Check if we have comments
+                if (val && val.status !== 'error') {
+                    // If comName is specified, data should be the specific section content
+                    if (val.name === section.id && val.data) {
+                        // This is the specific section content
+                        baseData[val.name] = val.data || '';
+                        data[val.name] = val.data || '';
+                        // IMPORTANT: Use innerHTML to render HTML tags
+                        contentArea.innerHTML = val.data || '';
+                        closeState({ base: { ...baseData }, raw: { ...data } });
+                    } 
+                    // If we have multiple comments (val.data is an array)
+                    else if (Array.isArray(val.data) && val.data.length > 0) {
+                        // Display all comments for this section
+                        let html = '';
+                        val.data.forEach((comment, index) => {
+                            // Get the section content from the comment
+                            const sectionContent = comment[section.id] || '';
+                            if (sectionContent) {
+                                const evaluatorName = comment.evaluator_name || 'Unknown Evaluator';
+                                const date = comment.date ? new Date(comment.date).toLocaleString() : '';
+                                
+                                html += `
+                                    <div style="border-bottom: 1px solid #e8ecf1; padding: 12px 0; margin-bottom: 8px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                            <strong style="color: #0f172a; font-size: 13px;">${evaluatorName}</strong>
+                                            <span style="color: #94a3b8; font-size: 11px;">${date}</span>
+                                        </div>
+                                        <div style="color: #1e293b; font-size: 14px; line-height: 1.6;">${sectionContent}</div>
+                                    </div>
+                                `;
+                            }
+                        });
+                        
+                        // If we have content, display it
+                        if (html) {
+                            // Store the combined content in data
+                            const combinedContent = val.data.map(c => c[section.id]).filter(c => c).join('<br><br>');
+                            baseData[section.id] = combinedContent;
+                            data[section.id] = combinedContent;
+                            contentArea.innerHTML = html;
+                            closeState({ base: { ...baseData }, raw: { ...data } });
+                        } else {
+                            // No content for this section
+                            baseData[section.id] = '';
+                            data[section.id] = '';
+                            contentArea.innerHTML = '';
+                            closeState({ base: { ...baseData }, raw: { ...data } });
+                        }
+                    } else {
+                        // No comments found, set empty state
+                        baseData[section.id] = '';
+                        data[section.id] = '';
+                        contentArea.innerHTML = '';
+                        closeState({ base: { ...baseData }, raw: { ...data } });
+                    }
                 } else {
                     // No comments found, set empty state
                     baseData[section.id] = '';
@@ -776,7 +832,6 @@ export const CommentBoard = ({ title, docId, closeState }) => {
                 closeState({ base: { ...baseData }, raw: { ...data } });
             }
         })();
-
         editorDiv.appendChild(contentArea);
         editorContainer.appendChild(editorDiv);
         editors[section.id] = editorDiv;

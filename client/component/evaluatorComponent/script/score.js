@@ -310,6 +310,9 @@ export const ScoreBoard = ({ resId, eventId, center, categoryId, userType }) => 
                 const form = new FormData();
                 form.append('scoreboard_req', '1');
                 form.append('docId', resId);
+                if (eventId) {
+                    form.append('eventId', eventId);
+                }
 
                 try {
                     const res = await fetch('/scoreboard', {

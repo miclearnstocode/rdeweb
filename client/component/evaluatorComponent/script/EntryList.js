@@ -503,7 +503,7 @@ export const EntryList = ({
                             type: 'click',
                             method: (e) => {
                                 e.stopPropagation()
-                                window.location.assign('/evaluator/viewdocs/' + docId)
+                                window.location.assign('/evaluator/viewdocs/' + docId + '?eventId=' + eventId)
                             }
                         },
                         elementHandler: (el) => {
@@ -531,7 +531,7 @@ export const EntryList = ({
                 }
                 // Remove any existing modals
                 document.querySelectorAll('.custom-modal-overlay').forEach(el => el.remove());
-                window.location.assign('/evaluator/viewdocs/' + docId)
+                window.location.assign('/evaluator/viewdocs/' + docId + '?eventId=' + eventId)
             }
         }
     }))
