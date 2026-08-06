@@ -6510,179 +6510,286 @@ if (isset($_POST['deleteEndorsement'])) {
     $response = new stdClass();
     $response->message = '';
     $response->status = false;
+    $docId = $_POST['docId'] ?? null;
+    $eventId = $_POST['eventId'] ?? null; // Pass eventId from frontend
+
+    if (!$docId) {
+        $response->message = "Document ID is required";
+        echo json_encode($response);
+        exit();
+    }
 
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $docId = $_POST['docId'];
-
         // Start transaction
         $con->begin_transaction();
 
         try {
-            // Get all Google Drive file IDs and folder IDs for this endorsement
-            $fileQuery = "SELECT 
-                e.drive_file_id as endorsement_drive_id,
-                e.drive_event_folder_id,
-                e.drive_center_folder_id,
-                e.drive_category_folder_id,
-                e.drive_entry_folder_id,
-                rf.id as research_id,
-                rf.drive_file_id as research_drive_id,
-                rf.program_drive_file_id,
-                rf.drive_event_folder_id as research_event_folder,
-                rf.drive_center_folder_id as research_center_folder,
-                rf.drive_category_folder_id as research_category_folder,
-                rf.drive_entry_folder_id as research_entry_folder
-            FROM endorsement e
-            LEFT JOIN researchfile rf ON rf.endorsementid = e.id
-            WHERE e.id = ?";
-
-            $fileStmt = $con->prepare($fileQuery);
-            $fileStmt->bind_param("s", $docId);
-            $fileStmt->execute();
-            $fileResult = $fileStmt->get_result();
-
-            $driveFileIds = [];
-            $folderIds = [];
-            $researchIds = [];
-
-            while ($row = $fileResult->fetch_assoc()) {
-                // Collect endorsement drive files
-                if (!empty($row['endorsement_drive_id'])) {
-                    $driveFileIds[] = $row['endorsement_drive_id'];
-                }
-
-                // Collect research drive files
-                if (!empty($row['research_drive_id'])) {
-                    $driveFileIds[] = $row['research_drive_id'];
-                }
-
-                // Collect program drive files
-                if (!empty($row['program_drive_file_id'])) {
-                    $driveFileIds[] = $row['program_drive_file_id'];
-                }
-
-                // Collect research IDs for comment deletion
-                if (!empty($row['research_id'])) {
-                    $researchIds[] = $row['research_id'];
-                }
-
-                // Collect folder IDs (optional - we might keep folders even if empty)
-                if (!empty($row['drive_entry_folder_id'])) {
-                    $folderIds[] = $row['drive_entry_folder_id'];
-                }
-                if (!empty($row['research_entry_folder'])) {
-                    $folderIds[] = $row['research_entry_folder'];
+            // ============ CHECK IF THIS IS A STUDENT RESEARCH PAPER ============
+            // Check if docId exists in student_research_papers with matching eventId
+            $checkStudentQuery = "SELECT id, drive_file_id, eventid, drive_folder_id, title 
+                                 FROM student_research_papers 
+                                 WHERE id = ?";
+            $checkStmt = $con->prepare($checkStudentQuery);
+            $checkStmt->bind_param("s", $docId);
+            $checkStmt->execute();
+            $studentResult = $checkStmt->get_result();
+            
+            // Only treat as student paper if eventId matches (if provided)
+            $isStudentPaper = false;
+            $studentData = null;
+            
+            if ($studentResult->num_rows > 0) {
+                $studentData = $studentResult->fetch_assoc();
+                // If eventId is provided, verify it matches
+                if ($eventId && $studentData['eventid'] == $eventId) {
+                    $isStudentPaper = true;
+                } elseif (!$eventId) {
+                    // If no eventId provided, check if this ID exists in endorsement table
+                    // If it does, it's likely an endorsement, not a student paper
+                    $checkEndorseQuery = "SELECT id FROM endorsement WHERE id = ?";
+                    $checkEndorseStmt = $con->prepare($checkEndorseQuery);
+                    $checkEndorseStmt->bind_param("s", $docId);
+                    $checkEndorseStmt->execute();
+                    $endorseResult = $checkEndorseStmt->get_result();
+                    
+                    if ($endorseResult->num_rows === 0) {
+                        // Only in student_research_papers, not in endorsement
+                        $isStudentPaper = true;
+                    }
+                    // If it exists in both, we need more info - default to endorsement
                 }
             }
 
-            error_log("Files to delete from Google Drive: " . json_encode($driveFileIds));
+            if ($isStudentPaper && $studentData) {
+                // ============ HANDLE STUDENT RESEARCH PAPER DELETION ============
+                $eventId = $studentData['eventid'];
+                $driveFileIds = [];
+                
+                // Collect student paper drive files
+                if (!empty($studentData['drive_file_id'])) {
+                    $driveFileIds[] = $studentData['drive_file_id'];
+                }
 
+                error_log("Deleting student research paper ID: $docId, Event ID: $eventId");
 
-            if (!class_exists('GoogleDriveService')) {
-                throw new Exception("GoogleDriveService class not found");
-            }
+                // Move files to trash in Google Drive
+                $trashedCount = 0;
+                $failedFiles = [];
 
-            $driveService = new GoogleDriveService();
-
-            // Move files to trash in Google Drive
-            $trashedCount = 0;
-            $failedFiles = [];
-
-            foreach ($driveFileIds as $fileId) {
-                try {
-                    if (!empty($fileId)) {
-                        error_log("Moving Google Drive file to trash: $fileId");
-                        $result = $driveService->trashFile($fileId);
-                        if ($result) {
-                            $trashedCount++;
-                            error_log("Successfully trashed file: $fileId");
-                        } else {
+                if (class_exists('GoogleDriveService') && !empty($driveFileIds)) {
+                    $driveService = new GoogleDriveService();
+                    
+                    foreach ($driveFileIds as $fileId) {
+                        try {
+                            if (!empty($fileId)) {
+                                $result = $driveService->trashFile($fileId);
+                                if ($result) {
+                                    $trashedCount++;
+                                } else {
+                                    $failedFiles[] = $fileId;
+                                }
+                            }
+                        } catch (Exception $e) {
                             $failedFiles[] = $fileId;
-                            error_log("Failed to trash file: $fileId");
+                            error_log("Exception trashing file $fileId: " . $e->getMessage());
                         }
                     }
-                } catch (Exception $e) {
-                    $failedFiles[] = $fileId;
-                    error_log("Exception trashing file $fileId: " . $e->getMessage());
-                    // Continue with other files even if one fails
-                }
-            }
-
-            // Delete comments for all research files
-            if (!empty($researchIds)) {
-                $placeholders = implode(',', array_fill(0, count($researchIds), '?'));
-                $commentDeleteQuery = "DELETE FROM comments WHERE resid IN ($placeholders)";
-                $commentDeleteStmt = $con->prepare($commentDeleteQuery);
-
-                // Dynamically bind parameters
-                $types = str_repeat('s', count($researchIds));
-                $commentDeleteStmt->bind_param($types, ...$researchIds);
-                $commentDeleteStmt->execute();
-                $commentsDeleted = $commentDeleteStmt->affected_rows;
-                error_log("Deleted $commentsDeleted comments for research IDs: " . implode(',', $researchIds));
-            }
-
-            // Delete researchfile records
-            $deleteResearchQuery = "DELETE FROM researchfile WHERE endorsementid = ?";
-            $deleteResearchStmt = $con->prepare($deleteResearchQuery);
-            $deleteResearchStmt->bind_param("s", $docId);
-            $deleteResearchStmt->execute();
-            $researchDeleted = $deleteResearchStmt->affected_rows;
-
-            // Delete endorsement record
-            $deleteEndorseQuery = "DELETE FROM endorsement WHERE id = ?";
-            $deleteEndorseStmt = $con->prepare($deleteEndorseQuery);
-            $deleteEndorseStmt->bind_param("s", $docId);
-            $deleteEndorseStmt->execute();
-            $endorsementDeleted = $deleteEndorseStmt->affected_rows;
-
-            if ($endorsementDeleted > 0) {
-                // Log the deletion
-                $logQuery = "INSERT INTO document_log (user_id, doc_id, details, date) VALUES (?, ?, ?, NOW())";
-                $logStmt = $con->prepare($logQuery);
-
-                $userName = $_SESSION['userName'] ?? $_SESSION['userFulname'] ?? 'Unknown User';
-                $details = "User: $userName deleted endorsement ID: $docId. ";
-                $details .= "$trashedCount Google Drive file(s) moved to trash.";
-
-                if (!empty($failedFiles)) {
-                    $details .= " Failed to trash: " . implode(', ', $failedFiles);
                 }
 
-                $sessionUserId = $_SESSION['userId'] ?? 0;
-                $logStmt->bind_param("sss", $sessionUserId, $docId, $details);
-                $logStmt->execute();
+                // Delete the student research paper
+                $deleteStudentQuery = "DELETE FROM student_research_papers WHERE id = ?";
+                $deleteStudentStmt = $con->prepare($deleteStudentQuery);
+                $deleteStudentStmt->bind_param("s", $docId);
+                $deleteStudentStmt->execute();
+                $documentDeleted = $deleteStudentStmt->affected_rows;
 
-                $con->commit();
+                if ($documentDeleted > 0) {
+                    // Log the deletion
+                    $logQuery = "INSERT INTO document_log (user_id, doc_id, event_id, details, date) VALUES (?, ?, ?, ?, NOW())";
+                    $logStmt = $con->prepare($logQuery);
+                    
+                    $userName = $_SESSION['userName'] ?? $_SESSION['userFulname'] ?? 'Unknown User';
+                    $details = "User: $userName deleted student research paper ID: $docId. Title: " . ($studentData['title'] ?? 'Unknown');
+                    
+                    $sessionUserId = $_SESSION['userId'] ?? 0;
+                    
+                    $logStmt->bind_param("ssss", $sessionUserId, $docId, $eventId, $details);
+                    $logStmt->execute();
 
-                // Build response message
-                $response->status = true;
-                $response->message = "Document deleted successfully. ";
-                $response->message .= "$trashedCount file(s) moved to Google Drive trash.";
+                    $con->commit();
 
-                if ($researchDeleted > 0) {
-                    $response->message .= " $researchDeleted research record(s) deleted.";
+                    $response->status = true;
+                    $response->message = "Student research paper deleted successfully.";
+                    $response->is_student_paper = true;
+                    $response->event_id = $eventId;
+
+                } else {
+                    throw new Exception("No student research paper found to delete");
                 }
-
-                if (!empty($failedFiles)) {
-                    $response->message .= " Warning: " . count($failedFiles) . " file(s) could not be trashed.";
-                    $response->failed_files = $failedFiles;
-                }
-
-                $response->trashed_count = $trashedCount;
-                $response->research_deleted = $researchDeleted;
 
             } else {
-                throw new Exception("No endorsement record found to delete");
+                // ============ HANDLE ENDORSEMENT / RESEARCHFILE DELETION ============
+                // Check if this is an endorsement with linked researchfiles
+                $endorsementQuery = "SELECT 
+                    e.id as endorsement_id,
+                    e.drive_file_id as endorsement_drive_id,
+                    e.drive_event_folder_id,
+                    e.drive_center_folder_id,
+                    e.drive_category_folder_id,
+                    e.drive_entry_folder_id,
+                    e.eventid,
+                    rf.id as research_id,
+                    rf.drive_file_id as research_drive_id,
+                    rf.program_drive_file_id
+                FROM endorsement e
+                LEFT JOIN researchfile rf ON rf.endorsementid = e.id
+                WHERE e.id = ?";
+
+                $endorseStmt = $con->prepare($endorsementQuery);
+                $endorseStmt->bind_param("s", $docId);
+                $endorseStmt->execute();
+                $endorseResult = $endorseStmt->get_result();
+
+                if ($endorseResult->num_rows === 0) {
+                    throw new Exception("No endorsement found with ID: $docId");
+                }
+
+                $driveFileIds = [];
+                $researchIds = [];
+                $eventId = null;
+
+                while ($row = $endorseResult->fetch_assoc()) {
+                    // Get event ID
+                    if (!empty($row['eventid'])) {
+                        $eventId = $row['eventid'];
+                    }
+
+                    // Collect endorsement drive files
+                    if (!empty($row['endorsement_drive_id'])) {
+                        $driveFileIds[] = $row['endorsement_drive_id'];
+                    }
+
+                    // Collect research drive files
+                    if (!empty($row['research_drive_id'])) {
+                        $driveFileIds[] = $row['research_drive_id'];
+                    }
+
+                    // Collect program drive files
+                    if (!empty($row['program_drive_file_id'])) {
+                        $driveFileIds[] = $row['program_drive_file_id'];
+                    }
+
+                    // Collect research IDs for comment deletion
+                    if (!empty($row['research_id'])) {
+                        $researchIds[] = $row['research_id'];
+                    }
+                }
+
+                error_log("Deleting endorsement ID: $docId with event ID: $eventId");
+
+                // Move files to trash in Google Drive
+                $trashedCount = 0;
+                $failedFiles = [];
+
+                if (class_exists('GoogleDriveService') && !empty($driveFileIds)) {
+                    $driveService = new GoogleDriveService();
+                    
+                    foreach ($driveFileIds as $fileId) {
+                        try {
+                            if (!empty($fileId)) {
+                                $result = $driveService->trashFile($fileId);
+                                if ($result) {
+                                    $trashedCount++;
+                                } else {
+                                    $failedFiles[] = $fileId;
+                                }
+                            }
+                        } catch (Exception $e) {
+                            $failedFiles[] = $fileId;
+                            error_log("Exception trashing file $fileId: " . $e->getMessage());
+                        }
+                    }
+                }
+
+                // Delete comments for all research files
+                if (!empty($researchIds)) {
+                    $placeholders = implode(',', array_fill(0, count($researchIds), '?'));
+                    $commentDeleteQuery = "DELETE FROM comments WHERE resid IN ($placeholders)";
+                    $commentDeleteStmt = $con->prepare($commentDeleteQuery);
+                    
+                    $types = str_repeat('s', count($researchIds));
+                    $commentDeleteStmt->bind_param($types, ...$researchIds);
+                    $commentDeleteStmt->execute();
+                    $commentsDeleted = $commentDeleteStmt->affected_rows;
+                    error_log("Deleted $commentsDeleted comments for research IDs: " . implode(',', $researchIds));
+                }
+
+                // Delete researchfile records
+                $deleteResearchQuery = "DELETE FROM researchfile WHERE endorsementid = ?";
+                $deleteResearchStmt = $con->prepare($deleteResearchQuery);
+                $deleteResearchStmt->bind_param("s", $docId);
+                $deleteResearchStmt->execute();
+                $researchDeleted = $deleteResearchStmt->affected_rows;
+
+                // Delete endorsement record
+                $deleteEndorseQuery = "DELETE FROM endorsement WHERE id = ?";
+                $deleteEndorseStmt = $con->prepare($deleteEndorseQuery);
+                $deleteEndorseStmt->bind_param("s", $docId);
+                $deleteEndorseStmt->execute();
+                $endorsementDeleted = $deleteEndorseStmt->affected_rows;
+
+                if ($endorsementDeleted > 0) {
+                    // Log the deletion
+                    $logQuery = "INSERT INTO document_log (user_id, doc_id, event_id, details, date) VALUES (?, ?, ?, ?, NOW())";
+                    $logStmt = $con->prepare($logQuery);
+                    
+                    $userName = $_SESSION['userName'] ?? $_SESSION['userFulname'] ?? 'Unknown User';
+                    $details = "User: $userName deleted endorsement ID: $docId. ";
+                    $details .= "$trashedCount Google Drive file(s) moved to trash.";
+                    
+                    if (!empty($failedFiles)) {
+                        $details .= " Failed to trash: " . implode(', ', $failedFiles);
+                    }
+                    
+                    $sessionUserId = $_SESSION['userId'] ?? 0;
+                    
+                    $logStmt->bind_param("ssss", $sessionUserId, $docId, $eventId, $details);
+                    $logStmt->execute();
+
+                    $con->commit();
+
+                    $response->status = true;
+                    $response->message = "Document deleted successfully. ";
+                    $response->message .= "$trashedCount file(s) moved to Google Drive trash.";
+                    
+                    if ($researchDeleted > 0) {
+                        $response->message .= " $researchDeleted research record(s) deleted.";
+                    }
+                    
+                    if (!empty($failedFiles)) {
+                        $response->message .= " Warning: " . count($failedFiles) . " file(s) could not be trashed.";
+                        $response->failed_files = $failedFiles;
+                    }
+                    
+                    $response->is_student_paper = false;
+                    $response->event_id = $eventId;
+                    $response->trashed_count = $trashedCount;
+                    $response->research_deleted = $researchDeleted;
+
+                } else {
+                    throw new Exception("No endorsement record found to delete");
+                }
             }
 
         } catch (Exception $e) {
             $con->rollback();
             $response->message = "Error: " . $e->getMessage();
             $response->error_details = $e->getMessage();
-            error_log("Delete endorsement failed: " . $e->getMessage());
+            error_log("Delete operation failed: " . $e->getMessage());
             error_log("Stack trace: " . $e->getTraceAsString());
         }
+        
+        $con->close();
     } else {
         $response->message = "Database connection error: " . mysqli_connect_error();
     }
@@ -6716,50 +6823,55 @@ if (isset($_POST['searchAcceptedPapers'])) {
         }
 
         $searchPattern = '%' . $con->real_escape_string($searchTerm) . '%';
+        $idSearch = (int)$searchTerm;
 
-        // ===== SEARCH FACULTY RESEARCH PAPERS =====
-        // Removed senderid filter - get ALL accepted symposium papers
-        $query = "SELECT DISTINCT 
-                    rf.id,
-                    rf.title,
-                    rf.author,
-                    rf.coauthor,
-                    rf.center,
-                    rf.campus,
-                    rf.category,
-                    rf.paper_trail_no,
-                    rf.event,
-                    rf.event_id,
-                    el.name as event_name,
-                    rf.status,
-                    rf.poster_submitted,
-                    e.status as endorsement_status
-                  FROM researchfile rf
-                  LEFT JOIN event_list el ON rf.event_id = el.id
-                  LEFT JOIN endorsement e ON rf.endorsementid = e.id
-                  WHERE rf.status = 'accepted'
-                  AND (rf.event LIKE '%Symposium%' 
-                       OR el.name LIKE '%Symposium%'
-                       OR rf.event LIKE '%symposium%')
-                  AND rf.poster_submitted = 0
-                  AND (rf.title LIKE ? 
-                       OR rf.author LIKE ? 
-                       OR rf.paper_trail_no LIKE ?
-                       OR rf.id = ?)
-                  ORDER BY rf.id DESC
-                  LIMIT 50";
+        // ===== QUERY 1: FACULTY RESEARCHFILES (In-House Review / Symposium) =====
+        $facultyQuery = "SELECT DISTINCT 
+                            rf.id,
+                            rf.title,
+                            rf.author,
+                            rf.coauthor,
+                            rf.center,
+                            rf.campus,
+                            rf.category,
+                            rf.paper_trail_no,
+                            rf.event,
+                            rf.event_id,
+                            el.name as event_name,
+                            rf.status,
+                            rf.poster_submitted,
+                            e.status as endorsement_status,
+                            'faculty' as source_type
+                        FROM researchfile rf
+                        LEFT JOIN event_list el ON rf.event_id = el.id
+                        LEFT JOIN endorsement e ON rf.endorsementid = e.id
+                        WHERE rf.status = 'accepted'
+                        AND rf.poster_submitted = 0
+                        AND (
+                            el.name LIKE '%In-House%' 
+                            OR el.name LIKE '%Symposium%'
+                            OR rf.event LIKE '%In-House%' 
+                            OR rf.event LIKE '%Symposium%'
+                        )
+                        AND (
+                            rf.title LIKE ? 
+                            OR rf.author LIKE ? 
+                            OR rf.paper_trail_no LIKE ?
+                            OR rf.id = ?
+                        )
+                        ORDER BY rf.id DESC
+                        LIMIT 50";
 
-        $stmt = $con->prepare($query);
-        if (!$stmt) {
-            throw new Exception("Prepare failed: " . $con->error);
+        $facultyStmt = $con->prepare($facultyQuery);
+        if (!$facultyStmt) {
+            throw new Exception("Faculty prepare failed: " . $con->error);
         }
 
-        $idSearch = (int)$searchTerm;
-        $stmt->bind_param("sssi", $searchPattern, $searchPattern, $searchPattern, $idSearch);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $facultyStmt->bind_param("sssi", $searchPattern, $searchPattern, $searchPattern, $idSearch);
+        $facultyStmt->execute();
+        $facultyResult = $facultyStmt->get_result();
 
-        while ($row = $result->fetch_assoc()) {
+        while ($row = $facultyResult->fetch_assoc()) {
             $paper = new stdClass();
             $paper->id = (int)$row['id'];
             $paper->title = $row['title'] ?? '';
@@ -6774,6 +6886,7 @@ if (isset($_POST['searchAcceptedPapers'])) {
             $paper->event_name = $row['event_name'] ?? $row['event'] ?? '';
             $paper->status = $row['status'] ?? '';
             $paper->poster_submitted = (int)($row['poster_submitted'] ?? 0);
+            $paper->source_type = 'faculty';
 
             // Parse coauthors
             if (!empty($row['coauthor'])) {
@@ -6783,74 +6896,82 @@ if (isset($_POST['searchAcceptedPapers'])) {
 
             $response->data[] = $paper;
         }
+        $facultyStmt->close();
 
-        $stmt->close();
+        // ===== QUERY 2: STUDENT RESEARCH PAPERS (Undergraduate / Graduate) =====
+        $studentQuery = "SELECT 
+                            srp.id,
+                            srp.title,
+                            srp.author,
+                            srp.coauthor,
+                            srp.category,
+                            srp.campus,
+                            srp.paper_type,
+                            srp.event_id,
+                            srp.event,
+                            srp.status,
+                            el.name as event_name,
+                            'student' as source_type
+                        FROM student_research_papers srp
+                        LEFT JOIN event_list el ON srp.event_id = el.id
+                        WHERE srp.status = 'accepted'
+                        AND (
+                            el.name LIKE '%Undergraduate%' 
+                            OR el.name LIKE '%Graduate%'
+                            OR srp.event LIKE '%Undergraduate%' 
+                            OR srp.event LIKE '%Graduate%'
+                        )
+                        AND srp.id NOT IN (
+                            SELECT research_id 
+                            FROM poster_submissions 
+                            WHERE event_id = el.id
+                        )
+                        AND (
+                            srp.title LIKE ? 
+                            OR srp.author LIKE ?
+                            OR srp.id = ?
+                        )
+                        ORDER BY srp.id DESC
+                        LIMIT 50";
 
-        // ===== IF NO FACULTY PAPERS FOUND, SEARCH STUDENT PAPERS =====
-        if (count($response->data) === 0) {
-            $studentQuery = "SELECT 
-                                srp.id,
-                                srp.title,
-                                srp.author,
-                                srp.coauthor,
-                                srp.category,
-                                srp.campus,
-                                srp.paper_type,
-                                srp.event_id,
-                                srp.event,
-                                srp.status,
-                                el.name as event_name
-                             FROM student_research_papers srp
-                             LEFT JOIN event_list el ON srp.event_id = el.id
-                             WHERE srp.status = 'accepted'
-                             AND (srp.event LIKE '%Symposium%' 
-                                  OR el.name LIKE '%Symposium%'
-                                  OR srp.event LIKE '%symposium%')
-                             AND srp.id NOT IN (
-                                 SELECT research_id FROM poster_submissions 
-                                 WHERE research_type = 'student'
-                             )
-                             AND (srp.title LIKE ? 
-                                  OR srp.author LIKE ?
-                                  OR srp.id = ?)
-                             ORDER BY srp.id DESC
-                             LIMIT 50";
-
-            $studentStmt = $con->prepare($studentQuery);
-            if ($studentStmt) {
-                $studentStmt->bind_param("ssi", $searchPattern, $searchPattern, $idSearch);
-                $studentStmt->execute();
-                $studentResult = $studentStmt->get_result();
-
-                while ($row = $studentResult->fetch_assoc()) {
-                    $paper = new stdClass();
-                    $paper->id = (int)$row['id'];
-                    $paper->title = $row['title'] ?? '';
-                    $paper->author = $row['author'] ?? '';
-                    $paper->coauthors = [];
-                    $paper->center = '';
-                    $paper->campus = $row['campus'] ?? '';
-                    $paper->category = $row['category'] ?? '';
-                    $paper->paper_trail_no = '';
-                    $paper->event = $row['event'] ?? '';
-                    $paper->event_id = $row['event_id'] ? (int)$row['event_id'] : null;
-                    $paper->event_name = $row['event_name'] ?? $row['event'] ?? '';
-                    $paper->status = $row['status'] ?? '';
-                    $paper->poster_submitted = 0;
-
-                    if (!empty($row['coauthor'])) {
-                        $coauthors = json_decode($row['coauthor'], true);
-                        $paper->coauthors = is_array($coauthors) ? $coauthors : [];
-                    }
-
-                    $response->data[] = $paper;
-                }
-                $studentStmt->close();
-            }
+        $studentStmt = $con->prepare($studentQuery);
+        if (!$studentStmt) {
+            throw new Exception("Student prepare failed: " . $con->error);
         }
 
+        $studentStmt->bind_param("ssi", $searchPattern, $searchPattern, $idSearch);
+        $studentStmt->execute();
+        $studentResult = $studentStmt->get_result();
+
+        while ($row = $studentResult->fetch_assoc()) {
+            $paper = new stdClass();
+            $paper->id = (int)$row['id'];
+            $paper->title = $row['title'] ?? '';
+            $paper->author = $row['author'] ?? '';
+            $paper->coauthors = [];
+            $paper->center = '';
+            $paper->campus = $row['campus'] ?? '';
+            $paper->category = $row['category'] ?? '';
+            $paper->paper_trail_no = '';
+            $paper->event = $row['event'] ?? '';
+            $paper->event_id = $row['event_id'] ? (int)$row['event_id'] : null;
+            $paper->event_name = $row['event_name'] ?? $row['event'] ?? '';
+            $paper->status = $row['status'] ?? '';
+            $paper->poster_submitted = 0;
+            $paper->source_type = 'student';
+
+            // Parse coauthors
+            if (!empty($row['coauthor'])) {
+                $coauthors = json_decode($row['coauthor'], true);
+                $paper->coauthors = is_array($coauthors) ? $coauthors : [];
+            }
+
+            $response->data[] = $paper;
+        }
+        $studentStmt->close();
+
         $response->status = true;
-        $response->message = count($response->data) . ' paper(s) found from Symposium events';
+        $response->message = count($response->data) . ' paper(s) found';
 
         $con->close();
 
@@ -6924,10 +7045,47 @@ if (isset($_POST['submitPoster'])) {
         // Start transaction
         $con->begin_transaction();
 
+        // ===== DETERMINE RESEARCH TYPE FROM EVENT =====
+        // Check if this is a faculty paper (In-House or Symposium)
+        $facultyCheckQuery = "SELECT id, paper_trail_no FROM researchfile 
+                             WHERE id = ? AND (event LIKE '%In-House%' OR event LIKE '%Symposium%')";
+        $facultyCheckStmt = $con->prepare($facultyCheckQuery);
+        $facultyCheckStmt->bind_param("i", $researchId);
+        $facultyCheckStmt->execute();
+        $facultyCheckResult = $facultyCheckStmt->get_result();
+        $isFaculty = $facultyCheckResult->num_rows > 0;
+        $paperTrailNo = null;
+        $researchType = null;
+        
+        if ($isFaculty) {
+            $row = $facultyCheckResult->fetch_assoc();
+            $paperTrailNo = $row['paper_trail_no'] ?? null;
+            $researchType = 'faculty';
+        }
+        $facultyCheckStmt->close();
+
+        // If not faculty, check if it's a student paper (Undergraduate or Graduate)
+        if (!$isFaculty) {
+            $studentCheckQuery = "SELECT id FROM student_research_papers 
+                                 WHERE id = ? AND (event LIKE '%Undergraduate%' OR event LIKE '%Graduate%')";
+            $studentCheckStmt = $con->prepare($studentCheckQuery);
+            $studentCheckStmt->bind_param("i", $researchId);
+            $studentCheckStmt->execute();
+            $studentCheckResult = $studentCheckStmt->get_result();
+            $isStudent = $studentCheckResult->num_rows > 0;
+            $studentCheckStmt->close();
+            
+            if ($isStudent) {
+                $researchType = 'student';
+            } else {
+                throw new Exception("Paper not found or not eligible for poster submission.");
+            }
+        }
+
         // ===== CHECK IF POSTER ALREADY EXISTS =====
-        $checkQuery = "SELECT id FROM poster_submissions WHERE research_id = ? AND sender_id = ?";
+        $checkQuery = "SELECT id FROM poster_submissions WHERE research_id = ? AND event_id = ?";
         $checkStmt = $con->prepare($checkQuery);
-        $checkStmt->bind_param("ii", $researchId, $senderId);
+        $checkStmt->bind_param("ii", $researchId, $eventId);
         $checkStmt->execute();
         $checkResult = $checkStmt->get_result();
 
@@ -6935,18 +7093,6 @@ if (isset($_POST['submitPoster'])) {
             throw new Exception("A poster has already been submitted for this paper.");
         }
         $checkStmt->close();
-
-        // ===== GET PAPER TRAIL NO FROM RESEARCHFILE =====
-        $paperTrailNo = null;
-        $paperTrailQuery = "SELECT paper_trail_no FROM researchfile WHERE id = ?";
-        $paperTrailStmt = $con->prepare($paperTrailQuery);
-        $paperTrailStmt->bind_param("i", $researchId);
-        $paperTrailStmt->execute();
-        $paperTrailResult = $paperTrailStmt->get_result();
-        if ($paperTrailRow = $paperTrailResult->fetch_assoc()) {
-            $paperTrailNo = $paperTrailRow['paper_trail_no'];
-        }
-        $paperTrailStmt->close();
 
         // ===== UPLOAD TO GOOGLE DRIVE =====
         if (!class_exists('GoogleDriveService')) {
@@ -6971,7 +7117,7 @@ if (isset($_POST['submitPoster'])) {
         $cleanTitle = preg_replace('/\s+/', '_', $cleanTitle);
         $cleanTitle = substr($cleanTitle, 0, 80);
 
-        // Generate filename with paper trail no prefix
+        // Generate filename
         $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
         $paperTrailPrefix = !empty($paperTrailNo) ? $paperTrailNo . ' - ' : '';
         $posterFileName = $paperTrailPrefix . 'Poster - ' . $cleanTitle . '.' . $extension;
@@ -6988,8 +7134,9 @@ if (isset($_POST['submitPoster'])) {
         $downloadUrl = "https://drive.google.com/uc?id={$fileId}&export=download";
 
         // ===== SAVE TO POSTER_SUBMISSIONS TABLE =====
+        // Using ONLY existing columns
         $insertQuery = "INSERT INTO poster_submissions (
-            research_id, 
+            research_id,
             paper_trail_no, 
             sender_id, 
             event_id, 
@@ -7007,10 +7154,8 @@ if (isset($_POST['submitPoster'])) {
             throw new Exception("Prepare failed: " . $con->error);
         }
 
-        // FIXED: 10 characters, 10 variables
-        // Format: int, string, string, int, string, string, string, string, string, string
         $insertStmt->bind_param(
-            'ississssss',
+            'ssiissssss',
             $researchId,
             $paperTrailNo,
             $senderId,
@@ -7030,15 +7175,30 @@ if (isset($_POST['submitPoster'])) {
         $posterId = $con->insert_id;
         $insertStmt->close();
 
-        // ===== UPDATE RESEARCHFILE POSTER_SUBMITTED FLAG =====
-        $updateFlagQuery = "UPDATE researchfile SET poster_submitted = 1 WHERE id = ?";
-        $updateStmt = $con->prepare($updateFlagQuery);
-        if ($updateStmt) {
-            $updateStmt->bind_param("i", $researchId);
-            if (!$updateStmt->execute()) {
-                error_log("Failed to update poster_submitted flag: " . $updateStmt->error);
+        // ===== UPDATE SOURCE TABLE BASED ON TYPE =====
+        if ($researchType === 'faculty') {
+            // Update researchfile poster_submitted flag
+            $updateFlagQuery = "UPDATE researchfile SET poster_submitted = 1 WHERE id = ?";
+            $updateStmt = $con->prepare($updateFlagQuery);
+            if ($updateStmt) {
+                $updateStmt->bind_param("i", $researchId);
+                if (!$updateStmt->execute()) {
+                    error_log("Failed to update poster_submitted flag: " . $updateStmt->error);
+                }
+                $updateStmt->close();
             }
-            $updateStmt->close();
+        } else {
+            // Student papers - no poster_submitted flag, just log it
+            $logQuery = "INSERT INTO document_log (user_id, doc_id, event_id, details, date) 
+                        VALUES (?, ?, ?, ?, NOW())";
+            $logStmt = $con->prepare($logQuery);
+            if ($logStmt) {
+                $userName = $_SESSION['userName'] ?? $_SESSION['userFulname'] ?? 'Unknown User';
+                $details = "User: $userName submitted a poster for student research ID: $researchId";
+                $logStmt->bind_param("ssss", $senderId, $researchId, $eventId, $details);
+                $logStmt->execute();
+                $logStmt->close();
+            }
         }
 
         // Commit transaction
@@ -7050,6 +7210,7 @@ if (isset($_POST['submitPoster'])) {
         $response->paper_trail_no = $paperTrailNo;
         $response->drive_file_id = $fileId;
         $response->drive_view_url = $viewUrl;
+        $response->research_type = $researchType;
 
         $con->close();
 
