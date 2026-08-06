@@ -165,7 +165,7 @@ export const Evaluator = () => {
                                         userData = data;
 
                                         if (data.userType === 'category' && data.categories && data.categories.length > 0) {
-                                            const categoryNames = data.categories.map(cat => cat.name).join(', ');
+                                            const categoryNames = data.categories.map(cat => cat.name).join(' and ');
                                             ev.textContent = categoryNames;
                                             ev.style.color = '#0f172a';
                                         } else if (data.userType === 'center' && data.displayCenter) {

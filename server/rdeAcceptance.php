@@ -970,13 +970,11 @@ if (isset($_POST['acceptStudentResearch'])) {
         exit;
     }
     
-    // Escape strings only after connection is established
     $campus_escaped = $con->real_escape_string($campus);
     $eventType_escaped = $con->real_escape_string($eventType);
     
-    // Update the status to 'approved'
     $updateQuery = "UPDATE student_research_papers 
-                    SET status = 'approved', updated_at = NOW() 
+                    SET status = 'accepted', updated_at = NOW() 
                     WHERE id = $paperId AND status = 'pending'";
     
     if ($con->query($updateQuery)) {
