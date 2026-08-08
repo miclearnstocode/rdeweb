@@ -1,0 +1,415 @@
+/* ============================================= */
+/* Best Presenter Vote Modal — Modern White Theme */
+/* ============================================= */
+
+/* Make sure modal doesn't clip content */
+.custom-modal-container.vote-modal {
+    overflow: visible !important;
+}
+
+.vote-modal .custom-modal-body {
+    overflow: visible !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
+}
+
+.vote-modal .custom-modal-content {
+    padding: 20px 24px 24px 24px !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+}
+
+.custom-modal-overlay .vote-modal {
+    overflow: visible !important;
+}
+
+/* Star Rating Container - Fixed overflow and spacing */
+.star-rating-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    padding: 16px 12px;
+    margin-bottom: 14px;
+    background: #ffffff;
+    border-radius: 18px;
+    border: 1px solid #eef1f5;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255,255,255,0.6);
+    min-height: 60px;
+    overflow: visible !important;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Individual Star Button - Fixed sizing and clickability */
+.star-rating-btn {
+    font-size: 32px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #e2e8f0;
+    transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+    padding: 4px 3px;
+    line-height: 1;
+    transform: scale(1);
+    outline: none;
+    position: relative;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    flex-shrink: 0;
+    min-width: 32px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: transparent;
+    z-index: 1;
+}
+
+/* Make sure stars are fully clickable */
+.star-rating-btn::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 8px;
+    z-index: -1;
+}
+
+.star-rating-btn:hover {
+    transform: scale(1.15) !important;
+    color: #f59e0b;
+}
+
+.star-rating-btn:active {
+    transform: scale(0.92) !important;
+}
+
+/* Active (filled) star state */
+.star-rating-btn.active {
+    color: #f59e0b;
+    transform: scale(1.08);
+    text-shadow: 0 2px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Inactive star state */
+.star-rating-btn.inactive {
+    color: #e2e8f0;
+    transform: scale(1);
+    text-shadow: none;
+}
+
+/* Rating Text */
+.rating-text {
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    letter-spacing: -0.2px;
+    min-height: 24px;
+}
+
+.rating-text.default {
+    color: #94a3b8;
+}
+
+.rating-text.selected {
+    color: #d97706;
+}
+
+/* Rating Labels - With Icons */
+.rating-labels {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4px;
+    margin-top: -6px;
+    margin-bottom: 18px;
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.rating-labels .poor {
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rating-labels .poor i {
+    font-size: 14px;
+    color: #ef4444;
+}
+
+.rating-labels .excellent {
+    color: #22c55e;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rating-labels .excellent i {
+    font-size: 14px;
+    color: #22c55e;
+}
+
+/* Hover Description */
+.hover-description {
+    color: #94a3b8;
+    font-size: 12px;
+    text-align: center;
+    margin-top: 4px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.hover-description i {
+    color: #cbd5e1;
+    font-size: 11px;
+}
+
+.hover-description:hover {
+    opacity: 1;
+}
+
+/* Vote Modal Content */
+.vote-modal-content {
+    padding: 4px 0 4px 0;
+    text-align: center;
+    max-width: 100%;
+    overflow: visible !important;
+    background: #ffffff;
+}
+
+/* Icon wrapper — modern circular badge */
+.vote-modal-icon-wrapper {
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 16px auto;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.25);
+    animation: bounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.vote-modal-icon-wrapper i {
+    font-size: 28px;
+    color: #d97706;
+}
+
+/* Legacy emoji icon (kept for backward compatibility) */
+.vote-modal-icon {
+    font-size: 56px;
+    margin-bottom: 12px;
+    display: block;
+    animation: bounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.vote-modal-title {
+    color: #0f172a;
+    margin-bottom: 6px;
+    font-size: 20px;
+    font-weight: 700;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    letter-spacing: -0.3px;
+}
+
+.vote-modal-desc {
+    color: #64748b;
+    font-size: 13.5px;
+    margin-bottom: 22px;
+    line-height: 1.6;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 380px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Vote Button States */
+.vote-btn {
+    padding: 10px 32px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-width: 140px;
+}
+
+.vote-btn:hover {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.45);
+}
+
+.vote-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.vote-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Cancel Button */
+.cancel-btn {
+    padding: 10px 24px;
+    background: #f8fafc;
+    border: 1px solid #e8ecf0;
+    border-radius: 12px;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-width: 100px;
+}
+
+.cancel-btn:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+/* Modal Footer */
+.vote-modal-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+    margin-top: 8px;
+}
+
+/* Animations */
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.15);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes starPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.star-rating-btn.pulse {
+    animation: starPulse 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .star-rating-container {
+        gap: 2px;
+        padding: 10px 4px;
+        min-height: 50px;
+    }
+
+    .star-rating-btn {
+        font-size: 24px;
+        padding: 2px 2px;
+        min-width: 26px;
+        min-height: 36px;
+    }
+
+    .vote-modal-icon-wrapper {
+        width: 56px;
+        height: 56px;
+        margin-bottom: 12px;
+    }
+
+    .vote-modal-icon-wrapper i {
+        font-size: 22px;
+    }
+
+    .vote-modal-title {
+        font-size: 17px;
+    }
+
+    .vote-modal-desc {
+        font-size: 13px;
+        padding: 0 8px;
+    }
+
+    .vote-btn {
+        padding: 9px 20px;
+        font-size: 13px;
+        min-width: 100px;
+    }
+
+    .cancel-btn {
+        padding: 9px 16px;
+        font-size: 13px;
+        min-width: 80px;
+    }
+
+    .vote-modal-footer {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 380px) {
+    .star-rating-container {
+        gap: 1px;
+        padding: 8px 2px;
+    }
+
+    .star-rating-btn {
+        font-size: 20px;
+        min-width: 22px;
+        min-height: 30px;
+        padding: 1px 1px;
+    }
+}
+
+/* Custom Modal Override for Vote - ensure no clipping */
+.vote-modal .custom-modal-container {
+    max-width: 420px !important;
+    width: 95% !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    border-radius: 22px !important;
+}
+
+/* Ensure modal itself doesn't clip content */
+.custom-modal-overlay {
+    overflow: visible !important;
+}
