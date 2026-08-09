@@ -1,7 +1,7 @@
 import { $, baseCheck, Request, CustomModal, Toast, ConfirmationModal } from '../../../lib/lib.js'
 import { EntryView } from "./entryview.js"
 
-// Modern Status Labels Component with Font Awesome
+
 const StatusLabels = ({ hasScore, hasComment, completionStatus }) => {
     // Get completion status label
     const getCompletionLabel = () => {
@@ -18,6 +18,71 @@ const StatusLabels = ({ hasScore, hasComment, completionStatus }) => {
 
     const completion = getCompletionLabel()
 
+    // Helper function to create label with hover
+    const createLabel = (config) => {
+        const label = $({
+            tag: 'span',
+            style: {
+                padding: '3px 10px',
+                borderRadius: '12px',
+                fontSize: '11px',
+                fontWeight: '600',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                backgroundColor: config.bg,
+                color: config.color,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                border: config.border || `1px solid ${config.color}33`,
+                transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap',
+                cursor: config.clickable ? 'pointer' : 'default',
+            },
+            child: [
+                $({
+                    tag: 'span',
+                    att: { className: config.icon },
+                    style: { fontSize: '11px' }
+                }),
+                $({
+                    tag: 'span',
+                    text: config.text
+                })
+            ]
+        });
+
+        // Add hover effect if clickable
+        if (config.clickable) {
+            const element = label;
+            // Store original styles for revert
+            const originalBg = config.bg;
+            const originalColor = config.color;
+            const originalBorder = config.border || `1px solid ${config.color}33`;
+
+            // We need to handle this differently since we're using the $ function
+            // We'll add event listeners after element is created
+            setTimeout(() => {
+                const el = document.querySelector(`[data-label="${config.id}"]`);
+                if (el) {
+                    el.addEventListener('mouseenter', () => {
+                        el.style.backgroundColor = config.hoverBg || originalBg;
+                        el.style.borderColor = config.hoverBorder || config.color;
+                        el.style.transform = 'translateY(-1px)';
+                        el.style.boxShadow = `0 4px 12px ${config.hoverShadow || 'rgba(0,0,0,0.05)'}`;
+                    });
+                    el.addEventListener('mouseleave', () => {
+                        el.style.backgroundColor = originalBg;
+                        el.style.borderColor = originalBorder;
+                        el.style.transform = 'translateY(0)';
+                        el.style.boxShadow = 'none';
+                    });
+                }
+            }, 50);
+        }
+
+        return label;
+    };
+
     return $({
         tag: 'div',
         style: {
@@ -31,6 +96,7 @@ const StatusLabels = ({ hasScore, hasComment, completionStatus }) => {
             // Completion Status Label
             $({
                 tag: 'span',
+                att: { 'data-label': 'completion-status' },
                 style: {
                     padding: '3px 10px',
                     borderRadius: '12px',
@@ -45,6 +111,7 @@ const StatusLabels = ({ hasScore, hasComment, completionStatus }) => {
                     border: `1px solid ${completion.color}33`,
                     transition: 'all 0.2s ease',
                     whiteSpace: 'nowrap',
+                    cursor: 'default',
                 },
                 child: [
                     $({
@@ -56,12 +123,60 @@ const StatusLabels = ({ hasScore, hasComment, completionStatus }) => {
                         tag: 'span',
                         text: completion.text
                     })
-                ]
+                ],
+                elementHandler: (el) => {
+                    // Add hover effect for Pending status
+                    if (completion.text === 'Pending') {
+                        el.addEventListener('mouseenter', () => {
+                            el.style.backgroundColor = '#fef3c7';
+                            el.style.borderColor = '#f59e0b';
+                            el.style.transform = 'translateY(-1px)';
+                            el.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.2)';
+                        });
+                        el.addEventListener('mouseleave', () => {
+                            el.style.backgroundColor = '#fef3c7';
+                            el.style.borderColor = '#f59e0b33';
+                            el.style.transform = 'translateY(0)';
+                            el.style.boxShadow = 'none';
+                        });
+                    }
+                    // Add hover effect for Presented
+                    else if (completion.text === 'Presented') {
+                        el.addEventListener('mouseenter', () => {
+                            el.style.backgroundColor = '#dcfce7';
+                            el.style.borderColor = '#10b981';
+                            el.style.transform = 'translateY(-1px)';
+                            el.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.2)';
+                        });
+                        el.addEventListener('mouseleave', () => {
+                            el.style.backgroundColor = '#dcfce7';
+                            el.style.borderColor = '#10b98133';
+                            el.style.transform = 'translateY(0)';
+                            el.style.boxShadow = 'none';
+                        });
+                    }
+                    // Add hover effect for Not Presented
+                    else if (completion.text === 'Not Presented') {
+                        el.addEventListener('mouseenter', () => {
+                            el.style.backgroundColor = '#fee2e2';
+                            el.style.borderColor = '#ef4444';
+                            el.style.transform = 'translateY(-1px)';
+                            el.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.2)';
+                        });
+                        el.addEventListener('mouseleave', () => {
+                            el.style.backgroundColor = '#fee2e2';
+                            el.style.borderColor = '#ef444433';
+                            el.style.transform = 'translateY(0)';
+                            el.style.boxShadow = 'none';
+                        });
+                    }
+                }
             }),
 
-            // Comment Status Label
+            // Comment Status Label - WITH HOVER
             $({
                 tag: 'span',
+                att: { 'data-label': 'comment-status' },
                 style: {
                     padding: '3px 10px',
                     borderRadius: '12px',
@@ -76,6 +191,7 @@ const StatusLabels = ({ hasScore, hasComment, completionStatus }) => {
                     border: hasComment ? '1px solid #bbf7d0' : '1px solid #e2e8f0',
                     transition: 'all 0.2s ease',
                     whiteSpace: 'nowrap',
+                    cursor: hasComment ? 'pointer' : 'default',
                 },
                 child: [
                     $({
@@ -89,12 +205,40 @@ const StatusLabels = ({ hasScore, hasComment, completionStatus }) => {
                         tag: 'span',
                         text: hasComment ? 'Commented' : 'No Comments'
                     })
-                ]
+                ],
+                elementHandler: (el) => {
+                    if (hasComment) {
+                        el.addEventListener('mouseenter', () => {
+                            el.style.backgroundColor = '#bbf7d0';
+                            el.style.borderColor = '#22c55e';
+                            el.style.transform = 'translateY(-1px)';
+                            el.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.2)';
+                        });
+                        el.addEventListener('mouseleave', () => {
+                            el.style.backgroundColor = '#dcfce7';
+                            el.style.borderColor = '#bbf7d0';
+                            el.style.transform = 'translateY(0)';
+                            el.style.boxShadow = 'none';
+                        });
+                    } else {
+                        el.addEventListener('mouseenter', () => {
+                            el.style.backgroundColor = '#e2e8f0';
+                            el.style.borderColor = '#94a3b8';
+                            el.style.color = '#475569';
+                        });
+                        el.addEventListener('mouseleave', () => {
+                            el.style.backgroundColor = '#f1f5f9';
+                            el.style.borderColor = '#e2e8f0';
+                            el.style.color = '#94a3b8';
+                        });
+                    }
+                }
             }),
 
-            // Score Status Label
+            // Score Status Label - WITH HOVER
             $({
                 tag: 'span',
+                att: { 'data-label': 'score-status' },
                 style: {
                     padding: '3px 10px',
                     borderRadius: '12px',
@@ -109,6 +253,7 @@ const StatusLabels = ({ hasScore, hasComment, completionStatus }) => {
                     border: hasScore ? '1px solid #ddd6fe' : '1px solid #e2e8f0',
                     transition: 'all 0.2s ease',
                     whiteSpace: 'nowrap',
+                    cursor: hasScore ? 'pointer' : 'default',
                 },
                 child: [
                     $({
@@ -122,118 +267,39 @@ const StatusLabels = ({ hasScore, hasComment, completionStatus }) => {
                         tag: 'span',
                         text: hasScore ? 'Scored' : 'Not Scored'
                     })
-                ]
+                ],
+                elementHandler: (el) => {
+                    if (hasScore) {
+                        el.addEventListener('mouseenter', () => {
+                            el.style.backgroundColor = '#c4b5fd';
+                            el.style.borderColor = '#8b5cf6';
+                            el.style.transform = 'translateY(-1px)';
+                            el.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.2)';
+                        });
+                        el.addEventListener('mouseleave', () => {
+                            el.style.backgroundColor = '#ede9fe';
+                            el.style.borderColor = '#ddd6fe';
+                            el.style.transform = 'translateY(0)';
+                            el.style.boxShadow = 'none';
+                        });
+                    } else {
+                        el.addEventListener('mouseenter', () => {
+                            el.style.backgroundColor = '#e2e8f0';
+                            el.style.borderColor = '#94a3b8';
+                            el.style.color = '#475569';
+                        });
+                        el.addEventListener('mouseleave', () => {
+                            el.style.backgroundColor = '#f1f5f9';
+                            el.style.borderColor = '#e2e8f0';
+                            el.style.color = '#94a3b8';
+                        });
+                    }
+                }
             })
         ]
     })
 }
 
-// =============================================
-// CONFETTI EFFECT - Modern Celebration
-// =============================================
-const triggerConfetti = (rating) => {
-    // Only trigger for high ratings (7-10)
-    if (rating < 7) return
-
-    const colors = [
-        '#f59e0b', '#ef4444', '#22c55e', '#3b82f6', '#8b5cf6',
-        '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#d946ef'
-    ]
-
-    const container = document.body
-    const rect = container.getBoundingClientRect()
-    const centerX = rect.width / 2
-    const centerY = rect.height / 2
-
-    // Create confetti pieces
-    const pieces = 80 + (rating - 7) * 15 // More pieces for higher ratings
-
-    for (let i = 0; i < pieces; i++) {
-        const confetti = document.createElement('div')
-        const color = colors[Math.floor(Math.random() * colors.length)]
-        const size = 6 + Math.random() * 10
-        const isCircle = Math.random() > 0.5
-        
-        // Random starting position (spread from center)
-        const angle = Math.random() * Math.PI * 2
-        const distance = 50 + Math.random() * 100
-        const startX = centerX + Math.cos(angle) * distance - size / 2
-        const startY = centerY + Math.sin(angle) * distance - size / 2
-        
-        // Random target position
-        const targetX = (Math.random() - 0.5) * rect.width * 1.5
-        const targetY = (Math.random() - 0.5) * rect.height * 1.5
-        
-        // Random rotation
-        const rotation = Math.random() * 720 - 360
-        
-        confetti.style.cssText = `
-            position: fixed;
-            left: ${startX}px;
-            top: ${startY}px;
-            width: ${size}px;
-            height: ${isCircle ? size : size * 0.4}px;
-            background: ${color};
-            border-radius: ${isCircle ? '50%' : '2px'};
-            pointer-events: none;
-            z-index: 999999;
-            opacity: 1;
-            box-shadow: 0 0 6px rgba(0,0,0,0.1);
-            transform: rotate(0deg);
-            transition: none;
-        `
-        
-        container.appendChild(confetti)
-        
-        // Animate with requestAnimationFrame for smooth motion
-        const startTime = performance.now()
-        const duration = 1500 + Math.random() * 1000
-        const startXPos = startX
-        const startYPos = startY
-        
-        const animate = (currentTime) => {
-            const elapsed = currentTime - startTime
-            const progress = Math.min(elapsed / duration, 1)
-            
-            // Ease out cubic
-            const ease = 1 - Math.pow(1 - progress, 3)
-            
-            // Add some wobble
-            const wobble = Math.sin(progress * Math.PI * 4 + i) * 20
-            
-            const x = startXPos + targetX * ease + wobble
-            const y = startYPos + targetY * ease - 200 * ease * ease
-            
-            // Fade out near the end
-            const opacity = progress < 0.8 ? 1 : 1 - (progress - 0.8) * 5
-            
-            confetti.style.left = `${x}px`
-            confetti.style.top = `${y}px`
-            confetti.style.transform = `rotate(${rotation * progress}deg) scale(${1 + progress * 0.5})`
-            confetti.style.opacity = Math.max(0, opacity)
-            
-            if (progress < 1) {
-                requestAnimationFrame(animate)
-            } else {
-                // Remove after animation completes
-                setTimeout(() => {
-                    if (confetti.parentNode) {
-                        confetti.parentNode.removeChild(confetti)
-                    }
-                }, 100)
-            }
-        }
-        
-        // Start with a slight delay for each piece
-        setTimeout(() => {
-            requestAnimationFrame(animate)
-        }, Math.random() * 300)
-    }
-}
-
-// =============================================
-// ALTERNATIVE: Canvas-based confetti (more performant)
-// =============================================
 const triggerCanvasConfetti = (rating) => {
     // Only trigger for high ratings (7-10)
     if (rating < 7) return
@@ -347,9 +413,9 @@ const triggerCanvasConfetti = (rating) => {
     }, 5000)
 }
 
-// Best Presenter Voting Component - Modern White Design
-const BestPresenterVote = ({ docId, eventId, sourceTable, onVoteComplete }) => {
-    let selectedRating = 0
+// Best Presenter Voting Component
+const BestPresenterVote = ({ docId, eventId, sourceTable, onVoteComplete, hasVoted = false, currentRating = 0 }) => {
+    let selectedRating = currentRating || 0
     let modalInstance = null
 
     const handleVote = async () => {
@@ -414,12 +480,26 @@ const BestPresenterVote = ({ docId, eventId, sourceTable, onVoteComplete }) => {
         for (let i = 1; i <= 10; i++) {
             const starBtn = document.createElement('button')
             starBtn.setAttribute('data-value', i)
-            starBtn.className = 'star-rating-btn inactive'
+            starBtn.className = `star-rating-btn ${i <= selectedRating ? 'active' : 'inactive'}`
             starBtn.innerHTML = '★'
             starBtn.setAttribute('aria-label', `Rate ${i} out of 10`)
             starBtn.style.overflow = 'visible'
             starBtn.style.flexShrink = '0'
             starBtn.style.minWidth = '34px'
+            starBtn.style.fontSize = '34px'
+            starBtn.style.padding = '4px 3px'
+            starBtn.style.cursor = 'pointer'
+            starBtn.style.background = 'none'
+            starBtn.style.border = 'none'
+            starBtn.style.transition = 'all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            
+            if (i <= selectedRating) {
+                starBtn.style.color = '#f59e0b'
+                starBtn.style.transform = 'scale(1.08)'
+            } else {
+                starBtn.style.color = '#e2e8f0'
+                starBtn.style.transform = 'scale(1)'
+            }
 
             // Mouse enter - highlight up to this star
             starBtn.addEventListener('mouseenter', () => {
@@ -464,10 +544,8 @@ const BestPresenterVote = ({ docId, eventId, sourceTable, onVoteComplete }) => {
 
                 // TRIGGER CONFETTI for high ratings (7-10)
                 if (i >= 7) {
-                    // Use canvas confetti (more performant)
                     triggerCanvasConfetti(i)
                     
-                    // Also add a small celebration message
                     const messages = {
                         7: 'Great rating! 🌟',
                         8: 'Excellent choice! ⭐',
@@ -508,12 +586,11 @@ const BestPresenterVote = ({ docId, eventId, sourceTable, onVoteComplete }) => {
         contentContainer.className = 'vote-modal-content'
         contentContainer.style.overflow = 'visible'
 
-        // Modern circular icon badge instead of raw emoji
         contentContainer.innerHTML = `
             <div class="vote-modal-icon-wrapper">
                 <i class="fa-solid fa-trophy"></i>
             </div>
-            <h3 class="vote-modal-title">Vote for Best Presenter</h3>
+            <h3 class="vote-modal-title">${hasVoted ? 'Update Your Vote' : 'Vote for Best Presenter'}</h3>
             <p class="vote-modal-desc">Rate the presenter's delivery, clarity, and overall presentation quality.</p>
         `
 
@@ -535,7 +612,9 @@ const BestPresenterVote = ({ docId, eventId, sourceTable, onVoteComplete }) => {
 
             const submitBtn = document.createElement('button')
             submitBtn.className = 'vote-btn'
-            submitBtn.textContent = 'Submit Vote'
+            submitBtn.textContent = hasVoted ? 'Update Vote' : 'Submit Vote'
+            submitBtn.style.background = hasVoted ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
+            submitBtn.style.boxShadow = hasVoted ? '0 4px 14px rgba(245, 158, 11, 0.35)' : '0 4px 14px rgba(59, 130, 246, 0.35)'
             submitBtn.addEventListener('click', handleVote)
 
             footerDiv.appendChild(cancelBtn)
@@ -545,7 +624,7 @@ const BestPresenterVote = ({ docId, eventId, sourceTable, onVoteComplete }) => {
         }
 
         CustomModal({
-            title: 'Best Presenter Vote',
+            title: hasVoted ? 'Update Best Presenter Vote' : 'Best Presenter Vote',
             content: contentContainer,
             footer: footer,
             size: 'small',
@@ -554,33 +633,53 @@ const BestPresenterVote = ({ docId, eventId, sourceTable, onVoteComplete }) => {
         })
     }
 
+    // Determine button style based on vote status - MATCHING "No Comments" style
+    const getButtonStyle = () => {
+        if (hasVoted) {
+            return {
+                border: '1px solid #f59e0b',
+                background: '#fef3c7',
+                color: '#d97706',
+                fontWeight: '600'
+            }
+        }
+        return {
+            border: '1px solid #e2e8f0',
+            background: '#f1f5f9',
+            color: '#94a3b8',
+            fontWeight: '600'
+        }
+    }
+
+    const buttonStyle = getButtonStyle()
+
     return $({
         tag: 'button',
         style: {
-            padding: '5px 14px',
-            borderRadius: '8px',
-            border: '1px solid #f59e0b',
-            background: '#fffbeb',
-            color: '#d97706',
-            fontSize: '12px',
-            fontWeight: '600',
+            padding: '3px 10px',
+            borderRadius: '12px',
+            border: buttonStyle.border,
+            background: buttonStyle.background,
+            color: buttonStyle.color,
+            fontSize: '11px',
+            fontWeight: buttonStyle.fontWeight,
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
             whiteSpace: 'nowrap',
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '4px',
         },
         child: [
             $({
                 tag: 'span',
-                att: { className: 'fa-solid fa-trophy' },
-                style: { fontSize: '12px' }
+                att: { className: hasVoted ? 'fa-solid fa-check-circle' : 'fa-regular fa-star' },
+                style: { fontSize: '11px' }
             }),
             $({
                 tag: 'span',
-                text: 'Vote Best Presenter'
+                text: hasVoted ? `Voted (${currentRating})` : 'Vote'
             })
         ],
         event: {
@@ -591,16 +690,29 @@ const BestPresenterVote = ({ docId, eventId, sourceTable, onVoteComplete }) => {
             }
         },
         elementHandler: (el) => {
-            el.addEventListener('mouseenter', () => {
-                el.style.background = '#fef3c7'
-                el.style.transform = 'translateY(-1px)'
-                el.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.2)'
-            })
-            el.addEventListener('mouseleave', () => {
-                el.style.background = '#fffbeb'
-                el.style.transform = 'translateY(0)'
-                el.style.boxShadow = 'none'
-            })
+            if (hasVoted) {
+                el.addEventListener('mouseenter', () => {
+                    el.style.background = '#fde68a'
+                    el.style.transform = 'translateY(-1px)'
+                    el.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.25)'
+                })
+                el.addEventListener('mouseleave', () => {
+                    el.style.background = '#fef3c7'
+                    el.style.transform = 'translateY(0)'
+                    el.style.boxShadow = 'none'
+                })
+            } else {
+                el.addEventListener('mouseenter', () => {
+                    el.style.background = '#e2e8f0'
+                    el.style.borderColor = '#94a3b8'
+                    el.style.color = '#475569'
+                })
+                el.addEventListener('mouseleave', () => {
+                    el.style.background = '#f1f5f9'
+                    el.style.borderColor = '#e2e8f0'
+                    el.style.color = '#94a3b8'
+                })
+            }
         }
     })
 }
@@ -612,9 +724,11 @@ const PresentedButton = ({ docId, eventName, sourceTable, completionStatus, onSt
         eventName.toLowerCase().includes('graduate')
     )
 
+    // Determine if the paper is already marked as presented
+    const isPresented = completionStatus === 'completed'
+
     const handlePresented = async () => {
-        // Check if already presented
-        if (completionStatus === 'completed') {
+        if (isPresented) {
             Toast.info('This paper is already marked as presented.')
             return
         }
@@ -654,20 +768,615 @@ const PresentedButton = ({ docId, eventName, sourceTable, completionStatus, onSt
         })
     }
 
-    // Only show for documents with pending_confirmation status
-    if (completionStatus !== 'pending_confirmation') {
-        return null
+    // Determine button style based on status - MATCHING "No Comments" style
+    const getButtonStyle = () => {
+        if (isPresented) {
+            return {
+                border: '1px solid #10b981',
+                background: '#dcfce7',
+                color: '#065f46',
+                fontWeight: '600'
+            }
+        }
+        return {
+            border: '1px solid #e2e8f0',
+            background: '#f1f5f9',
+            color: '#94a3b8',
+            fontWeight: '600'
+        }
     }
+
+    const buttonStyle = getButtonStyle()
 
     return $({
         tag: 'button',
         style: {
-            padding: '5px 14px',
+            padding: '3px 10px',
+            borderRadius: '12px',
+            border: buttonStyle.border,
+            background: buttonStyle.background,
+            color: buttonStyle.color,
+            fontSize: '11px',
+            fontWeight: buttonStyle.fontWeight,
+            cursor: isPresented ? 'default' : 'pointer',
+            transition: 'all 0.2s ease',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            whiteSpace: 'nowrap',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+        },
+        child: [
+            $({
+                tag: 'span',
+                att: { className: isPresented ? 'fa-solid fa-check-circle' : 'fa-regular fa-circle-check' },
+                style: { fontSize: '11px' }
+            }),
+            $({
+                tag: 'span',
+                text: isPresented ? 'Presented' : 'Presented?'
+            })
+        ],
+        event: {
+            type: 'click',
+            method: (e) => {
+                e.stopPropagation()
+                if (!isPresented) {
+                    handlePresented()
+                }
+            }
+        },
+        elementHandler: (el) => {
+            if (!isPresented) {
+                el.addEventListener('mouseenter', () => {
+                    el.style.background = '#e2e8f0'
+                    el.style.borderColor = '#94a3b8'
+                    el.style.color = '#475569'
+                })
+                el.addEventListener('mouseleave', () => {
+                    el.style.background = '#f1f5f9'
+                    el.style.borderColor = '#e2e8f0'
+                    el.style.color = '#94a3b8'
+                })
+            }
+        }
+    })
+}
+
+export const BestPresenterRanking = ({ eventId, sourceTable = 'researchfile', onUpdate }) => {
+    let rankingData = []
+    let isLoading = false
+    let modalInstance = null
+
+    const loadRankingData = async () => {
+        if (isLoading) return
+        isLoading = true
+
+        try {
+            const form = new FormData()
+            form.append('getBestPresenterRanking', '1')
+            form.append('eventId', eventId)
+            form.append('sourceTable', sourceTable)
+
+            const response = await fetch('/scoreboard', {
+                method: 'POST',
+                body: form
+            })
+
+            const data = await response.json()
+
+            if (data.status && data.data) {
+                rankingData = data.data
+                renderRankingList()
+            } else {
+                Toast.error(data.message || 'Failed to load ranking data')
+            }
+        } catch (error) {
+            console.error('Error loading ranking:', error)
+            Toast.error('Error loading ranking data')
+        } finally {
+            isLoading = false
+        }
+    }
+
+    const getMedal = (index) => {
+        const medals = ['🥇', '🥈', '🥉']
+        return index < 3 ? medals[index] : `#${index + 1}`
+    }
+
+    const getMedalColor = (index) => {
+        const colors = ['#f59e0b', '#94a3b8', '#cd7f32']
+        return index < 3 ? colors[index] : '#64748b'
+    }
+
+    const getStarDisplay = (rating) => {
+        const fullStars = Math.floor(rating)
+        const halfStar = rating % 1 >= 0.5
+        let stars = ''
+        for (let i = 0; i < fullStars; i++) {
+            stars += '⭐'
+        }
+        if (halfStar) stars += '½'
+        return stars || '☆'
+    }
+
+    const renderRankingList = () => {
+        const container = document.getElementById('ranking-list-container')
+        if (!container) return
+
+        if (rankingData.length === 0) {
+            container.innerHTML = `
+                <div style="
+                    text-align: center;
+                    padding: 40px 20px;
+                    color: #94a3b8;
+                ">
+                    <i class="fa-regular fa-trophy" style="font-size: 48px; display: block; margin-bottom: 16px; color: #cbd5e1;"></i>
+                    <p style="font-size: 15px; margin: 0;">No votes have been cast yet.</p>
+                    <p style="font-size: 13px; margin-top: 4px;">Be the first to vote for the Best Presenter!</p>
+                </div>
+            `
+            return
+        }
+
+        const sorted = [...rankingData].sort((a, b) => (b.rating || 0) - (a.rating || 0))
+
+        let html = `
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                padding: 12px 16px;
+                border-bottom: 2px solid #e8ecf0;
+                font-size: 12px;
+                font-weight: 600;
+                color: #94a3b8;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            ">
+                <span style="width: 40px;">Rank</span>
+                <span style="flex: 1; padding-left: 8px;">Presenter</span>
+                <span style="width: 120px; text-align: center;">Rating</span>
+                <span style="width: 80px; text-align: right;">Action</span>
+            </div>
+        `
+
+        sorted.forEach((item, index) => {
+            const medal = getMedal(index)
+            const medalColor = getMedalColor(index)
+            const starDisplay = getStarDisplay(item.rating || 0)
+            const voteCount = item.voteCount || 0
+            const isTopThree = index < 3
+            const hasVoted = item.hasVoted || false
+
+            html += `
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    padding: 12px 16px;
+                    border-bottom: 1px solid #f1f5f9;
+                    background: ${isTopThree ? 'rgba(245, 158, 11, 0.04)' : 'transparent'};
+                    transition: all 0.2s ease;
+                    border-radius: 8px;
+                    margin: 2px 0;
+                " class="ranking-item" data-docid="${item.docId}">
+                    <div style="
+                        width: 40px;
+                        font-weight: ${isTopThree ? '700' : '500'};
+                        color: ${medalColor};
+                        font-size: ${index < 3 ? '20px' : '14px'};
+                    ">
+                        ${medal}
+                    </div>
+                    <div style="
+                        flex: 1;
+                        padding-left: 8px;
+                        min-width: 0;
+                    ">
+                        <div style="
+                            font-weight: ${isTopThree ? '600' : '500'};
+                            color: #0f172a;
+                            font-size: 14px;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        ">
+                            ${item.presenter || 'Unknown Presenter'}
+                        </div>
+                        <div style="
+                            font-size: 12px;
+                            color: #94a3b8;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        ">
+                            ${item.title || 'Untitled'}
+                        </div>
+                    </div>
+                    <div style="
+                        width: 120px;
+                        text-align: center;
+                    ">
+                        <div style="
+                            font-size: 18px;
+                            letter-spacing: 2px;
+                        ">
+                            ${starDisplay}
+                        </div>
+                        <div style="
+                            font-size: 12px;
+                            color: #94a3b8;
+                        ">
+                            ${(item.rating || 0).toFixed(1)} / 10 (${voteCount} vote${voteCount !== 1 ? 's' : ''})
+                        </div>
+                    </div>
+                    <div style="
+                        width: 80px;
+                        text-align: right;
+                    ">
+                        <button style="
+                            padding: 4px 14px;
+                            border-radius: 8px;
+                            border: ${hasVoted ? '1px solid #f59e0b' : '1px solid #e8ecf0'};
+                            background: ${hasVoted ? '#fef3c7' : 'transparent'};
+                            color: ${hasVoted ? '#d97706' : '#94a3b8'};
+                            font-size: 12px;
+                            font-weight: ${hasVoted ? '600' : '400'};
+                            cursor: pointer;
+                            transition: all 0.2s ease;
+                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                        " class="edit-vote-btn" data-docid="${item.docId}" data-presenter="${item.presenter}" data-rating="${item.rating || 0}" data-hasvoted="${hasVoted}">
+                            ${hasVoted ? '✏️ Edit' : 'Vote'}
+                        </button>
+                    </div>
+                </div>
+            `
+        })
+
+        container.innerHTML = html
+
+        container.querySelectorAll('.edit-vote-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                const docId = btn.getAttribute('data-docid')
+                const presenter = btn.getAttribute('data-presenter')
+                const currentRating = parseFloat(btn.getAttribute('data-rating')) || 0
+                const hasVoted = btn.getAttribute('data-hasvoted') === 'true'
+                openEditVoteModal(docId, presenter, currentRating, hasVoted)
+            })
+        })
+
+        container.querySelectorAll('.ranking-item').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                item.style.background = '#f8fafc'
+                item.style.transform = 'translateX(4px)'
+            })
+            item.addEventListener('mouseleave', () => {
+                const isTopThree = parseInt(item.querySelector('div:first-child')?.textContent?.match(/\d+/)?.[0] || 0) <= 3
+                item.style.background = isTopThree ? 'rgba(245, 158, 11, 0.04)' : 'transparent'
+                item.style.transform = 'translateX(0)'
+            })
+        })
+    }
+
+    const openEditVoteModal = (docId, presenter, currentRating, hasVoted) => {
+        let selectedRating = currentRating
+        let editModalInstance = null
+
+        const handleUpdateVote = async () => {
+            if (selectedRating === 0) {
+                Toast.warning('Please select a rating.')
+                return
+            }
+
+            try {
+                const form = new FormData()
+                form.append('updateBestPresenterVote', '1')
+                form.append('docId', docId)
+                form.append('eventId', eventId)
+                form.append('rating', selectedRating)
+                form.append('sourceTable', sourceTable)
+
+                const response = await fetch('/scoreboard', {
+                    method: 'POST',
+                    body: form
+                })
+
+                const data = await response.json()
+
+                if (data.status) {
+                    Toast.success('Your vote has been updated!')
+                    if (editModalInstance && editModalInstance.closeModal) {
+                        editModalInstance.closeModal()
+                    }
+                    loadRankingData()
+                    if (onUpdate) onUpdate()
+                } else {
+                    Toast.error(data.message || 'Failed to update vote')
+                }
+            } catch (error) {
+                console.error('Error updating vote:', error)
+                Toast.error('Error updating vote. Please try again.')
+            }
+        }
+
+        const createEditStars = () => {
+            const starContainer = document.createElement('div')
+            starContainer.className = 'star-rating-container'
+            starContainer.style.overflow = 'visible'
+            starContainer.style.gap = '4px'
+
+            for (let i = 1; i <= 10; i++) {
+                const starBtn = document.createElement('button')
+                starBtn.setAttribute('data-value', i)
+                starBtn.className = `star-rating-btn ${i <= selectedRating ? 'active' : 'inactive'}`
+                starBtn.innerHTML = '★'
+                starBtn.style.fontSize = '34px'
+                starBtn.style.minWidth = '34px'
+                starBtn.style.padding = '4px 3px'
+                starBtn.style.cursor = 'pointer'
+                starBtn.style.background = 'none'
+                starBtn.style.border = 'none'
+                starBtn.style.transition = 'all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                if (i <= selectedRating) {
+                    starBtn.style.color = '#f59e0b'
+                    starBtn.style.transform = 'scale(1.08)'
+                } else {
+                    starBtn.style.color = '#e2e8f0'
+                    starBtn.style.transform = 'scale(1)'
+                }
+
+                starBtn.addEventListener('mouseenter', () => {
+                    const buttons = starContainer.querySelectorAll('.star-rating-btn')
+                    buttons.forEach((btn, idx) => {
+                        const val = parseInt(btn.getAttribute('data-value'))
+                        if (val <= i) {
+                            btn.classList.add('active')
+                            btn.classList.remove('inactive')
+                            btn.style.color = '#f59e0b'
+                            btn.style.transform = 'scale(1.1)'
+                        } else {
+                            btn.classList.remove('active')
+                            btn.classList.add('inactive')
+                            btn.style.color = '#e2e8f0'
+                            btn.style.transform = 'scale(1)'
+                        }
+                    })
+                    const ratingText = document.getElementById('edit-rating-text')
+                    if (ratingText) {
+                        ratingText.textContent = `Rating: ${i} / 10`
+                        ratingText.className = 'rating-text selected'
+                    }
+                })
+
+                starBtn.addEventListener('mouseleave', () => {
+                    const buttons = starContainer.querySelectorAll('.star-rating-btn')
+                    buttons.forEach((btn) => {
+                        const val = parseInt(btn.getAttribute('data-value'))
+                        if (val <= selectedRating) {
+                            btn.classList.add('active')
+                            btn.classList.remove('inactive')
+                            btn.style.color = '#f59e0b'
+                            btn.style.transform = 'scale(1.08)'
+                        } else {
+                            btn.classList.remove('active')
+                            btn.classList.add('inactive')
+                            btn.style.color = '#e2e8f0'
+                            btn.style.transform = 'scale(1)'
+                        }
+                    })
+                    const ratingText = document.getElementById('edit-rating-text')
+                    if (ratingText) {
+                        if (selectedRating > 0) {
+                            ratingText.textContent = `Rating: ${selectedRating} / 10`
+                            ratingText.className = 'rating-text selected'
+                        } else {
+                            ratingText.textContent = 'Click a star to rate'
+                            ratingText.className = 'rating-text default'
+                        }
+                    }
+                })
+
+                starBtn.addEventListener('click', (e) => {
+                    e.stopPropagation()
+                    selectedRating = i
+                    const buttons = starContainer.querySelectorAll('.star-rating-btn')
+                    buttons.forEach((btn) => {
+                        const val = parseInt(btn.getAttribute('data-value'))
+                        if (val <= i) {
+                            btn.classList.add('active')
+                            btn.classList.remove('inactive')
+                            btn.style.color = '#f59e0b'
+                            btn.style.transform = 'scale(1.08)'
+                        } else {
+                            btn.classList.remove('active')
+                            btn.classList.add('inactive')
+                            btn.style.color = '#e2e8f0'
+                            btn.style.transform = 'scale(1)'
+                        }
+                    })
+                    const ratingText = document.getElementById('edit-rating-text')
+                    if (ratingText) {
+                        ratingText.textContent = `Rating: ${i} / 10`
+                        ratingText.className = 'rating-text selected'
+                    }
+                })
+
+                starContainer.appendChild(starBtn)
+            }
+
+            return starContainer
+        }
+
+        const starContainer = createEditStars()
+
+        const contentContainer = document.createElement('div')
+        contentContainer.className = 'vote-modal-content'
+        contentContainer.style.overflow = 'visible'
+        contentContainer.style.padding = '4px 0'
+
+        const presenterInfo = document.createElement('div')
+        presenterInfo.style.cssText = `
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e8ecf0;
+        `
+        presenterInfo.innerHTML = `
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 4px;">${hasVoted ? 'Updating vote for' : 'Editing vote for'}</div>
+            <div style="font-size: 16px; font-weight: 600; color: #0f172a;">${presenter || 'Unknown Presenter'}</div>
+        `
+
+        const ratingDisplay = document.createElement('div')
+        ratingDisplay.id = 'edit-rating-text'
+        ratingDisplay.className = `rating-text ${selectedRating > 0 ? 'selected' : 'default'}`
+        ratingDisplay.textContent = selectedRating > 0 ? `Rating: ${selectedRating} / 10` : 'Click a star to rate'
+        ratingDisplay.style.marginBottom = '10px'
+
+        const labelsDiv = document.createElement('div')
+        labelsDiv.className = 'rating-labels'
+        labelsDiv.innerHTML = `
+            <span class="poor"><i class="fa-regular fa-face-frown"></i> Poor</span>
+            <span class="excellent"><i class="fa-regular fa-face-smile"></i> Excellent</span>
+        `
+
+        contentContainer.appendChild(presenterInfo)
+        contentContainer.appendChild(starContainer)
+        contentContainer.appendChild(labelsDiv)
+        contentContainer.appendChild(ratingDisplay)
+
+        const footer = ({ closeModal }) => {
+            editModalInstance = { closeModal }
+
+            const footerDiv = document.createElement('div')
+            footerDiv.className = 'vote-modal-footer'
+
+            const cancelBtn = document.createElement('button')
+            cancelBtn.className = 'cancel-btn'
+            cancelBtn.textContent = 'Cancel'
+            cancelBtn.addEventListener('click', closeModal)
+
+            const updateBtn = document.createElement('button')
+            updateBtn.className = 'vote-btn'
+            updateBtn.textContent = currentRating > 0 ? 'Update Vote' : 'Cast Vote'
+            updateBtn.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
+            updateBtn.style.boxShadow = '0 4px 14px rgba(59, 130, 246, 0.35)'
+            updateBtn.addEventListener('click', handleUpdateVote)
+
+            footerDiv.appendChild(cancelBtn)
+            footerDiv.appendChild(updateBtn)
+
+            return footerDiv
+        }
+
+        CustomModal({
+            title: `${currentRating > 0 ? 'Update' : 'Cast'} Vote`,
+            content: contentContainer,
+            footer: footer,
+            size: 'small',
+            closeOnOverlayClick: false,
+            className: 'vote-modal'
+        })
+    }
+
+    const openRankingModal = () => {
+        const contentContainer = document.createElement('div')
+        contentContainer.style.cssText = `
+            padding: 0;
+            overflow: hidden;
+            max-width: 100%;
+        `
+
+        const headerStats = document.createElement('div')
+        headerStats.style.cssText = `
+            display: flex;
+            gap: 16px;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        `
+        headerStats.innerHTML = `
+            <div style="flex: 1; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: #92400e;">${rankingData.length}</div>
+                <div style="font-size: 12px; color: #78350f;">Presenters</div>
+            </div>
+            <div style="width: 1px; background: rgba(0,0,0,0.1);"></div>
+            <div style="flex: 1; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: #92400e;">${rankingData.reduce((sum, item) => sum + (item.voteCount || 0), 0)}</div>
+                <div style="font-size: 12px; color: #78350f;">Total Votes</div>
+            </div>
+            <div style="width: 1px; background: rgba(0,0,0,0.1);"></div>
+            <div style="flex: 1; text-align: center;">
+                <div style="font-size: 24px; font-weight: 700; color: #92400e;">${rankingData.length > 0 ? (rankingData.reduce((sum, item) => sum + (item.rating || 0), 0) / rankingData.length).toFixed(1) : '0'}</div>
+                <div style="font-size: 12px; color: #78350f;">Avg Rating</div>
+            </div>
+        `
+
+        const listContainer = document.createElement('div')
+        listContainer.id = 'ranking-list-container'
+        listContainer.style.cssText = `
+            max-height: 450px;
+            overflow-y: auto;
+            padding-right: 4px;
+        `
+
+        contentContainer.appendChild(headerStats)
+        contentContainer.appendChild(listContainer)
+
+        loadRankingData()
+
+        const footer = ({ closeModal }) => {
+            modalInstance = { closeModal }
+
+            const footerDiv = document.createElement('div')
+            footerDiv.className = 'vote-modal-footer'
+            footerDiv.style.justifyContent = 'space-between'
+
+            const refreshBtn = document.createElement('button')
+            refreshBtn.className = 'cancel-btn'
+            refreshBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Refresh'
+            refreshBtn.style.display = 'flex'
+            refreshBtn.style.alignItems = 'center'
+            refreshBtn.style.gap = '6px'
+            refreshBtn.addEventListener('click', () => {
+                loadRankingData()
+                Toast.info('Refreshing ranking...')
+            })
+
+            const closeBtn = document.createElement('button')
+            closeBtn.className = 'vote-btn'
+            closeBtn.textContent = 'Close'
+            closeBtn.style.minWidth = '100px'
+            closeBtn.addEventListener('click', closeModal)
+
+            footerDiv.appendChild(refreshBtn)
+            footerDiv.appendChild(closeBtn)
+
+            return footerDiv
+        }
+
+        CustomModal({
+            title: '🏆 Best Presenter Ranking',
+            content: contentContainer,
+            footer: footer,
+            size: 'large',
+            closeOnOverlayClick: true,
+            className: 'ranking-modal'
+        })
+    }
+
+    // Return a button that opens the ranking modal
+    return $({
+        tag: 'button',
+        style: {
+            padding: '6px 16px',
             borderRadius: '8px',
-            border: '1px solid #10b981',
-            background: '#ecfdf5',
-            color: '#065f46',
-            fontSize: '12px',
+            border: '1px solid #8b5cf6',
+            background: '#f5f3ff',
+            color: '#7c3aed',
+            fontSize: '13px',
             fontWeight: '600',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
@@ -680,29 +1389,29 @@ const PresentedButton = ({ docId, eventName, sourceTable, completionStatus, onSt
         child: [
             $({
                 tag: 'span',
-                att: { className: 'fa-solid fa-check-circle' },
-                style: { fontSize: '12px' }
+                att: { className: 'fa-solid fa-ranking-star' },
+                style: { fontSize: '13px' }
             }),
             $({
                 tag: 'span',
-                text: 'Presented?'
+                text: 'Rankings'
             })
         ],
         event: {
             type: 'click',
             method: (e) => {
                 e.stopPropagation()
-                handlePresented()
+                openRankingModal()
             }
         },
         elementHandler: (el) => {
             el.addEventListener('mouseenter', () => {
-                el.style.background = '#d1fae5'
+                el.style.background = '#ede9fe'
                 el.style.transform = 'translateY(-1px)'
-                el.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.2)'
+                el.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.2)'
             })
             el.addEventListener('mouseleave', () => {
-                el.style.background = '#ecfdf5'
+                el.style.background = '#f5f3ff'
                 el.style.transform = 'translateY(0)'
                 el.style.boxShadow = 'none'
             })
@@ -728,7 +1437,9 @@ export const EntryList = ({
     completionStatus = 'pending_confirmation',
     eventName = '',
     sourceTable = 'researchfile',
-    onStatusUpdate = null
+    onStatusUpdate = null,
+    hasVoted = false,
+    voteRating = 0
 }) => {
     const base = window.location.href
     const url = base.replace(window.location.origin, '').split('/')
@@ -743,7 +1454,6 @@ export const EntryList = ({
     }
 
     const getCardStyle = () => {
-        // Completion status styles
         const statusStyles = {
             'completed': {
                 borderLeft: '4px solid #10b981',
@@ -759,7 +1469,6 @@ export const EntryList = ({
             }
         }
 
-        // Override with completion status if available
         if (completionStatus && statusStyles[completionStatus]) {
             return statusStyles[completionStatus]
         }
@@ -799,7 +1508,6 @@ export const EntryList = ({
 
     return ($({
         tag: 'div',
-        // Load the CSS file externally
         externalStyle: '/client/component/evaluatorComponent/style/entrylist.css',
         style: {
             display: 'flex',
@@ -822,6 +1530,7 @@ export const EntryList = ({
             className: 'entry-card',
             'data-search': searchText,
             'data-completion': completionStatus || 'pending',
+            'data-has-vote': hasVoted ? 'true' : 'false',
         },
         child: [
             // Status dot
@@ -1113,19 +1822,19 @@ export const EntryList = ({
                 style: {
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
+                    gap: '6px',
                     flexShrink: 0,
                     flexWrap: 'wrap',
                 },
                 child: [
-                    // Status Labels
+                    // Status Labels - Pending, No Comments, Not Scored
                     StatusLabels({
                         hasScore: hasScore || false,
                         hasComment: hasComment || false,
                         completionStatus: completionStatus || 'pending_confirmation'
                     }),
 
-                    // Presented? button
+                    // Presented? button - MATCHES "No Comments" style when not presented
                     PresentedButton({
                         docId: docId,
                         eventName: eventName,
@@ -1134,12 +1843,14 @@ export const EntryList = ({
                         onStatusUpdate: onStatusUpdate
                     }),
 
-                    // Best Presenter Vote button
+                    // Best Presenter Vote button - MATCHES "No Comments" style when not voted
                     BestPresenterVote({
                         docId: docId,
                         eventId: eventId,
                         sourceTable: sourceTable || 'researchfile',
-                        onVoteComplete: onStatusUpdate
+                        onVoteComplete: onStatusUpdate,
+                        hasVoted: hasVoted || false,
+                        currentRating: voteRating || 0
                     }),
 
                     // View action button
