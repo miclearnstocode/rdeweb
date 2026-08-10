@@ -2,15 +2,13 @@ import { $ } from "../../lib/lib.js";
 
 export const PrintResearchZoom = ({ eventName, data, formData }) => {
     const CM = 37.8;
-
     const PAGE_HEIGHT_PX = 29.7 * CM;
     const TOP_PADDING_PX = 4 * CM;
-    const BOTTOM_PADDING_PX = 4 * CM;
+    const BOTTOM_PADDING_PX = 5 * CM;
     const CONTENT_AREA_PX = PAGE_HEIGHT_PX - TOP_PADDING_PX - BOTTOM_PADDING_PX;
 
     const categoriesData = data?.length > 0 ? data[0].categories : [];
 
-    // ─── Text measurement utilities ───────────────────────────────────────────
     const measureTextHeight = (text, fontSize = 11, lineHeight = 1.5, maxWidth = 450) => {
         if (!text) return 0;
         
@@ -49,7 +47,6 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
         let totalHeight = 0;
         const style = element.style || {};
         
-        // Add margins/padding
         const marginTop = parseFloat(style.marginTop) || 0;
         const marginBottom = parseFloat(style.marginBottom) || 0;
         const paddingTop = parseFloat(style.paddingTop) || 0;
@@ -110,7 +107,7 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
             year: 'numeric'
         });
 
-        const pptDeadline = formData?.pptDeadline || 'the day before the event';
+        const pptDeadline = formData?.pptDeadline;
 
         // Build header content with accurate height calculation
         const headerItems = [
@@ -132,27 +129,38 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
             { type: 'spacer', height: 20 },
         ];
 
-        // Main letter body - this is the long text that needs careful handling
-        const letterBody = `We are pleased to inform you that the following research and extension papers were accepted for presentation in the ${eventName} which will be held on ${formData?.dateToBeHeld || 'the scheduled date'} via Zoom teleconference.`;
 
-        const letterBody2 = `For your reference, below are the Zoom meeting details for the ${eventName}:`;
+        const letterBody = `We are pleased to inform you that the following research and extension papers were accepted for presentation in the `;
+        const letterBodyEnd = ` which will be held on `;
+        const letterBodyEnd2 = ` via Zoom teleconference.`;
+        const letterBody2 = `For your reference, below are the Zoom meeting details for the `;
 
         headerItems.push({
             type: 'text',
-            text: letterBody,
             fontSize: 12,
             lineHeight: 1.5,
-            marginBottom: 15
+            marginBottom: 15,
+            child: [
+                { tag: 'span', text: letterBody, style: { fontWeight: 'normal' } },
+                { tag: 'span', text: eventName, style: { fontWeight: 'bold' } },
+                { tag: 'span', text: letterBodyEnd, style: { fontWeight: 'normal' } },
+                { tag: 'span', text: formData?.dateToBeHeld, style: { fontWeight: 'bold' } },
+                { tag: 'span', text: letterBodyEnd2, style: { fontWeight: 'normal' } }
+            ]
         });
 
         headerItems.push({ type: 'spacer', height: 10 });
 
         headerItems.push({
             type: 'text',
-            text: letterBody2,
             fontSize: 12,
             lineHeight: 1.5,
-            marginBottom: 10
+            marginBottom: 10,
+            child: [
+                { tag: 'span', text: letterBody2, style: { fontWeight: 'normal' } },
+                { tag: 'span', text: eventName, style: { fontWeight: 'bold' } },
+                { tag: 'span', text: ':', style: { fontWeight: 'normal' } }
+            ]
         });
 
         headerItems.push({ type: 'spacer', height: 10 });
@@ -160,9 +168,9 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
         // Zoom details
         headerItems.push({
             type: 'zoom-details',
-            link: formData?.zoomLink || 'https://zoom.us/j/92157257818',
-            meetingId: formData?.meetingId || '921 5725 7818',
-            passcode: formData?.passcode || 'capsurde',
+            link: formData?.zoomLink,
+            meetingId: formData?.meetingId,
+            passcode: formData?.passcode,
             fontSize: 11,
             marginBottom: 10
         });
@@ -170,14 +178,30 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
         headerItems.push({ type: 'spacer', height: 10 });
 
         // PPT deadline
-        const pptText = `Kindly advise the research and extension presenters to submit their PowerPoint presentation on or before ${pptDeadline} via the Google Drive link ${formData?.driveLink || 'https://bit.ly/44thSymposiumPPTs'}.`;
+        const pptTextStart = `Kindly advise the research and extension presenters to submit their PowerPoint presentation on or before `;
+        const pptTextMiddle = ` via the Google Drive link `;
+        const pptTextEnd = `.`;
 
         headerItems.push({
             type: 'text',
-            text: pptText,
             fontSize: 12,
             lineHeight: 1.5,
-            marginBottom: 20
+            marginBottom: 20,
+            child: [
+                { tag: 'span', text: pptTextStart, style: { fontWeight: 'normal' } },
+                { tag: 'span', text: pptDeadline, style: { fontWeight: 'bold' } },
+                { tag: 'span', text: pptTextMiddle, style: { fontWeight: 'normal' } },
+                { 
+                    tag: 'span', 
+                    text: formData?.driveLink, 
+                    style: { 
+                        fontWeight: 'normal',
+                        textDecoration: 'underline',
+                        color: '#87CEEB'
+                    } 
+                },
+                { tag: 'span', text: pptTextEnd, style: { fontWeight: 'normal' } }
+            ]
         });
 
         headerItems.push({
@@ -196,24 +220,6 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
             marginBottom: 30
         });
 
-        // Signatures
-        headerItems.push({
-            type: 'signature',
-            name: 'STEPHANIE S. PIMENTEL, PhD',
-            title: 'University Research Director',
-            fontSize: 12,
-            marginBottom: 30
-        });
-
-        headerItems.push({
-            type: 'signature',
-            name: 'FRENCH A. DAMPOG, MBA',
-            title: 'University IPMO Director',
-            fontSize: 12,
-            marginBottom: 10
-        });
-
-        // Add all header items to the main items list
         items.push({
             type: 'page-content',
             pageNumber: 1,
@@ -223,14 +229,30 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
         // ─── Page 2: Noted Section ──────────────────────────────────────────
         const notedItems = [
             { type: 'spacer', height: 40 },
+            // Row 1: Two signatures side by side
+            {
+                type: 'signature-row',
+                left: {
+                    name: 'STEPHANIE S. PIMENTEL, PhD',
+                    title: 'University Research Director'
+                },
+                right: {
+                    name: 'FRENCH A. DAMPOG, MBA',
+                    title: 'University IPMO Director'
+                },
+                fontSize: 12,
+                marginBottom: 40
+            },
+            // Row 2: Extension Director
             {
                 type: 'signature',
                 name: 'JOCELYN S. LEGASPI, MFT',
                 title: 'University Extension Director',
                 fontSize: 12,
-                marginBottom: 30
+                marginBottom: 40
             },
             { type: 'text', text: 'Noted:', fontSize: 12, marginBottom: 30 },
+            // Row 3: VP for RDE
             {
                 type: 'signature',
                 name: 'LEO ANDREW B. BICLAR, PhD',
@@ -238,6 +260,7 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                 fontSize: 12,
                 marginBottom: 30
             },
+            // Row 4: SUC President
             {
                 type: 'signature',
                 name: 'EFREN L. LINAN, PhD',
@@ -310,10 +333,8 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
             });
         });
 
-        // Now paginate the document items
         const documentPages = paginateDocumentItems(allDocItems);
 
-        // Add each document page to items
         documentPages.forEach((pageItems, index) => {
             items.push({
                 type: 'page-content',
@@ -332,7 +353,6 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
         let currentPage = [];
         let usedHeight = 0;
 
-        // Maximum usable height (accounting for padding)
         const MAX_HEIGHT = CONTENT_AREA_PX * 0.92;
 
         // Function to calculate item height
@@ -342,9 +362,9 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                     return 30; // Fixed height for category header
                 case 'document': {
                     // Calculate text height
-                    const fontSize = item.fontSize || 11;
-                    const lineHeight = item.lineHeight || 1.5;
-                    const maxWidth = 450; // Available width in pixels
+                    const fontSize = item.fontSize;
+                    const lineHeight = item.lineHeight;
+                    const maxWidth = 450;
 
                     // Measure the main text
                     const textHeight = measureTextHeight(item.text, fontSize, lineHeight, maxWidth);
@@ -356,7 +376,7 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                         totalHeight += presenterHeight + 4;
                     }
 
-                    return Math.max(totalHeight, 30); // Minimum height
+                    return Math.max(totalHeight, 30);
                 }
                 case 'spacer':
                     return item.height || 5;
@@ -406,13 +426,8 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
             // Add item to current page
             currentPage.push(item);
             usedHeight += itemHeight;
-
-            // If this is a category header, check if it's followed by documents
-            // If the category header is the last item and there are no documents after it,
-            // we can skip it or keep it on the current page
         }
 
-        // Add remaining items
         if (currentPage.length > 0) {
             pages.push([...currentPage]);
         }
@@ -420,7 +435,6 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
         return pages;
     };
 
-    // ─── Render items to DOM elements ──────────────────────────────────────
     const renderContentItems = (items) => {
         const elements = [];
 
@@ -488,19 +502,44 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                     break;
 
                 case 'text':
-                    elements.push($({
-                        tag: 'p',
-                        text: item.text,
-                        style: {
-                            fontSize: `${item.fontSize}pt`,
-                            fontWeight: item.bold ? 'bold' : 'normal',
-                            fontStyle: item.italic ? 'italic' : 'normal',
-                            margin: `0 0 ${item.marginBottom || 10}px 0`,
-                            lineHeight: item.lineHeight || 1.5,
-                            color: '#333',
-                            textAlign: 'justify'
-                        }
-                    }));
+                    if (item.child && Array.isArray(item.child)) {
+                        // If text has child elements (for bold/italic spans)
+                        const childElements = item.child.map(child => {
+                            return $({
+                                tag: child.tag || 'span',
+                                text: child.text || '',
+                                style: child.style || {}
+                            });
+                        });
+                        elements.push($({
+                            tag: 'p',
+                            style: {
+                                fontSize: `${item.fontSize}pt`,
+                                fontWeight: item.bold ? 'bold' : 'normal',
+                                fontStyle: item.italic ? 'italic' : 'normal',
+                                margin: `0 0 ${item.marginBottom || 10}px 0`,
+                                lineHeight: item.lineHeight || 1.5,
+                                color: '#333',
+                                textAlign: 'justify'
+                            },
+                            child: childElements
+                        }));
+                    } else {
+                        // Simple text (no child elements)
+                        elements.push($({
+                            tag: 'p',
+                            text: item.text,
+                            style: {
+                                fontSize: `${item.fontSize}pt`,
+                                fontWeight: item.bold ? 'bold' : 'normal',
+                                fontStyle: item.italic ? 'italic' : 'normal',
+                                margin: `0 0 ${item.marginBottom || 10}px 0`,
+                                lineHeight: item.lineHeight || 1.5,
+                                color: '#333',
+                                textAlign: 'justify'
+                            }
+                        }));
+                    }
                     break;
 
                 case 'zoom-details':
@@ -567,6 +606,87 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                     }));
                     break;
 
+                case 'signature-row':
+                    elements.push($({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginBottom: `${item.marginBottom || 40}px`,
+                            WebkitPrintColorAdjust: 'exact',
+                            printColorAdjust: 'exact'
+                        },
+                        child: [
+                            // Left signature
+                            $({
+                                tag: 'div',
+                                style: {
+                                    flex: '1',
+                                    paddingRight: '20px',
+                                    WebkitPrintColorAdjust: 'exact',
+                                    printColorAdjust: 'exact'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'p',
+                                        style: {
+                                            fontSize: `${item.fontSize || 12}pt`,
+                                            fontWeight: 'bold',
+                                            marginBottom: '2px',
+                                            marginTop: '0',
+                                            textAlign: 'left'
+                                        },
+                                        text: item.left.name
+                                    }),
+                                    $({
+                                        tag: 'p',
+                                        style: {
+                                            fontSize: `${(item.fontSize || 12) - 1}pt`,
+                                            marginTop: '0',
+                                            marginBottom: '0',
+                                            textAlign: 'left'
+                                        },
+                                        text: item.left.title
+                                    })
+                                ]
+                            }),
+                            // Right signature
+                            $({
+                                tag: 'div',
+                                style: {
+                                    flex: '1',
+                                    paddingLeft: '20px',
+                                    WebkitPrintColorAdjust: 'exact',
+                                    printColorAdjust: 'exact'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'p',
+                                        style: {
+                                            fontSize: `${item.fontSize || 12}pt`,
+                                            fontWeight: 'bold',
+                                            marginBottom: '2px',
+                                            marginTop: '0',
+                                            textAlign: 'left'
+                                        },
+                                        text: item.right.name
+                                    }),
+                                    $({
+                                        tag: 'p',
+                                        style: {
+                                            fontSize: `${(item.fontSize || 12) - 1}pt`,
+                                            marginTop: '0',
+                                            marginBottom: '0',
+                                            textAlign: 'left'
+                                        },
+                                        text: item.right.title
+                                    })
+                                ]
+                            })
+                        ]
+                    }));
+                    break;
+                
                 case 'signature':
                     elements.push($({
                         tag: 'div',
@@ -622,8 +742,33 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                 case 'document':
                     const docElements = [];
 
-                    // Main document text with number
-                    docElements.push($({
+                    // Extract the parts of the document text
+                    // Format: "Title by Author1, Author2 - Category"
+                    const docText = item.text;
+                    let titlePart = '';
+                    let authorsPart = '';
+                    let categoryPart = '';
+                    
+                    // Parse the document text to separate title, authors, and category
+                    const byIndex = docText.indexOf(' by ');
+                    const dashIndex = docText.lastIndexOf(' - ');
+                    
+                    if (byIndex !== -1 && dashIndex !== -1) {
+                        titlePart = docText.substring(0, byIndex);
+                        authorsPart = docText.substring(byIndex + 4, dashIndex);
+                        categoryPart = docText.substring(dashIndex + 3);
+                    } else if (byIndex !== -1) {
+                        titlePart = docText.substring(0, byIndex);
+                        authorsPart = docText.substring(byIndex + 4);
+                    } else if (dashIndex !== -1) {
+                        titlePart = docText.substring(0, dashIndex);
+                        categoryPart = docText.substring(dashIndex + 3);
+                    } else {
+                        titlePart = docText;
+                    }
+
+                    // Build the document line with proper formatting
+                    const docLine = $({
                         tag: 'div',
                         style: {
                             fontSize: `${item.fontSize}pt`,
@@ -633,12 +778,51 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                             textAlign: 'justify'
                         },
                         child: [
-                            $({ tag: 'span', text: `${item.number}. `, style: { fontWeight: 'bold' } }),
-                            $({ tag: 'span', text: item.text })
+                            // Number (bold)
+                            $({ 
+                                tag: 'span', 
+                                text: `${item.number}. `, 
+                                style: { fontWeight: 'bold' } 
+                            }),
+                            // Title (normal)
+                            $({ 
+                                tag: 'span', 
+                                text: titlePart, 
+                                style: { fontWeight: 'normal' } 
+                            }),
+                            // " by " text
+                            $({ 
+                                tag: 'span', 
+                                text: ' by ', 
+                                style: { fontWeight: 'normal' } 
+                            }),
+                            // Authors (italic)
+                            $({ 
+                                tag: 'span', 
+                                text: authorsPart, 
+                                style: { 
+                                    fontWeight: 'normal', 
+                                    fontStyle: 'italic' 
+                                } 
+                            }),
+                            // " - " text
+                            $({ 
+                                tag: 'span', 
+                                text: categoryPart ? ' - ' : '', 
+                                style: { fontWeight: 'normal' } 
+                            }),
+                            // Category (normal)
+                            $({ 
+                                tag: 'span', 
+                                text: categoryPart || '', 
+                                style: { fontWeight: 'normal' } 
+                            })
                         ]
-                    }));
+                    });
 
-                    // Presenter line if exists
+                    docElements.push(docLine);
+
+                    // Presenter line if exists (italic already)
                     if (item.presenter) {
                         docElements.push($({
                             tag: 'div',
@@ -661,12 +845,12 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                         child: docElements
                     }));
                     break;
-
+                    
                 case 'spacer':
                     elements.push($({
                         tag: 'div',
                         style: {
-                            height: `${item.height || 5}px`
+                            height: `${item.height}px`
                         }
                     }));
                     break;
@@ -679,7 +863,6 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
         return elements;
     };
 
-    // ─── Page Container ─────────────────────────────────────────────────────
     const createPage = (contentItems, pageNumber, totalPages) => {
         const children = renderContentItems(contentItems);
 
@@ -748,21 +931,41 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                         textAlign: 'justify'
                     },
                     child: [
+                        // Content items
                         ...children,
-                        // Page number
                         $({
                             tag: 'div',
-                            att: { className: 'page-number' },
+                            att: { className: 'event-name-footer' },
                             style: {
                                 position: 'absolute',
                                 bottom: '4cm',
                                 right: '1.5cm',
                                 fontSize: '10pt',
+                                textAlign: 'right',
                                 color: '#666',
-                                zIndex: 3,
-                                fontWeight: 'normal'
+                                fontWeight: 'normal',
+                                zIndex: 999,
+                                WebkitPrintColorAdjust: 'exact',
+                                printColorAdjust: 'exact'
                             },
-                            text: `Page ${pageNumber} of ${totalPages}`
+                            child: [
+                                $({
+                                    tag: 'div',
+                                    text: eventName,
+                                    style: {
+                                        marginBottom: '2px'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    text: `Page ${pageNumber} of ${totalPages}`,
+                                    style: {
+                                        fontSize: '10pt',
+                                        color: '#666',
+                                        fontWeight: 'normal'
+                                    }
+                                })
+                            ]
                         })
                     ]
                 })
@@ -770,7 +973,6 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
         });
     };
 
-    // ─── Main ────────────────────────────────────────────────────────────────
     const contentItems = buildContentItems();
 
     // Group by page
