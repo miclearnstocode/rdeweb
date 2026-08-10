@@ -4,7 +4,7 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
     const CM = 37.8;
     const PAGE_HEIGHT_PX = 29.7 * CM;
     const TOP_PADDING_PX = 4 * CM;
-    const BOTTOM_PADDING_PX = 5 * CM;
+    const BOTTOM_PADDING_PX = 4 * CM;
     const CONTENT_AREA_PX = PAGE_HEIGHT_PX - TOP_PADDING_PX - BOTTOM_PADDING_PX;
 
     const categoriesData = data?.length > 0 ? data[0].categories : [];
@@ -347,13 +347,13 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
         return items;
     };
 
-    // ─── Paginate document items (categories and documents) ────────────────
+    //Paginate document items
     const paginateDocumentItems = (allItems) => {
         const pages = [];
         let currentPage = [];
         let usedHeight = 0;
 
-        const MAX_HEIGHT = CONTENT_AREA_PX * 0.92;
+        const MAX_HEIGHT = CONTENT_AREA_PX * 0.82;
 
         // Function to calculate item height
         const calculateItemHeight = (item) => {
@@ -886,37 +886,26 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                     att: { className: 'page-background' },
                     style: {
                         position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        width: '100%',
-                        height: '100%',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        width: '100%', height: '100%',
                         zIndex: 1,
                         pointerEvents: 'none',
                         overflow: 'hidden',
-                        margin: 0,
-                        padding: 0
+                        margin: 0, padding: 0
                     },
                     child: [$({
                         tag: 'img',
-                        att: {
-                            src: '/client/images/header.png',
-                            className: 'background-img',
-                            alt: 'Page background'
-                        },
+                        att: { src: '/client/images/header.png', className: 'background-img', alt: 'Page background' },
                         style: {
-                            width: '100%',
-                            height: '100%',
+                            width: '100%', height: '100%',
                             objectFit: 'cover',
                             objectPosition: 'center center',
                             display: 'block',
-                            margin: 0,
-                            padding: 0
+                            margin: 0, padding: 0
                         }
                     })]
                 }),
-                // Page content
+                // Page content 
                 $({
                     tag: 'div',
                     att: { className: 'page-content' },
@@ -925,47 +914,36 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                         zIndex: 2,
                         padding: '4cm 1.5cm 4cm 1.5cm',
                         width: '100%',
-                        minHeight: '29.7cm',
+                        height: '29.7cm',   
+                        overflow: 'hidden',   
                         boxSizing: 'border-box',
                         backgroundColor: 'transparent',
                         textAlign: 'justify'
                     },
+                    child: children
+                }),
+                // Footer
+                $({
+                    tag: 'div',
+                    att: { className: 'event-name-footer' },
+                    style: {
+                        position: 'absolute',
+                        bottom: '3cm',    
+                        right: '1.5cm',
+                        fontSize: '10pt',
+                        textAlign: 'right',
+                        color: '#666',
+                        fontWeight: 'normal',
+                        zIndex: 999,
+                        WebkitPrintColorAdjust: 'exact',
+                        printColorAdjust: 'exact'
+                    },
                     child: [
-                        // Content items
-                        ...children,
+                        $({ tag: 'div', text: eventName, style: { marginBottom: '2px' } }),
                         $({
                             tag: 'div',
-                            att: { className: 'event-name-footer' },
-                            style: {
-                                position: 'absolute',
-                                bottom: '4cm',
-                                right: '1.5cm',
-                                fontSize: '10pt',
-                                textAlign: 'right',
-                                color: '#666',
-                                fontWeight: 'normal',
-                                zIndex: 999,
-                                WebkitPrintColorAdjust: 'exact',
-                                printColorAdjust: 'exact'
-                            },
-                            child: [
-                                $({
-                                    tag: 'div',
-                                    text: eventName,
-                                    style: {
-                                        marginBottom: '2px'
-                                    }
-                                }),
-                                $({
-                                    tag: 'div',
-                                    text: `Page ${pageNumber} of ${totalPages}`,
-                                    style: {
-                                        fontSize: '10pt',
-                                        color: '#666',
-                                        fontWeight: 'normal'
-                                    }
-                                })
-                            ]
+                            text: `Page ${pageNumber} of ${totalPages}`,
+                            style: { fontSize: '10pt', color: '#666', fontWeight: 'normal' }
                         })
                     ]
                 })
