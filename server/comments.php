@@ -24,36 +24,73 @@ function isStudentEvent($eventName, $eventId = null) {
     return false;
 }
 
-function getDocumentSource($con, $docId) {
-    // Check researchfile first
-    $query = "SELECT event_id, event FROM researchfile WHERE id = ?";
-    $stmt = $con->prepare($query);
-    if ($stmt) {
-        $stmt->bind_param("i", $docId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($row = $result->fetch_assoc()) {
-            $stmt->close();
-            return ['source' => 'researchfile', 'event_id' => $row['event_id'], 'event' => $row['event']];
+function getDocumentSource($con, $docId, $eventId = null) {
+    $docId = (int)$docId;
+    $result = null;
+    
+    // If eventId is provided, check if it's a student event
+    if (!empty($eventId)) {
+        $eventQuery = "SELECT name FROM event_list WHERE id = ? LIMIT 1";
+        $eventStmt = $con->prepare($eventQuery);
+        if ($eventStmt) {
+            $eventStmt->bind_param("i", $eventId);
+            $eventStmt->execute();
+            $eventResult = $eventStmt->get_result();
+            if ($row = $eventResult->fetch_assoc()) {
+                $eventName = $row['name'];
+                $lowerEventName = strtolower($eventName);
+                if (strpos($lowerEventName, 'undergraduate') !== false || 
+                    strpos($lowerEventName, 'graduate') !== false ||
+                    strpos($lowerEventName, 'student') !== false) {
+                    // Check student_research_papers
+                    $query = "SELECT event_id, event FROM student_research_papers WHERE id = ? LIMIT 1";
+                    $stmt = $con->prepare($query);
+                    if ($stmt) {
+                        $stmt->bind_param("i", $docId);
+                        $stmt->execute();
+                        $stmtResult = $stmt->get_result();
+                        if ($row = $stmtResult->fetch_assoc()) {
+                            $result = ['source' => 'student_research_papers', 'event_id' => $row['event_id'], 'event' => $row['event']];
+                        }
+                        $stmt->close();
+                    }
+                }
+            }
+            $eventStmt->close();
         }
-        $stmt->close();
     }
     
-    // Check student_research_papers
-    $query = "SELECT event_id, event FROM student_research_papers WHERE id = ?";
-    $stmt = $con->prepare($query);
-    if ($stmt) {
-        $stmt->bind_param("i", $docId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($row = $result->fetch_assoc()) {
+    // If not found in student or no eventId, check researchfile
+    if ($result === null) {
+        $query = "SELECT event_id, event FROM researchfile WHERE id = ? LIMIT 1";
+        $stmt = $con->prepare($query);
+        if ($stmt) {
+            $stmt->bind_param("i", $docId);
+            $stmt->execute();
+            $stmtResult = $stmt->get_result();
+            if ($row = $stmtResult->fetch_assoc()) {
+                $result = ['source' => 'researchfile', 'event_id' => $row['event_id'], 'event' => $row['event']];
+            }
             $stmt->close();
-            return ['source' => 'student_research_papers', 'event_id' => $row['event_id'], 'event' => $row['event']];
         }
-        $stmt->close();
     }
     
-    return null;
+    // If still not found, check student_research_papers as fallback
+    if ($result === null) {
+        $query = "SELECT event_id, event FROM student_research_papers WHERE id = ? LIMIT 1";
+        $stmt = $con->prepare($query);
+        if ($stmt) {
+            $stmt->bind_param("i", $docId);
+            $stmt->execute();
+            $stmtResult = $stmt->get_result();
+            if ($row = $stmtResult->fetch_assoc()) {
+                $result = ['source' => 'student_research_papers', 'event_id' => $row['event_id'], 'event' => $row['event']];
+            }
+            $stmt->close();
+        }
+    }
+    
+    return $result;
 }
 
 if(isset($_POST['getCategories'])){
@@ -93,16 +130,12 @@ if(isset($_POST['commentRequest'])){
     $response = [];
     
     if($con){
-        // ============================================================
         // STEP 1: Determine if the event is a student event
-        // ============================================================
-        // Check if eventType is a numeric ID or a name
         $isNumericEvent = is_numeric($eventType);
         $eventId = null;
         $eventName = null;
         
         if ($isNumericEvent) {
-            // It's an event ID - get the event name from event_list
             $eventId = (int)$eventType;
             $eventNameQuery = "SELECT name FROM event_list WHERE id = ?";
             $eventNameStmt = $con->prepare($eventNameQuery);
@@ -116,9 +149,7 @@ if(isset($_POST['commentRequest'])){
                 $eventNameStmt->close();
             }
         } else {
-            // It's an event name
             $eventName = $eventType;
-            // Try to get the event ID from event_list
             $eventIdQuery = "SELECT id FROM event_list WHERE name = ?";
             $eventIdStmt = $con->prepare($eventIdQuery);
             if ($eventIdStmt) {
@@ -132,14 +163,12 @@ if(isset($_POST['commentRequest'])){
             }
         }
         
-        error_log("commentRequest - Event ID: $eventId, Event Name: $eventName, Is Numeric: " . ($isNumericEvent ? 'Yes' : 'No'));
+        $logMessage = "commentRequest - Event ID: " . ($eventId ?? 'null') . ", Event Name: " . ($eventName ?? 'null') . ", Is Numeric: " . ($isNumericEvent ? 'Yes' : 'No');
+        error_log($logMessage);
         
-        // ============================================================
-        // STEP 2: Determine if it's a student event by checking both tables
-        // ============================================================
+        // STEP 2: Determine if it's a student event
         $isStudent = false;
         
-        // Check if there are student papers with this event name or ID
         if (!empty($eventName)) {
             $studentCheckQuery = "SELECT COUNT(*) as count FROM student_research_papers WHERE event = ? OR event_id = ?";
             $studentCheckStmt = $con->prepare($studentCheckQuery);
@@ -150,14 +179,13 @@ if(isset($_POST['commentRequest'])){
                 if ($row = $studentCheckResult->fetch_assoc()) {
                     if ($row['count'] > 0) {
                         $isStudent = true;
-                        error_log("commentRequest - Student event detected with $row['count'] papers");
+                        error_log("commentRequest - Student event detected with " . $row['count'] . " papers");
                     }
                 }
                 $studentCheckStmt->close();
             }
         }
         
-        // If not detected as student, check faculty papers
         if (!$isStudent && !empty($eventName)) {
             $facultyCheckQuery = "SELECT COUNT(*) as count FROM researchfile WHERE event = ? OR event_id = ?";
             $facultyCheckStmt = $con->prepare($facultyCheckQuery);
@@ -168,19 +196,21 @@ if(isset($_POST['commentRequest'])){
                 if ($row = $facultyCheckResult->fetch_assoc()) {
                     if ($row['count'] > 0) {
                         $isStudent = false;
-                        error_log("commentRequest - Faculty event detected with $row['count'] papers");
+                        error_log("commentRequest - Faculty event detected with " . $row['count'] . " papers");
                     }
                 }
                 $facultyCheckStmt->close();
             }
         }
         
-        // ============================================================
         // STEP 3: Build the query based on event type
-        // ============================================================
+        // Define NULL values as variables
+        $nullCenter = 'NULL';
+        $nullFile = 'NULL';
+        $nullPaperTrail = 'NULL';
+        $nullFinalSymposium = 'NULL';
+        
         if ($isStudent) {
-            // For student events, query from student_research_papers
-            // Use event_id if available, otherwise use event name
             if ($eventId) {
                 $query = "SELECT 
                     c.resid,
@@ -198,17 +228,17 @@ if(isset($_POST['commentRequest'])){
                     c.date,
                     e.fullname as evaluator_name,
                     srp.category,
-                    NULL as center,
+                    ? as center,
                     srp.campus,
                     srp.title as doc_title,
                     srp.author,
                     srp.coauthor,
                     srp.presenter,
                     srp.event,
-                    NULL as file,
+                    ? as file,
                     srp.research_file_view_url as drive_view_url,
-                    NULL as paper_trail_no,
-                    NULL as final_symposium_title,
+                    ? as paper_trail_no,
+                    ? as final_symposium_title,
                     cat.id as category_id,
                     cat.name as category_name
                 FROM comments c
@@ -217,8 +247,8 @@ if(isset($_POST['commentRequest'])){
                 LEFT JOIN category cat ON cat.name = srp.category
                 WHERE srp.event_id = ?";
                 
-                $params = [$eventId];
-                $types = "i";
+                $params = [$nullCenter, $nullFile, $nullPaperTrail, $nullFinalSymposium, $eventId];
+                $types = "ssssi";
             } else {
                 $query = "SELECT 
                     c.resid,
@@ -236,17 +266,17 @@ if(isset($_POST['commentRequest'])){
                     c.date,
                     e.fullname as evaluator_name,
                     srp.category,
-                    NULL as center,
+                    ? as center,
                     srp.campus,
                     srp.title as doc_title,
                     srp.author,
                     srp.coauthor,
                     srp.presenter,
                     srp.event,
-                    NULL as file,
+                    ? as file,
                     srp.research_file_view_url as drive_view_url,
-                    NULL as paper_trail_no,
-                    NULL as final_symposium_title,
+                    ? as paper_trail_no,
+                    ? as final_symposium_title,
                     cat.id as category_id,
                     cat.name as category_name
                 FROM comments c
@@ -255,13 +285,11 @@ if(isset($_POST['commentRequest'])){
                 LEFT JOIN category cat ON cat.name = srp.category
                 WHERE srp.event = ?";
                 
-                $params = [$eventName];
-                $types = "s";
+                $params = [$nullCenter, $nullFile, $nullPaperTrail, $nullFinalSymposium, $eventName];
+                $types = "sssss";
             }
             
-            // Add category filter if needed
             if ($categoryId !== 'Print All Category' && !$isPrintAll && !empty($categoryId) && $categoryId !== '-- Select Category --') {
-                // If categoryId is numeric, use cat.id; if it's a name, use cat.name
                 if (is_numeric($categoryId)) {
                     $query .= " AND cat.id = ?";
                     $params[] = (int)$categoryId;
@@ -276,7 +304,6 @@ if(isset($_POST['commentRequest'])){
             $query .= " ORDER BY srp.title, c.date DESC";
             
         } else {
-            // For faculty events, query from researchfile
             if ($eventId) {
                 $query = "SELECT 
                     c.resid,
@@ -355,7 +382,6 @@ if(isset($_POST['commentRequest'])){
                 $types = "s";
             }
             
-            // Add category filter if needed
             if ($categoryId !== 'Print All Category' && !$isPrintAll && !empty($categoryId) && $categoryId !== '-- Select Category --') {
                 if (is_numeric($categoryId)) {
                     $query .= " AND cat.id = ?";
@@ -381,12 +407,9 @@ if(isset($_POST['commentRequest'])){
             $statement->execute();
             $result = $statement->get_result();
             
-            // Group comments by research file ID
             $groupedComments = [];
             while ($val = $result->fetch_assoc()) {
                 $resid = $val['resid'];
-                
-                // Use doc_title directly
                 $docTitle = $val['doc_title'] ?? 'Untitled';
                 
                 if (!isset($groupedComments[$resid])) {
@@ -430,7 +453,6 @@ if(isset($_POST['commentRequest'])){
                 }
             }
             
-            // Calculate total word count for each document
             foreach ($groupedComments as $resid => &$docData) {
                 $totalWords = 0;
                 foreach ($docData['comments'] as $comment) {
@@ -486,221 +508,224 @@ if(isset($_POST['reqCommentIndiv2'])){
     $response->isCommented = 0;
     $response->evID = null;
     $response->status = 'success';
-    $response->message = 'No comments found';
-    $response->comments = []; // Add this for multiple comments
+    $response->message = 'No comments found for this paper';
+    $response->comments = [];
     $response->source_table = '';
     $response->doc_info = null;
+    $response->has_comments = false;
     
     try {
-        // Check if session exists
         if (!isset($_SESSION) || session_status() === PHP_SESSION_NONE) {
             session_start();
         }
         
-        // Check if userId is set in session
         if (!isset($_SESSION['userId'])) {
             error_log('userId not set in session');
+            $response->message = 'User not authenticated';
+            $response->status = 'error';
             echo json_encode($response);
             exit();
         }
         
         $docId = $_POST['docId'] ?? '';
-        $comName = $_POST['comName'] ?? ''; // This is the section name (title, intro, etc.)
+        $comName = $_POST['comName'] ?? '';
         $eventId = $_POST['eventId'] ?? null;
         
-        // Validate inputs
+        // CLEAN THE DOC ID
+        if (strpos($docId, '?') !== false) {
+            $docId = explode('?', $docId)[0];
+        }
+        if (strpos($docId, '&') !== false) {
+            $docId = explode('&', $docId)[0];
+        }
+        $docId = (int)preg_replace('/[^0-9]/', '', $docId);
+        
         if (empty($docId)) {
             $response->message = 'Missing document ID';
+            $response->status = 'error';
             echo json_encode($response);
             exit();
         }
         
-        // Establish database connection
         $cons = new mysqli($host, $username, $pass, $dbName);
         
         if ($cons->connect_error) {
             error_log('Database connection failed: ' . $cons->connect_error);
             $response->message = 'Database connection failed';
+            $response->status = 'error';
             echo json_encode($response);
             exit();
         }
         
-        // Determine which table the document belongs to
-        $docSource = getDocumentSource($cons, $docId);
+        // Get document source
+        $docSource = getDocumentSource($cons, $docId, $eventId);
         
         if (!$docSource) {
             $response->message = 'Document not found';
+            $response->status = 'error';
             echo json_encode($response);
             exit();
         }
         
-        $isStudent = isStudentEvent($docSource['event']);
-        $response->source_table = $isStudent ? 'student_research_papers' : 'researchfile';
+        $isStudent = ($docSource['source'] === 'student_research_papers');
+        $eventName = $docSource['event'];
+        $eventId = $docSource['event_id'];
+        $response->source_table = $docSource['source'];
+        $response->source_type = $isStudent ? 'student' : 'faculty';
         
-        // Build query based on source table
+        // Get document info from the appropriate table
+        $docInfo = null;
         if ($isStudent) {
-            // Student document - query with student_research_papers
-            $query = "SELECT 
-                c.title,
-                c.intro,
-                c.abstract,
-                c.objective,
-                c.methodology,
-                c.results,
-                c.recommendation,
-                c.literature,
-                c.other,
-                c.isCommented,
-                c.evID,
-                c.date,
-                c.resid,
-                e.fullname as evaluator_name,
-                srp.title as doc_title,
-                srp.category,
-                NULL as center,
-                srp.campus,
-                srp.author,
-                srp.coauthor,
-                srp.presenter,
-                srp.event,
-                NULL as file,
-                srp.research_file_view_url as drive_view_url,
-                NULL as paper_trail_no,
-                NULL as final_symposium_title,
-                srp.status as doc_status
-            FROM comments c
-            LEFT JOIN evaluator e ON e.id = c.evalid
-            LEFT JOIN student_research_papers srp ON srp.id = c.resid
-            WHERE c.resid = ?
-            ORDER BY c.date DESC, c.evalid";
+            $docQuery = "SELECT 
+                id,
+                title as doc_title,
+                event,
+                event_id,
+                category,
+                campus,
+                author,
+                coauthor,
+                presenter,
+                status as doc_status,
+                completion_status,
+                research_file_view_url as drive_view_url
+            FROM student_research_papers WHERE id = ? LIMIT 1";
         } else {
-            // Faculty document - query with researchfile
-            $query = "SELECT 
-                c.title,
-                c.intro,
-                c.abstract,
-                c.objective,
-                c.methodology,
-                c.results,
-                c.recommendation,
-                c.literature,
-                c.other,
-                c.isCommented,
-                c.evID,
-                c.date,
-                c.resid,
-                e.fullname as evaluator_name,
-                r.title as doc_title,
-                r.final_symposium_title,
-                r.category,
-                r.center,
-                r.campus,
-                r.author,
-                r.coauthor,
-                r.presenter,
-                r.event,
-                r.file,
-                r.drive_view_url,
-                r.paper_trail_no,
-                r.status as doc_status
-            FROM comments c
-            LEFT JOIN evaluator e ON e.id = c.evalid
-            LEFT JOIN researchfile r ON r.id = c.resid
-            WHERE c.resid = ?
-            ORDER BY c.date DESC, c.evalid";
+            $docQuery = "SELECT 
+                id,
+                title as doc_title,
+                final_symposium_title,
+                event,
+                event_id,
+                category,
+                center,
+                campus,
+                author,
+                coauthor,
+                presenter,
+                status as doc_status,
+                completion_status,
+                file,
+                drive_view_url,
+                paper_trail_no
+            FROM researchfile WHERE id = ? LIMIT 1";
         }
         
-        $statement = $cons->prepare($query);
+        $docStmt = $cons->prepare($docQuery);
+        if ($docStmt) {
+            $docStmt->bind_param("i", $docId);
+            $docStmt->execute();
+            $docResult = $docStmt->get_result();
+            if ($docResult->num_rows > 0) {
+                $docInfo = $docResult->fetch_assoc();
+            }
+            $docStmt->close();
+        }
         
-        if (!$statement) {
+        $response->doc_info = $docInfo;
+        
+        // Get comments for this document and evaluator
+        $evalId = (int)$_SESSION['userId'];
+        
+        $commentQuery = "SELECT 
+            c.title,
+            c.intro,
+            c.abstract,
+            c.objective,
+            c.methodology,
+            c.results,
+            c.recommendation,
+            c.literature,
+            c.other,
+            c.isCommented,
+            c.evID,
+            c.date,
+            c.resid
+        FROM comments c
+        WHERE c.resid = ? AND c.evalid = ?
+        ORDER BY c.date DESC";
+        
+        $commentStmt = $cons->prepare($commentQuery);
+        if (!$commentStmt) {
             error_log('Prepare failed: ' . $cons->error);
             $response->message = 'Query preparation failed';
+            $response->status = 'error';
             echo json_encode($response);
             exit();
         }
         
-        $statement->bind_param("s", $docId);
+        $commentStmt->bind_param("ii", $docId, $evalId);
         
-        if (!$statement->execute()) {
-            error_log('Execute failed: ' . $statement->error);
+        if (!$commentStmt->execute()) {
+            error_log('Execute failed: ' . $commentStmt->error);
             $response->message = 'Query execution failed';
+            $response->status = 'error';
             echo json_encode($response);
             exit();
         }
         
-        $result = $statement->get_result();
+        $result = $commentStmt->get_result();
         
-        // Build the response with all comments
         $comments = [];
-        $hasComments = false;
-        $docInfo = null;
-        $allCommentData = [];
+        $hasContent = false;
         
         while ($val = $result->fetch_assoc()) {
-            $hasComments = true;
-            
-            // Store document info once
-            if ($docInfo === null) {
-                $docInfo = [
-                    'resid' => $val['resid'],
-                    'doc_title' => $val['doc_title'] ?? 'Untitled',
-                    'final_symposium_title' => $val['final_symposium_title'] ?? null,
-                    'category' => $val['category'] ?? '',
-                    'center' => $val['center'] ?? '',
-                    'campus' => $val['campus'] ?? '',
-                    'author' => $val['author'] ?? '',
-                    'coauthor' => $val['coauthor'] ?? '',
-                    'presenter' => $val['presenter'] ?? '',
-                    'event' => $val['event'] ?? '',
-                    'file' => $val['file'] ?? '',
-                    'drive_view_url' => $val['drive_view_url'] ?? '',
-                    'paper_trail_no' => $val['paper_trail_no'] ?? '',
-                    'doc_status' => $val['doc_status'] ?? '',
-                    'source_type' => $isStudent ? 'student' : 'faculty'
-                ];
+            // Check if there's any actual content
+            $fields = ['title', 'intro', 'abstract', 'objective', 'methodology', 'results', 'recommendation', 'literature', 'other'];
+            $hasSectionContent = false;
+            foreach ($fields as $field) {
+                if (!empty($val[$field]) && trim($val[$field]) !== '' && trim($val[$field]) !== 'N/A') {
+                    $hasSectionContent = true;
+                    break;
+                }
             }
             
-            // Get the specific section content based on comName
+            if (!$hasSectionContent) {
+                continue;
+            }
+            
+            $hasContent = true;
+            
             $sectionContent = '';
             if (!empty($comName) && isset($val[$comName])) {
                 $sectionContent = $val[$comName] ?? '';
             }
             
-            // If comName is not specified or is 'all', get all sections
+            // Get evaluator name
+            $evaluatorName = 'Unknown Evaluator';
+            if (!empty($val['evID'])) {
+                $evalNameQuery = "SELECT fullname FROM evaluator WHERE id = ? LIMIT 1";
+                $evalNameStmt = $cons->prepare($evalNameQuery);
+                if ($evalNameStmt) {
+                    $evalNameStmt->bind_param("i", $val['evID']);
+                    $evalNameStmt->execute();
+                    $evalNameResult = $evalNameStmt->get_result();
+                    if ($row = $evalNameResult->fetch_assoc()) {
+                        $evaluatorName = $row['fullname'];
+                    }
+                    $evalNameStmt->close();
+                }
+            }
+            
             if (empty($comName) || $comName === 'all') {
-                // Build comment object with all sections
                 $comment = [
-                    'evaluator_name' => $val['evaluator_name'] ?? 'Unknown Evaluator',
+                    'evaluator_name' => $evaluatorName,
                     'date' => $val['date'] ?? '',
                     'evID' => $val['evID'] ?? null,
                     'isCommented' => (int)($val['isCommented'] ?? 0)
                 ];
                 
-                $fields = ['title', 'intro', 'abstract', 'objective', 'methodology', 'results', 'recommendation', 'literature', 'other'];
                 foreach ($fields as $field) {
                     if (!empty($val[$field]) && trim($val[$field]) !== '' && trim($val[$field]) !== 'N/A') {
                         $comment[$field] = $val[$field];
                     }
                 }
                 
-                // Check if there's any comment content
-                $hasCommentContent = false;
-                foreach ($fields as $field) {
-                    if (isset($comment[$field]) && !empty($comment[$field])) {
-                        $hasCommentContent = true;
-                        break;
-                    }
-                }
-                
-                if ($hasCommentContent) {
-                    $comments[] = $comment;
-                }
+                $comments[] = $comment;
             } else {
-                // Get specific section content
                 if (!empty($sectionContent) && trim($sectionContent) !== '' && trim($sectionContent) !== 'N/A') {
-                    // This is a comment for a specific section
                     $commentData = [
-                        'evaluator_name' => $val['evaluator_name'] ?? 'Unknown Evaluator',
+                        'evaluator_name' => $evaluatorName,
                         'date' => $val['date'] ?? '',
                         'evID' => $val['evID'] ?? null,
                         'isCommented' => (int)($val['isCommented'] ?? 0),
@@ -711,21 +736,18 @@ if(isset($_POST['reqCommentIndiv2'])){
             }
         }
         
-        $statement->close();
+        $commentStmt->close();
         $cons->close();
         
-        if ($hasComments && !empty($comments)) {
-            // Return the full comment data
+        // Build response
+        if ($hasContent && !empty($comments)) {
             $response->data = $comments;
-            $response->doc_info = $docInfo;
             $response->isCommented = 1;
             $response->message = 'Comments loaded successfully';
             $response->total_comments = count($comments);
-            $response->source_type = $isStudent ? 'student' : 'faculty';
+            $response->has_comments = true;
             
-            // If comName is specified, also return the specific section content
             if (!empty($comName) && $comName !== 'all') {
-                // Find the latest comment for this section
                 $latestComment = null;
                 foreach ($comments as $comment) {
                     if (isset($comment[$comName]) && !empty($comment[$comName])) {
@@ -739,14 +761,20 @@ if(isset($_POST['reqCommentIndiv2'])){
                 }
             }
         } else {
-            $response->message = 'No comments found for this document';
+            // No comments found - this is the expected response for empty comments
             $response->data = [];
+            $response->isCommented = 0;
+            $response->message = 'No comments found for this paper';
+            $response->status = 'success';
+            $response->has_comments = false;
         }
         
     } catch (Exception $e) {
         error_log('Exception in reqCommentIndiv2: ' . $e->getMessage());
         $response->message = 'Server error: ' . $e->getMessage();
         $response->status = 'error';
+        $response->data = [];
+        $response->has_comments = false;
     }
     
     echo json_encode($response);

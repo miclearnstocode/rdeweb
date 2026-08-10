@@ -71,15 +71,11 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
             const data = await response.json();
-            console.log('getEventInfo response:', data);
             
             if (data.status) {
                 eventId = data.event_id;
                 eventName = data.event_name;
-                sourceTable = data.source_table; 
-                console.log('Event info loaded:', { eventId, eventName, sourceTable, docStatus: data.doc_status });
             } else {
                 console.error('Failed to get event info:', data.message);
             }
@@ -720,14 +716,28 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
             }
         });
 
-        // Load saved data - FIXED to properly handle multiple comments
+        // Load saved data
         (async () => {
             let loading = null
             try {
+                let cleanDocId = docId;
+                if (docId && typeof docId === 'string' && docId.includes('?')) {
+                    cleanDocId = docId.split('?')[0];
+                } else if (docId && typeof docId === 'string' && docId.includes('&')) {
+                    cleanDocId = docId.split('&')[0];
+                }
+                // Ensure it's numeric
+                if (cleanDocId && typeof cleanDocId === 'string') {
+                    cleanDocId = cleanDocId.replace(/[^0-9]/g, '');
+                }
+
                 const form = new FormData();
                 form.append('reqCommentIndiv2', '1');
-                form.append('comName', section.id); // Pass the section name
-                form.append('docId', docId);
+                form.append('comName', section.id);
+                form.append('docId', cleanDocId);
+                if (eventId) {
+                    form.append('eventId', eventId);
+                }
 
                 loading = Waiting()
                 document.body.appendChild(loading)
@@ -741,12 +751,25 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
                 });
 
                 if (!res.ok) {
-                    throw new Error(`HTTP error! status: ${res.status}`);
+                    // If server returns error, just set empty state
+                    console.error('HTTP error:', res.status);
+                    baseData[section.id] = '';
+                    data[section.id] = '';
+                    contentArea.innerHTML = '';
+                    closeState({ base: { ...baseData }, raw: { ...data } });
+                    if (loading) loading.remove()
+                    return;
                 }
 
                 const text = await res.text();
                 if (!text || text.trim() === '') {
-                    throw new Error('Empty response from server');
+                    // Empty response, set empty state
+                    baseData[section.id] = '';
+                    data[section.id] = '';
+                    contentArea.innerHTML = '';
+                    closeState({ base: { ...baseData }, raw: { ...data } });
+                    if (loading) loading.remove()
+                    return;
                 }
 
                 let val;
@@ -754,28 +777,27 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
                     val = JSON.parse(text);
                 } catch (e) {
                     console.error('Invalid JSON response:', text);
-                    throw new Error('Invalid JSON response from server');
+                    baseData[section.id] = '';
+                    data[section.id] = '';
+                    contentArea.innerHTML = '';
+                    closeState({ base: { ...baseData }, raw: { ...data } });
+                    if (loading) loading.remove()
+                    return;
                 }
 
                 if (loading) loading.remove()
-
-                // Check if we have comments
+                
+                // Handle the response - even if status is error, set empty state
                 if (val && val.status !== 'error') {
-                    // If comName is specified, data should be the specific section content
                     if (val.name === section.id && val.data) {
-                        // This is the specific section content
                         baseData[val.name] = val.data || '';
                         data[val.name] = val.data || '';
-                        // IMPORTANT: Use innerHTML to render HTML tags
                         contentArea.innerHTML = val.data || '';
                         closeState({ base: { ...baseData }, raw: { ...data } });
                     } 
-                    // If we have multiple comments (val.data is an array)
                     else if (Array.isArray(val.data) && val.data.length > 0) {
-                        // Display all comments for this section
                         let html = '';
-                        val.data.forEach((comment, index) => {
-                            // Get the section content from the comment
+                        val.data.forEach((comment) => {
                             const sectionContent = comment[section.id] || '';
                             if (sectionContent) {
                                 const evaluatorName = comment.evaluator_name || 'Unknown Evaluator';
@@ -793,16 +815,13 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
                             }
                         });
                         
-                        // If we have content, display it
                         if (html) {
-                            // Store the combined content in data
                             const combinedContent = val.data.map(c => c[section.id]).filter(c => c).join('<br><br>');
                             baseData[section.id] = combinedContent;
                             data[section.id] = combinedContent;
                             contentArea.innerHTML = html;
                             closeState({ base: { ...baseData }, raw: { ...data } });
                         } else {
-                            // No content for this section
                             baseData[section.id] = '';
                             data[section.id] = '';
                             contentArea.innerHTML = '';
@@ -816,7 +835,7 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
                         closeState({ base: { ...baseData }, raw: { ...data } });
                     }
                 } else {
-                    // No comments found, set empty state
+                    // Error status or no comments, set empty state
                     baseData[section.id] = '';
                     data[section.id] = '';
                     contentArea.innerHTML = '';
@@ -929,7 +948,6 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
     mainContent.appendChild(editorContainer);
     container.appendChild(mainContent);
 
-    // Add CSS for list styling
     const style = document.createElement('style');
     style.textContent = `
         [contenteditable="true"] ul, [contenteditable="true"] ol {
