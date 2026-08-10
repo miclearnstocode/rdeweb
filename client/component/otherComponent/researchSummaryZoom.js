@@ -435,6 +435,36 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
         return pages;
     };
 
+    const formatScientificNames = (text) => {
+        if (!text || !text.trim()) return text;
+        
+        const scientificNamePattern = /\b([A-Z][a-z]{2,}\s+[a-z]{3,}\s+[A-Z]?[a-z]{3,})|\b([a-z]+\s+[A-Z][a-z]+\s+[A-Z]?[a-z]+)/g;
+        const parentheticalPattern = /\(([^)]+)\)/g;
+        
+        let result = text;
+
+        result = result.replace(parentheticalPattern, (match, content) => {
+
+            if (scientificNamePattern.test(content)) {
+                scientificNamePattern.lastIndex = 0;
+                const formatted = content.replace(scientificNamePattern, (match) => {
+                    return `<i>${match.trim()}</i>`;
+                });
+                return `(${formatted})`;
+            }
+            scientificNamePattern.lastIndex = 0;
+            return match;
+        });
+        
+        scientificNamePattern.lastIndex = 0;
+        result = result.replace(scientificNamePattern, (match) => {
+            if (result.includes(`<i>${match}</i>`)) return match;
+            return `<i>${match.trim()}</i>`;
+        });
+        
+        return result;
+    };
+
     const renderContentItems = (items) => {
         const elements = [];
 
@@ -503,11 +533,15 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
 
                 case 'text':
                     if (item.child && Array.isArray(item.child)) {
-                        // If text has child elements (for bold/italic spans)
                         const childElements = item.child.map(child => {
+                            // Check if this child contains scientific names
+                            let formattedText = child.text || '';
+                            if (typeof formattedText === 'string' && !child.style?.fontStyle) {
+                                formattedText = formatScientificNames(formattedText);
+                            }
                             return $({
                                 tag: child.tag || 'span',
-                                text: child.text || '',
+                                att: { innerHTML: formattedText },
                                 style: child.style || {}
                             });
                         });
@@ -525,10 +559,14 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                             child: childElements
                         }));
                     } else {
-                        // Simple text (no child elements)
+                        // Format scientific names in simple text
+                        let formattedText = item.text || '';
+                        if (typeof formattedText === 'string') {
+                            formattedText = formatScientificNames(formattedText);
+                        }
                         elements.push($({
                             tag: 'p',
-                            text: item.text,
+                            att: { innerHTML: formattedText },
                             style: {
                                 fontSize: `${item.fontSize}pt`,
                                 fontWeight: item.bold ? 'bold' : 'normal',
@@ -541,7 +579,7 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                         }));
                     }
                     break;
-
+                    
                 case 'zoom-details':
                     elements.push($({
                         tag: 'div',
@@ -743,13 +781,11 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                     const docElements = [];
 
                     // Extract the parts of the document text
-                    // Format: "Title by Author1, Author2 - Category"
                     const docText = item.text;
                     let titlePart = '';
                     let authorsPart = '';
                     let categoryPart = '';
                     
-                    // Parse the document text to separate title, authors, and category
                     const byIndex = docText.indexOf(' by ');
                     const dashIndex = docText.lastIndexOf(' - ');
                     
@@ -766,6 +802,9 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                     } else {
                         titlePart = docText;
                     }
+
+                    // Format scientific names in the title
+                    const formattedTitle = formatScientificNames(titlePart);
 
                     // Build the document line with proper formatting
                     const docLine = $({
@@ -784,10 +823,12 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                                 text: `${item.number}. `, 
                                 style: { fontWeight: 'bold' } 
                             }),
-                            // Title (normal)
+                            // Title with scientific names formatted (using innerHTML)
                             $({ 
                                 tag: 'span', 
-                                text: titlePart, 
+                                att: { 
+                                    innerHTML: formattedTitle 
+                                },
                                 style: { fontWeight: 'normal' } 
                             }),
                             // " by " text
@@ -822,8 +863,10 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
 
                     docElements.push(docLine);
 
-                    // Presenter line if exists (italic already)
+                    // Presenter line if exists
                     if (item.presenter) {
+                        // Also format scientific names in presenter if needed
+                        const formattedPresenter = formatScientificNames(item.presenter);
                         docElements.push($({
                             tag: 'div',
                             style: {
@@ -833,7 +876,7 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                                 fontStyle: 'italic',
                                 marginBottom: '4px'
                             },
-                            text: item.presenter
+                            att: { innerHTML: formattedPresenter }
                         }));
                     }
 
