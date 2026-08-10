@@ -13,30 +13,15 @@ function isScientificName($text) {
     if (!$text || strlen(trim($text)) < 2) return false;
     $text = trim($text);
 
-    // ── Hard exclusions ───────────────────────────────────────────────────
     if (preg_match('/\d/', $text)) return false;
-    if (preg_match('/^[A-Z]{2,}$/', $text)) return false; // pure acronyms
-
-    // ── Known scientific name patterns ────────────────────────────────────
-
-    // Binomial: "Genus species", "Genus Species" (with or without capital)
+    if (preg_match('/^[A-Z]{2,}$/', $text)) return false;
     if (preg_match('/^[A-Z][a-z]{1,20}\s+[A-Z]?[a-z]{3,25}$/', $text)) return true;
-
-    // Binomial + author: "Genus species L.", "Genus Species Linn."
     if (preg_match('/^[A-Z][a-z]{1,20}\s+[A-Z]?[a-z]{3,25}\s+[A-Z][a-zA-Z\.]{0,15}$/', $text)) return true;
-
-    // Trinomial: "Genus species var. subspecies"
     if (preg_match('/^[A-Z][a-z]+\s+[A-Z]?[a-z]+\s+(var\.|subsp\.|ssp\.|f\.|cv\.)\s+[a-z]+$/i', $text)) return true;
-
-    // Single word genus with strong Latin/Greek suffixes
     if (preg_match('/^[A-Z][a-z]{3,25}$/', $text)) {
-        // Strong Latin/Greek genus endings used in taxonomy
         $latinGenusEndings = [
-            // Animals
             'idae', 'inae', 'ini', 'oidea', 'iformes',
-            // Plants  
             'aceae', 'ales', 'opsida', 'ophyta',
-            // General Latin/Greek endings common in genus names
             'ia', 'ium', 'ius', 'ella', 'illa', 'ula', 'ulus',
             'aster', 'oides', 'opsis', 'phora', 'fera',
             'dendron', 'phyllum', 'carpus', 'anthus', 'spora',
@@ -552,24 +537,98 @@ function areAuthorsSimilar($authors1, $authors2, $threshold = 80) {
     return $similarity >= $threshold;
 }
 
-
-if(isset($_POST['entryCounter'])){
-    $response = [];
+function getStudentPapers($con, $eventName, $status = 'accepted') {
+    $query = "SELECT 
+                srp.id,
+                srp.author,
+                srp.coauthor,
+                srp.presenter,
+                srp.title,
+                srp.category,
+                srp.campus,
+                srp.paper_type,
+                srp.status
+              FROM student_research_papers srp
+              WHERE srp.event = ? 
+                AND srp.status = ?
+              ORDER BY srp.title ASC";
     
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+    $stmt = $con->prepare($query);
+    $stmt->bind_param("ss", $eventName, $status);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $papers = [];
+    while ($row = $result->fetch_assoc()) {
+        $authors = [];
+        if (!empty($row['author'])) {
+            $authors[] = $row['author'];
+        }
+        if (!empty($row['coauthor'])) {
+            $coauthors = json_decode($row['coauthor'], true);
+            if (is_array($coauthors)) {
+                $authors = array_merge($authors, $coauthors);
+            }
+        }
         
-        // Get all categories from the category table
-        $categoryQuery = "SELECT id, name FROM category ORDER BY name ASC";
-        $categoryResult = $con->query($categoryQuery);
+        $papers[] = [
+            'id' => $row['id'],
+            'title' => $row['title'],
+            'authors' => $authors,
+            'presenter' => $row['presenter'] ?? '',
+            'category' => $row['category'],
+            'campus' => $row['campus'] ?: 'Main Campus',
+            'paper_type' => $row['paper_type'] // undergraduate or graduate
+        ];
+    }
+    
+    // Deduplicate student papers using fuzzy matching
+    return deduplicatePapers($papers);
+}
+function deduplicatePapers($papers) {
+    $processed = [];
+    $unique = [];
+    
+    foreach ($papers as $paper) {
+        $isDuplicate = false;
+        foreach ($processed as $processedPaper) {
+            $titleSimilar = isSimilarString($paper['title'], $processedPaper['title'], 80);
+            $authorSimilar = areAuthorsSimilar($paper['authors'], $processedPaper['authors'], 70);
+            
+            if ($titleSimilar && $authorSimilar) {
+                $isDuplicate = true;
+                break;
+            }
+        }
         
-        while ($categoryRow = $categoryResult->fetch_assoc()) {
-            $categoryName = $categoryRow['name'];
-            
-            $catObj = new stdClass();
-            $catObj->name = $categoryName;
-            $catObj->total = 0;
-            
-            $query = "SELECT 
+        if (!$isDuplicate) {
+            $processed[] = [
+                'title' => $paper['title'],
+                'authors' => $paper['authors']
+            ];
+            $unique[] = $paper;
+        }
+    }
+    
+    return $unique;
+}
+
+function isStudentEvent($eventName) {
+    $eventLower = strtolower($eventName);
+    return (strpos($eventLower, 'undergraduate') !== false || 
+            strpos($eventLower, 'graduate') !== false);
+}
+
+
+function getPapersForEvent($con, $eventName, $status = 'accepted') {
+    if (isStudentEvent($eventName)) {
+        return getStudentPapers($con, $eventName, $status);
+    } else {
+        return getFacultyPapers($con, $eventName, $status);
+    }
+}
+function getFacultyPapers($con, $eventName, $status = 'accepted') {
+    $query = "SELECT 
                 researchfile.id,
                 researchfile.title,
                 researchfile.final_symposium_title,
@@ -577,75 +636,80 @@ if(isset($_POST['entryCounter'])){
                 researchfile.coauthor,
                 researchfile.presenter,
                 researchfile.category,
+                researchfile.campus,
+                researchfile.center,
                 researchfile.status as research_status,
                 endorsement.status as endorsement_status
-            FROM researchfile
-            LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-            WHERE researchfile.event = ? 
-                AND researchfile.category = ?
-                AND (
-                    researchfile.status = 'accepted'
-                    OR (researchfile.status IS NULL AND endorsement.status = 'accepted')
-                )
-            ORDER BY researchfile.title ASC";
-            
-            $stmt = $con->prepare($query);
-            $stmt->bind_param("ss", $_POST['eventType'], $categoryName);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            // Track unique documents using fuzzy matching
-            $processedDocs = [];
-            $uniqueCount = 0;
-            
-            while ($row = $result->fetch_assoc()) {
-                // Format authors
-                $authors = [];
-                if (!empty($row['author'])) {
-                    $authors[] = $row['author'];
-                }
-                
-                if (!empty($row['coauthor'])) {
-                    $coauthors = json_decode($row['coauthor'], true);
-                    if (is_array($coauthors)) {
-                        $authors = array_merge($authors, $coauthors);
-                    }
-                }
-                
-                // Use final_symposium_title if exists, otherwise use title
-                $displayTitle = !empty($row['final_symposium_title']) 
-                    ? $row['final_symposium_title'] 
-                    : $row['title'];
-                
-                // Check if this is a duplicate using fuzzy matching
-                $isDuplicate = false;
-                foreach ($processedDocs as $processed) {
-                    // Check title similarity (80% threshold)
-                    $titleSimilar = isSimilarString($displayTitle, $processed['title'], 80);
-                    
-                    // Check author similarity (70% threshold for authors)
-                    $authorSimilar = areAuthorsSimilar($authors, $processed['authors'], 70);
-                    
-                    // If both title and authors are similar, it's a duplicate
-                    if ($titleSimilar && $authorSimilar) {
-                        $isDuplicate = true;
-                        break;
-                    }
-                }
-                
-                // Only count if not a duplicate
-                if (!$isDuplicate) {
-                    $uniqueCount++;
-                    $processedDocs[] = [
-                        'title' => $displayTitle,
-                        'authors' => $authors
-                    ];
-                }
+              FROM researchfile
+              LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
+              WHERE researchfile.event = ?
+              AND (researchfile.status = ? OR (researchfile.status IS NULL AND endorsement.status = ?))
+              ORDER BY researchfile.title ASC";
+    
+    $stmt = $con->prepare($query);
+    $stmt->bind_param("sss", $eventName, $status, $status);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $papers = [];
+    while ($row = $result->fetch_assoc()) {
+        $authors = [];
+        if (!empty($row['author'])) {
+            $authors[] = $row['author'];
+        }
+        if (!empty($row['coauthor'])) {
+            $coauthors = json_decode($row['coauthor'], true);
+            if (is_array($coauthors)) {
+                $authors = array_merge($authors, $coauthors);
             }
-            
-            $catObj->total = $uniqueCount;
+        }
+        
+        $displayTitle = !empty($row['final_symposium_title']) 
+            ? $row['final_symposium_title'] 
+            : $row['title'];
+        
+        $papers[] = [
+            'id' => $row['id'],
+            'title' => $displayTitle,
+            'original_title' => $row['title'],
+            'final_symposium_title' => $row['final_symposium_title'],
+            'authors' => $authors,
+            'presenter' => $row['presenter'] ?? '',
+            'category' => $row['category'],
+            'campus' => $row['campus'] ?: 'Main Campus',
+            'center' => $row['center'] ?: 'Unassigned',
+            'paper_type' => 'faculty'
+        ];
+    }
+    
+    return deduplicatePapers($papers);
+}
+
+if(isset($_POST['entryCounter'])){
+    $response = [];
+    
+    if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $eventName = $_POST['eventType'];
+        
+        // Get papers based on event type
+        $papers = getPapersForEvent($con, $eventName);
+        
+        // Count by category
+        $categoryCounts = [];
+        foreach ($papers as $paper) {
+            $category = $paper['category'] ?: 'Uncategorized';
+            if (!isset($categoryCounts[$category])) {
+                $categoryCounts[$category] = 0;
+            }
+            $categoryCounts[$category]++;
+        }
+        
+        // Build response
+        foreach ($categoryCounts as $category => $count) {
+            $catObj = new stdClass();
+            $catObj->name = $category;
+            $catObj->total = $count;
             $response[] = $catObj;
-            $stmt->close();
         }
     }
     
@@ -654,244 +718,182 @@ if(isset($_POST['entryCounter'])){
     exit();
 }
 
+
 if(isset($_POST['perCenterReport'])){
     $response = [];
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        
-        // Get all campuses
-        $campusList = ['Central Office', 'Roxas City Main', 'Dayao', 'Pontevedra', 'Pilar', 
-                      'Dumarao', 'Burias', 'Mambusao', 'Tapaz', 'Sigma'];
-        
+        $eventName = $_POST['eventType'];
         $centerName = $_POST['center'];
         $categoryName = $_POST['category'];
-        $eventType = $_POST['eventType'];
         
-        foreach ($campusList as $campus) {
-            $obj = new stdClass();
-            $obj->name = $campus;
-            $obj->total = 0;
+        // Check if student event
+        if (isStudentEvent($eventName)) {
+            // Student papers don't have center, so we count by campus
+            $allCampuses = ['Roxas City Main', 'Dayao', 'Pontevedra', 'Pilar', 'Dumarao', 'Burias', 'Mambusao', 'Tapaz', 'Sigma', 'Central Office'];
             
-            $query = "SELECT COUNT(*) as total FROM researchfile
-                LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-                WHERE endorsement.status = 'accepted'
-                AND researchfile.event = ?
-                AND researchfile.center = ?
-                AND researchfile.category = ?
-                AND researchfile.campus = ?";
-            
-            $statement = $con->prepare($query);
-            $statement->bind_param("ssss", $eventType, $centerName, $categoryName, $campus);
-            $statement->execute();
-            $result = $statement->get_result();
-            
-            if ($row = $result->fetch_assoc()) {
-                $obj->total = $row['total'] ?: 0;
+            foreach ($allCampuses as $campus) {
+                $obj = new stdClass();
+                $obj->name = $campus;
+                $obj->total = 0;
+                
+                $query = "SELECT COUNT(*) as total FROM student_research_papers
+                          WHERE event = ? AND category = ? AND campus = ? AND status = 'accepted'";
+                
+                $statement = $con->prepare($query);
+                $statement->bind_param("sss", $eventName, $categoryName, $campus);
+                $statement->execute();
+                $result = $statement->get_result();
+                
+                if ($row = $result->fetch_assoc()) {
+                    $obj->total = $row['total'] ?: 0;
+                }
+                
+                $response[] = $obj;
+                $statement->close();
             }
+        } else {
+            // Faculty papers have center
+            $allCampuses = ['Roxas City Main', 'Dayao', 'Pontevedra', 'Pilar', 'Dumarao', 'Burias', 'Mambusao', 'Tapaz', 'Sigma', 'Central Office'];
             
-            $response[] = $obj;
-            $statement->close();
+            foreach ($allCampuses as $campus) {
+                $obj = new stdClass();
+                $obj->name = $campus;
+                $obj->total = 0;
+                
+                $query = "SELECT COUNT(*) as total FROM researchfile
+                          LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
+                          WHERE endorsement.status = 'accepted'
+                          AND researchfile.event = ?
+                          AND researchfile.center = ?
+                          AND researchfile.category = ?
+                          AND researchfile.campus = ?";
+                
+                $statement = $con->prepare($query);
+                $statement->bind_param("ssss", $eventName, $centerName, $categoryName, $campus);
+                $statement->execute();
+                $result = $statement->get_result();
+                
+                if ($row = $result->fetch_assoc()) {
+                    $obj->total = $row['total'] ?: 0;
+                }
+                
+                $response[] = $obj;
+                $statement->close();
+            }
         }
     }
     
+    header('Content-Type: application/json');
     echo json_encode($response);
+    exit();
 }
 
 if(isset($_POST['perCampReport'])){
-
-    $response=[];
-
+    $response = [];
+    
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-
-        $camp= ['Central Office','Roxas City Main','Dayao','Pontevedra','Pilar','Dumarao','Burias','Mambusao','Tapaz','Sigma'];
-
-        foreach ($camp as $v){
-
-            $obj= new stdClass();
-
-            $obj->name=$v;
-
-            $obj->total='0';
-
-            $response[]=$obj;
-
+        $eventName = $_POST['eventType'];
+        $categoryName = $_POST['category'];
+        
+        $allCampuses = ['Central Office', 'Roxas City Main', 'Dayao', 'Pontevedra', 'Pilar', 'Dumarao', 'Burias', 'Mambusao', 'Tapaz', 'Sigma'];
+        
+        foreach ($allCampuses as $campus) {
+            $obj = new stdClass();
+            $obj->name = $campus;
+            $obj->total = '0';
+            $response[] = $obj;
         }
-
-        $query="SELECT researchfile.id, researchfile.category,researchfile.campus,COUNT(*) as total FROM researchfile
-
-        LEFT JOIN endorsement ON researchfile.endorsementid=endorsement.id
-
-        WHERE endorsement.status='accepted'AND researchfile.category=? AND researchfile.event=?
-
-        GROUP BY researchfile.campus ";
-
-        $statement=$con->prepare($query);
-
-        $statement->bind_param("ss",$_POST['category'],$_POST['eventType']);
-
-        $statement->execute();
-
-        $result=$statement->get_result();
-
-        while ($val=$result->fetch_assoc()){
-
-            for($x=0;$x<sizeof($response);$x++){
-
-                if($response[$x]->name===$val['campus']){
-
-                    $response[$x]->total=$val['total'];
-
+        
+        // Check if student event
+        if (isStudentEvent($eventName)) {
+            $query = "SELECT campus, COUNT(*) as total FROM student_research_papers
+                      WHERE event = ? AND category = ? AND status = 'accepted'
+                      GROUP BY campus";
+            
+            $statement = $con->prepare($query);
+            $statement->bind_param("ss", $eventName, $categoryName);
+            $statement->execute();
+            $result = $statement->get_result();
+            
+            while ($val = $result->fetch_assoc()) {
+                for ($x = 0; $x < sizeof($response); $x++) {
+                    if ($response[$x]->name === $val['campus']) {
+                        $response[$x]->total = $val['total'];
+                    }
+                }
+            }
+        } else {
+            $query = "SELECT researchfile.campus, COUNT(*) as total FROM researchfile
+                      LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
+                      WHERE endorsement.status = 'accepted' 
+                      AND researchfile.category = ? 
+                      AND researchfile.event = ?
+                      GROUP BY researchfile.campus";
+            
+            $statement = $con->prepare($query);
+            $statement->bind_param("ss", $categoryName, $eventName);
+            $statement->execute();
+            $result = $statement->get_result();
+            
+            while ($val = $result->fetch_assoc()) {
+                for ($x = 0; $x < sizeof($response); $x++) {
+                    if ($response[$x]->name === $val['campus']) {
+                        $response[$x]->total = $val['total'];
+                    }
                 }
             }
         }
     }
+    
+    header('Content-Type: application/json');
     echo json_encode($response);
+    exit();
 }
 
 if(isset($_POST['printSum'])) {
     $response = [];
     
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
+        $eventName = $_POST['eventName'];
         
-        // ============================================================
-        // STEP 1: Get ALL accepted documents with GLOBAL duplicate detection
-        // EXACTLY like entryCounter
-        // ============================================================
-        $query = "SELECT 
-                    researchfile.id,
-                    researchfile.center,
-                    researchfile.category,
-                    researchfile.campus,
-                    researchfile.title,
-                    researchfile.final_symposium_title,
-                    researchfile.author,
-                    researchfile.coauthor,
-                    researchfile.presenter,
-                    researchfile.status as research_status,
-                    endorsement.status as endorsement_status
-                  FROM researchfile
-                  LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-                  WHERE researchfile.event = ?
-                  AND (
-                      researchfile.status = 'accepted'
-                      OR (researchfile.status IS NULL AND endorsement.status = 'accepted')
-                  )";
+        // Get papers based on event type
+        $papers = getPapersForEvent($con, $eventName);
         
-        $statement = $con->prepare($query);
-        $statement->bind_param("s", $_POST['eventName']);
-        $statement->execute();
-        $result = $statement->get_result();
+        // Check if symposium event
+        $isSymposiumEvent = strpos(strtolower($eventName), 'symposium') !== false;
+        $isStudentEvent = isStudentEvent($eventName);
         
-        // ============================================================
-        // STEP 2: Process with GLOBAL duplicate detection (same as entryCounter)
-        // ============================================================
-        $globalProcessedDocs = [];
-        $uniqueDocs = [];
-        
-        while ($row = $result->fetch_assoc()) {
-            // Format authors
-            $authors = [];
-            if (!empty($row['author'])) {
-                $authors[] = $row['author'];
-            }
-            if (!empty($row['coauthor'])) {
-                $coauthors = json_decode($row['coauthor'], true);
-                if (is_array($coauthors)) {
-                    $authors = array_merge($authors, $coauthors);
-                }
-            }
-            
-            // Use final_symposium_title if exists
-            $displayTitle = !empty($row['final_symposium_title']) 
-                ? $row['final_symposium_title'] 
-                : $row['title'];
-            
-            // Check for GLOBAL duplicates using fuzzy matching (same as entryCounter)
-            $isDuplicate = false;
-            foreach ($globalProcessedDocs as $processed) {
-                // Check title similarity (80% threshold)
-                $titleSimilar = isSimilarString($displayTitle, $processed['title'], 80);
-                
-                // Check author similarity (70% threshold for authors)
-                $authorSimilar = areAuthorsSimilar($authors, $processed['authors'], 70);
-                
-                // If both title and authors are similar, it's a duplicate
-                if ($titleSimilar && $authorSimilar) {
-                    $isDuplicate = true;
-                    break;
-                }
-            }
-            
-            // Only store if not a duplicate
-            if (!$isDuplicate) {
-                $globalProcessedDocs[] = [
-                    'title' => $displayTitle,
-                    'authors' => $authors
-                ];
-                
-                // Store the unique document with its metadata
-                $uniqueDocs[] = [
-                    'category' => $row['category'],
-                    'campus' => $row['campus'] ?: 'Main Campus',
-                    'center' => $row['center'] ?: 'Unassigned',
-                    'title' => $displayTitle,
-                    'authors' => $authors
-                ];
-            }
-        }
-        
-        // ============================================================
-        // STEP 3: Count unique documents by category (like entryCounter)
-        // ============================================================
-        $categoryTotals = [];
-        foreach ($uniqueDocs as $doc) {
-            $category = $doc['category'];
-            if (!isset($categoryTotals[$category])) {
-                $categoryTotals[$category] = 0;
-            }
-            $categoryTotals[$category]++;
-        }
-        
-        // ============================================================
-        // STEP 4: Build response for display
-        // ============================================================
-        $isSymposiumEvent = strpos(strtolower($_POST['eventName']), 'symposium') !== false;
+        // Get all campuses
+        $allCampuses = ['Roxas City Main', 'Dayao', 'Pontevedra', 'Pilar', 'Dumarao', 'Burias', 'Mambusao', 'Tapaz', 'Sigma', 'Central Office'];
         
         if ($isSymposiumEvent) {
-            // ===== SYMPOSIUM VIEW - Group by Category =====
-            $allCampuses = ['Roxas City Main', 'Dayao', 'Pontevedra', 'Pilar', 'Dumarao', 'Burias', 'Mambusao', 'Tapaz', 'Sigma', 'Central Office'];
-            
-            // Get all unique categories from unique docs
-            $allCategories = array_keys($categoryTotals);
-            sort($allCategories);
-            
-            // Initialize data structure
             $categoryData = [];
-            foreach ($allCategories as $cat) {
-                $categoryData[$cat] = [
-                    'category' => $cat,
-                    'campuses' => []
-                ];
-                foreach ($allCampuses as $campus) {
-                    $categoryData[$cat]['campuses'][$campus] = 0;
-                }
-            }
+            $allCategories = [];
             
-            // Count by category and campus
-            foreach ($uniqueDocs as $doc) {
-                $category = $doc['category'];
-                $campus = $doc['campus'];
+            foreach ($papers as $paper) {
+                $category = $paper['category'] ?: 'Uncategorized';
+                $campus = $paper['campus'] ?: 'Main Campus';
                 
-                if (isset($categoryData[$category]['campuses'][$campus])) {
-                    $categoryData[$category]['campuses'][$campus]++;
+                if (!isset($allCategories[$category])) {
+                    $allCategories[$category] = true;
                 }
+                
+                if (!isset($categoryData[$category])) {
+                    $categoryData[$category] = [];
+                }
+                if (!isset($categoryData[$category][$campus])) {
+                    $categoryData[$category][$campus] = 0;
+                }
+                $categoryData[$category][$campus]++;
             }
             
-            // Format response
-            $allCategoriesSorted = array_keys($categoryData);
-            sort($allCategoriesSorted);
+            // Sort categories
+            ksort($allCategories);
+            $allCategories = array_keys($allCategories);
             
-            foreach ($allCategoriesSorted as $categoryName) {
+            // Build response
+            foreach ($allCategories as $categoryName) {
                 $centerObj = new stdClass();
                 $centerObj->center = $categoryName;
                 $centerObj->campuses = [];
@@ -903,7 +905,7 @@ if(isset($_POST['printSum'])) {
                     
                     $catObj = new stdClass();
                     $catObj->name = $categoryName;
-                    $catObj->total = $categoryData[$categoryName]['campuses'][$campusName];
+                    $catObj->total = $categoryData[$categoryName][$campusName] ?? 0;
                     $campusObj->categories[] = $catObj;
                     
                     $centerObj->campuses[] = $campusObj;
@@ -914,16 +916,17 @@ if(isset($_POST['printSum'])) {
             
         } else {
             // ===== IN-HOUSE VIEW - Group by Center =====
-            // Get all unique categories from unique docs
-            $allCategories = array_keys($categoryTotals);
-            sort($allCategories);
-            
             $centerData = [];
+            $allCategories = [];
             
-            foreach ($uniqueDocs as $doc) {
-                $centerName = $doc['center'] ?: 'Unassigned';
-                $campus = $doc['campus'];
-                $category = $doc['category'];
+            foreach ($papers as $paper) {
+                $centerName = $paper['center'] ?? 'Unassigned';
+                $campus = $paper['campus'] ?: 'Main Campus';
+                $category = $paper['category'] ?: 'Uncategorized';
+                
+                if (!isset($allCategories[$category])) {
+                    $allCategories[$category] = true;
+                }
                 
                 if (!isset($centerData[$centerName])) {
                     $centerData[$centerName] = [
@@ -937,16 +940,16 @@ if(isset($_POST['printSum'])) {
                         'campus' => $campus,
                         'categories' => []
                     ];
-                    
-                    foreach ($allCategories as $cat) {
-                        $centerData[$centerName]['campuses'][$campus]['categories'][$cat] = 0;
-                    }
                 }
                 
-                if (isset($centerData[$centerName]['campuses'][$campus]['categories'][$category])) {
-                    $centerData[$centerName]['campuses'][$campus]['categories'][$category]++;
+                if (!isset($centerData[$centerName]['campuses'][$campus]['categories'][$category])) {
+                    $centerData[$centerName]['campuses'][$campus]['categories'][$category] = 0;
                 }
+                $centerData[$centerName]['campuses'][$campus]['categories'][$category]++;
             }
+            
+            $allCategories = array_keys($allCategories);
+            sort($allCategories);
             
             // Format response
             foreach ($centerData as $centerName => $centerInfo) {
@@ -959,7 +962,8 @@ if(isset($_POST['printSum'])) {
                     $campusObj->campus = $campusName;
                     $campusObj->categories = [];
                     
-                    foreach ($campusInfo['categories'] as $catName => $count) {
+                    foreach ($allCategories as $catName) {
+                        $count = $campusInfo['categories'][$catName] ?? 0;
                         if ($count > 0) {
                             $catObj = new stdClass();
                             $catObj->name = $catName;
@@ -1020,117 +1024,28 @@ if(isset($_POST['printEntry'])){
             return;
         }
         
-        // ============================================================
-        // STEP 1: Get ALL accepted documents with GLOBAL duplicate detection
-        // ============================================================
-        $query = "SELECT 
-                    researchfile.id,
-                    researchfile.campus,
-                    researchfile.title,
-                    researchfile.final_symposium_title,
-                    researchfile.author,
-                    researchfile.coauthor,
-                    researchfile.presenter,
-                    researchfile.category,
-                    researchfile.status as research_status,
-                    endorsement.status as endorsement_status
-                  FROM researchfile
-                  LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-                  WHERE researchfile.event = ?
-                  AND (
-                      researchfile.status = 'accepted'
-                      OR (researchfile.status IS NULL AND endorsement.status = 'accepted')
-                  )
-                  ORDER BY researchfile.title ASC";
+        // Get papers based on event type
+        $papers = getPapersForEvent($con, $eventName);
         
-        $stmt = $con->prepare($query);
-        $stmt->bind_param("s", $eventName);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        // ============================================================
-        // STEP 2: Process with GLOBAL duplicate detection
-        // ============================================================
-        $globalProcessedDocs = [];
-        $uniqueDocs = [];
-        
-        while ($row = $result->fetch_assoc()) {
-            // Format authors
-            $authors = [];
-            if (!empty($row['author'])) {
-                $authors[] = $row['author'];
+        // Group by category
+        $groupedByCategory = [];
+        foreach ($papers as $paper) {
+            $category = $paper['category'] ?: 'Uncategorized';
+            if (!isset($groupedByCategory[$category])) {
+                $groupedByCategory[$category] = [];
             }
-            if (!empty($row['coauthor'])) {
-                $coauthors = json_decode($row['coauthor'], true);
-                if (is_array($coauthors)) {
-                    $authors = array_merge($authors, $coauthors);
-                }
-            }
-            
-            // Use final_symposium_title if exists
-            $displayTitle = !empty($row['final_symposium_title']) 
-                ? $row['final_symposium_title'] 
-                : $row['title'];
-            
-            // Check for GLOBAL duplicates
-            $isDuplicate = false;
-            foreach ($globalProcessedDocs as $processed) {
-                $titleSimilar = isSimilarString($displayTitle, $processed['title'], 80);
-                $authorSimilar = areAuthorsSimilar($authors, $processed['authors'], 70);
-                
-                if ($titleSimilar && $authorSimilar) {
-                    $isDuplicate = true;
-                    break;
-                }
-            }
-            
-            // Only store if not a duplicate
-            if (!$isDuplicate) {
-                $globalProcessedDocs[] = [
-                    'title' => $displayTitle,
-                    'authors' => $authors
-                ];
-                
-                // ============================================================
-                // FIXED: Only set presenter if it exists, otherwise leave as empty string
-                // ============================================================
-                $presenter = trim($row['presenter'] ?? '');
-                
-                $uniqueDocs[] = [
-                    'id' => $row['id'],
-                    'campus' => $row['campus'] ?: 'Main Campus',
-                    'title' => $displayTitle,
-                    'original_title' => $row['title'],
-                    'final_symposium_title' => $row['final_symposium_title'],
-                    'presenter' => $presenter, // Keep as empty string if not set
-                    'category' => $row['category'],
-                    'authors' => $authors
-                ];
-            }
+            $groupedByCategory[$category][] = $paper;
         }
         
-        // ============================================================
-        // STEP 3: Group unique documents by category
-        // ============================================================
+        // Build response
         $data = new stdClass();
         $data->event = $eventRow['name'];
         $data->event_id = $eventRow['id'];
         $data->categories = [];
         
-        // Group by category
-        $groupedByCategory = [];
-        foreach ($uniqueDocs as $doc) {
-            $category = $doc['category'];
-            if (!isset($groupedByCategory[$category])) {
-                $groupedByCategory[$category] = [];
-            }
-            $groupedByCategory[$category][] = $doc;
-        }
-        
         // Sort categories alphabetically
         ksort($groupedByCategory);
         
-        // Build response
         foreach ($groupedByCategory as $categoryName => $docs) {
             $cat = new stdClass();
             $cat->category = $categoryName;
@@ -1141,14 +1056,12 @@ if(isset($_POST['printEntry'])){
                 $resData->id = $doc['id'];
                 $resData->campus = $doc['campus'];
                 $resData->title = formatDocumentTitle($doc['title']);
-                $resData->original_title = $doc['original_title'];
-                $resData->final_symposium_title = $doc['final_symposium_title'];
-                // ============================================================
-                // FIXED: Pass presenter as is (empty string if not set)
-                // ============================================================
-                $resData->presenter = $doc['presenter'];
+                $resData->original_title = $doc['original_title'] ?? '';
+                $resData->final_symposium_title = $doc['final_symposium_title'] ?? '';
+                $resData->presenter = $doc['presenter'] ?? '';
                 $resData->category = $doc['category'];
                 $resData->authors = formatAuthors($doc['authors']);
+                $resData->paper_type = $doc['paper_type'] ?? 'faculty';
                 $cat->docs[] = $resData;
             }
             
@@ -1169,150 +1082,31 @@ if(isset($_POST['getCertificates'])) {
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
         $eventName = $_POST['eventName'];
         
-        // Get research files with accepted status for the selected event
-        $query = "SELECT 
-                    researchfile.id,
-                    researchfile.title,
-                    researchfile.final_symposium_title,
-                    researchfile.category,
-                    researchfile.presenter,
-                    researchfile.author,
-                    researchfile.coauthor
-                  FROM researchfile
-                  WHERE researchfile.status = 'accepted' 
-                    AND researchfile.event = ?
-                  ORDER BY researchfile.category, researchfile.title";
+        // Get papers based on event type
+        $papers = getPapersForEvent($con, $eventName);
         
-        $stmt = $con->prepare($query);
-        $stmt->bind_param("s", $eventName);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        // ============================================================
-        // STEP 1: Get all documents and their scores
-        // ============================================================
-        $allDocs = [];
-        $docScores = [];
-        
-        while ($row = $result->fetch_assoc()) {
-            // Format authors
-            $authors = [];
-            if (!empty($row['author'])) {
-                $authors[] = $row['author'];
-            }
-            if (!empty($row['coauthor'])) {
-                $coauthors = json_decode($row['coauthor'], true);
-                if (is_array($coauthors)) {
-                    $authors = array_merge($authors, $coauthors);
-                }
-            }
-            
-            // Use final_symposium_title if exists, otherwise use title
-            $displayTitle = !empty($row['final_symposium_title']) 
-                ? $row['final_symposium_title'] 
-                : $row['title'];
-            
-            // Clean title for better comparison (remove prefixes like "1. ", "2. ", etc.)
-            $cleanTitle = preg_replace('/^[\d]+\.\s*/', '', $displayTitle);
-            
-            // Get total score for this document
-            $scoreQuery = "SELECT SUM(score) as total_score 
-                          FROM score_board 
-                          WHERE doc_id = ?";
-            $scoreStmt = $con->prepare($scoreQuery);
-            $scoreStmt->bind_param("i", $row['id']);
-            $scoreStmt->execute();
-            $scoreResult = $scoreStmt->get_result();
-            $scoreRow = $scoreResult->fetch_assoc();
-            $totalScore = $scoreRow['total_score'] ?? 0;
-            $scoreStmt->close();
-            
-            $allDocs[] = [
-                'id' => $row['id'],
-                'title' => $displayTitle,
-                'clean_title' => $cleanTitle,
-                'original_title' => $row['title'],
-                'final_symposium_title' => $row['final_symposium_title'],
-                'category' => $row['category'],
-                'presenter' => $row['presenter'],
-                'authors' => $authors,
-                'total_score' => (int)$totalScore
-            ];
-            
-            $docScores[$row['id']] = (int)$totalScore;
-        }
-        
-        // ============================================================
-        // STEP 2: Deduplicate documents using fuzzy matching
-        // ============================================================
-        $uniqueDocs = [];
-        $usedIndices = [];
-        
-        for ($i = 0; $i < count($allDocs); $i++) {
-            if (in_array($i, $usedIndices)) {
-                continue;
-            }
-            
-            $bestIndex = $i;
-            $bestScore = $allDocs[$i]['total_score'];
-            $bestTitle = $allDocs[$i]['title'];
-            
-            // Check against all other documents
-            for ($j = $i + 1; $j < count($allDocs); $j++) {
-                if (in_array($j, $usedIndices)) {
-                    continue;
-                }
-                
-                $title1 = $allDocs[$i]['clean_title'];
-                $title2 = $allDocs[$j]['clean_title'];
-                
-                // Check if titles are similar
-                if (isSimilarString($title1, $title2, 85)) {
-                    $usedIndices[] = $j;
-                    
-                    // Check if this document has a higher score
-                    $currentScore = $allDocs[$j]['total_score'];
-                    if ($currentScore > $bestScore) {
-                        $bestScore = $currentScore;
-                        $bestIndex = $j;
-                        $bestTitle = $allDocs[$j]['title'];
-                    }
-                }
-            }
-            
-            // Keep the document with the highest score
-            $uniqueDocs[] = $allDocs[$bestIndex];
-            
-            error_log("Kept certificate document: ID={$allDocs[$bestIndex]['id']}, Title='$bestTitle', Score=$bestScore");
-        }
-        
-        // ============================================================
-        // STEP 3: Build certificate data from unique docs
-        // ============================================================
+        // Build certificate data
         $certificateData = [];
         
-        foreach ($uniqueDocs as $doc) {
+        foreach ($papers as $paper) {
             $certItem = new stdClass();
-            $certItem->id = $doc['id'];
-            $certItem->title = formatDocumentTitle($doc['title']);
-            $certItem->category = $doc['category'];
+            $certItem->id = $paper['id'];
+            $certItem->title = formatDocumentTitle($paper['title']);
+            $certItem->category = $paper['category'] ?: 'Uncategorized';
+            $certItem->presenter = formatName($paper['presenter'] ?: 'Not specified');
+            $certItem->paper_type = $paper['paper_type'] ?? 'faculty';
             
-            // Format presenter name
-            $certItem->presenter = formatName($doc['presenter'] ?: 'Not specified');
-            
-            // Combine author and coauthors
+            // Format researchers
             $researchers = [];
-            foreach ($doc['authors'] as $author) {
+            foreach ($paper['authors'] as $author) {
                 $researchers[] = formatName($author);
             }
-            
             $certItem->researchers = $researchers;
+            
             $certificateData[] = $certItem;
         }
         
-        // ============================================================
-        // STEP 4: Group by category
-        // ============================================================
+        // Group by category
         $groupedData = [];
         foreach ($certificateData as $item) {
             $category = $item->category;
@@ -1326,12 +1120,8 @@ if(isset($_POST['getCertificates'])) {
             'status' => 'success',
             'event' => $eventName,
             'data' => $groupedData,
-            'count' => count($certificateData),
-            'total_original' => count($allDocs),
-            'duplicates_removed' => count($allDocs) - count($certificateData)
+            'count' => count($certificateData)
         ];
-        
-        $stmt->close();
     } else {
         $response = [
             'status' => 'error',
