@@ -1,153 +1,106 @@
 import { $ } from "../../lib/lib.js";
 
 export const PrintResearch = ({ eventName, data, formData }) => {
-    const CM = 37.8; 
-
+    const CM = 37.8;
     const PAGE_HEIGHT_PX = 29.7 * CM;
     const TOP_PADDING_PX = 4 * CM;
     const BOTTOM_PADDING_PX = 4 * CM;
-    const CONTENT_AREA_PX = PAGE_HEIGHT_PX - 140;
-    const USABLE_HEIGHT = CONTENT_AREA_PX * 0.99;
+    const CONTENT_AREA_PX = PAGE_HEIGHT_PX - TOP_PADDING_PX - BOTTOM_PADDING_PX;
 
     const categoriesData = data?.length > 0 ? data[0].categories : [];
 
-    const estimateHeight = (element) => {
-        if (!element) return 0
-
-        const cls = element.att?.className || ''
-
-        if (cls.includes('summary-header')) {
-            // h1 (18pt≈24px) + h2 (14pt≈19px) + margins
-            return 24 + 5 + 19 + 15 + 40 + 20; // ~123px
-        }
-        if (cls.includes('center-header')) {
-            // h2 14pt ≈ 19px + padding + border + margins
-            return 19 + 10 + 15 + 10; // ~54px
-        }
-        if (cls.includes('category-section')) {
-            // Just the ol wrapper itself (children counted separately)
-            return 5 + 10; // ~15px (margins only, docs counted below)
-        }
-        if (cls.includes('document-item')) {
-            // Title line: 11pt≈15px * ~2 lines + presenter line: 10pt≈13px + margins
-            return (15 * 2 * 1.5) + 13 + 12; // ~70px average
-        }
-        if (cls.includes('documents-list')) {
-            return 5 + 10; // list margins only
-        }
-        if (cls.includes('center-section')) {
-            return 30; // section wrapper margin only
-        }
-
-        return 0; // unknown elements contribute 0 (children are counted separately)
-    }
-
-    const calculateContentHeight = (content) => {
-        if (!content) return 0;
-
-        if (Array.isArray(content)) {
-            return content.reduce((sum, item) => sum + calculateContentHeight(item), 0);
-        }
-
-        if (typeof content === 'object') {
-            let h = estimateHeight(content);
-            if (content.child) {
-                h += calculateContentHeight(content.child);
+    const measureTextHeight = (text, fontSize = 11, lineHeight = 1.5, maxWidth = 450) => {
+        if (!text) return 0;
+        
+        const charsPerLine = Math.floor(maxWidth / (fontSize * 0.35));
+        const words = text.split(' ');
+        let lines = 1;
+        let currentLineLength = 0;
+        
+        for (const word of words) {
+            const wordLength = word.length;
+            if (currentLineLength + wordLength + 1 > charsPerLine) {
+                lines++;
+                currentLineLength = wordLength;
+            } else {
+                currentLineLength += wordLength + 1;
             }
-            return h
+            if (wordLength > charsPerLine * 0.7) {
+                const extraLines = Math.floor(wordLength / charsPerLine);
+                lines += extraLines;
+            }
         }
+        
+        lines = Math.max(1, lines);
+        return lines * fontSize * lineHeight;
+    };
 
-        return 0
-    }
+    const measureElementHeight = (element) => {
+        if (!element) return 0;
+        
+        let totalHeight = 0;
+        const style = element.style || {};
+        
+        const marginTop = parseFloat(style.marginTop) || 0;
+        const marginBottom = parseFloat(style.marginBottom) || 0;
+        const paddingTop = parseFloat(style.paddingTop) || 0;
+        const paddingBottom = parseFloat(style.paddingBottom) || 0;
+        
+        totalHeight += marginTop + marginBottom + paddingTop + paddingBottom;
+        
+        if (element.text) {
+            const fontSize = parseFloat(style.fontSize) || 11;
+            const lineHeight = parseFloat(style.lineHeight) || 1.5;
+            const maxWidth = parseFloat(style.maxWidth) || 450;
+            totalHeight += measureTextHeight(element.text, fontSize, lineHeight, maxWidth);
+        }
+        
+        if (element.child && Array.isArray(element.child)) {
+            for (const child of element.child) {
+                if (child) {
+                    totalHeight += measureElementHeight(child);
+                }
+            }
+        }
+        
+        return totalHeight;
+    };
 
-    const renderDocument = (doc, docNumber) => {
-        const authorsText = doc.authors?.length > 0
-            ? doc.authors.join(', ')
-            : 'No author specified'
+    // ─── Format scientific names ──────────────────────────────────────────────
+    const formatScientificNames = (text) => {
+        if (!text || !text.trim()) return text;
+        
+        const scientificNamePattern = /\b([A-Z][a-z]{2,}\s+[a-z]{3,}\s+[A-Z]?[a-z]{3,})|\b([a-z]+\s+[A-Z][a-z]+\s+[A-Z]?[a-z]+)/g;
+        const parentheticalPattern = /\(([^)]+)\)/g;
+        
+        let result = text;
 
-        const hasPresenter = doc.presenter && 
-            doc.presenter.trim() !== '' && 
-            doc.presenter !== 'Not specified' && 
-            doc.presenter !== 'Not Specified' &&
-            doc.presenter.toLowerCase() !== 'not specified';
+        result = result.replace(parentheticalPattern, (match, content) => {
+            if (scientificNamePattern.test(content)) {
+                scientificNamePattern.lastIndex = 0;
+                const formatted = content.replace(scientificNamePattern, (match) => {
+                    return `<i>${match.trim()}</i>`;
+                });
+                return `(${formatted})`;
+            }
+            scientificNamePattern.lastIndex = 0;
+            return match;
+        });
+        
+        scientificNamePattern.lastIndex = 0;
+        result = result.replace(scientificNamePattern, (match) => {
+            if (result.includes(`<i>${match}</i>`)) return match;
+            return `<i>${match.trim()}</i>`;
+        });
+        
+        return result;
+    };
 
-        return $({
-            tag: 'li',
-            att: { className: 'document-item', value: String(docNumber) },
-            style: {
-                marginBottom: '12px',
-                fontSize: '11pt',
-                lineHeight: '1.5',
-                listStyleType: 'decimal',
-                textAlign: 'justify'
-            },
-            child: [
-                $({
-                    tag: 'div',
-                    att: { className: 'doc-title-line' },
-                    style: { fontWeight: 'normal', marginBottom: '2px' },
-                    child: [
-                        $({ tag: 'span', text: `${doc.title} by `, style: { fontWeight: 'normal' } }),
-                        $({ tag: 'span', text: authorsText, style: { fontWeight: 'normal', fontStyle: 'italic' } }),
-                        $({ tag: 'span', text: ` - ${doc.category}`, style: { fontWeight: 'normal' } }),
-                    ]
-                }),
-                hasPresenter ? $({
-                    tag: 'div',
-                    att: { className: 'doc-presenter-line' },
-                    style: {
-                        marginLeft: '20px',
-                        fontSize: '10pt',
-                        color: '#555',
-                        fontStyle: 'italic'
-                    },
-                    text: `Presenter: ${doc.presenter}`
-                }) : null
-            ].filter(Boolean)
-        })
-    }
-
-    const renderCategoryGroup = (category, allDocs) => {
-        const docs = allDocs.filter(doc => doc.category === category);
-        if (!docs.length) return null;
-
-        return $({
-            tag: 'div',
-            att: { className: 'category-section' },
-            style: {
-                marginBottom: '30px',
-                position: 'relative',
-                zIndex: 2
-            },
-            child: [
-                $({
-                    tag: 'h2',
-                    att: { className: 'category-header' },
-                    style: {
-                        fontSize: '14pt',
-                        fontWeight: 'bold',
-                        margin: '15px 0 10px 0',
-                        padding: '5px 0',
-                        borderBottom: '2px solid #000',
-                        color: '#000',
-                        textTransform: 'uppercase'
-                    },
-                    text: category
-                }),
-                $({
-                    tag: 'ol',
-                    att: { className: 'documents-list', start: '1' },
-                    style: { margin: '5px 0 10px 20px', paddingLeft: '20px' },
-                    child: docs.map((doc, index) => renderDocument(doc, index + 1))
-                })
-            ]
-        })
-    }
-
-    const buildFlatItems = () => {
-        const items = []
-
+    // ─── Build content with accurate height tracking ────────────────────────
+    const buildContentItems = () => {
+        const items = [];
         const allDocs = [];
+
         categoriesData.forEach(category => {
             category.docs.forEach(doc => {
                 allDocs.push({
@@ -167,559 +120,663 @@ export const PrintResearch = ({ eventName, data, formData }) => {
 
         const sortedCategories = Object.keys(categoryGroups).sort();
 
-        // Add combined header+footer (Page 1)
-        const combinedHeaderFooter = $({
-            tag: 'div',
-            att: { className: 'combined-header-footer' },
-            style: {
-                marginBottom: '30px',
-                WebkitPrintColorAdjust: 'exact',
-                printColorAdjust: 'exact'
-            },
+        // ─── Page 1: Header + Letter Body ──────────────────────────────────
+        const currentDate = new Date().toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        });
+
+        const pptDeadline = formData?.pptDeadline;
+
+        const headerItems = [
+            { type: 'title', text: 'OFFICE OF THE UNIVERSITY PRESIDENT', fontSize: 18, marginBottom: 5 },
+            { type: 'spacer', height: 20 },
+            { type: 'date', text: currentDate, fontSize: 12, marginBottom: 5 },
+            { type: 'spacer', height: 20 },
+            { type: 'subtitle', text: 'CAMPUS ADMINISTRATORS', fontSize: 12, bold: true, marginBottom: 5 },
+            { type: 'subtitle', text: 'SATELLITE COLLEGE DIRECTORS', fontSize: 12, bold: true, marginBottom: 5 },
+            { type: 'subtitle', text: 'RESEARCH CENTER DIRECTORS', fontSize: 12, bold: true, marginBottom: 5 },
+            { type: 'subtitle', text: 'This University', fontSize: 12, marginBottom: 5 },
+            { type: 'spacer', height: 20 },
+            { type: 'attention', text: 'Attention: Research Chairs', fontSize: 12, marginBottom: 5 },
+            { type: 'attention', text: 'Extension Chairs', fontSize: 12, marginBottom: 5 },
+            { type: 'spacer', height: 20 },
+            { type: 'greeting', text: 'Dear Sir/Ma\'am:', fontSize: 12, bold: true, marginBottom: 5 },
+            { type: 'spacer', height: 20 },
+            { type: 'greeting', text: 'Greetings!', fontSize: 12, marginBottom: 5 },
+            { type: 'spacer', height: 20 },
+        ];
+
+        const letterBody = `We are pleased to inform you that the following research and extension proposals were accepted for presentation in the `;
+        const letterBodyEnd = ` which will be held on `;
+        const letterBodyEnd2 = ` at `;
+        const letterBodyEnd3 = `.`;
+
+        headerItems.push({
+            type: 'text',
+            fontSize: 12,
+            lineHeight: 1.5,
+            marginBottom: 15,
             child: [
-                $({
-                    tag: 'h1',
-                    text: 'OFFICE OF THE UNIVERSITY PRESIDENT',
-                    style: {
-                        fontSize: '18pt',
-                        fontWeight: 'normal',
-                        margin: '0 0 5px 0',
-                        color: '#43A5BE',
-                        textAlign: 'center',
-                        WebkitPrintColorAdjust: 'exact',
-                        printColorAdjust: 'exact'
-                    },
-                    att: {
-                        style: 'color: #43A5BE !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;'
-                    }
-                }),
-                $({ tag: 'div', style: { height: '20px' } }),
-                $({
-                    tag: 'h2',
-                    text: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-                    style: { fontSize: '12pt', fontWeight: 'normal', margin: '0 0 5px 0', color: '#000' }
-                }),
-                $({ tag: 'div', style: { height: '20px' } }),
-                $({
-                    tag: 'h2', text: 'CAMPUS ADMINISTRATORS',
-                    style: { fontSize: '12pt', fontWeight: 'bold', margin: '0 0 5px 0', color: '#000' }
-                }),
-                $({
-                    tag: 'h2', text: 'SATELLITE COLLEGE DIRECTORS',
-                    style: { fontSize: '12pt', fontWeight: 'bold', margin: '0 0 5px 0', color: '#000' }
-                }),
-                $({
-                    tag: 'h2', text: 'RESEARCH CENTER DIRECTORS',
-                    style: { fontSize: '12pt', fontWeight: 'bold', margin: '0 0 5px 0', color: '#000' }
-                }),
-                $({
-                    tag: 'h2', text: 'This University',
-                    style: { fontSize: '12pt', fontWeight: 'normal', margin: '0 0 5px 0', color: '#000' }
-                }),
-                $({ tag: 'div', style: { height: '20px' } }),
-                $({
-                    tag: 'div',
-                    style: { fontSize: '12pt', margin: '0 0 5px 0', color: '#000', display: 'flex' },
-                    child: [
-                        $({ tag: 'span', text: '           ', style: { width: '95px' } }),
-                        $({ tag: 'span', text: 'Attention: ', style: { fontWeight: 'normal', width: '70px' } }),
-                        $({ tag: 'span', text: 'Research Chairs', style: { fontWeight: 'bold' } })
-                    ]
-                }),
-                $({
-                    tag: 'div',
-                    style: { fontSize: '12pt', margin: '0 0 5px 0', color: '#000', display: 'flex' },
-                    child: [
-                        $({ tag: 'span', text: '           ', style: { width: '70px' } }),
-                        $({ tag: 'span', text: '           ', style: { width: '95px' } }),
-                        $({ tag: 'span', text: 'Extension Chairs', style: { fontWeight: 'bold' } })
-                    ]
-                }),
-                $({ tag: 'div', style: { height: '20px' } }),
-                $({
-                    tag: 'div',
-                    style: { fontSize: '12pt', margin: '0 0 5px 0', color: '#000' },
-                    child: [
-                        $({ tag: 'span', text: 'Dear ', style: { fontWeight: 'normal' } }),
-                        $({ tag: 'span', text: 'Sir/Ma\'am:', style: { fontWeight: 'bold' } })
-                    ]
-                }),
-                $({ tag: 'div', style: { height: '20px' } }),
-                $({
-                    tag: 'h4',
-                    text: 'Greetings!',
-                    style: { fontSize: '12pt', fontWeight: 'normal', margin: '0 0 5px 0', color: '#000' }
-                }),
-                $({ tag: 'div', style: { height: '20px' } }),
-                $({
-                    tag: 'p',
-                    style: {
-                        fontSize: '12pt',
-                        fontWeight: 'normal',
-                        margin: '0 0 15px 0',
-                        color: '#333',
-                        lineHeight: '1.5',
-                        textAlign: 'justify'
-                    },
-                    child: [
-                        $({ tag: 'span', text: 'We are pleased to inform you that the following research and extension proposals were accepted for presentation in the ', style: { fontWeight: 'normal' } }),
-                        $({ tag: 'span', text: eventName, style: { fontWeight: 'bold' } }),
-                        $({ tag: 'span', text: ' which will be held on ', style: { fontWeight: 'normal' } }),
-                        $({ tag: 'span', text: formData?.dateToBeHeld, style: { fontWeight: 'bold' } }),
-                        $({ tag: 'span', text: ' at ', style: { fontWeight: 'normal' } }),
-                        $({ tag: 'span', text: formData?.venue, style: { fontWeight: 'bold' } }),
-                        $({ tag: 'span', text: '.', style: { fontWeight: 'normal' } })
-                    ]
-                }),
-                $({ tag: 'div', style: { height: '15px' } }),
-                // FOOTER CONTENT
-                $({
-                    tag: 'div',
-                    style: {
-                        width: '100%',
-                        WebkitPrintColorAdjust: 'exact',
-                        printColorAdjust: 'exact'
-                    },
-                    child: [
-                        $({
-                            tag: 'p',
-                            style: { fontSize: '12pt', lineHeight: '1.5', marginBottom: '20px' },
-                            child: [
-                                $({ tag: 'span', text: `Kindly advise the proposal presenters to submit their PowerPoint presentation on or before ${formData?.pptDeadline} via the Google Drive link ` }),
-                                $({
-                                    tag: 'a',
-                                    text: formData?.driveLink,
-                                    att: {
-                                        href: formData?.driveLink,
-                                        target: '_blank',
-                                        style: 'color: #87CEEB !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;'
-                                    },
-                                    style: {
-                                        color: '#87CEEB',
-                                        WebkitPrintColorAdjust: 'exact',
-                                        printColorAdjust: 'exact'
-                                    }
-                                }),
-                                $({ tag: 'span', text: ' and bring four copies of their manuscript during the event.' })
-                            ]
-                        }),
-                        $({ tag: 'p', style: { fontSize: '12pt', lineHeight: '1.5', marginBottom: '20px' }, text: 'Thank you.' }),
-                        $({ tag: 'p', style: { fontSize: '12pt', lineHeight: '1.5', marginBottom: '30px' }, text: 'Very truly yours,' }),
-                        $({
-                            tag: 'div',
-                            style: {
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                marginBottom: '30px',
-                                width: '100%',
-                                WebkitPrintColorAdjust: 'exact',
-                                printColorAdjust: 'exact'
-                            },
-                            child: [
-                                $({
-                                    tag: 'div',
-                                    style: {
-                                        textAlign: 'left',
-                                        width: '45%',
-                                        WebkitPrintColorAdjust: 'exact',
-                                        printColorAdjust: 'exact'
-                                    },
-                                    child: [
-                                        $({ tag: 'p', style: { fontSize: '12pt', fontWeight: 'bold', marginBottom: '5px' }, text: 'STEPHANIE S. PIMENTEL, PhD' }),
-                                        $({ tag: 'p', style: { fontSize: '11pt', marginTop: '0' }, text: 'University Research Director' })
-                                    ]
-                                }),
-                                $({
-                                    tag: 'div',
-                                    style: {
-                                        width: '45%',
-                                        marginLeft: '5px',
-                                        WebkitPrintColorAdjust: 'exact',
-                                        printColorAdjust: 'exact'
-                                    },
-                                    child: [
-                                        $({ tag: 'p', style: { fontSize: '12pt', fontWeight: 'bold', marginBottom: '5px' }, text: 'FRENCH A. DAMPOG, MBA' }),
-                                        $({ tag: 'p', style: { fontSize: '11pt', marginTop: '0' }, text: 'University IPMO Director' })
-                                    ]
-                                })
-                            ]
-                        })
-                    ]
-                })
+                { tag: 'span', text: letterBody, style: { fontWeight: 'normal' } },
+                { tag: 'span', text: eventName, style: { fontWeight: 'bold' } },
+                { tag: 'span', text: letterBodyEnd, style: { fontWeight: 'normal' } },
+                { tag: 'span', text: formData?.dateToBeHeld, style: { fontWeight: 'bold' } },
+                { tag: 'span', text: letterBodyEnd2, style: { fontWeight: 'normal' } },
+                { tag: 'span', text: formData?.venue, style: { fontWeight: 'bold' } },
+                { tag: 'span', text: letterBodyEnd3, style: { fontWeight: 'normal' } }
             ]
         });
 
-        items.push({
-            type: 'combined-header-footer',
-            height: 1100,
-            element: combinedHeaderFooter
-        });
+        headerItems.push({ type: 'spacer', height: 15 });
 
-        // Add page break
-        items.push({
-            type: 'page-break',
-            height: 0,
-            element: $({
-                tag: 'div',
-                style: {
-                    pageBreakBefore: 'always',
-                    height: '0',
-                    margin: '0',
-                    padding: '0'
-                }
-            })
-        });
+        // PPT deadline for FTF
+        const pptTextStart = `Kindly advise the proposal presenters to submit their PowerPoint presentation on or before `;
+        const pptTextMiddle = ` via the Google Drive link `;
+        const pptTextEnd = ` and bring four copies of their manuscript during the event.`;
 
-        // Add Noted section (Page 2)
-        items.push({
-            type: 'noted-section',
-            height: 450,
-            element: $({
-                tag: 'div',
-                att: { className: 'noted-section' },
-                style: {
-                    marginTop: '30px',
-                    width: '100%',
-                    pageBreakBefore: 'always',
-                    WebkitPrintColorAdjust: 'exact',
-                    printColorAdjust: 'exact'
+        headerItems.push({
+            type: 'text',
+            fontSize: 12,
+            lineHeight: 1.5,
+            marginBottom: 20,
+            child: [
+                { tag: 'span', text: pptTextStart, style: { fontWeight: 'normal' } },
+                { tag: 'span', text: pptDeadline, style: { fontWeight: 'bold' } },
+                { tag: 'span', text: pptTextMiddle, style: { fontWeight: 'normal' } },
+                { 
+                    tag: 'span', 
+                    text: formData?.driveLink, 
+                    style: { 
+                        fontWeight: 'normal',
+                        textDecoration: 'underline',
+                        color: '#87CEEB'
+                    } 
                 },
-                child: [
-                    $({
-                        tag: 'div',
-                        style: {
-                            textAlign: 'left',
-                            marginBottom: '25px',
-                            WebkitPrintColorAdjust: 'exact',
-                            printColorAdjust: 'exact'
-                        },
-                        child: [
-                            $({ tag: 'p', style: { fontSize: '12pt', fontWeight: 'bold', marginBottom: '5px' }, text: 'JOCELYN S. LEGASPI, MFT' }),
-                            $({ tag: 'p', style: { fontSize: '11pt', marginTop: '0' }, text: 'University Extension Director' })
-                        ]
-                    }),
-                    $({ tag: 'p', style: { fontSize: '12pt', marginBottom: '30px', marginTop: '20px' }, text: 'Noted:' }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            marginBottom: '30px',
-                            WebkitPrintColorAdjust: 'exact',
-                            printColorAdjust: 'exact'
-                        },
-                        child: [
-                            $({ tag: 'p', style: { fontSize: '12pt', fontWeight: 'bold', marginBottom: '5px' }, text: 'LEO ANDREW B. BICLAR, PhD' }),
-                            $({ tag: 'p', style: { fontSize: '11pt', marginTop: '0' }, text: 'VP for RDE' })
-                        ]
-                    }),
-                    $({
-                        tag: 'div',
-                        style: {
-                            marginBottom: '20px',
-                            WebkitPrintColorAdjust: 'exact',
-                            printColorAdjust: 'exact'
-                        },
-                        child: [
-                            $({ tag: 'p', style: { fontSize: '12pt', fontWeight: 'bold', marginBottom: '5px' }, text: 'EFREN L. LINAN, PhD' }),
-                            $({ tag: 'p', style: { fontSize: '11pt', marginTop: '0' }, text: 'SUC President III' })
-                        ]
-                    }),
-                    $({ tag: 'p', style: { fontSize: '11pt', fontStyle: 'italic', marginTop: '20px' }, text: 'Cc: RDE' })
-                ]
-            })
+                { tag: 'span', text: pptTextEnd, style: { fontWeight: 'normal' } }
+            ]
         });
 
-        // Add page break before categories
+        headerItems.push({
+            type: 'text',
+            text: 'Thank you.',
+            fontSize: 12,
+            lineHeight: 1.5,
+            marginBottom: 30
+        });
+
+        headerItems.push({
+            type: 'text',
+            text: 'Very truly yours,',
+            fontSize: 12,
+            lineHeight: 1.5,
+            marginBottom: 30
+        });
+
         items.push({
-            type: 'page-break',
-            height: 0,
-            element: $({
-                tag: 'div',
-                style: {
-                    pageBreakBefore: 'always',
-                    height: '0',
-                    margin: '0',
-                    padding: '0'
-                }
-            })
+            type: 'page-content',
+            pageNumber: 1,
+            content: headerItems
         });
 
-        // Now add categories with their documents (Page 3+)
-        let docCounter = 1;
-        sortedCategories.forEach(category => {
-            const docs = categoryGroups[category];
-            if (!docs.length) return;
+        // ─── Page 2: Noted Section ──────────────────────────────────────────
+        const notedItems = [
+            { type: 'spacer', height: 40 },
+            {
+                type: 'signature-row',
+                left: {
+                    name: 'STEPHANIE S. PIMENTEL, PhD',
+                    title: 'University Research Director'
+                },
+                right: {
+                    name: 'FRENCH A. DAMPOG, MBA',
+                    title: 'University IPMO Director'
+                },
+                fontSize: 12,
+                marginBottom: 40
+            },
+            {
+                type: 'signature',
+                name: 'JOCELYN S. LEGASPI, MFT',
+                title: 'University Extension Director',
+                fontSize: 12,
+                marginBottom: 40
+            },
+            { type: 'text', text: 'Noted:', fontSize: 12, marginBottom: 30 },
+            {
+                type: 'signature',
+                name: 'LEO ANDREW B. BICLAR, PhD',
+                title: 'VP for RDE',
+                fontSize: 12,
+                marginBottom: 30
+            },
+            {
+                type: 'signature',
+                name: 'EFREN L. LINAN, PhD',
+                title: 'SUC President III',
+                fontSize: 12,
+                marginBottom: 20
+            },
+            { type: 'text', text: 'Cc: RDE', fontSize: 11, italic: true, marginBottom: 10 }
+        ];
 
-            // Category header
-            items.push({
+        items.push({
+            type: 'page-content',
+            pageNumber: 2,
+            content: notedItems
+        });
+
+        // ─── Pages 3+: Categories and Documents ────────────────────────────
+        const allDocItems = [];
+        let docCounter = 1;
+
+        sortedCategories.forEach(category => {
+            const docs = categoryGroups[category] || [];
+            if (docs.length === 0) return;
+
+            allDocItems.push({
                 type: 'category-header',
-                categoryName: category,
-                height: 54,
-                element: $({
-                    tag: 'h2',
-                    att: { className: 'category-header' },
-                    style: {
-                        fontSize: '14pt',
-                        fontWeight: 'bold',
-                        margin: '15px 0 10px 0',
-                        padding: '5px 0',
-                        borderBottom: '2px solid #000',
-                        color: '#000',
-                        textTransform: 'uppercase',
-                        WebkitPrintColorAdjust: 'exact',
-                        printColorAdjust: 'exact'
-                    },
-                    text: category
-                })
+                text: category,
+                fontSize: 14,
+                bold: true,
+                marginTop: 10,
+                marginBottom: 8,
+                borderBottom: true
             });
 
-            // Documents for this category
-            docs.forEach((doc) => {
+            docs.forEach(doc => {
                 const authorsText = doc.authors?.length > 0
                     ? doc.authors.join(', ')
                     : 'No author specified';
 
-                // Check if presenter exists
-                const hasPresenter = doc.presenter && 
-                    doc.presenter.trim() !== '' && 
-                    doc.presenter !== 'Not specified' && 
+                const hasPresenter = doc.presenter &&
+                    doc.presenter.trim() !== '' &&
+                    doc.presenter !== 'Not specified' &&
                     doc.presenter !== 'Not Specified' &&
                     doc.presenter.toLowerCase() !== 'not specified';
 
-                // Height calculation
-                const CHARS_PER_LINE = 95;
-                const BASE_LINE_HEIGHT = 22;
-                const PRESENTER_LINE_PX = hasPresenter ? 18 : 0; // Only add height if presenter exists
-                const MARGIN_PX = 10;
+                const docText = `${doc.title} by ${authorsText} - ${doc.category}`;
+                const presenterText = hasPresenter ? `Presenter: ${doc.presenter}` : null;
 
-                const titleLineText = `${doc.title} by ${authorsText} - ${doc.category}`;
-                const words = titleLineText.split(' ');
-                let lineCount = 1;
-                let currentLineLength = 0;
-
-                for (const word of words) {
-                    const wordLength = word.length;
-                    if (currentLineLength + wordLength + 1 > CHARS_PER_LINE) {
-                        lineCount++;
-                        currentLineLength = wordLength;
-                    } else {
-                        currentLineLength += wordLength + 1;
-                    }
-                    if (wordLength > CHARS_PER_LINE * 0.8) {
-                        const extraLines = Math.floor(wordLength / CHARS_PER_LINE);
-                        lineCount += extraLines;
-                    }
-                }
-
-                const hasScientificName = /[A-Z][a-z]+\s+[a-z]+|\([A-Z][a-z]+\.\)|[a-z]+\.?\s+[a-z]+/i.test(doc.title);
-                let specialBuffer = 0;
-                if (hasScientificName) specialBuffer += 8;
-                if (doc.authors?.length > 5) specialBuffer += 5;
-
-                lineCount = Math.max(2, Math.min(5, lineCount));
-                const docHeight = (lineCount * BASE_LINE_HEIGHT) + PRESENTER_LINE_PX + MARGIN_PX + specialBuffer;
-                const finalHeight = Math.min(Math.max(docHeight, 90), 180);
-
-                items.push({
+                allDocItems.push({
                     type: 'document',
-                    categoryName: doc.category,
-                    docNumber: docCounter,
-                    height: finalHeight,
-                    element: $({
-                        tag: 'li',
-                        att: {
-                            className: 'document-item',
-                            value: String(docCounter)
-                        },
-                        style: {
-                            marginBottom: '8px',
-                            fontSize: '11pt',
-                            lineHeight: '1.35',
-                            listStyleType: 'decimal',
-                            WebkitPrintColorAdjust: 'exact',
-                            printColorAdjust: 'exact'
-                        },
-                        child: [
-                            $({
-                                tag: 'div',
-                                att: { className: 'doc-title-line' },
-                                style: {
-                                    fontWeight: 'normal',
-                                    marginBottom: '1px',
-                                    WebkitPrintColorAdjust: 'exact',
-                                    printColorAdjust: 'exact'
-                                },
-                                child: [
-                                    $({ tag: 'span', html: `${doc.title} by `, style: { fontWeight: 'normal' } }),
-                                    $({ tag: 'span', text: authorsText, style: { fontWeight: 'normal', fontStyle: 'italic' } }),
-                                    $({ tag: 'span', text: ` - ${doc.category}`, style: { fontWeight: 'normal' } }),
-                                ]
-                            }),
-
-                            hasPresenter ? $({
-                                tag: 'div',
-                                att: { className: 'doc-presenter-line' },
-                                style: {
-                                    marginLeft: '20px',
-                                    fontSize: '10pt',
-                                    color: '#555',
-                                    fontStyle: 'italic',
-                                    marginTop: '0px',
-                                    WebkitPrintColorAdjust: 'exact',
-                                    printColorAdjust: 'exact'
-                                },
-                                text: `Presenter: ${doc.presenter}`
-                            }) : null
-                        ].filter(Boolean)
-                    })
+                    number: docCounter,
+                    text: docText,
+                    presenter: presenterText,
+                    fontSize: 11,
+                    lineHeight: 1.5,
+                    marginBottom: 12,
+                    indent: 20
                 });
+
                 docCounter++;
+            });
+
+            allDocItems.push({
+                type: 'spacer',
+                height: 5
+            });
+        });
+
+        const documentPages = paginateDocumentItems(allDocItems);
+
+        documentPages.forEach((pageItems, index) => {
+            items.push({
+                type: 'page-content',
+                pageNumber: 3 + index,
+                content: pageItems,
+                isDocumentPage: true
             });
         });
 
         return items;
-    }
+    };
 
-    // ─── Pagination ───────────────────────────────────────────────────────────
-    const paginateItems = (flatItems) => {
-        const pages = []
-        let current = []
-        let usedHeight = 0
-        const flush = () => {
-            if (current.length) {
-                pages.push([...current])
-                current = []
-                usedHeight = 0
-            }
-        }
-        for (let i = 0; i < flatItems.length; i++) {
-            const item = flatItems[i]
-            const pairedHeight = (item.type === 'center-header' && i + 1 < flatItems.length)
-                ? item.height + flatItems[i + 1].height
-                : item.height
-            if (usedHeight + pairedHeight > USABLE_HEIGHT && current.length > 0) {
-                flush()
-            }
-            current.push(item)
-            usedHeight += item.height
-        }
-        flush()
-        return pages
-    }
+    // ─── Paginate document items ──────────────────────────────────────────────
+    const paginateDocumentItems = (allItems) => {
+        const pages = [];
+        let currentPage = [];
+        let usedHeight = 0;
 
-    const buildPageChildren = (flatItems) => {
-        const children = []
-        let i = 0
-        while (i < flatItems.length) {
-            const item = flatItems[i]
+        const MAX_HEIGHT = CONTENT_AREA_PX * 0.82;
 
-            if (item.type === 'page-break') {
-                i++
-                continue
-            }
+        const calculateItemHeight = (item) => {
+            switch (item.type) {
+                case 'category-header':
+                    return 30;
+                case 'document': {
+                    const fontSize = item.fontSize;
+                    const lineHeight = item.lineHeight;
+                    const maxWidth = 450;
 
-            if (item.type === 'combined-header-footer' || 
-                item.type === 'noted-section' || 
-                item.type === 'title' || 
-                item.type === 'footer' || 
-                item.type === 'spacer') {
-                children.push(item.element)
-                i++
-                continue
-            }
+                    const textHeight = measureTextHeight(item.text, fontSize, lineHeight, maxWidth);
+                    let totalHeight = textHeight + (item.marginBottom || 12);
 
-            if (item.type === 'category-header') {
-                const headerEl = item.element
-                const docElements = []
-                let firstDocNumber = 1
-                let j = i + 1
-                while (j < flatItems.length && flatItems[j].type === 'document') {
-                    if (docElements.length === 0) {
-                        firstDocNumber = flatItems[j].docNumber
+                    if (item.presenter) {
+                        const presenterHeight = measureTextHeight(item.presenter, fontSize * 0.9, lineHeight, maxWidth - 30);
+                        totalHeight += presenterHeight + 4;
                     }
-                    docElements.push(flatItems[j].element)
-                    j++
+
+                    return Math.max(totalHeight, 30);
                 }
-                if (docElements.length > 0) {
-                    children.push($({
-                        tag: 'div',
-                        att: { className: 'category-section' },
+                case 'spacer':
+                    return item.height || 5;
+                default:
+                    return 20;
+            }
+        };
+
+        for (let i = 0; i < allItems.length; i++) {
+            const item = allItems[i];
+            const itemHeight = calculateItemHeight(item);
+
+            const wouldExceed = usedHeight + itemHeight > MAX_HEIGHT;
+
+            if (wouldExceed && currentPage.length > 0) {
+                if (item.type === 'category-header') {
+                    let hasDocsAfter = false;
+                    let j = i + 1;
+                    while (j < allItems.length) {
+                        if (allItems[j].type === 'document') {
+                            hasDocsAfter = true;
+                            break;
+                        }
+                        if (allItems[j].type === 'category-header') {
+                            break;
+                        }
+                        j++;
+                    }
+
+                    if (!hasDocsAfter) {
+                        currentPage.push(item);
+                        usedHeight += itemHeight;
+                        continue;
+                    }
+                }
+
+                pages.push([...currentPage]);
+                currentPage = [];
+                usedHeight = 0;
+            }
+
+            currentPage.push(item);
+            usedHeight += itemHeight;
+        }
+
+        if (currentPage.length > 0) {
+            pages.push([...currentPage]);
+        }
+
+        return pages;
+    };
+
+    // ─── Render content items ──────────────────────────────────────────────────
+    const renderContentItems = (items) => {
+        const elements = [];
+
+        for (const item of items) {
+            switch (item.type) {
+                case 'title':
+                    elements.push($({
+                        tag: 'h1',
+                        text: item.text,
                         style: {
-                            marginBottom: '30px',
-                            position: 'relative',
-                            zIndex: 2,
+                            fontSize: `${item.fontSize}pt`,
+                            fontWeight: 'normal',
+                            margin: `0 0 ${item.marginBottom || 5}px 0`,
+                            color: '#43A5BE',
+                            textAlign: 'center',
+                            WebkitPrintColorAdjust: 'exact',
+                            printColorAdjust: 'exact'
+                        }
+                    }));
+                    break;
+
+                case 'date':
+                case 'subtitle':
+                    elements.push($({
+                        tag: item.type === 'subtitle' ? 'h2' : 'div',
+                        text: item.text,
+                        style: {
+                            fontSize: `${item.fontSize}pt`,
+                            fontWeight: item.bold ? 'bold' : 'normal',
+                            margin: `0 0 ${item.marginBottom || 5}px 0`,
+                            color: '#000'
+                        }
+                    }));
+                    break;
+
+                case 'attention':
+                    elements.push($({
+                        tag: 'div',
+                        style: {
+                            fontSize: `${item.fontSize}pt`,
+                            margin: `0 0 ${item.marginBottom || 5}px 0`,
+                            color: '#000',
+                            display: 'flex'
+                        },
+                        child: [
+                            $({ tag: 'span', text: '           ', style: { width: '95px' } }),
+                            $({ tag: 'span', text: item.text, style: { fontWeight: 'bold' } })
+                        ]
+                    }));
+                    break;
+
+                case 'greeting':
+                    elements.push($({
+                        tag: 'div',
+                        style: {
+                            fontSize: `${item.fontSize}pt`,
+                            margin: `0 0 ${item.marginBottom || 5}px 0`,
+                            color: '#000'
+                        },
+                        child: [
+                            $({ tag: 'span', text: item.bold ? '' : 'Dear ', style: { fontWeight: 'normal' } }),
+                            $({ tag: 'span', text: item.text, style: { fontWeight: item.bold ? 'bold' : 'normal' } })
+                        ]
+                    }));
+                    break;
+
+                case 'text':
+                    if (item.child && Array.isArray(item.child)) {
+                        const childElements = item.child.map(child => {
+                            let formattedText = child.text || '';
+                            if (typeof formattedText === 'string' && !child.style?.fontStyle) {
+                                formattedText = formatScientificNames(formattedText);
+                            }
+                            return $({
+                                tag: child.tag || 'span',
+                                att: { innerHTML: formattedText },
+                                style: child.style || {}
+                            });
+                        });
+                        elements.push($({
+                            tag: 'p',
+                            style: {
+                                fontSize: `${item.fontSize}pt`,
+                                fontWeight: item.bold ? 'bold' : 'normal',
+                                fontStyle: item.italic ? 'italic' : 'normal',
+                                margin: `0 0 ${item.marginBottom || 10}px 0`,
+                                lineHeight: item.lineHeight || 1.5,
+                                color: '#333',
+                                textAlign: 'justify'
+                            },
+                            child: childElements
+                        }));
+                    } else {
+                        let formattedText = item.text || '';
+                        if (typeof formattedText === 'string') {
+                            formattedText = formatScientificNames(formattedText);
+                        }
+                        elements.push($({
+                            tag: 'p',
+                            att: { innerHTML: formattedText },
+                            style: {
+                                fontSize: `${item.fontSize}pt`,
+                                fontWeight: item.bold ? 'bold' : 'normal',
+                                fontStyle: item.italic ? 'italic' : 'normal',
+                                margin: `0 0 ${item.marginBottom || 10}px 0`,
+                                lineHeight: item.lineHeight || 1.5,
+                                color: '#333',
+                                textAlign: 'justify'
+                            }
+                        }));
+                    }
+                    break;
+
+                case 'signature-row':
+                    elements.push($({
+                        tag: 'div',
+                        style: {
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginBottom: `${item.marginBottom || 40}px`,
                             WebkitPrintColorAdjust: 'exact',
                             printColorAdjust: 'exact'
                         },
                         child: [
-                            headerEl,
                             $({
-                                tag: 'ol',
-                                att: {
-                                    className: 'documents-list',
-                                    start: String(firstDocNumber)
-                                },
+                                tag: 'div',
                                 style: {
-                                    margin: '5px 0 10px 20px',
+                                    flex: '1',
+                                    paddingRight: '20px',
+                                    WebkitPrintColorAdjust: 'exact',
+                                    printColorAdjust: 'exact'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'p',
+                                        style: {
+                                            fontSize: `${item.fontSize || 12}pt`,
+                                            fontWeight: 'bold',
+                                            marginBottom: '2px',
+                                            marginTop: '0',
+                                            textAlign: 'left'
+                                        },
+                                        text: item.left.name
+                                    }),
+                                    $({
+                                        tag: 'p',
+                                        style: {
+                                            fontSize: `${(item.fontSize || 12) - 1}pt`,
+                                            marginTop: '0',
+                                            marginBottom: '0',
+                                            textAlign: 'left'
+                                        },
+                                        text: item.left.title
+                                    })
+                                ]
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    flex: '1',
                                     paddingLeft: '20px',
                                     WebkitPrintColorAdjust: 'exact',
                                     printColorAdjust: 'exact'
                                 },
-                                child: docElements
+                                child: [
+                                    $({
+                                        tag: 'p',
+                                        style: {
+                                            fontSize: `${item.fontSize || 12}pt`,
+                                            fontWeight: 'bold',
+                                            marginBottom: '2px',
+                                            marginTop: '0',
+                                            textAlign: 'left'
+                                        },
+                                        text: item.right.name
+                                    }),
+                                    $({
+                                        tag: 'p',
+                                        style: {
+                                            fontSize: `${(item.fontSize || 12) - 1}pt`,
+                                            marginTop: '0',
+                                            marginBottom: '0',
+                                            textAlign: 'left'
+                                        },
+                                        text: item.right.title
+                                    })
+                                ]
                             })
                         ]
-                    }))
-                    i = j
-                } else {
-                    children.push(headerEl)
-                    i++
-                }
-                continue
-            }
+                    }));
+                    break;
 
-            // Continuation docs (fallback)
-            const docElements = []
-            let firstDocNumber = 1
-            while (i < flatItems.length && flatItems[i].type === 'document') {
-                if (docElements.length === 0) {
-                    firstDocNumber = flatItems[i].docNumber
-                }
-                docElements.push(flatItems[i].element)
-                i++
-            }
-
-            if (docElements.length > 0) {
-                children.push($({
-                    tag: 'div',
-                    att: { className: 'category-section' },
-                    style: {
-                        marginLeft: '15px',
-                        marginBottom: '20px',
-                        WebkitPrintColorAdjust: 'exact',
-                        printColorAdjust: 'exact'
-                    },
-                    child: [$({
-                        tag: 'ol',
-                        att: {
-                            className: 'documents-list',
-                            start: String(firstDocNumber)
-                        },
+                case 'signature':
+                    elements.push($({
+                        tag: 'div',
                         style: {
-                            margin: '5px 0 10px 20px',
-                            paddingLeft: '20px',
+                            marginBottom: `${item.marginBottom || 20}px`,
                             WebkitPrintColorAdjust: 'exact',
                             printColorAdjust: 'exact'
                         },
+                        child: [
+                            $({
+                                tag: 'p',
+                                style: {
+                                    fontSize: `${item.fontSize}pt`,
+                                    fontWeight: 'bold',
+                                    marginBottom: '2px',
+                                    marginTop: '0',
+                                    textAlign: 'left'
+                                },
+                                text: item.name
+                            }),
+                            $({
+                                tag: 'p',
+                                style: {
+                                    fontSize: `${item.fontSize - 1}pt`,
+                                    marginTop: '0',
+                                    marginBottom: '0',
+                                    textAlign: 'left'
+                                },
+                                text: item.title
+                            })
+                        ]
+                    }));
+                    break;
+
+                case 'category-header':
+                    elements.push($({
+                        tag: 'h2',
+                        text: item.text,
+                        style: {
+                            fontSize: `${item.fontSize}pt`,
+                            fontWeight: 'bold',
+                            margin: `${item.marginTop || 10}px 0 ${item.marginBottom || 8}px 0`,
+                            padding: '3px 0',
+                            borderBottom: item.borderBottom ? '2px solid #000' : 'none',
+                            color: '#000',
+                            textTransform: 'uppercase',
+                            WebkitPrintColorAdjust: 'exact',
+                            printColorAdjust: 'exact'
+                        }
+                    }));
+                    break;
+
+                case 'document':
+                    const docElements = [];
+
+                    const docText = item.text;
+                    let titlePart = '';
+                    let authorsPart = '';
+                    let categoryPart = '';
+                    
+                    const byIndex = docText.indexOf(' by ');
+                    const dashIndex = docText.lastIndexOf(' - ');
+                    
+                    if (byIndex !== -1 && dashIndex !== -1) {
+                        titlePart = docText.substring(0, byIndex);
+                        authorsPart = docText.substring(byIndex + 4, dashIndex);
+                        categoryPart = docText.substring(dashIndex + 3);
+                    } else if (byIndex !== -1) {
+                        titlePart = docText.substring(0, byIndex);
+                        authorsPart = docText.substring(byIndex + 4);
+                    } else if (dashIndex !== -1) {
+                        titlePart = docText.substring(0, dashIndex);
+                        categoryPart = docText.substring(dashIndex + 3);
+                    } else {
+                        titlePart = docText;
+                    }
+
+                    const formattedTitle = formatScientificNames(titlePart);
+
+                    const docLine = $({
+                        tag: 'div',
+                        style: {
+                            fontSize: `${item.fontSize}pt`,
+                            lineHeight: item.lineHeight || 1.5,
+                            marginLeft: `${item.indent || 0}px`,
+                            marginBottom: '2px',
+                            textAlign: 'justify'
+                        },
+                        child: [
+                            $({ 
+                                tag: 'span', 
+                                text: `${item.number}. `, 
+                                style: { fontWeight: 'bold' } 
+                            }),
+                            $({ 
+                                tag: 'span', 
+                                att: { 
+                                    innerHTML: formattedTitle 
+                                },
+                                style: { fontWeight: 'normal' } 
+                            }),
+                            $({ 
+                                tag: 'span', 
+                                text: ' by ', 
+                                style: { fontWeight: 'normal' } 
+                            }),
+                            $({ 
+                                tag: 'span', 
+                                text: authorsPart, 
+                                style: { 
+                                    fontWeight: 'normal', 
+                                    fontStyle: 'italic' 
+                                } 
+                            }),
+                            $({ 
+                                tag: 'span', 
+                                text: categoryPart ? ' - ' : '', 
+                                style: { fontWeight: 'normal' } 
+                            }),
+                            $({ 
+                                tag: 'span', 
+                                text: categoryPart || '', 
+                                style: { fontWeight: 'normal' } 
+                            })
+                        ]
+                    });
+
+                    docElements.push(docLine);
+
+                    if (item.presenter) {
+                        const formattedPresenter = formatScientificNames(item.presenter);
+                        docElements.push($({
+                            tag: 'div',
+                            style: {
+                                fontSize: `${item.fontSize * 0.9}pt`,
+                                marginLeft: `${(item.indent || 0) + 20}px`,
+                                color: '#555',
+                                fontStyle: 'italic',
+                                marginBottom: '4px'
+                            },
+                            att: { innerHTML: formattedPresenter }
+                        }));
+                    }
+
+                    elements.push($({
+                        tag: 'div',
+                        style: {
+                            marginBottom: `${item.marginBottom || 12}px`
+                        },
                         child: docElements
-                    })]
-                }))
+                    }));
+                    break;
+
+                case 'spacer':
+                    elements.push($({
+                        tag: 'div',
+                        style: {
+                            height: `${item.height}px`
+                        }
+                    }));
+                    break;
+
+                default:
+                    break;
             }
         }
-        return children
-    }
 
-    // ─── Page container ───────────────────────────────────────────────────
-    const createPageContainer = (flatItems, pageNumber, totalPages) => {
-        const pageChildren = buildPageChildren(flatItems)
+        return elements;
+    };
+
+    // ─── Page Container ──────────────────────────────────────────────────────
+    const createPage = (contentItems, pageNumber, totalPages) => {
+        const children = renderContentItems(contentItems);
 
         return $({
             tag: 'div',
@@ -731,43 +788,31 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                 margin: '0 auto',
                 backgroundColor: 'transparent',
                 pageBreakAfter: pageNumber < totalPages ? 'always' : 'avoid',
-                overflow: 'visible',
+                overflow: 'hidden',
                 boxSizing: 'border-box'
             },
             child: [
-
                 $({
                     tag: 'div',
                     att: { className: 'page-background' },
                     style: {
                         position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        width: '100%',
-                        height: '100%',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        width: '100%', height: '100%',
                         zIndex: 1,
                         pointerEvents: 'none',
                         overflow: 'hidden',
-                        margin: 0,
-                        padding: 0
+                        margin: 0, padding: 0
                     },
                     child: [$({
                         tag: 'img',
-                        att: {
-                            src: '/client/images/header.png',
-                            className: 'background-img',
-                            alt: 'Page background'
-                        },
+                        att: { src: '/client/images/header.png', className: 'background-img', alt: 'Page background' },
                         style: {
-                            width: '100%',
-                            height: '100%',
+                            width: '100%', height: '100%',
                             objectFit: 'cover',
                             objectPosition: 'center center',
                             display: 'block',
-                            margin: 0,
-                            padding: 0
+                            margin: 0, padding: 0
                         }
                     })]
                 }),
@@ -779,46 +824,77 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                         zIndex: 2,
                         padding: '4cm 1.5cm 4cm 1.5cm',
                         width: '100%',
-                        minHeight: '29.7cm',
+                        height: '29.7cm',
+                        overflow: 'hidden',
                         boxSizing: 'border-box',
                         backgroundColor: 'transparent',
                         textAlign: 'justify'
                     },
+                    child: children
+                }),
+                $({
+                    tag: 'div',
+                    att: { className: 'event-name-footer' },
+                    style: {
+                        position: 'absolute',
+                        bottom: '3cm',
+                        right: '1.5cm',
+                        fontSize: '10pt',
+                        textAlign: 'right',
+                        color: '#666',
+                        fontWeight: 'normal',
+                        zIndex: 999,
+                        WebkitPrintColorAdjust: 'exact',
+                        printColorAdjust: 'exact'
+                    },
                     child: [
-                        ...pageChildren,
-
-                        // Page number at the bottom
+                        $({ tag: 'div', text: eventName, style: { marginBottom: '2px' } }),
                         $({
                             tag: 'div',
-                            att: { className: 'page-number' },
-                            style: {
-                                position: 'absolute',
-                                bottom: '4cm',
-                                right: '1.5cm',
-                                fontSize: '10pt',
-                                color: '#666',
-                                zIndex: 3,
-                                fontWeight: 'normal'
-                            },
-                            text: `Page ${pageNumber} of ${totalPages}`
+                            text: `Page ${pageNumber} of ${totalPages}`,
+                            style: { fontSize: '10pt', color: '#666', fontWeight: 'normal' }
                         })
                     ]
                 })
             ]
-        })
+        });
+    };
+
+    // ─── Main ──────────────────────────────────────────────────────────────────
+    const contentItems = buildContentItems();
+
+    const pages = [];
+    let currentPageItems = [];
+
+    for (const item of contentItems) {
+        if (item.type === 'page-content') {
+            if (currentPageItems.length > 0) {
+                pages.push(currentPageItems);
+                currentPageItems = [];
+            }
+            pages.push(item.content);
+        } else {
+            currentPageItems.push(item);
+        }
     }
 
-    // ─── Main 
-    const flatItems = buildFlatItems();
-    const pages = paginateItems(flatItems);
+    if (currentPageItems.length > 0) {
+        pages.push(currentPageItems);
+    }
+
     const totalPages = pages.length;
 
     return $({
         tag: 'div',
         att: { className: 'print-research-summary' },
-        style: { width: '100%', fontFamily: 'Arial, sans-serif' },
+        style: {
+            width: '100%',
+            fontFamily: 'Arial, sans-serif',
+            backgroundColor: '#f0f0f0',
+            padding: '20px'
+        },
         child: pages.map((pageItems, idx) =>
-            createPageContainer(pageItems, idx + 1, totalPages)
+            createPage(pageItems, idx + 1, totalPages)
         )
-    })
-}
+    });
+};
