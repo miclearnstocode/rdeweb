@@ -84,7 +84,22 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
         }
     };
 
-    // Queue comment for email scheduling
+    const cleanHtmlContent = (html) => {
+        if (!html) return '';
+        
+        // Create a temporary div to parse HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // Get text content (removes all HTML tags)
+        let text = tempDiv.textContent || tempDiv.innerText || '';
+        
+        // Clean up whitespace
+        text = text.replace(/\s+/g, ' ').trim();
+        
+        return text;
+    };
+
     const queueCommentForEmail = async () => {
         if (!docId) return;
         
@@ -177,8 +192,17 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
                     method: async () => {
                         if (!docId) { alert('Document ID required'); return; }
                         
+                        const cleanHtmlContent = (html) => {
+                            if (!html) return '';
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = html;
+                            let text = tempDiv.textContent || tempDiv.innerText || '';
+                            text = text.replace(/\s+/g, ' ').trim();
+                            return text;
+                        };
+                        
                         const formData = new FormData();
-                        formData.append('updateReview', 'true');
+                        formData.append('addComment', 'true');
 
                         let cleanDocId = docId;
                         if (docId && typeof docId === 'string' && docId.includes('?')) {
@@ -195,15 +219,17 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
                         if (eventId) {
                             formData.append('eventId', eventId);
                         }
-                        formData.append('title', data.title || '');
-                        formData.append('intro', data.intro || '');
-                        formData.append('abstract', data.abstract || '');
-                        formData.append('objective', data.objective || '');
-                        formData.append('methodology', data.methodology || '');
-                        formData.append('results', data.results || '');
-                        formData.append('recommendation', data.recommendation || '');
-                        formData.append('literature', data.literature || '');
-                        formData.append('other', data.other || '');
+                        
+                        // Clean HTML content before sending
+                        formData.append('title', cleanHtmlContent(data.title || ''));
+                        formData.append('intro', cleanHtmlContent(data.intro || ''));
+                        formData.append('abstract', cleanHtmlContent(data.abstract || ''));
+                        formData.append('objective', cleanHtmlContent(data.objective || ''));
+                        formData.append('methodology', cleanHtmlContent(data.methodology || ''));
+                        formData.append('results', cleanHtmlContent(data.results || ''));
+                        formData.append('recommendation', cleanHtmlContent(data.recommendation || ''));
+                        formData.append('literature', cleanHtmlContent(data.literature || ''));
+                        formData.append('other', cleanHtmlContent(data.other || ''));
 
                         let loading = Waiting();
                         document.body.appendChild(loading);
@@ -215,7 +241,7 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
                         };
 
                         try {
-                            const response = await fetch('/uploadResearchFile', { 
+                            const response = await fetch('/comments', { 
                                 method: 'POST', 
                                 body: formData 
                             });

@@ -1148,3 +1148,636 @@ if(isset($_POST['queueCommentForEmail'])){
     echo json_encode($response);
     exit();
 }
+if (isset($_POST['addComment'])) {
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    $response->queueStatus = '';
+
+    // Log all POST data for debugging
+    error_log("=== addComment called ===");
+    error_log("POST data: " . print_r($_POST, true));
+
+    try {
+        if ($con = new mysqli($host, $username, $pass, $dbName)) {
+            // Check connection
+            if ($con->connect_error) {
+                throw new Exception("Database connection failed: " . $con->connect_error);
+            }
+
+            // Check if user is logged in
+            if (!isset($_SESSION['userId'])) {
+                throw new Exception("User not authenticated");
+            }
+
+            $evalId = (int)$_SESSION['userId'];
+            $evalName = $_SESSION['userFulname'] ?? '';
+            $docsId = $_POST['docId'] ?? '';
+            $eventId = (int)($_POST['eventId'] ?? 0);
+
+            error_log("addComment - evalId: $evalId, docsId: $docsId, eventId: $eventId");
+
+            // Clean the docId
+            if (strpos($docsId, '?') !== false) {
+                $docsId = explode('?', $docsId)[0];
+            }
+            if (strpos($docsId, '&') !== false) {
+                $docsId = explode('&', $docsId)[0];
+            }
+            $docsId = (int)preg_replace('/[^0-9]/', '', $docsId);
+            
+            if (empty($docsId)) {
+                throw new Exception("Invalid document ID");
+            }
+
+            $eventName = '';
+            $docInfo = null;
+            $displayTitle = '';
+
+            // Get event name from event_list
+            if ($eventId > 0) {
+                $eventQuery = "SELECT name FROM event_list WHERE id = ? LIMIT 1";
+                $eventStmt = $con->prepare($eventQuery);
+                if ($eventStmt) {
+                    $eventStmt->bind_param("i", $eventId);
+                    $eventStmt->execute();
+                    $eventResult = $eventStmt->get_result();
+                    if ($row = $eventResult->fetch_assoc()) {
+                        $eventName = $row['name'];
+                    }
+                    $eventStmt->close();
+                }
+            }
+
+            // Get document info from researchfile
+            $docQuery = $con->prepare("SELECT 
+                rf.id,
+                rf.title,
+                rf.final_symposium_title,
+                rf.event,
+                rf.event_id,
+                rf.author,
+                rf.coauthor,
+                rf.presenter,
+                rf.category,
+                rf.center,
+                rf.campus,
+                rf.file,
+                rf.drive_view_url,
+                rf.paper_trail_no,
+                el.name as event_name
+            FROM researchfile rf
+            LEFT JOIN event_list el ON el.id = rf.event_id
+            WHERE rf.id = ? LIMIT 1");
+            
+            if ($docQuery) {
+                $docQuery->bind_param("i", $docsId);
+                $docQuery->execute();
+                $docResult = $docQuery->get_result();
+                $docInfo = $docResult->fetch_assoc();
+                $docQuery->close();
+            }
+
+            // If not found in researchfile, try student_research_papers
+            if (!$docInfo) {
+                $docQuery = $con->prepare("SELECT 
+                    srp.id,
+                    srp.title,
+                    srp.event,
+                    srp.event_id,
+                    srp.author,
+                    srp.coauthor,
+                    srp.presenter,
+                    srp.category,
+                    srp.campus,
+                    el.name as event_name,
+                    NULL as final_symposium_title,
+                    NULL as center,
+                    NULL as file,
+                    NULL as drive_view_url,
+                    NULL as paper_trail_no
+                FROM student_research_papers srp
+                LEFT JOIN event_list el ON el.id = srp.event_id
+                WHERE srp.id = ? LIMIT 1");
+                
+                if ($docQuery) {
+                    $docQuery->bind_param("i", $docsId);
+                    $docQuery->execute();
+                    $docResult = $docQuery->get_result();
+                    $docInfo = $docResult->fetch_assoc();
+                    $docQuery->close();
+                }
+            }
+
+            // If event name not found from event_list, use from document
+            if (empty($eventName) && $docInfo) {
+                $eventName = $docInfo['event_name'] ?? $docInfo['event'] ?? '';
+            }
+
+            // Get display title
+            if ($docInfo) {
+                $displayTitle = !empty($docInfo['final_symposium_title']) 
+                    ? $docInfo['final_symposium_title'] 
+                    : ($docInfo['title'] ?? 'Untitled Document');
+            }
+
+            if (empty($eventName)) {
+                $eventName = 'Unknown Event';
+                error_log("WARNING: No event name found, using default");
+            }
+
+            error_log("addComment - Event Name: '$eventName'");
+
+            $title = trim($_POST['title'] ?? '');
+            $intro = trim($_POST['intro'] ?? '');
+            $abstract = trim($_POST['abstract'] ?? '');
+            $objective = trim($_POST['objective'] ?? '');
+            $methodology = trim($_POST['methodology'] ?? '');
+            $results = trim($_POST['results'] ?? '');
+            $recommendation = trim($_POST['recommendation'] ?? '');
+            $literature = trim($_POST['literature'] ?? '');
+            $other = trim($_POST['other'] ?? '');
+
+            error_log("addComment - Comment data - title length: " . strlen($title) . ", intro length: " . strlen($intro));
+
+            $found = false;
+            if ($docsId > 0 && $evalId > 0) {
+                $checkQuery = $con->prepare("SELECT COUNT(*) as count FROM comments WHERE evalid = ? AND resid = ?");
+                if ($checkQuery) {
+                    $checkQuery->bind_param("ii", $evalId, $docsId);
+                    $checkQuery->execute();
+                    $checkResult = $checkQuery->get_result();
+                    $row = $checkResult->fetch_assoc();
+                    $found = ($row['count'] > 0);
+                    $checkQuery->close();
+                    error_log("addComment - Comments exist: " . ($found ? 'yes' : 'no'));
+                }
+            }
+
+            $saveSuccess = false;
+
+            if ($found) {
+                // UPDATE existing comments
+                $comQ = "UPDATE comments SET 
+                    eventType = ?,
+                    title = ?,
+                    intro = ?,
+                    abstract = ?,
+                    objective = ?,
+                    methodology = ?,
+                    results = ?,
+                    recommendation = ?,
+                    literature = ?,
+                    other = ?,
+                    isCommented = 1
+                    WHERE resid = ? AND evalid = ?";
+
+                $statement = $con->prepare($comQ);
+                if (!$statement) {
+                    throw new Exception("Failed to prepare update query: " . $con->error);
+                }
+                
+                $statement->bind_param(
+                    "ssssssssssii",
+                    $eventName,
+                    $title,
+                    $intro,
+                    $abstract,
+                    $objective,
+                    $methodology,
+                    $results,
+                    $recommendation,
+                    $literature,
+                    $other,
+                    $docsId,
+                    $evalId
+                );
+
+                $status = $statement->execute();
+                
+                if ($status) {
+                    $response->status = true;
+                    $response->message = "Comments Updated successfully!";
+                    $saveSuccess = true;
+                    error_log("addComment - UPDATE successful");
+                } else {
+                    throw new Exception("Update failed: " . $statement->error);
+                }
+                $statement->close();
+            } else {
+                // INSERT new comments
+                $comQuery = "INSERT INTO comments (
+                    resid,
+                    evalid,
+                    evID,
+                    eventType,
+                    title,
+                    intro,
+                    abstract,
+                    objective,
+                    methodology,
+                    results,
+                    recommendation,
+                    literature,
+                    other,
+                    isCommented
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+
+                $statement = $con->prepare($comQuery);
+                if (!$statement) {
+                    throw new Exception("Failed to prepare insert query: " . $con->error);
+                }
+                
+                $evIDValue = $eventId > 0 ? $eventId : 0;
+                
+                $statement->bind_param(
+                    "iiissssssssss",
+                    $docsId,
+                    $evalId,
+                    $evIDValue,
+                    $eventName,
+                    $title,
+                    $intro,
+                    $abstract,
+                    $objective,
+                    $methodology,
+                    $results,
+                    $recommendation,
+                    $literature,
+                    $other
+                );
+
+                $status = $statement->execute();
+
+                if ($status) {
+                    $response->status = true;
+                    $response->message = "Comments Saved successfully!";
+                    $saveSuccess = true;
+                    error_log("addComment - INSERT successful");
+                } else {
+                    throw new Exception("Insert failed: " . $statement->error);
+                }
+                $statement->close();
+            }
+
+            if ($saveSuccess && !empty($docInfo)) {
+                // Get the comments from the database (including author info)
+                $commentData = [];
+                $commentQuery = "SELECT 
+                    c.intro, c.abstract, c.objective, c.methodology, 
+                    c.results, c.recommendation, c.literature, c.other
+                FROM comments c
+                WHERE c.resid = ? AND c.evalid = ?";
+                
+                $commentStmt = $con->prepare($commentQuery);
+                if ($commentStmt) {
+                    $commentStmt->bind_param("ii", $docsId, $evalId);
+                    $commentStmt->execute();
+                    $commentResult = $commentStmt->get_result();
+                    $commentData = $commentResult->fetch_assoc();
+                    $commentStmt->close();
+                }
+                
+                // Check if there are actual comments
+                $hasComments = false;
+                $sections = ['intro', 'abstract', 'objective', 'methodology', 'results', 'recommendation', 'literature', 'other'];
+                foreach ($sections as $section) {
+                    if (!empty($commentData[$section]) && trim($commentData[$section]) !== '') {
+                        $hasComments = true;
+                        break;
+                    }
+                }
+                
+                if ($hasComments) {
+                    // Queue for email
+                    $queueResult = queueCommentForEmail(
+                        $con, 
+                        $docsId, 
+                        $evalId, 
+                        $evalName, 
+                        $docInfo, 
+                        $displayTitle, 
+                        $eventId, 
+                        $eventName
+                    );
+                    
+                    if ($queueResult['status']) {
+                        $response->queueStatus = $queueResult['message'];
+                        error_log("addComment - Email queued: " . $queueResult['message']);
+                    } else {
+                        $response->queueStatus = "Warning: " . $queueResult['message'];
+                        error_log("addComment - Email queue warning: " . $queueResult['message']);
+                    }
+                } else {
+                    $response->queueStatus = "Comments saved but no email notification queued (no comments content).";
+                }
+            } else {
+                $response->queueStatus = "Comments saved but no email notification queued (no document info found).";
+            }
+
+            $con->close();
+
+        } else {
+            throw new Exception("Database connection failed");
+        }
+
+    } catch (Exception $e) {
+        error_log("addComment ERROR: " . $e->getMessage());
+        $response->message = $e->getMessage();
+        $response->status = false;
+    }
+
+    // Ensure we always return JSON
+    header('Content-Type: application/json');
+    $jsonResponse = json_encode($response);
+    error_log("addComment Response: " . $jsonResponse);
+    echo $jsonResponse;
+    exit();
+}
+
+function queueCommentForEmail($con, $docsId, $evalId, $evalName, $docInfo, $displayTitle, $eventId, $eventType)
+{
+    $result = ['status' => false, 'message' => ''];
+
+    try {
+        // Check if there are actual comments
+        $commentQuery = "SELECT 
+            c.intro, c.abstract, c.objective, c.methodology, 
+            c.results, c.recommendation, c.literature, c.other,
+            r.author, r.coauthor, r.presenter, r.campus,
+            a.id as acceptance_id, a.date_to_be_held
+        FROM comments c
+        LEFT JOIN researchfile r ON c.resid = r.id
+        LEFT JOIN acceptance_letter_data a ON r.event_id = a.event_id
+        WHERE c.resid = ? AND c.evalid = ?";
+        
+        $commentStmt = $con->prepare($commentQuery);
+        $commentStmt->bind_param("si", $docsId, $evalId);
+        $commentStmt->execute();
+        $commentResult = $commentStmt->get_result();
+        $commentData = $commentResult->fetch_assoc();
+        $commentStmt->close();
+
+        if (!$commentData) {
+            return ['status' => false, 'message' => 'No comments found'];
+        }
+
+        // Check if there are actual comments (not empty)
+        $hasComments = false;
+        $sections = ['intro', 'abstract', 'objective', 'methodology', 'results', 'recommendation', 'literature', 'other'];
+        foreach ($sections as $section) {
+            if (!empty($commentData[$section]) && trim($commentData[$section]) !== '') {
+                $hasComments = true;
+                break;
+            }
+        }
+
+        if (!$hasComments) {
+            return ['status' => false, 'message' => 'No comments have been added'];
+        }
+
+        // Get author emails from account_detail
+        $authorEmails = [];
+        $authorName = '';
+
+        // Get author
+        if (!empty($docInfo['author'])) {
+            $authorName = $docInfo['author'];
+            $authQuery = "SELECT email FROM account_detail WHERE fullName = ? AND (usertype = 'Research Chair' OR usertype = 'User')";
+            $authStmt = $con->prepare($authQuery);
+            $authStmt->bind_param("s", $docInfo['author']);
+            $authStmt->execute();
+            $authResult = $authStmt->get_result();
+            while ($row = $authResult->fetch_assoc()) {
+                if (!in_array($row['email'], $authorEmails)) {
+                    $authorEmails[] = $row['email'];
+                }
+            }
+            $authStmt->close();
+        }
+
+        // Get presenter
+        if (!empty($docInfo['presenter'])) {
+            if (empty($authorName)) $authorName = $docInfo['presenter'];
+            $presQuery = "SELECT email FROM account_detail WHERE fullName = ? AND (usertype = 'Research Chair' OR usertype = 'User')";
+            $presStmt = $con->prepare($presQuery);
+            $presStmt->bind_param("s", $docInfo['presenter']);
+            $presStmt->execute();
+            $presResult = $presStmt->get_result();
+            while ($row = $presResult->fetch_assoc()) {
+                if (!in_array($row['email'], $authorEmails)) {
+                    $authorEmails[] = $row['email'];
+                }
+            }
+            $presStmt->close();
+        }
+
+        // If no emails found, return warning
+        if (empty($authorEmails)) {
+            return ['status' => false, 'message' => 'No author emails found to notify'];
+        }
+
+        // Get acceptance letter date
+        $acceptanceId = $commentData['acceptance_id'] ?? null;
+        $eventDate = $commentData['date_to_be_held'] ?? null;
+
+        // If no event date found, use current date + 1 day as fallback
+        if (empty($eventDate)) {
+            $eventDate = date('Y-m-d H:i:s', strtotime('+1 day'));
+        }
+
+        // Calculate scheduled date (event date + 1 day after by default)
+        $scheduledDateTime = new DateTime($eventDate);
+        $scheduledDateTime->modify('+1 day');
+        $scheduledDate = $scheduledDateTime->format('Y-m-d H:i:s');
+
+        // Get comment sections that have content
+        $commentSections = [];
+        $sectionNames = [
+            'intro' => 'Introduction',
+            'abstract' => 'Abstract',
+            'objective' => 'Objectives',
+            'methodology' => 'Methodology',
+            'results' => 'Results and Discussion',
+            'recommendation' => 'Conclusions and Recommendation',
+            'literature' => 'Literature',
+            'other' => 'Other Comments'
+        ];
+
+        foreach ($sectionNames as $key => $name) {
+            if (!empty($commentData[$key]) && trim($commentData[$key]) !== '') {
+                $commentSections[] = $name;
+            }
+        }
+
+        $commentSectionsStr = implode(', ', $commentSections);
+
+        // Insert into email_queue for each author email
+        $queuedCount = 0;
+        foreach ($authorEmails as $email) {
+            if (empty($email)) continue;
+
+            // Check if already queued for this document and evaluator
+            $checkQueueQuery = "SELECT id FROM email_queue 
+                               WHERE document_id = ? AND evaluator_id = ? AND author_email = ? 
+                               AND status IN ('pending', 'processing')";
+            $checkQueueStmt = $con->prepare($checkQueueQuery);
+            $checkQueueStmt->bind_param("iis", $docsId, $evalId, $email);
+            $checkQueueStmt->execute();
+            $checkQueueResult = $checkQueueStmt->get_result();
+
+            if ($checkQueueResult->num_rows > 0) {
+                // Already queued, skip
+                $checkQueueStmt->close();
+                continue;
+            }
+            $checkQueueStmt->close();
+
+            // Insert into email_queue
+            $insertQuery = "INSERT INTO email_queue 
+                            (document_id, document_title, evaluator_id, evaluator_name, 
+                             author_name, author_email, event_id, acceptance_letter_id,
+                             scheduled_date, status, email_type, comment_sections, created_at) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'comment_notification', ?, NOW())";
+
+            $insertStmt = $con->prepare($insertQuery);
+            
+            // Use the display title from docInfo
+            $docTitleForQueue = $displayTitle ?: ($docInfo['title'] ?? 'Untitled Document');
+            
+            $insertStmt->bind_param("isissiisss", 
+                $docsId, 
+                $docTitleForQueue,
+                $evalId, 
+                $evalName ?: 'Unknown Evaluator',
+                $authorName,
+                $email, 
+                $eventId, 
+                $acceptanceId,
+                $scheduledDate,
+                $commentSectionsStr
+            );
+
+            if ($insertStmt->execute()) {
+                $queuedCount++;
+            }
+            $insertStmt->close();
+        }
+
+        // Log to email_log for tracking
+        if ($queuedCount > 0) {
+            foreach ($authorEmails as $email) {
+                $logQuery = "INSERT INTO email_log 
+                             (document_id, evaluator_id, author_email, sent_date, email_type, status) 
+                             VALUES (?, ?, ?, NOW(), 'comment_queued', 0)";
+                $logStmt = $con->prepare($logQuery);
+                $logStmt->bind_param("iis", $docsId, $evalId, $email);
+                $logStmt->execute();
+                $logStmt->close();
+            }
+
+            return [
+                'status' => true, 
+                'message' => "Comments queued for scheduled email (" . $queuedCount . " recipient(s)) on " . $scheduledDate
+            ];
+        } else {
+            return ['status' => false, 'message' => 'No new email queue entries added'];
+        }
+
+    } catch (Exception $e) {
+        error_log('queueCommentForEmail error: ' . $e->getMessage());
+        return ['status' => false, 'message' => 'Error queueing email: ' . $e->getMessage()];
+    }
+}
+
+function sendCommentEmail($con, $evaluatorName, $docInfo, $comments, $docsId, $evalId, $rdeEmail, $emailPassword)
+{
+    // Use the display title (final_symposium_title if available)
+    $displayTitle = !empty($docInfo['display_title']) 
+        ? $docInfo['display_title'] 
+        : (!empty($docInfo['final_symposium_title']) 
+            ? $docInfo['final_symposium_title'] 
+            : $docInfo['title'] ?? 'Research Document');
+
+    if (empty($docInfo) || empty($docInfo['email'])) {
+        return "Could not send email: No author email found.";
+    }
+
+    // Clean the comments before sending
+    $cleanedComments = [];
+    foreach ($comments as $key => $comment) {
+        $cleanedComments[$key] = cleanCommentHtml($comment);
+    }
+
+    // Check if there are any actual comments after cleaning
+    $hasComments = false;
+    foreach ($cleanedComments as $comment) {
+        if (!empty(trim(strip_tags($comment)))) {
+            $hasComments = true;
+            break;
+        }
+    }
+
+    if (!$hasComments) {
+        return "No email sent: No comments were added.";
+    }
+
+    // Get the system base URL
+    $baseUrl = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https://" : "http://";
+    $baseUrl .= $_SERVER['HTTP_HOST'];
+    $documentUrl = $baseUrl . "/account/Login?redirect=";
+
+    // Prepare the email
+    $from = new stdClass();
+    $from->email = $rdeEmail;
+    $from->password = $emailPassword;
+    $from->name = 'CAPSU RDE System';
+
+    $to = new stdClass();
+    $to->name = $docInfo['fullName'] ?? $docInfo['author'];
+    $to->email = $docInfo['email'];
+
+    // Generate email content - use display title
+    $emailContent = CommentNotification(
+        $evaluatorName,
+        $docInfo['event_name'] ?? 'Research Event',
+        $displayTitle, // Use the display title
+        $docInfo['center'] ?? $docInfo['endorsement_center'],
+        $docInfo['author'],
+        $cleanedComments,
+        $documentUrl
+    );
+
+    // Send email
+    $mailResult = SendEmail($from, $to, $emailContent);
+
+    if ($mailResult->status) {
+        // Log the email sending
+        $logQuery = "INSERT INTO email_log (document_id, evaluator_id, author_email, sent_date, email_type) 
+                     VALUES (?, ?, ?, NOW(), 'comment_notification')";
+        $logStmt = $con->prepare($logQuery);
+        $logStmt->bind_param("sss", $docsId, $evalId, $to->email);
+        $logStmt->execute();
+
+        return "Email notification sent to author.";
+    } else {
+        return "Failed to send email: " . ($mailResult->message ?? 'Unknown error');
+    }
+}
+
+function cleanCommentHtml($html)
+{
+    if (empty($html)) {
+        return '';
+    }
+    $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $html = str_replace('&nbsp;', ' ', $html);
+    $html = preg_replace('/\s+/', ' ', $html);
+    $html = trim($html);
+    $html = preg_replace('/<(\w+)[^>]*>\s*<\/\1>/', '', $html);
+    $html = preg_replace('/<(\w+)[^>]*>(\s|&nbsp;)*<\/\1>/', '', $html);
+    $html = str_replace(['<br>', '<br/>', '<br />'], "\n", $html);
+    $plainText = strip_tags($html);
+
+    return $plainText;
+}
