@@ -1,6 +1,3 @@
-/* ============================================= */
-/* Best Presenter Vote Modal — Modern White Theme */
-/* ============================================= */
 
 /* Make sure modal doesn't clip content */
 .custom-modal-container.vote-modal {
@@ -67,6 +64,11 @@
     border-radius: 6px;
     background: transparent;
     z-index: 1;
+}
+
+.star-rating-btn i {
+    font-size: inherit;
+    pointer-events: none;
 }
 
 /* Make sure stars are fully clickable */

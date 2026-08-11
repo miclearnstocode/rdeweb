@@ -460,13 +460,20 @@ const BestPresenterVote = ({ docId, eventId, sourceTable, onVoteComplete, hasVot
         buttons.forEach((btn) => {
             const value = parseInt(btn.getAttribute('data-value'))
             const isActive = value <= rating
+            const icon = btn.querySelector('i')
 
             if (isActive) {
                 btn.classList.add('active')
                 btn.classList.remove('inactive')
+                if (icon) {
+                    icon.style.color = '#f59e0b'
+                }
             } else {
                 btn.classList.add('inactive')
                 btn.classList.remove('active')
+                if (icon) {
+                    icon.style.color = '#e2e8f0'
+                }
             }
         })
     }
@@ -481,7 +488,18 @@ const BestPresenterVote = ({ docId, eventId, sourceTable, onVoteComplete, hasVot
             const starBtn = document.createElement('button')
             starBtn.setAttribute('data-value', i)
             starBtn.className = `star-rating-btn ${i <= selectedRating ? 'active' : 'inactive'}`
-            starBtn.innerHTML = '★'
+            
+            // Create the icon with explicit color
+            const icon = document.createElement('i')
+            icon.className = 'fa-solid fa-star'
+            icon.style.cssText = `
+                font-size: inherit;
+                pointer-events: none;
+                color: ${i <= selectedRating ? '#f59e0b' : '#e2e8f0'};
+                transition: color 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+            `
+            starBtn.appendChild(icon)
+            
             starBtn.setAttribute('aria-label', `Rate ${i} out of 10`)
             starBtn.style.overflow = 'visible'
             starBtn.style.flexShrink = '0'
@@ -492,12 +510,14 @@ const BestPresenterVote = ({ docId, eventId, sourceTable, onVoteComplete, hasVot
             starBtn.style.background = 'none'
             starBtn.style.border = 'none'
             starBtn.style.transition = 'all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            starBtn.style.display = 'flex'
+            starBtn.style.alignItems = 'center'
+            starBtn.style.justifyContent = 'center'
+            starBtn.style.color = 'inherit' // Let the icon control color
             
             if (i <= selectedRating) {
-                starBtn.style.color = '#f59e0b'
                 starBtn.style.transform = 'scale(1.08)'
             } else {
-                starBtn.style.color = '#e2e8f0'
                 starBtn.style.transform = 'scale(1)'
             }
 
@@ -1109,7 +1129,18 @@ export const BestPresenterRanking = ({ eventId, sourceTable = 'researchfile', on
                 const starBtn = document.createElement('button')
                 starBtn.setAttribute('data-value', i)
                 starBtn.className = `star-rating-btn ${i <= selectedRating ? 'active' : 'inactive'}`
-                starBtn.innerHTML = '★'
+                
+                // Create the icon with explicit color
+                const icon = document.createElement('i')
+                icon.className = 'fa-solid fa-star'
+                icon.style.cssText = `
+                    font-size: inherit;
+                    pointer-events: none;
+                    color: ${i <= selectedRating ? '#f59e0b' : '#e2e8f0'};
+                    transition: color 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+                `
+                starBtn.appendChild(icon)
+                
                 starBtn.style.fontSize = '34px'
                 starBtn.style.minWidth = '34px'
                 starBtn.style.padding = '4px 3px'
@@ -1117,11 +1148,14 @@ export const BestPresenterRanking = ({ eventId, sourceTable = 'researchfile', on
                 starBtn.style.background = 'none'
                 starBtn.style.border = 'none'
                 starBtn.style.transition = 'all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                starBtn.style.display = 'flex'
+                starBtn.style.alignItems = 'center'
+                starBtn.style.justifyContent = 'center'
+                starBtn.style.color = 'inherit'
+                
                 if (i <= selectedRating) {
-                    starBtn.style.color = '#f59e0b'
                     starBtn.style.transform = 'scale(1.08)'
                 } else {
-                    starBtn.style.color = '#e2e8f0'
                     starBtn.style.transform = 'scale(1)'
                 }
 
@@ -1129,15 +1163,20 @@ export const BestPresenterRanking = ({ eventId, sourceTable = 'researchfile', on
                     const buttons = starContainer.querySelectorAll('.star-rating-btn')
                     buttons.forEach((btn, idx) => {
                         const val = parseInt(btn.getAttribute('data-value'))
+                        const iconEl = btn.querySelector('i')
                         if (val <= i) {
                             btn.classList.add('active')
                             btn.classList.remove('inactive')
-                            btn.style.color = '#f59e0b'
+                            if (iconEl) {
+                                iconEl.style.color = '#f59e0b'
+                            }
                             btn.style.transform = 'scale(1.1)'
                         } else {
                             btn.classList.remove('active')
                             btn.classList.add('inactive')
-                            btn.style.color = '#e2e8f0'
+                            if (iconEl) {
+                                iconEl.style.color = '#e2e8f0'
+                            }
                             btn.style.transform = 'scale(1)'
                         }
                     })
@@ -1152,15 +1191,20 @@ export const BestPresenterRanking = ({ eventId, sourceTable = 'researchfile', on
                     const buttons = starContainer.querySelectorAll('.star-rating-btn')
                     buttons.forEach((btn) => {
                         const val = parseInt(btn.getAttribute('data-value'))
+                        const iconEl = btn.querySelector('i')
                         if (val <= selectedRating) {
                             btn.classList.add('active')
                             btn.classList.remove('inactive')
-                            btn.style.color = '#f59e0b'
+                            if (iconEl) {
+                                iconEl.style.color = '#f59e0b'
+                            }
                             btn.style.transform = 'scale(1.08)'
                         } else {
                             btn.classList.remove('active')
                             btn.classList.add('inactive')
-                            btn.style.color = '#e2e8f0'
+                            if (iconEl) {
+                                iconEl.style.color = '#e2e8f0'
+                            }
                             btn.style.transform = 'scale(1)'
                         }
                     })
@@ -1182,15 +1226,20 @@ export const BestPresenterRanking = ({ eventId, sourceTable = 'researchfile', on
                     const buttons = starContainer.querySelectorAll('.star-rating-btn')
                     buttons.forEach((btn) => {
                         const val = parseInt(btn.getAttribute('data-value'))
+                        const iconEl = btn.querySelector('i')
                         if (val <= i) {
                             btn.classList.add('active')
                             btn.classList.remove('inactive')
-                            btn.style.color = '#f59e0b'
+                            if (iconEl) {
+                                iconEl.style.color = '#f59e0b'
+                            }
                             btn.style.transform = 'scale(1.08)'
                         } else {
                             btn.classList.remove('active')
                             btn.classList.add('inactive')
-                            btn.style.color = '#e2e8f0'
+                            if (iconEl) {
+                                iconEl.style.color = '#e2e8f0'
+                            }
                             btn.style.transform = 'scale(1)'
                         }
                     })
