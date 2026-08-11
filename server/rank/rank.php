@@ -89,6 +89,7 @@ function deduplicateDocuments($documents, $docScores = []) {
     return $uniqueDocs;
 }
 
+
 if(isset($_POST['getEval'])) {
     $response = [];
     
@@ -98,7 +99,7 @@ if(isset($_POST['getEval'])) {
     // Check connection
     if ($con->connect_error) {
         ob_clean();
-        echo json_encode(['error' => 'Database connection failed: ' . $con->connect_error]);
+        echo json_encode([]);
         ob_end_flush();
         exit();
     }
@@ -147,42 +148,107 @@ if(isset($_POST['getEval'])) {
         error_log("Category ID: " . $categoryId);
         error_log("Category Name from DB: '" . $categoryName . "'");
         
-        // STEP 2: Get documents for this event and category
-        $checkQuery = "SELECT rf.id, rf.title, rf.category, rf.event_id, e.status 
-                       FROM researchfile rf 
-                       INNER JOIN endorsement e ON rf.endorsementid = e.id 
-                       WHERE rf.event_id = ? AND rf.category = ? AND e.status = 'accepted'";
-        $checkStmt = $con->prepare($checkQuery);
-        if (!$checkStmt) {
-            throw new Exception('Prepare failed: ' . $con->error);
+        // STEP 2: Determine if this is a student or faculty event and get paper_type
+        $isStudent = false;
+        $sourceTable = 'researchfile';
+        $paperType = null;
+        
+        $eventCheckQuery = "SELECT name FROM event_list WHERE id = ? LIMIT 1";
+        $eventCheckStmt = $con->prepare($eventCheckQuery);
+        if ($eventCheckStmt) {
+            $eventCheckStmt->bind_param("i", $eventId);
+            $eventCheckStmt->execute();
+            $eventCheckResult = $eventCheckStmt->get_result();
+            if ($row = $eventCheckResult->fetch_assoc()) {
+                $eventName = strtolower($row['name']);
+                if (strpos($eventName, 'undergraduate') !== false) {
+                    $isStudent = true;
+                    $sourceTable = 'student_research_papers';
+                    $paperType = 'undergraduate';
+                } elseif (strpos($eventName, 'graduate') !== false) {
+                    $isStudent = true;
+                    $sourceTable = 'student_research_papers';
+                    $paperType = 'graduate';
+                } elseif (strpos($eventName, 'student') !== false) {
+                    $isStudent = true;
+                    $sourceTable = 'student_research_papers';
+                    // Check if it contains undergraduate or graduate specifically
+                    if (strpos($eventName, 'undergraduate') !== false) {
+                        $paperType = 'undergraduate';
+                    } elseif (strpos($eventName, 'graduate') !== false) {
+                        $paperType = 'graduate';
+                    }
+                }
+            }
+            $eventCheckStmt->close();
         }
-        $checkStmt->bind_param("is", $eventId, $categoryName);
+        
+        error_log("isStudent: " . ($isStudent ? 'true' : 'false') . ", sourceTable: $sourceTable, paperType: " . ($paperType ?? 'null'));
+        
+        // STEP 3: Get documents for this event and category
+        $docIds = [];
+        $allDocs = [];
+        
+        if ($isStudent) {
+            // Query from student_research_papers with paper_type filter
+            $checkQuery = "SELECT id, title, category, event_id, paper_type 
+                           FROM student_research_papers 
+                           WHERE event_id = ? AND category = ? AND status = 'accepted'";
+            
+            // Add paper_type filter if specified
+            if ($paperType !== null) {
+                $checkQuery .= " AND paper_type = ?";
+            }
+            
+            $checkStmt = $con->prepare($checkQuery);
+            if (!$checkStmt) {
+                throw new Exception('Prepare failed: ' . $con->error);
+            }
+            
+            if ($paperType !== null) {
+                $checkStmt->bind_param("iss", $eventId, $categoryName, $paperType);
+            } else {
+                $checkStmt->bind_param("is", $eventId, $categoryName);
+            }
+        } else {
+            // Query from researchfile (faculty)
+            $checkQuery = "SELECT rf.id, rf.title, rf.category, rf.event_id 
+                           FROM researchfile rf 
+                           INNER JOIN endorsement e ON rf.endorsementid = e.id 
+                           WHERE rf.event_id = ? AND rf.category = ? AND e.status = 'accepted'";
+            
+            $checkStmt = $con->prepare($checkQuery);
+            if (!$checkStmt) {
+                throw new Exception('Prepare failed: ' . $con->error);
+            }
+            $checkStmt->bind_param("is", $eventId, $categoryName);
+        }
+        
         $checkStmt->execute();
         $checkResult = $checkStmt->get_result();
         
-        $docIds = [];
-        $allDocs = [];
         while ($row = $checkResult->fetch_assoc()) {
             $docIds[] = $row['id'];
             $allDocs[$row['id']] = [
                 'id' => $row['id'],
                 'title' => $row['title'],
                 'category' => $row['category'],
-                'event_id' => $row['event_id']
+                'event_id' => $row['event_id'],
+                'paper_type' => $row['paper_type'] ?? null
             ];
-            error_log("Found document: ID=" . $row['id'] . ", Title=" . $row['title'] . ", Category=" . $row['category']);
+            error_log("Found document: ID=" . $row['id'] . ", Title=" . $row['title'] . ", Category=" . $row['category'] . ", paper_type=" . ($row['paper_type'] ?? 'N/A'));
         }
         $checkStmt->close();
         
         if (empty($docIds)) {
-            error_log("No documents found for event " . $eventId . " and category '" . $categoryName . "'");
+            error_log("No documents found for event " . $eventId . " and category '" . $categoryName . "'" . ($paperType ? " and paper_type '" . $paperType . "'" : ""));
             ob_clean();
             echo json_encode([]);
             ob_end_flush();
             exit();
         }
         
-        // STEP 2.5: Get total scores for each document to help with deduplication
+        // STEP 4: Get total scores for each document to help with deduplication
         $docIdPlaceholder = implode(',', array_fill(0, count($docIds), '?'));
         $scoreSumQuery = "SELECT 
                             doc_id,
@@ -211,7 +277,8 @@ if(isset($_POST['getEval'])) {
             error_log("After deduplication: " . count($docIds) . " documents remain");
         }
         
-        // STEP 3: Get evaluators who have scored these documents
+        // Rest of the code remains the same...
+        // STEP 5: Get evaluators who have scored these documents
         $docIdsPlaceholder = implode(',', array_fill(0, count($docIds), '?'));
         
         $evalQuery = "SELECT DISTINCT sb.eval_id, e.fullname 
@@ -251,29 +318,55 @@ if(isset($_POST['getEval'])) {
         
         $evaluatorIds = array_keys($evaluators);
         
-        // STEP 4: Get all scores for these documents and evaluators
+        // STEP 6: Get all scores for these documents and evaluators
         $evalIdPlaceholder = implode(',', array_fill(0, count($evaluatorIds), '?'));
         $docIdPlaceholder = implode(',', array_fill(0, count($docIds), '?'));
         
-        $scoreQuery = "SELECT 
-            rf.id as doc_id,  
-            rf.title,
-            rf.author,
-            rf.campus,
-            rf.category,
-            rf.event_id,
-            sb.eval_id,
-            COALESCE(sb.score, 0) as score,
-            c.id as criteria_id,
-            c.name as criteria_name,
-            c.percentage
-        FROM score_board sb
-        INNER JOIN researchfile rf ON rf.id = sb.doc_id
-        LEFT JOIN criteria c ON sb.criteria_id = c.id
-        WHERE sb.doc_id IN ($docIdPlaceholder)
-        AND sb.eval_id IN ($evalIdPlaceholder)
-        AND sb.score > 0
-        ORDER BY sb.eval_id, rf.id, c.id";
+        // Build the score query based on source table
+        if ($isStudent) {
+            // Student papers - join with student_research_papers
+            $scoreQuery = "SELECT 
+                srp.id as doc_id,  
+                srp.title,
+                srp.author,
+                srp.campus,
+                srp.category,
+                srp.event_id,
+                srp.paper_type,
+                sb.eval_id,
+                COALESCE(sb.score, 0) as score,
+                c.id as criteria_id,
+                c.name as criteria_name,
+                c.percentage
+            FROM score_board sb
+            INNER JOIN student_research_papers srp ON srp.id = sb.doc_id
+            LEFT JOIN criteria c ON sb.criteria_id = c.id
+            WHERE sb.doc_id IN ($docIdPlaceholder)
+            AND sb.eval_id IN ($evalIdPlaceholder)
+            AND sb.score > 0
+            ORDER BY sb.eval_id, srp.id, c.id";
+        } else {
+            // Faculty papers - join with researchfile
+            $scoreQuery = "SELECT 
+                rf.id as doc_id,  
+                rf.title,
+                rf.author,
+                rf.campus,
+                rf.category,
+                rf.event_id,
+                sb.eval_id,
+                COALESCE(sb.score, 0) as score,
+                c.id as criteria_id,
+                c.name as criteria_name,
+                c.percentage
+            FROM score_board sb
+            INNER JOIN researchfile rf ON rf.id = sb.doc_id
+            LEFT JOIN criteria c ON sb.criteria_id = c.id
+            WHERE sb.doc_id IN ($docIdPlaceholder)
+            AND sb.eval_id IN ($evalIdPlaceholder)
+            AND sb.score > 0
+            ORDER BY sb.eval_id, rf.id, c.id";
+        }
         
         $scoreStmt = $con->prepare($scoreQuery);
         if (!$scoreStmt) {
@@ -314,7 +407,8 @@ if(isset($_POST['getEval'])) {
                         'author' => $row['author'] ?? '',
                         'campus' => $row['campus'] ?? '',
                         'category' => $row['category'] ?? '',
-                        'event_id' => (int)$row['event_id']
+                        'event_id' => (int)$row['event_id'],
+                        'paper_type' => $row['paper_type'] ?? null
                     ],
                     'TotalScore' => 0,
                     'criteria' => []
@@ -355,14 +449,12 @@ if(isset($_POST['getEval'])) {
     } catch (Exception $e) {
         error_log("getEval Error: " . $e->getMessage());
         error_log("Error on line: " . $e->getLine());
-        ob_clean();
-        echo json_encode([]);
-        ob_end_flush();
-        exit();
+        $response = [];
     }
     
     $con->close();
     
+    // Return only the data array, no metadata
     ob_clean();
     echo json_encode($response, JSON_NUMERIC_CHECK);
     ob_end_flush();
@@ -379,9 +471,25 @@ if(isset($_POST['generateSummaryReport'])) {
         $categoryId = isset($_POST['categoryId']) ? (int)$_POST['categoryId'] : 0;
         
         try {
-            // STEP 1: GET EVENT DETAILS
+            // STEP 1: GET EVENT DETAILS AND DETERMINE IF STUDENT OR FACULTY
             $eventName = getEventName($con, $eventId);
             $eventTitle = $eventName;
+            
+            // Determine if this is a student or faculty event
+            $isStudent = false;
+            $sourceTable = 'researchfile';
+            
+            if (!empty($eventName)) {
+                $lowerEventName = strtolower($eventName);
+                if (strpos($lowerEventName, 'undergraduate') !== false || 
+                    strpos($lowerEventName, 'graduate') !== false ||
+                    strpos($lowerEventName, 'student') !== false) {
+                    $isStudent = true;
+                    $sourceTable = 'student_research_papers';
+                }
+            }
+            
+            error_log("generateSummaryReport - Event: $eventName, isStudent: " . ($isStudent ? 'true' : 'false') . ", sourceTable: $sourceTable");
             
             // STEP 2: GET CATEGORY NAME
             $categoryName = 'All Categories';
@@ -400,97 +508,80 @@ if(isset($_POST['generateSummaryReport'])) {
                 $catStmt->close();
             }
             
-            // STEP 3: GET CRITERIA FOR THIS EVENT
+            // STEP 3: GET CRITERIA FOR THIS EVENT - Only for the specific event
             $criteriaList = [];
             $qualityPresentationCriteriaId = null;
 
-            // First, get the criteria IDs that are actually being used in scores for this category
-            $criteriaIdQuery = "SELECT DISTINCT sb.criteria_id 
-                                FROM score_board sb
-                                INNER JOIN researchfile rf ON rf.id = sb.doc_id
-                                INNER JOIN endorsement e ON rf.endorsementid = e.id
-                                WHERE rf.event_id = ? 
-                                AND rf.category = ? 
-                                AND e.status = 'accepted'
-                                AND sb.score > 0";
-
-            $criteriaIdStmt = $con->prepare($criteriaIdQuery);
-            if (!$criteriaIdStmt) {
+            // Directly get criteria for this event ID
+            $criteriaQuery = "SELECT DISTINCT c.id, c.name, c.percentage 
+                              FROM criteria c
+                              WHERE c.event_id = ?
+                              ORDER BY c.id ASC";
+            
+            $criteriaStmt = $con->prepare($criteriaQuery);
+            if (!$criteriaStmt) {
                 throw new Exception('Prepare failed: ' . $con->error);
             }
-            $criteriaIdStmt->bind_param("is", $eventId, $categoryName);
-            $criteriaIdStmt->execute();
-            $criteriaIdResult = $criteriaIdStmt->get_result();
-
-            $criteriaIds = [];
-            while ($row = $criteriaIdResult->fetch_assoc()) {
-                $criteriaIds[] = (int)$row['criteria_id'];
-            }
-            $criteriaIdStmt->close();
-
-            error_log("Criteria IDs found in score_board: " . implode(', ', $criteriaIds));
-
-            // If criteria IDs found, get the full criteria details
-            if (!empty($criteriaIds)) {
-                $idPlaceholder = implode(',', array_fill(0, count($criteriaIds), '?'));
-                $criteriaQuery = "SELECT DISTINCT c.id, c.name, c.percentage 
-                                FROM criteria c
-                                WHERE c.id IN ($idPlaceholder)
-                                ORDER BY c.id ASC";
+            
+            $criteriaStmt->bind_param("i", $eventId);
+            $criteriaStmt->execute();
+            $criteriaResult = $criteriaStmt->get_result();
+            
+            while ($criterion = $criteriaResult->fetch_assoc()) {
+                $criteriaList[] = [
+                    'id' => (int)$criterion['id'],
+                    'name' => $criterion['name'],
+                    'percentage' => (int)$criterion['percentage']
+                ];
                 
-                $criteriaStmt = $con->prepare($criteriaQuery);
-                if (!$criteriaStmt) {
-                    throw new Exception('Prepare failed: ' . $con->error);
+                if (stripos($criterion['name'], 'Quality of Presentation') !== false) {
+                    $qualityPresentationCriteriaId = (int)$criterion['id'];
                 }
-                
-                $types = str_repeat('i', count($criteriaIds));
-                $criteriaStmt->bind_param($types, ...$criteriaIds);
-                $criteriaStmt->execute();
-                $criteriaResult = $criteriaStmt->get_result();
-                
-                while ($criterion = $criteriaResult->fetch_assoc()) {
-                    $criteriaList[] = [
-                        'id' => (int)$criterion['id'],
-                        'name' => $criterion['name'],
-                        'percentage' => (int)$criterion['percentage']
-                    ];
-                    
-                    if (stripos($criterion['name'], 'Quality of Presentation') !== false) {
-                        $qualityPresentationCriteriaId = (int)$criterion['id'];
-                    }
-                }
-                $criteriaStmt->close();
-                
-                error_log("Found " . count($criteriaList) . " criteria from score_board data with IDs: " . implode(', ', array_column($criteriaList, 'id')));
             }
+            $criteriaStmt->close();
+            
+            error_log("Found " . count($criteriaList) . " criteria for event ID $eventId");
 
-            // If still no criteria found, return error
+            // If no criteria found, return error
             if (empty($criteriaList)) {
-                throw new Exception('No criteria found for this event and category');
+                throw new Exception('No criteria found for this event');
             }
             
             // STEP 4: GET ACCEPTED DOCUMENTS FOR THIS EVENT
-            $docQuery = "SELECT 
-                rf.id,  
-                rf.title,
-                rf.author,
-                rf.campus,
-                rf.category
-            FROM researchfile rf
-            INNER JOIN endorsement e ON rf.endorsementid = e.id
-            WHERE rf.event_id = ?
-            AND e.status = 'accepted'";
+            // Use the appropriate table based on event type
+            if ($isStudent) {
+                $docQuery = "SELECT 
+                    srp.id,  
+                    srp.title,
+                    srp.author,
+                    srp.campus,
+                    srp.category
+                FROM student_research_papers srp
+                WHERE srp.event_id = ?
+                AND srp.status = 'accepted'";
+            } else {
+                $docQuery = "SELECT 
+                    rf.id,  
+                    rf.title,
+                    rf.author,
+                    rf.campus,
+                    rf.category
+                FROM researchfile rf
+                INNER JOIN endorsement e ON rf.endorsementid = e.id
+                WHERE rf.event_id = ?
+                AND e.status = 'accepted'";
+            }
             
             $params = [$eventId];
             $types = "i";
             
             if ($categoryId > 0) {
-                $docQuery .= " AND rf.category = ?";
+                $docQuery .= " AND category = ?";
                 $params[] = $categoryName;
                 $types .= "s";
             }
             
-            $docQuery .= " ORDER BY rf.title";
+            $docQuery .= " ORDER BY title";
             
             $docStmt = $con->prepare($docQuery);
             if (!$docStmt) {
@@ -583,29 +674,52 @@ if(isset($_POST['generateSummaryReport'])) {
             $evaluatorIds = array_keys($evaluators);
             $evalIdPlaceholder = implode(',', array_fill(0, count($evaluatorIds), '?'));
             
-            // STEP 6: GET ALL SCORES - FILTER BY THE CRITERIA IDs WE FOUND
+            // STEP 6: GET ALL SCORES - FILTER BY THE CRITERIA IDs WE FOUND for this event
             $criteriaIds = array_column($criteriaList, 'id');
             $criteriaIdPlaceholder = implode(',', array_fill(0, count($criteriaIds), '?'));
             
-            $scoreQuery = "SELECT 
-                rf.id as doc_id,  
-                rf.title,
-                rf.author,
-                rf.campus,
-                rf.category,
-                sb.eval_id,
-                sb.score,
-                sb.criteria_id,
-                c.name as criteria_name,
-                c.percentage
-            FROM score_board sb
-            INNER JOIN researchfile rf ON rf.id = sb.doc_id
-            LEFT JOIN criteria c ON sb.criteria_id = c.id
-            WHERE sb.doc_id IN ($docIdPlaceholder)
-            AND sb.eval_id IN ($evalIdPlaceholder)
-            AND sb.criteria_id IN ($criteriaIdPlaceholder)
-            AND sb.score > 0
-            ORDER BY sb.eval_id, rf.id, sb.criteria_id";
+            // Build score query - join with the appropriate table based on event type
+            if ($isStudent) {
+                $scoreQuery = "SELECT 
+                    srp.id as doc_id,  
+                    srp.title,
+                    srp.author,
+                    srp.campus,
+                    srp.category,
+                    sb.eval_id,
+                    sb.score,
+                    sb.criteria_id,
+                    c.name as criteria_name,
+                    c.percentage
+                FROM score_board sb
+                INNER JOIN student_research_papers srp ON srp.id = sb.doc_id
+                LEFT JOIN criteria c ON sb.criteria_id = c.id
+                WHERE sb.doc_id IN ($docIdPlaceholder)
+                AND sb.eval_id IN ($evalIdPlaceholder)
+                AND sb.criteria_id IN ($criteriaIdPlaceholder)
+                AND sb.score > 0
+                ORDER BY sb.eval_id, srp.id, sb.criteria_id";
+            } else {
+                $scoreQuery = "SELECT 
+                    rf.id as doc_id,  
+                    rf.title,
+                    rf.author,
+                    rf.campus,
+                    rf.category,
+                    sb.eval_id,
+                    sb.score,
+                    sb.criteria_id,
+                    c.name as criteria_name,
+                    c.percentage
+                FROM score_board sb
+                INNER JOIN researchfile rf ON rf.id = sb.doc_id
+                LEFT JOIN criteria c ON sb.criteria_id = c.id
+                WHERE sb.doc_id IN ($docIdPlaceholder)
+                AND sb.eval_id IN ($evalIdPlaceholder)
+                AND sb.criteria_id IN ($criteriaIdPlaceholder)
+                AND sb.score > 0
+                ORDER BY sb.eval_id, rf.id, sb.criteria_id";
+            }
             
             $scoreStmt = $con->prepare($scoreQuery);
             if (!$scoreStmt) {
@@ -625,6 +739,11 @@ if(isset($_POST['generateSummaryReport'])) {
                 $docId = (int)$row['doc_id'];
                 $criteriaId = (int)$row['criteria_id'];
                 $score = (int)$row['score'];
+                
+                // Skip if the criteria is not in our list for this event
+                if (!in_array($criteriaId, $criteriaIds)) {
+                    continue;
+                }
                 
                 // Initialize evaluator if not exists
                 if (!isset($docsByEval[$evalId])) {
@@ -686,7 +805,9 @@ if(isset($_POST['generateSummaryReport'])) {
                 'criteria' => $criteriaList,
                 'evaluators' => [],
                 'quality_presentation_totals' => [],
-                'rankings' => []
+                'rankings' => [],
+                'source_type' => $isStudent ? 'student' : 'faculty',
+                'source_table' => $sourceTable
             ];
             
             // Sort documents by title for consistent column order
@@ -703,14 +824,16 @@ if(isset($_POST['generateSummaryReport'])) {
             
             // STEP 9: PROCESS EACH EVALUATOR
             foreach ($evaluatorData as $evalIndex => $evalItem) {
-                $evaluator = $evalItem->evaluator ?? $evalItem['evaluator'];
-                $docs = $evalItem->docs ?? $evalItem['docs'];
+                $isEvalItemArray = is_array($evalItem);
+                $evaluator = $isEvalItemArray ? ($evalItem['evaluator'] ?? null) : ($evalItem->evaluator ?? null);
+                $docs = $isEvalItemArray ? ($evalItem['docs'] ?? []) : ($evalItem->docs ?? []);
                 
+                $isEvaluatorArray = is_array($evaluator);
                 $evaluatorSheet = [
                     'evaluator' => [
                         'number' => $evalIndex + 1,
-                        'name' => $evaluator['fullname'] ?? $evaluator->fullname,
-                        'id' => $evaluator['id'] ?? $evaluator->id
+                        'name' => $isEvaluatorArray ? ($evaluator['fullname'] ?? '') : ($evaluator->fullname ?? ''),
+                        'id' => $isEvaluatorArray ? ($evaluator['id'] ?? null) : ($evaluator->id ?? null)
                     ],
                     'headers' => [
                         'criteria_row' => ['CRITERIA'],
@@ -967,7 +1090,6 @@ if(isset($_POST['generateSummaryReport'])) {
     exit();
 }
 
-
 function getEventName($con, $eventId) {
     $query = "SELECT name FROM event_list WHERE id = ?";
     $stmt = $con->prepare($query);
@@ -1113,7 +1235,8 @@ function getEvalByCategory($con, $eventId, $categoryId) {
     return $response;
 }
 
-// GET FINAL CONSOLIDATED RANK (with deduplication)
+
+// GET FINAL CONSOLIDATED RANK
 if(isset($_POST['getFinalRank'])) {
     $response = ['success' => false, 'data' => null, 'error' => ''];
     
@@ -1159,8 +1282,7 @@ if(isset($_POST['getFinalRank'])) {
             
             // Deduplicate documents
             $allDocuments = deduplicateDocuments($allDocuments, $docScores);
-            
-            error_log("getFinalRank - After deduplication: " . count($allDocuments) . " documents remain");
+
             
             // Rebuild evaluator data with deduplicated documents
             $deduplicatedEvalData = [];
@@ -1340,7 +1462,7 @@ if(isset($_POST['getFinalRank'])) {
     exit();
 }
 
-// GET AVERAGE RANK ACROSS ALL EVALUATORS (with deduplication)
+// GET AVERAGE RANK ACROSS ALL EVALUATORS
 if(isset($_POST['getAverageRank'])) {
     $response = ['success' => false, 'data' => null, 'error' => ''];
     
@@ -1352,6 +1474,22 @@ if(isset($_POST['getAverageRank'])) {
         
         try {
             $eventName = getEventName($con, $eventId);
+            
+            // Determine if this is a student or faculty event
+            $isStudent = false;
+            $sourceTable = 'researchfile';
+            
+            if (!empty($eventName)) {
+                $lowerEventName = strtolower($eventName);
+                if (strpos($lowerEventName, 'undergraduate') !== false || 
+                    strpos($lowerEventName, 'graduate') !== false ||
+                    strpos($lowerEventName, 'student') !== false) {
+                    $isStudent = true;
+                    $sourceTable = 'student_research_papers';
+                }
+            }
+            
+            error_log("getAverageRank - Event: $eventName, isStudent: " . ($isStudent ? 'true' : 'false') . ", sourceTable: $sourceTable");
             
             // STEP 1: Get category name if specified
             $categoryName = null;
@@ -1368,29 +1506,43 @@ if(isset($_POST['getAverageRank'])) {
             }
             
             // STEP 2: Get accepted documents for this event (filtered by category if specified)
-            $docQuery = "SELECT 
-                rf.id,  
-                rf.title,
-                rf.author,
-                rf.campus,
-                rf.category,
-                rf.event_id
-            FROM researchfile rf
-            INNER JOIN endorsement e ON rf.endorsementid = e.id
-            WHERE rf.event_id = ?
-            AND e.status = 'accepted'";
+            // Use the appropriate table based on event type
+            if ($isStudent) {
+                $docQuery = "SELECT 
+                    srp.id,  
+                    srp.title,
+                    srp.author,
+                    srp.campus,
+                    srp.category,
+                    srp.event_id
+                FROM student_research_papers srp
+                WHERE srp.event_id = ?
+                AND srp.status = 'accepted'";
+            } else {
+                $docQuery = "SELECT 
+                    rf.id,  
+                    rf.title,
+                    rf.author,
+                    rf.campus,
+                    rf.category,
+                    rf.event_id
+                FROM researchfile rf
+                INNER JOIN endorsement e ON rf.endorsementid = e.id
+                WHERE rf.event_id = ?
+                AND e.status = 'accepted'";
+            }
             
             $params = [$eventId];
             $types = "i";
             
             // Add category filter if specified and found
             if ($categoryId > 0 && $categoryName !== null) {
-                $docQuery .= " AND rf.category = ?";
+                $docQuery .= " AND category = ?";
                 $params[] = $categoryName;
                 $types .= "s";
             }
             
-            $docQuery .= " ORDER BY rf.title";
+            $docQuery .= " ORDER BY title";
             
             $docStmt = $con->prepare($docQuery);
             if (!$docStmt) {
@@ -1481,21 +1633,38 @@ if(isset($_POST['getAverageRank'])) {
             $evaluatorIds = array_keys($evaluators);
             $evalIdPlaceholder = implode(',', array_fill(0, count($evaluatorIds), '?'));
             
-            // STEP 4: Get all scores
-            $scoreQuery = "SELECT 
-                rf.id as doc_id,  
-                sb.eval_id,
-                COALESCE(sb.score, 0) as score,
-                c.id as criteria_id,
-                c.name as criteria_name,
-                c.percentage
-            FROM score_board sb
-            INNER JOIN researchfile rf ON rf.id = sb.doc_id
-            LEFT JOIN criteria c ON sb.criteria_id = c.id
-            WHERE sb.doc_id IN ($docIdPlaceholder)
-            AND sb.eval_id IN ($evalIdPlaceholder)
-            AND sb.score > 0
-            ORDER BY sb.eval_id, rf.id, c.id";
+            // STEP 4: Get all scores - join with the appropriate table based on event type
+            if ($isStudent) {
+                $scoreQuery = "SELECT 
+                    srp.id as doc_id,  
+                    sb.eval_id,
+                    COALESCE(sb.score, 0) as score,
+                    c.id as criteria_id,
+                    c.name as criteria_name,
+                    c.percentage
+                FROM score_board sb
+                INNER JOIN student_research_papers srp ON srp.id = sb.doc_id
+                LEFT JOIN criteria c ON sb.criteria_id = c.id
+                WHERE sb.doc_id IN ($docIdPlaceholder)
+                AND sb.eval_id IN ($evalIdPlaceholder)
+                AND sb.score > 0
+                ORDER BY sb.eval_id, srp.id, c.id";
+            } else {
+                $scoreQuery = "SELECT 
+                    rf.id as doc_id,  
+                    sb.eval_id,
+                    COALESCE(sb.score, 0) as score,
+                    c.id as criteria_id,
+                    c.name as criteria_name,
+                    c.percentage
+                FROM score_board sb
+                INNER JOIN researchfile rf ON rf.id = sb.doc_id
+                LEFT JOIN criteria c ON sb.criteria_id = c.id
+                WHERE sb.doc_id IN ($docIdPlaceholder)
+                AND sb.eval_id IN ($evalIdPlaceholder)
+                AND sb.score > 0
+                ORDER BY sb.eval_id, rf.id, c.id";
+            }
             
             $scoreStmt = $con->prepare($scoreQuery);
             if (!$scoreStmt) {
@@ -1667,7 +1836,9 @@ if(isset($_POST['getAverageRank'])) {
                 'summary' => [
                     'total_evaluators' => count($evaluators),
                     'total_documents' => count($allDocuments),
-                    'generated_at' => date('Y-m-d H:i:s')
+                    'generated_at' => date('Y-m-d H:i:s'),
+                    'source_type' => $isStudent ? 'student' : 'faculty',
+                    'source_table' => $sourceTable
                 ]
             ];
             
