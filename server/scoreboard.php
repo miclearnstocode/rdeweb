@@ -57,12 +57,9 @@ if (isset($_POST['scoreboard_req'])) {
             
             $docId = $_POST['docId'];
             
-            // Get eventId from request (if provided)
             $eventIdFromRequest = isset($_POST['eventId']) ? intval($_POST['eventId']) : null;
             
-            // ============================================================
-            // STEP 1: Check student_research_papers FIRST
-            // ============================================================
+
             $studentQuery = "SELECT 
                 srp.event_id, 
                 srp.event, 
@@ -247,9 +244,6 @@ if (isset($_POST['scoreboard_req'])) {
                 $studentStmt->close();
             }
             
-            // ============================================================
-            // STEP 2: If not found in student, check researchfile
-            // ============================================================
             $eventQuery = "SELECT rf.event_id, rf.event, rf.category 
                           FROM researchfile rf
                           WHERE rf.id = ?";
@@ -428,9 +422,6 @@ if (isset($_POST['scoreboard_req'])) {
                 $eventStmt->close();
             }
             
-            // ============================================================
-            // STEP 3: Document not found in either table
-            // ============================================================
             error_log("Scoreboard - Document not found: Doc ID $docId");
             echo json_encode(['error' => 'Document not found in either table']);
             exit();
