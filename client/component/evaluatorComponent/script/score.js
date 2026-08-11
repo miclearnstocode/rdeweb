@@ -2,6 +2,7 @@ import { $, Request, Waiting } from '../../../lib/lib.js'
 
 export const ScoreBoard = ({ resId, eventId, center, categoryId, userType }) => {
     let AbstainState = false;
+    let reloadScoreData = null;
     const dataArray = [];
 
     const Submit = async () => {
@@ -241,12 +242,30 @@ export const ScoreBoard = ({ resId, eventId, center, categoryId, userType }) => 
                                         elementHandler: (el) => {
                                             setTimeout(() => {
                                                 el.value = 0;
+                                                
+                                                // Clean the docId
+                                                let cleanDocId = resId;
+                                                if (cleanDocId && typeof cleanDocId === 'string' && cleanDocId.includes('?')) {
+                                                    cleanDocId = cleanDocId.split('?')[0];
+                                                } else if (cleanDocId && typeof cleanDocId === 'string' && cleanDocId.includes('&')) {
+                                                    cleanDocId = cleanDocId.split('&')[0];
+                                                }
+                                                if (cleanDocId && typeof cleanDocId === 'string') {
+                                                    cleanDocId = cleanDocId.replace(/[^0-9]/g, '');
+                                                }
+                                                
                                                 const req = new Request('/scoreboard');
                                                 req.Post([
                                                     { name: 'scoreReq', value: '1' },
-                                                    { name: 'docId', value: resId },
+                                                    { name: 'docId', value: cleanDocId },
                                                     { name: 'criteria_id', value: crit_id }
                                                 ]);
+                                                // Send eventId separately if available
+                                                if (eventId) {
+                                                    req.Post([
+                                                        { name: 'eventId', value: eventId }
+                                                    ]);
+                                                }
                                                 req.Json();
                                                 req.Send().then(data => {
                                                     // Check if data is an array
@@ -471,6 +490,7 @@ export const ScoreBoard = ({ resId, eventId, center, categoryId, userType }) => 
                     // Abstain button
                     $({
                         tag: 'button',
+                        att: { className: 'abstain-btn' },
                         style: {
                             padding: '8px 20px',
                             backgroundColor: '#f1f5f9',
@@ -504,25 +524,75 @@ export const ScoreBoard = ({ resId, eventId, center, categoryId, userType }) => 
                                     document.body.appendChild(loading);
                                     loading.offsetHeight;
 
+                                    // Clean the docId
+                                    let cleanDocId = resId;
+                                    if (cleanDocId && typeof cleanDocId === 'string' && cleanDocId.includes('?')) {
+                                        cleanDocId = cleanDocId.split('?')[0];
+                                    } else if (cleanDocId && typeof cleanDocId === 'string' && cleanDocId.includes('&')) {
+                                        cleanDocId = cleanDocId.split('&')[0];
+                                    }
+                                    if (cleanDocId && typeof cleanDocId === 'string') {
+                                        cleanDocId = cleanDocId.replace(/[^0-9]/g, '');
+                                    }
+
                                     const req = new Request('/abstain');
                                     if (AbstainState) {
                                         req.Post([
                                             { name: 'removeAbstain', value: '1' },
-                                            { name: 'docId', value: resId }
+                                            { name: 'docId', value: cleanDocId }
                                         ]);
                                     } else {
                                         req.Post([
                                             { name: 'UpdateAbstain', value: '1' },
-                                            { name: 'docId', value: resId },
+                                            { name: 'docId', value: cleanDocId },
                                             { name: 'reason', value: '' }
                                         ]);
+                                    }
+                                    if (eventId) {
+                                        req.form.append('eventId', eventId);
                                     }
 
                                     req.Json();
                                     req.Send().then(data => {
                                         loading.remove();
                                         if (data.status) {
-                                            window.location.reload();
+                                            // Toggle AbstainState
+                                            AbstainState = !AbstainState;
+                                            
+                                            // Update the button UI
+                                            const abstainBtn = document.querySelector('.abstain-btn');
+                                            if (abstainBtn) {
+                                                if (AbstainState) {
+                                                    abstainBtn.style.backgroundColor = '#fef2f2';
+                                                    abstainBtn.style.borderColor = '#fca5a5';
+                                                    abstainBtn.style.color = '#dc2626';
+                                                    abstainBtn.innerHTML = '<span class="fa-solid fa-ban"></span><span>Abstained</span>';
+                                                } else {
+                                                    abstainBtn.style.backgroundColor = '#f1f5f9';
+                                                    abstainBtn.style.borderColor = '#e2e8f0';
+                                                    abstainBtn.style.color = '#64748b';
+                                                    abstainBtn.innerHTML = '<span class="fa-solid fa-ban"></span><span>Abstain</span>';
+                                                }
+                                            }
+                                            
+                                            // Update all input fields to reflect abstain state
+                                            const inputs = document.querySelectorAll('input[type="number"]');
+                                            inputs.forEach(input => {
+                                                input.readOnly = AbstainState;
+                                                input.style.borderColor = AbstainState ? '#e2e8f0' : '#3b82f6';
+                                                input.style.backgroundColor = AbstainState ? '#f8fafc' : '#ffffff';
+                                                input.style.color = AbstainState ? '#94a3b8' : '#0f172a';
+                                                input.style.opacity = AbstainState ? 0.6 : 1;
+                                                input.style.cursor = AbstainState ? 'not-allowed' : 'text';
+                                            });
+                                            
+                                            // Reload the score data
+                                            if (typeof reloadScoreData === 'function') {
+                                                reloadScoreData();
+                                            }
+                                            
+                                            // Show success message
+                                            alert('Abstain status updated successfully');
                                         } else {
                                             alert(data.message || 'Error updating abstain status');
                                         }
@@ -535,6 +605,7 @@ export const ScoreBoard = ({ resId, eventId, center, categoryId, userType }) => 
                             }
                         },
                         elementHandler: (el) => {
+                            // Check abstain status on load
                             const req = new Request('/abstain');
                             req.Post([
                                 { name: 'checkAbstain', value: '1' },
@@ -548,6 +619,16 @@ export const ScoreBoard = ({ resId, eventId, center, categoryId, userType }) => 
                                     el.style.borderColor = '#fca5a5';
                                     el.style.color = '#dc2626';
                                     el.innerHTML = '<span class="fa-solid fa-ban"></span><span>Abstained</span>';
+                                    // Disable all inputs
+                                    const inputs = document.querySelectorAll('input[type="number"]');
+                                    inputs.forEach(input => {
+                                        input.readOnly = true;
+                                        input.style.borderColor = '#e2e8f0';
+                                        input.style.backgroundColor = '#f8fafc';
+                                        input.style.color = '#94a3b8';
+                                        input.style.opacity = '0.6';
+                                        input.style.cursor = 'not-allowed';
+                                    });
                                 } else {
                                     el.style.backgroundColor = '#f1f5f9';
                                     el.style.borderColor = '#e2e8f0';
@@ -558,14 +639,19 @@ export const ScoreBoard = ({ resId, eventId, center, categoryId, userType }) => 
                                 console.error('Error checking abstain status:', err);
                             });
 
+                            // Hover effects
                             el.addEventListener('mouseenter', () => {
                                 if (!AbstainState) {
                                     el.style.backgroundColor = '#e2e8f0';
+                                } else {
+                                    el.style.backgroundColor = '#fecaca';
                                 }
                             });
                             el.addEventListener('mouseleave', () => {
                                 if (!AbstainState) {
                                     el.style.backgroundColor = '#f1f5f9';
+                                } else {
+                                    el.style.backgroundColor = '#fef2f2';
                                 }
                             });
                         }

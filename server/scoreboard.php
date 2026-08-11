@@ -462,108 +462,130 @@ if (isset($_POST['scoreReq'])) {
             }
             
             $userId = $_SESSION['userId'];
-            $docId = $_POST['docId'] ?? 0;
+            $docId = $_POST['docId'] ?? '';
             $criteriaId = $_POST['criteria_id'] ?? 0;
+            
+            // CLEAN THE DOC ID - Remove query string
+            if (strpos($docId, '?') !== false) {
+                $docId = explode('?', $docId)[0];
+            }
+            if (strpos($docId, '&') !== false) {
+                $docId = explode('&', $docId)[0];
+            }
+            $docId = (int)preg_replace('/[^0-9]/', '', $docId);
             
             if (empty($docId) || empty($criteriaId)) {
                 echo json_encode([]);
                 exit();
             }
             
-            // ============================================================
-            // STEP 1: Check student_research_papers FIRST
-            // ============================================================
-            $sourceTable = 'student_research_papers';
-            $eventId = null;
             $isStudent = false;
+            $eventId = null;
+            $eventName = null;
             
-            // Check student_research_papers first (since undergrad/grad are students)
-            $checkQuery = "SELECT event_id, event FROM student_research_papers WHERE id = ?";
-            $checkStmt = $con->prepare($checkQuery);
-            if ($checkStmt) {
-                $checkStmt->bind_param("i", $docId);
-                $checkStmt->execute();
-                $checkResult = $checkStmt->get_result();
-                if ($row = $checkResult->fetch_assoc()) {
+            // Check student_research_papers first
+            $studentCheck = "SELECT event_id, event FROM student_research_papers WHERE id = ? LIMIT 1";
+            $studentStmt = $con->prepare($studentCheck);
+            if ($studentStmt) {
+                $studentStmt->bind_param("i", $docId);
+                $studentStmt->execute();
+                $studentResult = $studentStmt->get_result();
+                if ($row = $studentResult->fetch_assoc()) {
                     $eventId = $row['event_id'];
                     $eventName = $row['event'];
                     $isStudent = true;
-                    $sourceTable = 'student_research_papers';
+                    error_log("ScoreReq - Document found in student_research_papers: docId=$docId");
                 }
-                $checkStmt->close();
+                $studentStmt->close();
             }
             
-            // ============================================================
-            // STEP 2: If not found in student, check researchfile (faculty)
-            // ============================================================
-            if (empty($eventId)) {
-                $checkQuery = "SELECT event_id, event FROM researchfile WHERE id = ?";
-                $checkStmt = $con->prepare($checkQuery);
-                if ($checkStmt) {
-                    $checkStmt->bind_param("i", $docId);
-                    $checkStmt->execute();
-                    $checkResult = $checkStmt->get_result();
-                    if ($row = $checkResult->fetch_assoc()) {
+            // If not found in student, check researchfile (faculty)
+            if (!$eventId) {
+                $facultyCheck = "SELECT event_id, event FROM researchfile WHERE id = ? LIMIT 1";
+                $facultyStmt = $con->prepare($facultyCheck);
+                if ($facultyStmt) {
+                    $facultyStmt->bind_param("i", $docId);
+                    $facultyStmt->execute();
+                    $facultyResult = $facultyStmt->get_result();
+                    if ($row = $facultyResult->fetch_assoc()) {
                         $eventId = $row['event_id'];
                         $eventName = $row['event'];
                         $isStudent = false;
-                        $sourceTable = 'researchfile';
+                        error_log("ScoreReq - Document found in researchfile: docId=$docId");
                     }
-                    $checkStmt->close();
+                    $facultyStmt->close();
                 }
             }
             
             // If no event_id found, return empty
             if (empty($eventId)) {
-                error_log("ScoreReq - No event_id found for document ID: $docId");
+                error_log("ScoreReq - No event found for document ID: $docId");
                 echo json_encode([]);
                 exit();
             }
             
-            error_log("ScoreReq - Document ID: $docId, Source: $sourceTable, Event ID: $eventId, Is Student: " . ($isStudent ? 'Yes' : 'No'));
+            // Check if event name contains student keywords
+            if (!empty($eventName)) {
+                $lowerEventName = strtolower($eventName);
+                if (strpos($lowerEventName, 'undergraduate') !== false || 
+                    strpos($lowerEventName, 'graduate') !== false ||
+                    strpos($lowerEventName, 'student') !== false) {
+                    $isStudent = true;
+                    error_log("ScoreReq - Student event detected by name: $eventName");
+                }
+            }
             
-            // ============================================================
-            // STEP 3: Check if evaluator has abstained
-            // ============================================================
+            error_log("ScoreReq - Document ID: $docId, Event ID: $eventId, Event Name: $eventName, Is Student: " . ($isStudent ? 'Yes' : 'No'));
+            
+            // Get criteria event_id
+            $criteriaEventQuery = "SELECT event_id FROM criteria WHERE id = ? LIMIT 1";
+            $criteriaStmt = $con->prepare($criteriaEventQuery);
+            $criteriaEventId = null;
+            if ($criteriaStmt) {
+                $criteriaStmt->bind_param("i", $criteriaId);
+                $criteriaStmt->execute();
+                $criteriaResult = $criteriaStmt->get_result();
+                if ($row = $criteriaResult->fetch_assoc()) {
+                    $criteriaEventId = $row['event_id'];
+                }
+                $criteriaStmt->close();
+            }
+            
+
             $checkQuery = "SELECT EXISTS(SELECT 1 FROM abstain WHERE eval_id = ? AND doc_id = ?) as Total";
             $stm = $con->prepare($checkQuery);
+            $hasAbstained = false;
             if ($stm) {
                 $stm->bind_param("ii", $userId, $docId);
                 $stm->execute();
                 $res = $stm->get_result();
                 $r1 = $res->fetch_assoc();
-                
-                if ($r1 && $r1['Total'] === 0) {
-                    // ============================================================
-                    // STEP 4: Get the score - verify criteria belongs to the correct event
-                    // ============================================================
-                    $query = "SELECT 
-                        score_board.score, 
-                        score_board.id as scoreId, 
-                        score_board.criteria_id,
-                        criteria.event_id,
-                        criteria.category_id,
-                        criteria.center_id
-                    FROM score_board
-                    LEFT JOIN criteria ON criteria.id = score_board.criteria_id
-                    WHERE score_board.doc_id = ? 
-                    AND score_board.criteria_id = ? 
-                    AND score_board.eval_id = ?
-                    AND criteria.event_id = ?";
-                    
-                    $statement = $con->prepare($query);
-                    if ($statement) {
-                        $statement->bind_param("iiii", $docId, $criteriaId, $userId, $eventId);
-                        $statement->execute();
-                        $result = $statement->get_result();
-                        
-                        while ($val = $result->fetch_assoc()) {
-                            $response[] = $val;
-                        }
-                        $statement->close();
-                    }
-                }
+                $hasAbstained = ($r1 && $r1['Total'] > 0);
                 $stm->close();
+            }
+            
+            if (!$hasAbstained) {
+
+                $query = "SELECT 
+                    score_board.score, 
+                    score_board.id as scoreId, 
+                    score_board.criteria_id
+                FROM score_board
+                WHERE score_board.doc_id = ? 
+                AND score_board.criteria_id = ? 
+                AND score_board.eval_id = ?";
+                
+                $statement = $con->prepare($query);
+                if ($statement) {
+                    $statement->bind_param("iii", $docId, $criteriaId, $userId);
+                    $statement->execute();
+                    $result = $statement->get_result();
+                    
+                    while ($val = $result->fetch_assoc()) {
+                        $response[] = $val;
+                    }
+                    $statement->close();
+                }
             }
             
             $con->close();
@@ -682,6 +704,124 @@ if (isset($_POST['scoreSave'])) {
     } catch (Exception $e) {
         error_log("Score save error: " . $e->getMessage());
         $response->message = "Error saving score: " . $e->getMessage();
+    }
+    
+    echo json_encode($response);
+    exit();
+}
+
+// Mark document as presented
+if (isset($_POST['markPresented'])) {
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    
+    try {
+        $docId = $_POST['docId'] ?? 0;
+        $sourceTable = $_POST['sourceTable'] ?? 'researchfile';
+        $isStudent = isset($_POST['isStudent']) && $_POST['isStudent'] == '1';
+        
+        if (empty($docId)) {
+            throw new Exception('Document ID required');
+        }
+        
+        $con = new mysqli($host, $username, $pass, $dbName);
+        
+        if ($con->connect_error) {
+            throw new Exception('Database connection failed');
+        }
+        
+        // Determine which table to update
+        $table = $isStudent ? 'student_research_papers' : 'researchfile';
+        $idColumn = $isStudent ? 'id' : 'id';
+        
+        $query = "UPDATE `$table` SET `completion_status` = 'completed' WHERE `$idColumn` = ?";
+        $stmt = $con->prepare($query);
+        $stmt->bind_param("i", $docId);
+        
+        if ($stmt->execute()) {
+            $response->status = true;
+            $response->message = 'Document marked as presented successfully';
+        } else {
+            throw new Exception($stmt->error);
+        }
+        
+        $stmt->close();
+        $con->close();
+        
+    } catch (Exception $e) {
+        error_log('markPresented error: ' . $e->getMessage());
+        $response->message = $e->getMessage();
+    }
+    
+    echo json_encode($response);
+    exit();
+}
+
+// Vote for best presenter
+if (isset($_POST['voteBestPresenter'])) {
+    $response = new stdClass();
+    $response->status = false;
+    $response->message = '';
+    
+    try {
+        $docId = $_POST['docId'] ?? 0;
+        $eventId = $_POST['eventId'] ?? 0;
+        $rating = intval($_POST['rating'] ?? 0);
+        $sourceTable = $_POST['sourceTable'] ?? 'researchfile';
+        $evaluatorId = $_SESSION['userId'] ?? 0;
+        
+        if (empty($docId) || empty($eventId) || empty($evaluatorId)) {
+            throw new Exception('Missing required fields');
+        }
+        
+        if ($rating < 1 || $rating > 10) {
+            throw new Exception('Rating must be between 1 and 10');
+        }
+        
+        $con = new mysqli($host, $username, $pass, $dbName);
+        
+        if ($con->connect_error) {
+            throw new Exception('Database connection failed');
+        }
+        
+        // Check if already voted
+        $checkQuery = "SELECT id FROM best_presenter_votes 
+                       WHERE doc_id = ? AND event_id = ? AND evaluator_id = ?";
+        $checkStmt = $con->prepare($checkQuery);
+        $checkStmt->bind_param("iii", $docId, $eventId, $evaluatorId);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        
+        if ($checkResult->num_rows > 0) {
+            // Update existing vote
+            $updateQuery = "UPDATE best_presenter_votes 
+                           SET rating = ?, updated_at = NOW() 
+                           WHERE doc_id = ? AND event_id = ? AND evaluator_id = ?";
+            $updateStmt = $con->prepare($updateQuery);
+            $updateStmt->bind_param("iiii", $rating, $docId, $eventId, $evaluatorId);
+            $updateStmt->execute();
+            $updateStmt->close();
+        } else {
+            // Insert new vote
+            $insertQuery = "INSERT INTO best_presenter_votes 
+                           (doc_id, event_id, evaluator_id, rating, source_table) 
+                           VALUES (?, ?, ?, ?, ?)";
+            $insertStmt = $con->prepare($insertQuery);
+            $insertStmt->bind_param("iiiis", $docId, $eventId, $evaluatorId, $rating, $sourceTable);
+            $insertStmt->execute();
+            $insertStmt->close();
+        }
+        
+        $checkStmt->close();
+        $con->close();
+        
+        $response->status = true;
+        $response->message = 'Vote recorded successfully';
+        
+    } catch (Exception $e) {
+        error_log('voteBestPresenter error: ' . $e->getMessage());
+        $response->message = $e->getMessage();
     }
     
     echo json_encode($response);
