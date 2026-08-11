@@ -89,9 +89,20 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
         if (!docId) return;
         
         try {
+            let cleanDocId = docId;
+            if (docId && typeof docId === 'string' && docId.includes('?')) {
+                cleanDocId = docId.split('?')[0];
+            } else if (docId && typeof docId === 'string' && docId.includes('&')) {
+                cleanDocId = docId.split('&')[0];
+            }
+
+            if (cleanDocId && typeof cleanDocId === 'string') {
+                cleanDocId = cleanDocId.replace(/[^0-9]/g, '');
+            }
+
             const formData = new FormData();
             formData.append('queueCommentForEmail', '1');
-            formData.append('docId', docId);
+            formData.append('docId', cleanDocId); 
             if (eventId) formData.append('eventId', eventId);
             if (eventName) formData.append('eventName', eventName);
             
@@ -105,7 +116,6 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
             }
             
             const result = await response.json();
-            console.log('Email queue result:', result);
             return result;
         } catch (error) {
             console.error('Error queueing comment for email:', error);
@@ -169,6 +179,22 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
                         
                         const formData = new FormData();
                         formData.append('updateReview', 'true');
+
+                        let cleanDocId = docId;
+                        if (docId && typeof docId === 'string' && docId.includes('?')) {
+                            cleanDocId = docId.split('?')[0];
+                        } else if (docId && typeof docId === 'string' && docId.includes('&')) {
+                            cleanDocId = docId.split('&')[0];
+                        }
+
+                        if (cleanDocId && typeof cleanDocId === 'string') {
+                            cleanDocId = cleanDocId.replace(/[^0-9]/g, '');
+                        }
+
+                        formData.append('docId', cleanDocId);
+                        if (eventId) {
+                            formData.append('eventId', eventId);
+                        }
                         formData.append('title', data.title || '');
                         formData.append('intro', data.intro || '');
                         formData.append('abstract', data.abstract || '');
@@ -178,7 +204,6 @@ export const CommentBoard = ({ title, docId, closeState, eventId}) => {
                         formData.append('recommendation', data.recommendation || '');
                         formData.append('literature', data.literature || '');
                         formData.append('other', data.other || '');
-                        formData.append('docId', docId);
 
                         let loading = Waiting();
                         document.body.appendChild(loading);

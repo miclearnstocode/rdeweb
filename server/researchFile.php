@@ -224,7 +224,7 @@ if (isset($_POST['researchSubmit'])) {
         if ($isStudentEvent) {
             error_log("Querying student_research_papers for event $eventId");
             
-            // Build query for student_research_papers - NO NULL values
+            // Build query for student_research_papers - ONLY accepted status
             $sql = "SELECT 
                 srp.id,
                 srp.author,
@@ -242,7 +242,8 @@ if (isset($_POST['researchSubmit'])) {
                 srp.status
             FROM student_research_papers srp
             LEFT JOIN category cat ON srp.category = cat.name
-            WHERE srp.event_id = ?";
+            WHERE srp.event_id = ?
+              AND srp.status = 'accepted'";
             
             $params = [$eventId];
             $types = "i";
@@ -257,8 +258,7 @@ if (isset($_POST['researchSubmit'])) {
                 }
             }
             
-            $sql .= " AND srp.status IN ('pending', 'accepted')
-                     ORDER BY srp.title ASC";
+            $sql .= " ORDER BY srp.title ASC";
             
             error_log("Student SQL: " . $sql);
             error_log("Student Params: " . print_r($params, true));
@@ -282,7 +282,7 @@ if (isset($_POST['researchSubmit'])) {
         } else {
             error_log("Querying researchfile for event $eventId");
             
-            // Build query for researchfile (faculty) - NO NULL values
+            // Build query for researchfile (faculty) - ONLY accepted status
             $sql = "SELECT 
                 rf.id,
                 rf.author,
@@ -301,12 +301,14 @@ if (isset($_POST['researchSubmit'])) {
                 event_list.id as eventId,
                 category.id as catId,
                 category.name as category_name,
-                rf.status
+                rf.status as research_status,
+                endorsement.status as endorsement_status
             FROM researchfile as rf
             LEFT JOIN endorsement ON endorsement.id = rf.endorsementid
             LEFT JOIN event_list ON rf.event_id = event_list.id
             LEFT JOIN category ON rf.category = category.name
-            WHERE rf.event_id = ?";
+            WHERE rf.event_id = ?
+              AND (rf.status = 'accepted' OR endorsement.status = 'accepted')";
             
             $params = [$eventId];
             $types = "i";
@@ -329,8 +331,7 @@ if (isset($_POST['researchSubmit'])) {
                 $types .= "ss";
             }
             
-            $sql .= " AND (rf.status = 'accepted' OR endorsement.status = 'accepted')
-                     ORDER BY rf.title ASC";
+            $sql .= " ORDER BY rf.title ASC";
             
             error_log("Faculty SQL: " . $sql);
             error_log("Faculty Params: " . print_r($params, true));
@@ -352,14 +353,52 @@ if (isset($_POST['researchSubmit'])) {
             error_log("Faculty papers found: " . count($allPapers));
         }
 
-        // Process papers
+        // Process papers with deduplication
         $processedPapers = [];
         $uniqueIds = [];
+        $processedTitles = [];
         
         foreach ($allPapers as $paper) {
+            // Skip duplicates by ID
             if (in_array($paper['id'], $uniqueIds)) {
                 continue;
             }
+            
+            // For student papers, also check for title duplicates (fuzzy matching)
+            if ($isStudentEvent) {
+                $title = isset($paper['research_title']) ? $paper['research_title'] : '';
+                $authors = [];
+                if (!empty($paper['author'])) {
+                    $authors[] = $paper['author'];
+                }
+                if (!empty($paper['coauthor'])) {
+                    $coauthors = json_decode($paper['coauthor'], true);
+                    if (is_array($coauthors)) {
+                        $authors = array_merge($authors, $coauthors);
+                    }
+                }
+                
+                $isDuplicate = false;
+                foreach ($processedTitles as $processed) {
+                    $titleSimilar = isSimilarString($title, $processed['title'], 80);
+                    $authorSimilar = areAuthorsSimilar($authors, $processed['authors'], 70);
+                    
+                    if ($titleSimilar && $authorSimilar) {
+                        $isDuplicate = true;
+                        break;
+                    }
+                }
+                
+                if ($isDuplicate) {
+                    continue;
+                }
+                
+                $processedTitles[] = [
+                    'title' => $title,
+                    'authors' => $authors
+                ];
+            }
+            
             $uniqueIds[] = $paper['id'];
             
             $data = new stdClass();
@@ -457,15 +496,15 @@ if (isset($_POST['researchSubmit'])) {
         
         $response->list = $processedPapers;
         $response->totalUnique = count($processedPapers);
-        $response->totalDuplicateCount = 0;
-        $response->hasDuplicates = false;
+        $response->totalDuplicateCount = count($allPapers) - count($processedPapers);
+        $response->hasDuplicates = ($response->totalDuplicateCount > 0);
         $response->source_table = $isStudentEvent ? 'student_research_papers' : 'researchfile';
         $response->is_student_event = $isStudentEvent;
         $response->event_name = $eventName;
-        $response->source_count = count($processedPapers);
+        $response->source_count = count($allPapers);
         $response->message = 'Successfully loaded ' . count($processedPapers) . ' papers from ' . ($isStudentEvent ? 'student' : 'faculty') . ' table';
 
-        error_log("Total papers returned: " . count($response->list));
+        error_log("Total papers found: " . count($allPapers) . ", Unique: " . count($processedPapers) . ", Duplicates removed: " . (count($allPapers) - count($processedPapers)));
         
     } else {
         $response->message = 'Database connection failed';
@@ -595,8 +634,9 @@ if (isset($_POST['updateReview'])) {
         $evalId = $_SESSION['userId'] ?? 0;
         $evalName = $_SESSION['userFulname'] ?? '';
         $docsId = $_POST['docId'] ?? '';
+        $eventId = $_POST['eventId'] ?? null;
 
-        error_log("evalId: $evalId, docsId: $docsId");
+        error_log("evalId: $evalId, docsId: $docsId, eventId: $eventId");
 
         // Verify the document exists and get its details
         if (empty($docsId)) {
@@ -606,38 +646,154 @@ if (isset($_POST['updateReview'])) {
             exit();
         }
 
-        $eventId = 0;
-        $eventType = '';
-        $researchTitle = '';
-        $finalSymposiumTitle = '';
+        // Clean the docId
+        if (strpos($docsId, '?') !== false) {
+            $docsId = explode('?', $docsId)[0];
+        }
+        if (strpos($docsId, '&') !== false) {
+            $docsId = explode('&', $docsId)[0];
+        }
+        $docsId = (int)preg_replace('/[^0-9]/', '', $docsId);
         
-        if ($docsId) {
-            $eventQuery = $con->prepare("SELECT rf.event_id, rf.title, rf.final_symposium_title, el.name as event_name FROM researchfile rf LEFT JOIN event_list el ON el.id = rf.event_id WHERE rf.id = ?");
-            if (!$eventQuery) {
-                $response->message = "Database error: " . $con->error;
-                error_log("Failed to prepare event query: " . $con->error);
-                echo json_encode($response);
-                exit();
+        if (empty($docsId)) {
+            $response->message = "Invalid document ID";
+            error_log("ERROR: Invalid document ID after cleaning");
+            echo json_encode($response);
+            exit();
+        }
+
+        // Determine which table to query based on event name
+        $isStudent = false;
+        $eventName = null;
+        $sourceTable = 'researchfile';
+        $docInfo = null;
+
+        // If eventId is provided, get the event name
+        if (!empty($eventId)) {
+            $eventQuery = "SELECT name FROM event_list WHERE id = ? LIMIT 1";
+            $eventStmt = $con->prepare($eventQuery);
+            if ($eventStmt) {
+                $eventStmt->bind_param("i", $eventId);
+                $eventStmt->execute();
+                $eventResult = $eventStmt->get_result();
+                if ($row = $eventResult->fetch_assoc()) {
+                    $eventName = $row['name'];
+                    $lowerEventName = strtolower($eventName);
+                    // Check if it's a student event
+                    if (strpos($lowerEventName, 'undergraduate') !== false || 
+                        strpos($lowerEventName, 'graduate') !== false ||
+                        strpos($lowerEventName, 'student') !== false) {
+                        $isStudent = true;
+                        $sourceTable = 'student_research_papers';
+                    }
+                }
+                $eventStmt->close();
             }
-            $eventQuery->bind_param("s", $docsId);
-            $eventQuery->execute();
-            $eventResult = $eventQuery->get_result();
-            $eventRow = $eventResult->fetch_assoc();
-            
-            if (!$eventRow) {
-                $response->message = "Document not found with ID: $docsId";
-                error_log("ERROR: Document not found with ID: $docsId");
-                echo json_encode($response);
-                exit();
+        }
+
+        // If no eventId or not found, try to determine from the document
+        if (!$eventName) {
+            // Check student_research_papers first
+            $studentCheck = "SELECT id, event, event_id FROM student_research_papers WHERE id = ? LIMIT 1";
+            $studentStmt = $con->prepare($studentCheck);
+            if ($studentStmt) {
+                $studentStmt->bind_param("i", $docsId);
+                $studentStmt->execute();
+                $studentResult = $studentStmt->get_result();
+                if ($row = $studentResult->fetch_assoc()) {
+                    $eventName = $row['event'];
+                    $eventId = $row['event_id'];
+                    $isStudent = true;
+                    $sourceTable = 'student_research_papers';
+                    error_log("Document found in student_research_papers: docsId=$docsId");
+                }
+                $studentStmt->close();
             }
+        }
+
+        // If not found in student, check researchfile
+        if (!$eventName) {
+            $facultyCheck = "SELECT id, event, event_id FROM researchfile WHERE id = ? LIMIT 1";
+            $facultyStmt = $con->prepare($facultyCheck);
+            if ($facultyStmt) {
+                $facultyStmt->bind_param("i", $docsId);
+                $facultyStmt->execute();
+                $facultyResult = $facultyStmt->get_result();
+                if ($row = $facultyResult->fetch_assoc()) {
+                    $eventName = $row['event'];
+                    $eventId = $row['event_id'];
+                    $isStudent = false;
+                    $sourceTable = 'researchfile';
+                    error_log("Document found in researchfile: docsId=$docsId");
+                }
+                $facultyStmt->close();
+            }
+        }
+
+        // Get document info from the appropriate table
+        if ($isStudent) {
+            $docQuery = $con->prepare("SELECT 
+                srp.id,
+                srp.title,
+                srp.event,
+                srp.event_id,
+                srp.author,
+                srp.coauthor,
+                srp.presenter,
+                srp.category,
+                srp.campus,
+                NULL as final_symposium_title,
+                NULL as center,
+                NULL as file,
+                NULL as drive_view_url,
+                NULL as paper_trail_no,
+                el.name as event_name
+            FROM student_research_papers srp
+            LEFT JOIN event_list el ON el.id = srp.event_id
+            WHERE srp.id = ? LIMIT 1");
+        } else {
+            $docQuery = $con->prepare("SELECT 
+                rf.id,
+                rf.title,
+                rf.final_symposium_title,
+                rf.event,
+                rf.event_id,
+                rf.author,
+                rf.coauthor,
+                rf.presenter,
+                rf.category,
+                rf.center,
+                rf.campus,
+                rf.file,
+                rf.drive_view_url,
+                rf.paper_trail_no,
+                el.name as event_name
+            FROM researchfile rf
+            LEFT JOIN event_list el ON el.id = rf.event_id
+            WHERE rf.id = ? LIMIT 1");
+        }
+
+        if ($docQuery) {
+            $docQuery->bind_param("i", $docsId);
+            $docQuery->execute();
+            $docResult = $docQuery->get_result();
+            $docInfo = $docResult->fetch_assoc();
+            $docQuery->close();
             
-            $eventId = $eventRow['event_id'] ?? $_SESSION['eventId'] ?? 0;
-            $eventType = $eventRow['event_name'] ?? $_SESSION['eventTYpe'] ?? '';
-            $researchTitle = $eventRow['title'] ?? '';
-            $finalSymposiumTitle = $eventRow['final_symposium_title'] ?? '';
-            
-            $eventQuery->close();
-            error_log("eventId: $eventId, eventType: $eventType, title: $researchTitle, finalTitle: $finalSymposiumTitle");
+            if ($docInfo) {
+                $eventName = $docInfo['event_name'] ?? $docInfo['event'] ?? $eventName;
+                $eventId = $docInfo['event_id'] ?? $eventId;
+                $researchTitle = $docInfo['title'] ?? '';
+                $finalSymposiumTitle = $docInfo['final_symposium_title'] ?? '';
+                error_log("Document info retrieved from $sourceTable");
+            }
+        }
+
+        if (!$docInfo) {
+            $response->message = "Document not found with ID: $docsId";
+            error_log("ERROR: Document not found with ID: $docsId");
+            echo json_encode($response);
+            exit();
         }
 
         $title = $_POST['title'] ?? '';
@@ -652,42 +808,12 @@ if (isset($_POST['updateReview'])) {
 
         error_log("Comment data - title: '$title', intro: '$intro', abstract: '$abstract'");
 
-        // Get document details for queueing
-        $docInfo = [];
-        if ($docsId) {
-            $documentDetails = $con->prepare("SELECT 
-                researchfile.title, 
-                researchfile.final_symposium_title,
-                researchfile.author, 
-                researchfile.event_id,
-                event_list.name as event_name,
-                researchfile.category,
-                researchfile.center,
-                researchfile.campus,
-                endorsement.center as endorsement_center,
-                account_detail.email,
-                account_detail.fullName
-            FROM researchfile 
-            LEFT JOIN endorsement ON researchfile.endorsementid = endorsement.id
-            LEFT JOIN account_detail ON researchfile.senderid = account_detail.id
-            LEFT JOIN event_list ON researchfile.event_id = event_list.id
-            WHERE researchfile.id = ?");
-
-            if ($documentDetails) {
-                $documentDetails->bind_param("s", $docsId);
-                $documentDetails->execute();
-                $docResult = $documentDetails->get_result();
-                $docInfo = $docResult->fetch_assoc();
-                $documentDetails->close();
-            }
-        }
-
         // Check if comments exist for this evaluator and document
         $found = false;
         if ($docsId && $evalId) {
             $checkQuery = $con->prepare("SELECT COUNT(*) as count FROM comments WHERE evalid = ? AND resid = ?");
             if ($checkQuery) {
-                $checkQuery->bind_param("ss", $evalId, $docsId);
+                $checkQuery->bind_param("ii", $evalId, $docsId);
                 $checkQuery->execute();
                 $checkResult = $checkQuery->get_result();
                 $row = $checkResult->fetch_assoc();
@@ -697,7 +823,7 @@ if (isset($_POST['updateReview'])) {
             }
         }
 
-        // Use the title from the database (final_symposium_title if available) for display
+        // Use the title from the database for display
         $displayTitle = !empty($finalSymposiumTitle) ? $finalSymposiumTitle : $researchTitle;
         error_log("Display title for document: $displayTitle");
 
@@ -731,7 +857,7 @@ if (isset($_POST['updateReview'])) {
             }
             
             $statement->bind_param(
-                "ssssssssssss",
+                "ssssssssssii",
                 $title,
                 $intro,
                 $abstract,
@@ -741,12 +867,12 @@ if (isset($_POST['updateReview'])) {
                 $recommendation,
                 $literature,
                 $other,
-                $eventType,
+                $eventName,
                 $docsId,
                 $evalId
             );
 
-            error_log("Binding values: title='$title', intro='$intro', abstract='$abstract', objective='$objective', methodology='$methodology', results='$results', recommendation='$recommendation', literature='$literature', other='$other', docsId='$docsId', evalId='$evalId'");
+            error_log("Binding values: title='$title', intro='$intro', abstract='$abstract', docsId='$docsId', evalId='$evalId'");
 
             $status = $statement->execute();
 
@@ -790,11 +916,11 @@ if (isset($_POST['updateReview'])) {
             }
             
             $statementQ->bind_param(
-                "sssssssssssss",
+                "iiissssssssss",
                 $docsId,
                 $evalId,
                 $eventId,
-                $eventType,
+                $eventName,
                 $title,
                 $intro,
                 $abstract,
@@ -806,7 +932,7 @@ if (isset($_POST['updateReview'])) {
                 $other
             );
 
-            error_log("Binding values: docsId='$docsId', evalId='$evalId', eventId='$eventId', eventType='$eventType', title='$title', intro='$intro', abstract='$abstract', objective='$objective', methodology='$methodology', results='$results', recommendation='$recommendation', literature='$literature', other='$other'");
+            error_log("Binding values: docsId='$docsId', evalId='$evalId', eventId='$eventId', eventType='$eventName'");
 
             $statusIn = $statementQ->execute();
 
@@ -824,7 +950,7 @@ if (isset($_POST['updateReview'])) {
 
         // If comments were saved successfully, queue for scheduled email
         if ($saveSuccess && !empty($docInfo)) {
-            $queueResult = queueCommentForEmail($con, $docsId, $evalId, $evalName, $docInfo, $displayTitle, $eventId, $eventType);
+            $queueResult = queueCommentForEmail($con, $docsId, $evalId, $evalName, $docInfo, $displayTitle, $eventId, $eventName);
             
             if ($queueResult['status']) {
                 $response->queueStatus = $queueResult['message'];
@@ -836,6 +962,8 @@ if (isset($_POST['updateReview'])) {
         } else {
             $response->queueStatus = "Comments saved but no email notification queued (no author email found).";
         }
+
+        $con->close();
 
     } else {
         $response->message = "Database connection error";
