@@ -417,126 +417,275 @@ if (isset($_POST['requestEventRDE'])) {
         mysqli_report(MYSQLI_REPORT_OFF);
         $con->set_charset('utf8mb4');
         
-        if ($eventId === '0' || $eventId === '') {
-            $countSql = "
-                SELECT COUNT(*) as total
-                FROM researchfile
-                INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
-                WHERE (endorsement.status = 'accepted' OR researchfile.status = 'accepted')";
-            $countStmt = $con->prepare($countSql);
-            
-            if (!$countStmt) {
-                throw new Exception('Prepare count failed: ' . $con->error);
-            }
-            
-            $countStmt->execute();
-        } else {
-            $countSql = "
-                SELECT COUNT(*) as total
-                FROM researchfile
-                INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
-                INNER JOIN event_list ON researchfile.event = event_list.name
-                WHERE (endorsement.status = 'accepted' OR researchfile.status = 'accepted')
-                AND event_list.id = ?";
-            $countStmt = $con->prepare($countSql);
-            
-            if (!$countStmt) {
-                throw new Exception('Prepare count failed: ' . $con->error);
-            }
-            
-            $countStmt->bind_param('s', $eventId);
-            $countStmt->execute();
-        }
-
-        $countResult = $countStmt->get_result();
-        $countRow = $countResult->fetch_assoc();
-        $total = (int)($countRow['total'] ?? 0);
+        // Get event name to determine which table to query
+        $eventName = '';
+        $useStudentTable = false;
         
-        $countResult->free();
-        $countStmt->close();
+        if ($eventId !== '0' && $eventId !== '') {
+            $eventQuery = "SELECT name FROM event_list WHERE id = ?";
+            $eventStmt = $con->prepare($eventQuery);
+            if ($eventStmt) {
+                $eventStmt->bind_param('s', $eventId);
+                $eventStmt->execute();
+                $eventResult = $eventStmt->get_result();
+                if ($eventRow = $eventResult->fetch_assoc()) {
+                    $eventName = $eventRow['name'];
+                }
+                $eventResult->free();
+                $eventStmt->close();
+            }
+        }
+        
+        // Determine which table to query based on event name
+        // Student events contain: "Undergraduate" or "Graduate"
+        // Research events contain: "In-House", "Symposium", "Review", or default
+        if (!empty($eventName)) {
+            $eventNameLower = strtolower($eventName);
+            if (strpos($eventNameLower, 'undergraduate') !== false || 
+                strpos($eventNameLower, 'graduate') !== false) {
+                $useStudentTable = true;
+            } else {
+                $useStudentTable = false;
+            }
+        } else {
+            // If no event selected or event not found, default to researchfile
+            $useStudentTable = false;
+        }
+        
+        // ============================================================
+        // COUNT QUERY
+        // ============================================================
+        $total = 0;
+        
+        if ($useStudentTable) {
+            // Query student_research_papers
+            if ($eventId === '0' || $eventId === '') {
+                $countSql = "
+                    SELECT COUNT(*) as total
+                    FROM student_research_papers srp
+                    WHERE srp.status = 'accepted'";
+                $countStmt = $con->prepare($countSql);
+            } else {
+                $countSql = "
+                    SELECT COUNT(*) as total
+                    FROM student_research_papers srp
+                    WHERE srp.status = 'accepted'
+                    AND srp.event_id = ?";
+                $countStmt = $con->prepare($countSql);
+            }
+            
+            if (!$countStmt) {
+                throw new Exception('Prepare count failed: ' . $con->error);
+            }
+            if ($eventId !== '0' && $eventId !== '') {
+                $countStmt->bind_param('s', $eventId);
+            }
+            $countStmt->execute();
+            $countResult = $countStmt->get_result();
+            $countRow = $countResult->fetch_assoc();
+            $total = (int)($countRow['total'] ?? 0);
+            $countResult->free();
+            $countStmt->close();
+            
+        } else {
+            // Query researchfile (default for faculty/staff)
+            if ($eventId === '0' || $eventId === '') {
+                $countSql = "
+                    SELECT COUNT(*) as total
+                    FROM researchfile rf
+                    INNER JOIN endorsement ON endorsement.id = rf.endorsementid
+                    WHERE (endorsement.status = 'accepted' OR rf.status = 'accepted')";
+                $countStmt = $con->prepare($countSql);
+            } else {
+                $countSql = "
+                    SELECT COUNT(*) as total
+                    FROM researchfile rf
+                    INNER JOIN endorsement ON endorsement.id = rf.endorsementid
+                    WHERE (endorsement.status = 'accepted' OR rf.status = 'accepted')
+                    AND rf.event = ?";
+                $countStmt = $con->prepare($countSql);
+            }
+            
+            if (!$countStmt) {
+                throw new Exception('Prepare count failed: ' . $con->error);
+            }
+            if ($eventId !== '0' && $eventId !== '') {
+                $countStmt->bind_param('s', $eventName);
+            }
+            $countStmt->execute();
+            $countResult = $countStmt->get_result();
+            $countRow = $countResult->fetch_assoc();
+            $total = (int)($countRow['total'] ?? 0);
+            $countResult->free();
+            $countStmt->close();
+        }
 
         $res['total'] = $total;
         $res['totalPages'] = $total > 0 ? (int)ceil($total / $limit) : 0;
 
+        // ============================================================
+        // DATA QUERY
+        // ============================================================
         if ($total > 0) {
-            if ($eventId === '0' || $eventId === '') {
-                $sql = "
-                    SELECT
-                        researchfile.id,
-                        researchfile.senderid,
-                        researchfile.author,
-                        researchfile.title,
-                        researchfile.file,
-                        researchfile.drive_view_url,
-                        researchfile.drive_file_id,
-                        researchfile.drive_download_url,
-                        researchfile.status,
-                        researchfile.category,
-                        researchfile.center,
-                        endorsement.campus,
-                        endorsement.event,
-                        endorsement.date,
-                        endorsement.id AS endorsId
-                    FROM researchfile
-                    INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
-                    WHERE (endorsement.status = 'accepted' OR researchfile.status = 'accepted')
-                    ORDER BY researchfile.id DESC
-                    LIMIT ? OFFSET ?";
-                
-                $stmt = $con->prepare($sql);
-                
-                if (!$stmt) {
-                    throw new Exception('Prepare data statement failed: ' . $con->error);
+            $data = [];
+            $stmt = null;
+            
+            if ($useStudentTable) {
+                // Query student_research_papers
+                if ($eventId === '0' || $eventId === '') {
+                    $sql = "
+                        SELECT
+                            srp.id,
+                            srp.author,
+                            srp.title,
+                            srp.research_file_view_url AS file,
+                            srp.research_file_view_url AS drive_view_url,
+                            NULL AS drive_file_id,
+                            srp.research_file_download_url AS drive_download_url,
+                            srp.status,
+                            srp.category,
+                            NULL AS center,
+                            srp.presenter,
+                            srp.coauthor,
+                            srp.campus,
+                            srp.event,
+                            NULL AS date,
+                            NULL AS endorsId,
+                            'student' AS source_type
+                        FROM student_research_papers srp
+                        WHERE srp.status = 'accepted'
+                        ORDER BY srp.id DESC
+                        LIMIT ? OFFSET ?";
+                    
+                    $stmt = $con->prepare($sql);
+                    if (!$stmt) {
+                        throw new Exception('Prepare data statement failed: ' . $con->error);
+                    }
+                    $stmt->bind_param('ii', $limit, $offset);
+                    
+                } else {
+                    $sql = "
+                        SELECT
+                            srp.id,
+                            srp.author,
+                            srp.title,
+                            srp.research_file_view_url AS file,
+                            srp.research_file_view_url AS drive_view_url,
+                            NULL AS drive_file_id,
+                            srp.research_file_download_url AS drive_download_url,
+                            srp.status,
+                            srp.category,
+                            NULL AS center,
+                            srp.presenter,
+                            srp.coauthor,
+                            srp.campus,
+                            srp.event,
+                            NULL AS date,
+                            NULL AS endorsId,
+                            'student' AS source_type
+                        FROM student_research_papers srp
+                        WHERE srp.status = 'accepted'
+                        AND srp.event_id = ?
+                        ORDER BY srp.id DESC
+                        LIMIT ? OFFSET ?";
+                    
+                    $stmt = $con->prepare($sql);
+                    if (!$stmt) {
+                        throw new Exception('Prepare data statement failed: ' . $con->error);
+                    }
+                    $stmt->bind_param('sii', $eventId, $limit, $offset);
                 }
-                
-                $stmt->bind_param('ii', $limit, $offset);
                 
             } else {
-                $sql = "
-                    SELECT
-                        researchfile.id,
-                        researchfile.senderid,
-                        researchfile.author,
-                        researchfile.title,
-                        researchfile.file,
-                        researchfile.drive_view_url,
-                        researchfile.drive_file_id,
-                        researchfile.drive_download_url,
-                        researchfile.status,
-                        researchfile.category,
-                        researchfile.center,
-                        endorsement.campus,
-                        endorsement.event,
-                        endorsement.date,
-                        endorsement.id AS endorsId
-                    FROM researchfile
-                    INNER JOIN endorsement ON endorsement.id = researchfile.endorsementid
-                    INNER JOIN event_list ON researchfile.event = event_list.name
-                    WHERE (endorsement.status = 'accepted' OR researchfile.status = 'accepted')
-                    AND event_list.id = ?
-                    ORDER BY researchfile.id DESC
-                    LIMIT ? OFFSET ?";
-                
-                $stmt = $con->prepare($sql);
-                
-                if (!$stmt) {
-                    throw new Exception('Prepare data statement failed: ' . $con->error);
+                // Query researchfile (default for faculty/staff)
+                if ($eventId === '0' || $eventId === '') {
+                    $sql = "
+                        SELECT
+                            rf.id,
+                            rf.senderid,
+                            rf.author,
+                            rf.title,
+                            rf.file,
+                            rf.drive_view_url,
+                            rf.drive_file_id,
+                            rf.drive_download_url,
+                            rf.status,
+                            rf.category,
+                            rf.center,
+                            rf.presenter,
+                            rf.coauthor,
+                            endorsement.campus,
+                            endorsement.event,
+                            endorsement.date,
+                            endorsement.id AS endorsId,
+                            'researchfile' AS source_type
+                        FROM researchfile rf
+                        INNER JOIN endorsement ON endorsement.id = rf.endorsementid
+                        WHERE (endorsement.status = 'accepted' OR rf.status = 'accepted')
+                        ORDER BY rf.id DESC
+                        LIMIT ? OFFSET ?";
+                    
+                    $stmt = $con->prepare($sql);
+                    if (!$stmt) {
+                        throw new Exception('Prepare data statement failed: ' . $con->error);
+                    }
+                    $stmt->bind_param('ii', $limit, $offset);
+                    
+                } else {
+                    $sql = "
+                        SELECT
+                            rf.id,
+                            rf.senderid,
+                            rf.author,
+                            rf.title,
+                            rf.file,
+                            rf.drive_view_url,
+                            rf.drive_file_id,
+                            rf.drive_download_url,
+                            rf.status,
+                            rf.category,
+                            rf.center,
+                            rf.presenter,
+                            rf.coauthor,
+                            endorsement.campus,
+                            endorsement.event,
+                            endorsement.date,
+                            endorsement.id AS endorsId,
+                            'researchfile' AS source_type
+                        FROM researchfile rf
+                        INNER JOIN endorsement ON endorsement.id = rf.endorsementid
+                        WHERE (endorsement.status = 'accepted' OR rf.status = 'accepted')
+                        AND rf.event = ?
+                        ORDER BY rf.id DESC
+                        LIMIT ? OFFSET ?";
+                    
+                    $stmt = $con->prepare($sql);
+                    if (!$stmt) {
+                        throw new Exception('Prepare data statement failed: ' . $con->error);
+                    }
+                    $stmt->bind_param('sii', $eventName, $limit, $offset);
                 }
-                
-                $stmt->bind_param('sii', $eventId, $limit, $offset);
+            }
+
+            // Check if $stmt was properly initialized
+            if ($stmt === null) {
+                throw new Exception('No query was prepared. Invalid event type configuration.');
             }
 
             $stmt->execute();
             $result = $stmt->get_result();
             
-            $data = [];
-            
             while ($row = $result->fetch_assoc()) {
-                if (!empty($row['drive_view_url'])) {
-                    $row['file'] = $row['drive_view_url'];
-                } elseif (empty($row['file']) && !empty($row['drive_file_id'])) {
-                    $row['file'] = 'https://drive.google.com/file/d/' . $row['drive_file_id'] . '/preview';
+                // Handle file URL for researchfile entries
+                if ($row['source_type'] === 'researchfile') {
+                    if (!empty($row['drive_view_url'])) {
+                        $row['file'] = $row['drive_view_url'];
+                    } elseif (empty($row['file']) && !empty($row['drive_file_id'])) {
+                        $row['file'] = 'https://drive.google.com/file/d/' . $row['drive_file_id'] . '/preview';
+                    }
                 }
+                // For student entries, file is already set from research_file_view_url
+                
                 $data[] = $row;
             }
 
@@ -570,7 +719,8 @@ if (isset($_POST['requestEventRDE'])) {
     echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
-// Search Documents - no event selection required
+
+// Search Documents
 if (isset($_POST['searchDocuments'])) {
     ob_clean();
     
@@ -622,13 +772,59 @@ if (isset($_POST['searchDocuments'])) {
             $whereClause = "AND (" . implode(" OR ", $searchConditions) . ")";
         }
         
-        // Count query
+        // ============================================================
+        // COUNT QUERY: Union of researchfile and student_research_papers
+        // ============================================================
         $countSql = "
-            SELECT COUNT(*) as total
-            FROM researchfile rf
-            INNER JOIN endorsement ON endorsement.id = rf.endorsementid
-            WHERE (endorsement.status = 'accepted' OR rf.status = 'accepted')
-            {$whereClause}";
+            SELECT COUNT(*) as total FROM (
+                SELECT rf.id 
+                FROM researchfile rf
+                INNER JOIN endorsement ON endorsement.id = rf.endorsementid
+                WHERE (endorsement.status = 'accepted' OR rf.status = 'accepted')
+                {$whereClause}
+                
+                UNION ALL
+                
+                SELECT srp.id 
+                FROM student_research_papers srp
+                WHERE srp.status = 'accepted'
+                {$studentWhereClause}
+            ) AS combined";
+        
+        // Build student search conditions separately
+        $studentWhereClause = "";
+        $studentParams = [];
+        $studentTypes = "";
+        
+        if (!empty($searchTerm)) {
+            $studentWhereClause = "AND (srp.title LIKE ? OR srp.author LIKE ? OR srp.coauthor LIKE ? OR srp.presenter LIKE ? OR srp.category LIKE ? OR srp.campus LIKE ? OR srp.event LIKE ?)";
+            $studentParams = [
+                $searchTerm, $searchTerm, $searchTerm, 
+                $searchTerm, $searchTerm, $searchTerm, $searchTerm
+            ];
+            $studentTypes = "sssssss";
+        }
+        
+        // Rebuild count query with student search conditions
+        $countSql = "
+            SELECT COUNT(*) as total FROM (
+                SELECT rf.id 
+                FROM researchfile rf
+                INNER JOIN endorsement ON endorsement.id = rf.endorsementid
+                WHERE (endorsement.status = 'accepted' OR rf.status = 'accepted')
+                {$whereClause}
+                
+                UNION ALL
+                
+                SELECT srp.id 
+                FROM student_research_papers srp
+                WHERE srp.status = 'accepted'
+                {$studentWhereClause}
+            ) AS combined";
+        
+        // For count, we need to combine both sets of parameters
+        $allCountParams = array_merge($params, $studentParams);
+        $allCountTypes = $types . $studentTypes;
         
         $countStmt = $con->prepare($countSql);
         
@@ -636,8 +832,8 @@ if (isset($_POST['searchDocuments'])) {
             throw new Exception('Prepare count failed: ' . $con->error);
         }
         
-        if (!empty($params)) {
-            $countStmt->bind_param($types, ...$params);
+        if (!empty($allCountParams)) {
+            $countStmt->bind_param($allCountTypes, ...$allCountParams);
         }
         
         $countStmt->execute();
@@ -652,32 +848,78 @@ if (isset($_POST['searchDocuments'])) {
         $res['totalPages'] = $total > 0 ? (int)ceil($total / $limit) : 0;
         
         if ($total > 0) {
-            // Data query
+            // ============================================================
+            // DATA QUERY: Full union with pagination
+            // ============================================================
             $sql = "
-                SELECT
-                    rf.id,
-                    rf.senderid,
-                    rf.author,
-                    rf.title,
-                    rf.final_symposium_title,
-                    rf.file,
-                    rf.drive_view_url,
-                    rf.drive_file_id,
-                    rf.drive_download_url,
-                    rf.status,
-                    rf.category,
-                    rf.center,
-                    rf.presenter,
-                    rf.coauthor,
-                    endorsement.campus,
-                    endorsement.event,
-                    endorsement.date,
-                    endorsement.id AS endorsId
-                FROM researchfile rf
-                INNER JOIN endorsement ON endorsement.id = rf.endorsementid
-                WHERE (endorsement.status = 'accepted' OR rf.status = 'accepted')
-                {$whereClause}
-                ORDER BY rf.id DESC
+                SELECT 
+                    id,
+                    author,
+                    title,
+                    file,
+                    status,
+                    category,
+                    center,
+                    campus,
+                    event,
+                    date,
+                    endorsId,
+                    'researchfile' AS source_type,
+                    presenter,
+                    coauthor
+                FROM (
+                    SELECT
+                        rf.id,
+                        rf.author,
+                        rf.title,
+                        rf.final_symposium_title,
+                        rf.file,
+                        rf.drive_view_url,
+                        rf.drive_file_id,
+                        rf.drive_download_url,
+                        rf.status,
+                        rf.category,
+                        rf.center,
+                        rf.presenter,
+                        rf.coauthor,
+                        endorsement.campus,
+                        endorsement.event,
+                        endorsement.date,
+                        endorsement.id AS endorsId,
+                        'researchfile' AS source_type,
+                        NULL AS event_id
+                    FROM researchfile rf
+                    INNER JOIN endorsement ON endorsement.id = rf.endorsementid
+                    WHERE (endorsement.status = 'accepted' OR rf.status = 'accepted')
+                    {$whereClause}
+                    
+                    UNION ALL
+                    
+                    SELECT
+                        srp.id,
+                        srp.author,
+                        srp.title,
+                        srp.title AS final_symposium_title,
+                        srp.research_file_view_url AS file,
+                        srp.research_file_view_url AS drive_view_url,
+                        NULL AS drive_file_id,
+                        srp.research_file_download_url AS drive_download_url,
+                        srp.status,
+                        srp.category,
+                        NULL AS center,
+                        srp.presenter,
+                        srp.coauthor,
+                        srp.campus,
+                        srp.event,
+                        NULL AS date,
+                        NULL AS endorsId,
+                        'student' AS source_type,
+                        srp.event_id
+                    FROM student_research_papers srp
+                    WHERE srp.status = 'accepted'
+                    {$studentWhereClause}
+                ) AS combined_results
+                ORDER BY id DESC
                 LIMIT ? OFFSET ?";
             
             $stmt = $con->prepare($sql);
@@ -686,12 +928,12 @@ if (isset($_POST['searchDocuments'])) {
                 throw new Exception('Prepare data statement failed: ' . $con->error);
             }
             
-            // Add limit and offset to params
-            $allParams = array_merge($params, [$limit, $offset]);
-            $allTypes = $types . "ii";
+            // Combine all parameters with limit and offset
+            $allDataParams = array_merge($params, $studentParams, [$limit, $offset]);
+            $allDataTypes = $types . $studentTypes . "ii";
             
-            if (!empty($allParams)) {
-                $stmt->bind_param($allTypes, ...$allParams);
+            if (!empty($allDataParams)) {
+                $stmt->bind_param($allDataTypes, ...$allDataParams);
             }
             
             $stmt->execute();
@@ -700,11 +942,16 @@ if (isset($_POST['searchDocuments'])) {
             $data = [];
             
             while ($row = $result->fetch_assoc()) {
-                if (!empty($row['drive_view_url'])) {
-                    $row['file'] = $row['drive_view_url'];
-                } elseif (empty($row['file']) && !empty($row['drive_file_id'])) {
-                    $row['file'] = 'https://drive.google.com/file/d/' . $row['drive_file_id'] . '/preview';
+                // Handle file URL for researchfile entries
+                if ($row['source_type'] === 'researchfile') {
+                    if (!empty($row['drive_view_url'])) {
+                        $row['file'] = $row['drive_view_url'];
+                    } elseif (empty($row['file']) && !empty($row['drive_file_id'])) {
+                        $row['file'] = 'https://drive.google.com/file/d/' . $row['drive_file_id'] . '/preview';
+                    }
                 }
+                // For student entries, file is already set from research_file_view_url
+                
                 $data[] = $row;
             }
             

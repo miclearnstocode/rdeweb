@@ -3862,9 +3862,8 @@ export const Content = (mainFrame, leftPDiv = null) => {
 
                         // Prepare background image data
                         let backgroundImageData = null;
-                        let backgroundImagePath = '/client/images/certBackground.png'; // Default path
+                        let backgroundImagePath = '/client/images/certBackground.png';
 
-                        // If a custom background file was uploaded, convert it to base64 for inline use
                         if (backgroundFile) {
                             const reader = new FileReader();
                             reader.onload = function(e) {
@@ -6628,7 +6627,6 @@ export const Content = (mainFrame, leftPDiv = null) => {
                     },
                     elementHandler: (el) => {
                         Bod = el
-                        // Initial load - Entry List
                         Bod.appendChild(search({
                             tools: tools(),
                             searchEvent: searchInput
