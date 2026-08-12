@@ -1526,3 +1526,397 @@ if (isset($_POST['getAllPosters'])) {
     ob_end_flush();
     exit();
 }
+// Get Best Presenter based on Quality of Presentation criteria
+if (isset($_POST['getBestPresenter'])) {
+    while (ob_get_level()) ob_end_clean();
+    ob_start();
+    
+    $response = ['status' => false, 'message' => '', 'data' => []];
+    
+    try {
+        $eventId = isset($_POST['eventId']) ? intval($_POST['eventId']) : 0;
+        
+        if ($eventId <= 0) {
+            throw new Exception('Invalid event ID');
+        }
+        
+        $con = new mysqli($host, $username, $pass, $dbName);
+        
+        if ($con->connect_error) {
+            throw new Exception('Database connection failed: ' . $con->connect_error);
+        }
+        
+        $criteriaQuery = "SELECT id, name, percentage FROM criteria WHERE event_id = ? AND name LIKE '%Quality of Presentation%' LIMIT 1";
+        $criteriaStmt = $con->prepare($criteriaQuery);
+        $criteriaStmt->bind_param("i", $eventId);
+        $criteriaStmt->execute();
+        $criteriaResult = $criteriaStmt->get_result();
+        
+        if ($criteriaResult->num_rows === 0) {
+            throw new Exception('Quality of Presentation criteria not found for this event');
+        }
+        
+        $criteriaRow = $criteriaResult->fetch_assoc();
+        $criteriaId = $criteriaRow['id'];
+        $criteriaPercentage = $criteriaRow['percentage'] ?? 25;
+        
+        $criteriaStmt->close();
+        
+        $eventQuery = "SELECT name FROM event_list WHERE id = ?";
+        $eventStmt = $con->prepare($eventQuery);
+        $eventStmt->bind_param("i", $eventId);
+        $eventStmt->execute();
+        $eventResult = $eventStmt->get_result();
+        $eventRow = $eventResult->fetch_assoc();
+        $eventName = $eventRow['name'] ?? '';
+        $eventStmt->close();
+        
+        // Check if it's a student event by looking for keywords in the name
+        $isStudentEvent = false;
+        if (!empty($eventName)) {
+            $lowerEventName = strtolower($eventName);
+            if (strpos($lowerEventName, 'undergraduate') !== false || 
+                strpos($lowerEventName, 'graduate') !== false) {
+                $isStudentEvent = true;
+            }
+        }
+        
+        error_log("BestPresenter - Event: $eventId, IsStudent: " . ($isStudentEvent ? 'Yes' : 'No'));
+        
+        $evalQuery = "
+            SELECT 
+                e.id as evaluator_id,
+                e.fullname as evaluator_name,
+                ec.category_id,
+                c.name as category_name
+            FROM evaluator e
+            LEFT JOIN evaluator_categories ec ON e.id = ec.evaluator_id
+            LEFT JOIN category c ON ec.category_id = c.id
+            WHERE e.event_ids LIKE ?
+            ORDER BY e.id, ec.category_id
+        ";
+        $evalPattern = '%' . $eventId . '%';
+        $evalStmt = $con->prepare($evalQuery);
+        $evalStmt->bind_param("s", $evalPattern);
+        $evalStmt->execute();
+        $evalResult = $evalStmt->get_result();
+        
+        $evaluatorCategories = [];
+        $evaluatorNames = []; // Store evaluator names by ID from evaluator table
+        $totalEvaluatorsByCategory = [];
+        
+        while ($row = $evalResult->fetch_assoc()) {
+            $evalId = $row['evaluator_id'];
+            $evalName = $row['evaluator_name'] ?? 'Unknown Evaluator';
+            $categoryId = $row['category_id'];
+            $categoryName = $row['category_name'];
+            
+            // Store evaluator name from evaluator table
+            $evaluatorNames[$evalId] = $evalName;
+            
+            if (!isset($evaluatorCategories[$evalId])) {
+                $evaluatorCategories[$evalId] = [
+                    'id' => $evalId,
+                    'name' => $evalName,
+                    'categories' => []
+                ];
+            }
+            
+            if ($categoryId && $categoryName) {
+                $evaluatorCategories[$evalId]['categories'][] = [
+                    'id' => $categoryId,
+                    'name' => $categoryName
+                ];
+            }
+            
+            // Track total evaluators per category
+            if ($categoryId) {
+                if (!isset($totalEvaluatorsByCategory[$categoryId])) {
+                    $totalEvaluatorsByCategory[$categoryId] = [
+                        'name' => $categoryName,
+                        'count' => 0,
+                        'evaluators' => []
+                    ];
+                }
+                $totalEvaluatorsByCategory[$categoryId]['count']++;
+                $totalEvaluatorsByCategory[$categoryId]['evaluators'][] = $evalId;
+            }
+        }
+        $evalStmt->close();
+        
+        error_log("BestPresenter - Evaluator names from evaluator table: " . print_r($evaluatorNames, true));
+        
+        $scoreQuery = "
+            SELECT 
+                sb.doc_id,
+                sb.score,
+                sb.eval_id
+            FROM score_board sb
+            WHERE sb.criteria_id = ?
+              AND sb.score IS NOT NULL
+              AND sb.score > 0
+            ORDER BY sb.doc_id, sb.eval_id
+        ";
+        
+        $scoreStmt = $con->prepare($scoreQuery);
+        $scoreStmt->bind_param("i", $criteriaId);
+        $scoreStmt->execute();
+        $scoreResult = $scoreStmt->get_result();
+        
+        $allScores = [];
+        $docIds = [];
+        $evaluatorScores = []; // Track which evaluators scored which documents
+        
+        while ($row = $scoreResult->fetch_assoc()) {
+            $docId = $row['doc_id'];
+            $evalId = $row['eval_id'];
+            
+            // Get evaluator name from the evaluator table data
+            $evalName = $evaluatorNames[$evalId] ?? 'Unknown Evaluator';
+            
+            $allScores[] = [
+                'doc_id' => $docId,
+                'score' => $row['score'],
+                'eval_id' => $evalId,
+                'evaluator_name' => $evalName
+            ];
+            $docIds[] = $docId;
+            
+            // Track evaluator scores per document
+            if (!isset($evaluatorScores[$docId])) {
+                $evaluatorScores[$docId] = [];
+            }
+            $evaluatorScores[$docId][$evalId] = true;
+        }
+        $scoreStmt->close();
+        
+        error_log("BestPresenter - Total scores found: " . count($allScores));
+        
+        if (empty($allScores)) {
+            throw new Exception('No scores found for Quality of Presentation criteria (ID: ' . $criteriaId . ')');
+        }
+        
+        // Get unique doc_ids
+        $uniqueDocIds = array_unique($docIds);
+        $docIdPlaceholders = implode(',', array_fill(0, count($uniqueDocIds), '?'));
+        $docIdTypes = str_repeat('i', count($uniqueDocIds));
+        
+        $docScoresMap = [];
+        $validDocIds = [];
+        
+        if ($isStudentEvent) {
+            $docCheckQuery = "
+                SELECT 
+                    srp.id as doc_id,
+                    srp.title,
+                    srp.author,
+                    srp.presenter,
+                    srp.coauthor,
+                    srp.category,
+                    srp.campus,
+                    srp.event,
+                    srp.paper_type,
+                    srp.event_id,
+                    cat.id as category_id
+                FROM student_research_papers srp
+                LEFT JOIN category cat ON srp.category = cat.name
+                WHERE srp.id IN ($docIdPlaceholders)
+                  AND srp.event_id = ?
+                  AND srp.status = 'accepted'
+            ";
+        } else {
+            $docCheckQuery = "
+                SELECT 
+                    rf.id as doc_id,
+                    rf.title,
+                    rf.final_symposium_title,
+                    rf.author,
+                    rf.presenter,
+                    rf.coauthor,
+                    rf.category,
+                    rf.center,
+                    rf.campus,
+                    rf.event,
+                    rf.event_id,
+                    cat.id as category_id
+                FROM researchfile rf
+                INNER JOIN endorsement e ON rf.endorsementid = e.id
+                LEFT JOIN category cat ON rf.category = cat.name
+                WHERE rf.id IN ($docIdPlaceholders)
+                  AND rf.event_id = ?
+                  AND (rf.status = 'accepted' OR e.status = 'accepted')
+            ";
+        }
+        
+        $docCheckStmt = $con->prepare($docCheckQuery);
+        $docCheckParams = array_merge($uniqueDocIds, [$eventId]);
+        $docCheckTypes = $docIdTypes . 'i';
+        $docCheckStmt->bind_param($docCheckTypes, ...$docCheckParams);
+        $docCheckStmt->execute();
+        $docCheckResult = $docCheckStmt->get_result();
+        
+        while ($row = $docCheckResult->fetch_assoc()) {
+            $docId = $row['doc_id'];
+            $categoryId = $row['category_id'] ?? null;
+            $categoryName = $row['category'] ?? 'Uncategorized';
+            $validDocIds[] = $docId;
+            
+            // Get evaluators for this category
+            $categoryEvaluators = [];
+            $categoryEvaluatorCount = 0;
+            if ($categoryId && isset($totalEvaluatorsByCategory[$categoryId])) {
+                $categoryEvaluators = $totalEvaluatorsByCategory[$categoryId]['evaluators'];
+                $categoryEvaluatorCount = $totalEvaluatorsByCategory[$categoryId]['count'];
+            }
+            
+            $docScoresMap[$docId] = [
+                'doc_id' => $docId,
+                'title' => $row['title'] ?? ($row['final_symposium_title'] ?? 'Untitled'),
+                'author' => $row['author'] ?? 'Unknown',
+                'presenter' => $row['presenter'] ?? $row['author'] ?? 'Unknown',
+                'coauthor' => $row['coauthor'] ?? '',
+                'category' => $categoryName,
+                'category_id' => $categoryId,
+                'campus' => $row['campus'] ?? 'N/A',
+                'center' => $row['center'] ?? 'N/A',
+                'event' => $row['event'] ?? $eventName,
+                'paper_type' => $row['paper_type'] ?? null,
+                'source_type' => $isStudentEvent ? 'student' : 'faculty',
+                'scores' => [],
+                'score_details' => [],
+                'total_score' => 0,
+                'evaluator_count' => 0,
+                'total_evaluators_for_category' => $categoryEvaluatorCount,
+                'category_evaluators' => $categoryEvaluators,
+                'abstained_count' => 0,
+                'evaluator_names' => []
+            ];
+        }
+        $docCheckStmt->close();
+        
+        error_log("BestPresenter - Valid documents found: " . count($validDocIds));
+        
+        foreach ($allScores as $scoreRow) {
+            $docId = $scoreRow['doc_id'];
+            if (isset($docScoresMap[$docId])) {
+                $evalId = $scoreRow['eval_id'];
+                $categoryId = $docScoresMap[$docId]['category_id'];
+                $categoryEvaluators = $docScoresMap[$docId]['category_evaluators'];
+                
+                // Check if this evaluator is assigned to this document's category
+                $isValidEvaluator = empty($categoryEvaluators) || in_array($evalId, $categoryEvaluators);
+                
+                if ($isValidEvaluator) {
+                    $scoreValue = (float)$scoreRow['score'];
+                    $evaluatorName = $scoreRow['evaluator_name'] ?? 'Unknown Evaluator';
+                    
+                    $docScoresMap[$docId]['scores'][] = $scoreValue;
+                    $docScoresMap[$docId]['total_score'] += $scoreValue;
+                    $docScoresMap[$docId]['evaluator_count']++;
+                    
+                    if (!in_array($evaluatorName, $docScoresMap[$docId]['evaluator_names'])) {
+                        $docScoresMap[$docId]['evaluator_names'][] = $evaluatorName;
+                    }
+                    
+                    // Store detailed score info
+                    $docScoresMap[$docId]['score_details'][] = [
+                        'score' => $scoreValue,
+                        'evaluator_name' => $evaluatorName,
+                        'evaluator_id' => $evalId
+                    ];
+                }
+            }
+        }
+        
+        // Calculate abstentions for each document (only from category-assigned evaluators)
+        foreach ($docScoresMap as $docId => &$data) {
+            $categoryEvaluators = $data['category_evaluators'] ?? [];
+            $totalCategoryEvaluators = $data['total_evaluators_for_category'] ?? 0;
+            
+            // Count how many category evaluators actually scored
+            $scoredEvaluators = 0;
+            if (!empty($categoryEvaluators)) {
+                foreach ($categoryEvaluators as $evalId) {
+                    if (isset($evaluatorScores[$docId][$evalId])) {
+                        $scoredEvaluators++;
+                    }
+                }
+            } else {
+                // If no category mapping, use the scores we have
+                $scoredEvaluators = $data['evaluator_count'];
+            }
+            
+            $data['abstained_count'] = $totalCategoryEvaluators - $scoredEvaluators;
+            $data['total_evaluators'] = $totalCategoryEvaluators;
+        }
+        
+        $ranking = [];
+        foreach ($docScoresMap as $docId => $data) {
+            if ($data['evaluator_count'] > 0) {
+                $avgScore = $data['total_score'] / $data['evaluator_count'];
+                $data['average_score'] = round($avgScore, 2);
+                $data['percentage'] = $criteriaPercentage;
+                $ranking[] = $data;
+            }
+        }
+        
+        // Sort by average score (highest first)
+        usort($ranking, function($a, $b) {
+            return ($b['average_score'] ?? 0) <=> ($a['average_score'] ?? 0);
+        });
+        
+        // Add ranks
+        foreach ($ranking as $index => &$doc) {
+            $doc['rank'] = $index + 1;
+        }
+        
+        $categories = [];
+        $categoryQuery = "SELECT id, name FROM category ORDER BY name ASC";
+        $categoryResult = $con->query($categoryQuery);
+        while ($catRow = $categoryResult->fetch_assoc()) {
+            $categories[] = $catRow;
+        }
+        
+        $response['status'] = true;
+        $response['data'] = [
+            'event_id' => $eventId,
+            'event_name' => $eventName,
+            'is_student_event' => $isStudentEvent,
+            'criteria_id' => $criteriaId,
+            'criteria_name' => $criteriaRow['name'],
+            'criteria_percentage' => $criteriaPercentage,
+            'total_evaluators' => count($evaluatorCategories),
+            'total_documents' => count($ranking),
+            'categories' => $categories,
+            'evaluator_categories' => $evaluatorCategories,
+            'evaluator_names' => $evaluatorNames,
+            'ranking' => $ranking,
+            'best_presenter' => !empty($ranking) ? $ranking[0] : null,
+            'debug' => [
+                'total_scores_found' => count($allScores),
+                'unique_doc_ids' => count($uniqueDocIds),
+                'valid_docs_matched' => count($validDocIds),
+                'documents_with_scores' => count($docScoresMap)
+            ]
+        ];
+        
+        if (empty($ranking)) {
+            $response['message'] = 'No matching documents found with scores.';
+        } else {
+            $response['message'] = 'Best Presenter data retrieved successfully';
+        }
+        
+        $con->close();
+        
+    } catch (Exception $e) {
+        error_log("getBestPresenter error: " . $e->getMessage());
+        $response['status'] = false;
+        $response['message'] = $e->getMessage();
+    }
+    
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($response);
+    ob_end_flush();
+    exit();
+}

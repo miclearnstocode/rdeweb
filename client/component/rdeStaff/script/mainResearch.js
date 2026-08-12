@@ -7,6 +7,7 @@ import { FinalRanking, RankPerCriteria, ScoreRankAVe } from "./src/rankAlgo.js";
 import { Summary } from "./src/Summary.js";
 import { PrintResearch } from "../../otherComponent/researchSummary.js";
 import { Forwarded } from "./src/forwarded.js";
+import { BestPresenter } from "./src/bestPresenter.js";
 
 
 //add certification attachment when there is title changes
@@ -2307,7 +2308,6 @@ export const ResearchMain = () => {
                             )
                         }
 
-                        // Add paper trail number display
                         if (paperTrailNo && !inhouseSource && !localInhouseData) {
                             researchDetails.push(
                                 $({
@@ -3177,9 +3177,31 @@ export const ResearchMain = () => {
 
     const ScoreSummary = () => {
         let Anchor, EventName
+        let selectedEventId = null;
+        let selectedEventName = '';
+        let bestPresenterButton = null;
+        let eventSelectEl = null;
+
         const safePath = (index) => {
             const path = Path(index);
             return path && path !== 'undefined' ? path : null;
+        };
+
+        // Function to show Best Presenter modal
+        const showBestPresenterModal = (eventId) => {
+            if (!eventId) {
+                alert('Please select an event first.');
+                return;
+            }
+
+            // Dynamically import the BestPresenter component
+            import('./src/bestPresenter.js').then(module => {
+                const { showBestPresenterModal } = module;
+                showBestPresenterModal(eventId);
+            }).catch(err => {
+                console.error('Error loading BestPresenter:', err);
+                alert('Failed to load Best Presenter feature. Please try again.');
+            });
         };
 
         function ChangeId(eventId, eventName) {
@@ -3276,6 +3298,19 @@ export const ResearchMain = () => {
                                 type: 'change',
                                 method: (ev) => {
                                     const eventId = ev.target.value;
+                                    selectedEventId = eventId;
+                                    const selectedOption = ev.target.options[ev.target.selectedIndex];
+                                    selectedEventName = selectedOption ? selectedOption.text : '';
+
+                                    // Show/hide Best Presenter button
+                                    if (bestPresenterButton) {
+                                        if (eventId && eventId !== 'Select Event') {
+                                            bestPresenterButton.style.display = 'flex';
+                                        } else {
+                                            bestPresenterButton.style.display = 'none';
+                                        }
+                                    }
+
                                     if (eventId && eventId !== 'Select Event') {
                                         const currentPath = window.location.pathname;
                                         const pathParts = currentPath.split('/');
@@ -3313,6 +3348,7 @@ export const ResearchMain = () => {
                                 })
                             ],
                             elementHandler: (el) => {
+                                eventSelectEl = el;
                                 const req = new Request('/eventRequest')
                                 req.Post([{ name: 'getEventAdmin', value: '1' }])
                                 req.Json()
@@ -3333,6 +3369,12 @@ export const ResearchMain = () => {
                                         if (pathParts.includes('scoreSummary') && pathParts[4]) {
                                             if (pathParts[4] == val.id) {
                                                 option.selected = true;
+                                                selectedEventId = val.id;
+                                                selectedEventName = val.name;
+                                                // Show Best Presenter button
+                                                if (bestPresenterButton) {
+                                                    bestPresenterButton.style.display = 'flex';
+                                                }
                                             }
                                         }
                                         el.appendChild(option);
@@ -3340,6 +3382,55 @@ export const ResearchMain = () => {
                                 }).catch(err => {
                                     console.error('Error loading events:', err);
                                 })
+                            }
+                        }),
+                        // Best Presenter Button - Initially hidden
+                        $({
+                            tag: 'button',
+                            style: {
+                                padding: '8px 18px',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #ffd700',
+                                borderRadius: '10px',
+                                cursor: 'pointer',
+                                fontFamily: 'Inter, sans-serif',
+                                fontSize: '13px',
+                                fontWeight: '500',
+                                color: '#856404',
+                                display: 'none',
+                                alignItems: 'center',
+                                gap: '8px',
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap'
+                            },
+                            child: [
+                                $({ tag: 'span', att: { className: 'fa-solid fa-trophy' }, style: { color: '#ffd700', fontSize: '15px' } }),
+                                $({ tag: 'span', text: 'Best Presenter' })
+                            ],
+                            elementHandler: (el) => {
+                                bestPresenterButton = el;
+                            },
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    if (selectedEventId) {
+                                        showBestPresenterModal(selectedEventId);
+                                    } else {
+                                        alert('Please select an event first.');
+                                    }
+                                }
+                            },
+                            mouseenter: (e) => {
+                                e.target.style.backgroundColor = '#fff8e1';
+                                e.target.style.borderColor = '#ffd700';
+                                e.target.style.boxShadow = '0 2px 8px rgba(255,215,0,0.2)';
+                                e.target.style.transform = 'translateY(-1px)';
+                            },
+                            mouseleave: (e) => {
+                                e.target.style.backgroundColor = '#ffffff';
+                                e.target.style.borderColor = '#ffd700';
+                                e.target.style.boxShadow = 'none';
+                                e.target.style.transform = 'translateY(0)';
                             }
                         })
                     ]
@@ -3356,7 +3447,8 @@ export const ResearchMain = () => {
                     display: 'flex',
                     alignItems: 'center',
                     borderBottom: '1px solid #e9ecef',
-                    gap: '16px'
+                    gap: '16px',
+                    flexWrap: 'wrap'
                 },
                 child: [
                     $({
@@ -3403,7 +3495,8 @@ export const ResearchMain = () => {
                         style: {
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '12px'
+                            gap: '12px',
+                            flexWrap: 'wrap'
                         },
                         child: [
                             $({
@@ -4330,6 +4423,7 @@ export const ResearchMain = () => {
             ]
         })
     }
+
     return ($({
         tag: 'div',
         style: {

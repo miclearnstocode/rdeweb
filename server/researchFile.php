@@ -2,7 +2,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/drive_errors.log');
+ini_set('error_log', __DIR__ . 'drive_errors.log');
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -615,366 +615,6 @@ if (isset($_POST['getDocTitle'])) {
     
     header('Content-Type: application/json');
     echo json_encode($response);
-    exit();
-}
-
-if (isset($_POST['updateReview'])) {
-    $response = new stdClass();
-    $response->status = false;
-    $response->message = '';
-    $response->queueStatus = '';
-
-    // Log all POST data for debugging
-    error_log("=== updateReview called ===");
-    error_log("POST data: " . print_r($_POST, true));
-
-    if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $category = $_SESSION['category'] ?? $_SESSION['center'] ?? '';
-        $response->userName = $_SESSION['userName'] ?? '';
-        $evalId = $_SESSION['userId'] ?? 0;
-        $evalName = $_SESSION['userFulname'] ?? '';
-        $docsId = $_POST['docId'] ?? '';
-        $eventId = $_POST['eventId'] ?? null;
-
-        error_log("evalId: $evalId, docsId: $docsId, eventId: $eventId");
-
-        // Verify the document exists and get its details
-        if (empty($docsId)) {
-            $response->message = "Document ID is required";
-            error_log("ERROR: Document ID is empty");
-            echo json_encode($response);
-            exit();
-        }
-
-        // Clean the docId
-        if (strpos($docsId, '?') !== false) {
-            $docsId = explode('?', $docsId)[0];
-        }
-        if (strpos($docsId, '&') !== false) {
-            $docsId = explode('&', $docsId)[0];
-        }
-        $docsId = (int)preg_replace('/[^0-9]/', '', $docsId);
-        
-        if (empty($docsId)) {
-            $response->message = "Invalid document ID";
-            error_log("ERROR: Invalid document ID after cleaning");
-            echo json_encode($response);
-            exit();
-        }
-
-        // Determine which table to query based on event name
-        $isStudent = false;
-        $eventName = null;
-        $sourceTable = 'researchfile';
-        $docInfo = null;
-
-        // If eventId is provided, get the event name
-        if (!empty($eventId)) {
-            $eventQuery = "SELECT name FROM event_list WHERE id = ? LIMIT 1";
-            $eventStmt = $con->prepare($eventQuery);
-            if ($eventStmt) {
-                $eventStmt->bind_param("i", $eventId);
-                $eventStmt->execute();
-                $eventResult = $eventStmt->get_result();
-                if ($row = $eventResult->fetch_assoc()) {
-                    $eventName = $row['name'];
-                    $lowerEventName = strtolower($eventName);
-                    // Check if it's a student event
-                    if (strpos($lowerEventName, 'undergraduate') !== false || 
-                        strpos($lowerEventName, 'graduate') !== false ||
-                        strpos($lowerEventName, 'student') !== false) {
-                        $isStudent = true;
-                        $sourceTable = 'student_research_papers';
-                    }
-                }
-                $eventStmt->close();
-            }
-        }
-
-        // If no eventId or not found, try to determine from the document
-        if (!$eventName) {
-            // Check student_research_papers first
-            $studentCheck = "SELECT id, event, event_id FROM student_research_papers WHERE id = ? LIMIT 1";
-            $studentStmt = $con->prepare($studentCheck);
-            if ($studentStmt) {
-                $studentStmt->bind_param("i", $docsId);
-                $studentStmt->execute();
-                $studentResult = $studentStmt->get_result();
-                if ($row = $studentResult->fetch_assoc()) {
-                    $eventName = $row['event'];
-                    $eventId = $row['event_id'];
-                    $isStudent = true;
-                    $sourceTable = 'student_research_papers';
-                    error_log("Document found in student_research_papers: docsId=$docsId");
-                }
-                $studentStmt->close();
-            }
-        }
-
-        // If not found in student, check researchfile
-        if (!$eventName) {
-            $facultyCheck = "SELECT id, event, event_id FROM researchfile WHERE id = ? LIMIT 1";
-            $facultyStmt = $con->prepare($facultyCheck);
-            if ($facultyStmt) {
-                $facultyStmt->bind_param("i", $docsId);
-                $facultyStmt->execute();
-                $facultyResult = $facultyStmt->get_result();
-                if ($row = $facultyResult->fetch_assoc()) {
-                    $eventName = $row['event'];
-                    $eventId = $row['event_id'];
-                    $isStudent = false;
-                    $sourceTable = 'researchfile';
-                    error_log("Document found in researchfile: docsId=$docsId");
-                }
-                $facultyStmt->close();
-            }
-        }
-
-        // Get document info from the appropriate table
-        if ($isStudent) {
-            $docQuery = $con->prepare("SELECT 
-                srp.id,
-                srp.title,
-                srp.event,
-                srp.event_id,
-                srp.author,
-                srp.coauthor,
-                srp.presenter,
-                srp.category,
-                srp.campus,
-                NULL as final_symposium_title,
-                NULL as center,
-                NULL as file,
-                NULL as drive_view_url,
-                NULL as paper_trail_no,
-                el.name as event_name
-            FROM student_research_papers srp
-            LEFT JOIN event_list el ON el.id = srp.event_id
-            WHERE srp.id = ? LIMIT 1");
-        } else {
-            $docQuery = $con->prepare("SELECT 
-                rf.id,
-                rf.title,
-                rf.final_symposium_title,
-                rf.event,
-                rf.event_id,
-                rf.author,
-                rf.coauthor,
-                rf.presenter,
-                rf.category,
-                rf.center,
-                rf.campus,
-                rf.file,
-                rf.drive_view_url,
-                rf.paper_trail_no,
-                el.name as event_name
-            FROM researchfile rf
-            LEFT JOIN event_list el ON el.id = rf.event_id
-            WHERE rf.id = ? LIMIT 1");
-        }
-
-        if ($docQuery) {
-            $docQuery->bind_param("i", $docsId);
-            $docQuery->execute();
-            $docResult = $docQuery->get_result();
-            $docInfo = $docResult->fetch_assoc();
-            $docQuery->close();
-            
-            if ($docInfo) {
-                $eventName = $docInfo['event_name'] ?? $docInfo['event'] ?? $eventName;
-                $eventId = $docInfo['event_id'] ?? $eventId;
-                $researchTitle = $docInfo['title'] ?? '';
-                $finalSymposiumTitle = $docInfo['final_symposium_title'] ?? '';
-                error_log("Document info retrieved from $sourceTable");
-            }
-        }
-
-        if (!$docInfo) {
-            $response->message = "Document not found with ID: $docsId";
-            error_log("ERROR: Document not found with ID: $docsId");
-            echo json_encode($response);
-            exit();
-        }
-
-        $title = $_POST['title'] ?? '';
-        $intro = $_POST['intro'] ?? '';
-        $abstract = $_POST['abstract'] ?? '';
-        $objective = $_POST['objective'] ?? '';
-        $methodology = $_POST['methodology'] ?? '';
-        $results = $_POST['results'] ?? '';
-        $recommendation = $_POST['recommendation'] ?? '';
-        $literature = $_POST['literature'] ?? '';
-        $other = $_POST['other'] ?? '';
-
-        error_log("Comment data - title: '$title', intro: '$intro', abstract: '$abstract'");
-
-        // Check if comments exist for this evaluator and document
-        $found = false;
-        if ($docsId && $evalId) {
-            $checkQuery = $con->prepare("SELECT COUNT(*) as count FROM comments WHERE evalid = ? AND resid = ?");
-            if ($checkQuery) {
-                $checkQuery->bind_param("ii", $evalId, $docsId);
-                $checkQuery->execute();
-                $checkResult = $checkQuery->get_result();
-                $row = $checkResult->fetch_assoc();
-                $found = ($row['count'] > 0);
-                $checkQuery->close();
-                error_log("Comments exist: " . ($found ? 'yes' : 'no'));
-            }
-        }
-
-        // Use the title from the database for display
-        $displayTitle = !empty($finalSymposiumTitle) ? $finalSymposiumTitle : $researchTitle;
-        error_log("Display title for document: $displayTitle");
-
-        $saveSuccess = false;
-
-        if ($found) {
-            // Update existing comments
-            $comQ = "UPDATE comments SET 
-                comments.title = ?,
-                comments.intro = ?,
-                comments.abstract = ?,
-                comments.objective = ?,
-                comments.methodology = ?,
-                comments.results = ?,
-                comments.recommendation = ?,
-                comments.literature = ?,
-                comments.other = ?,
-                comments.eventType = ?,
-                comments.isCommented = 1,
-                comments.date = NOW()
-                WHERE comments.resid = ? AND comments.evalid = ?";
-
-            error_log("UPDATE Query: " . $comQ);
-
-            $statement = $con->prepare($comQ);
-            if (!$statement) {
-                $response->message = "Failed to prepare update query: " . $con->error;
-                error_log("Failed to prepare update query: " . $con->error);
-                echo json_encode($response);
-                exit();
-            }
-            
-            $statement->bind_param(
-                "ssssssssssii",
-                $title,
-                $intro,
-                $abstract,
-                $objective,
-                $methodology,
-                $results,
-                $recommendation,
-                $literature,
-                $other,
-                $eventName,
-                $docsId,
-                $evalId
-            );
-
-            error_log("Binding values: title='$title', intro='$intro', abstract='$abstract', docsId='$docsId', evalId='$evalId'");
-
-            $status = $statement->execute();
-
-            if ($status) {
-                $response->status = true;
-                $response->message = "Comments Updated successfully..!";
-                $saveSuccess = true;
-                error_log("UPDATE successful");
-            } else {
-                $response->message = "Update failed: " . $statement->error;
-                error_log("UPDATE failed: " . $statement->error);
-            }
-            $statement->close();
-        } else {
-            // Insert new comments
-            $comQuery = "INSERT INTO comments (
-                resid,
-                evalid,
-                evID,
-                eventType,
-                title,
-                intro,
-                abstract,
-                objective,
-                methodology,
-                results,
-                recommendation,
-                literature,
-                other,
-                isCommented,
-                date ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())";
-
-            error_log("INSERT Query: " . $comQuery);
-
-            $statementQ = $con->prepare($comQuery);
-            if (!$statementQ) {
-                $response->message = "Failed to prepare insert query: " . $con->error;
-                error_log("Failed to prepare insert query: " . $con->error);
-                echo json_encode($response);
-                exit();
-            }
-            
-            $statementQ->bind_param(
-                "iiissssssssss",
-                $docsId,
-                $evalId,
-                $eventId,
-                $eventName,
-                $title,
-                $intro,
-                $abstract,
-                $objective,
-                $methodology,
-                $results,
-                $recommendation,
-                $literature,
-                $other
-            );
-
-            error_log("Binding values: docsId='$docsId', evalId='$evalId', eventId='$eventId', eventType='$eventName'");
-
-            $statusIn = $statementQ->execute();
-
-            if ($statusIn) {
-                $response->status = true;
-                $response->message = "Comments Saved successfully..!";
-                $saveSuccess = true;
-                error_log("INSERT successful");
-            } else {
-                $response->message = "Insert failed: " . $statementQ->error;
-                error_log("INSERT failed: " . $statementQ->error);
-            }
-            $statementQ->close();
-        }
-
-        // If comments were saved successfully, queue for scheduled email
-        if ($saveSuccess && !empty($docInfo)) {
-            $queueResult = queueCommentForEmail($con, $docsId, $evalId, $evalName, $docInfo, $displayTitle, $eventId, $eventName);
-            
-            if ($queueResult['status']) {
-                $response->queueStatus = $queueResult['message'];
-                error_log("Email queued: " . $queueResult['message']);
-            } else {
-                $response->queueStatus = "Warning: " . $queueResult['message'];
-                error_log("Email queue warning: " . $queueResult['message']);
-            }
-        } else {
-            $response->queueStatus = "Comments saved but no email notification queued (no author email found).";
-        }
-
-        $con->close();
-
-    } else {
-        $response->message = "Database connection error";
-        error_log("Database connection error");
-    }
-
-    // Ensure we always return JSON
-    header('Content-Type: application/json');
-    $jsonResponse = json_encode($response);
-    error_log("Response: " . $jsonResponse);
-    echo $jsonResponse;
     exit();
 }
 
@@ -2197,6 +1837,182 @@ if (isset($_POST['saveResearchPer'])) {
     ob_clean();
     echo json_encode($response);
     exit();
+}
+
+if (isset($_POST['endorsementList'])) {
+    ob_clean();
+    
+    $page = max(1, (int)($_POST['page'] ?? 1));
+    $limit = max(1, min(50, (int)($_POST['limit'] ?? 10)));
+    $offset = ($page - 1) * $limit;
+    
+    $res = [
+        'data' => [],
+        'hasMore' => false,
+        'total' => 0,
+        'currentPage' => $page,
+        'totalPages' => 0
+    ];
+
+    try {
+        $con = new mysqli($host, $username, $pass, $dbName);
+        
+        if ($con->connect_error) {
+            throw new Exception('Database connection failed: ' . $con->connect_error);
+        }
+
+        mysqli_report(MYSQLI_REPORT_OFF);
+        $con->set_charset('utf8mb4');
+
+        // ============================================================
+        // COUNT QUERY - Count both faculty and student endorsements
+        // ============================================================
+        $countSql = "
+            SELECT COUNT(*) as total FROM (
+                SELECT e.id 
+                FROM endorsement e
+                INNER JOIN researchfile rf ON rf.endorsementid = e.id
+                WHERE e.status = 'accepted' 
+                AND (rf.status = 'accepted' OR rf.status = '' OR rf.status IS NULL)
+                
+                UNION ALL
+                
+                SELECT srp.id 
+                FROM student_research_papers srp
+                WHERE srp.status = 'accepted'
+            ) AS combined";
+        
+        $countStmt = $con->prepare($countSql);
+        if (!$countStmt) {
+            throw new Exception('Prepare count failed: ' . $con->error);
+        }
+        $countStmt->execute();
+        $countResult = $countStmt->get_result();
+        $countRow = $countResult->fetch_assoc();
+        $total = (int)($countRow['total'] ?? 0);
+        $countResult->free();
+        $countStmt->close();
+
+        $res['total'] = $total;
+        $res['totalPages'] = $total > 0 ? (int)ceil($total / $limit) : 0;
+
+        if ($total > 0) {
+            // ============================================================
+            // DATA QUERY - Fetch both faculty and student endorsements
+            // ============================================================
+            $sql = "
+                SELECT 
+                    id,
+                    campus,
+                    event,
+                    date,
+                    status,
+                    source_type,
+                    research_data
+                FROM (
+                    SELECT 
+                        e.id,
+                        e.campus,
+                        e.event,
+                        e.date,
+                        e.status,
+                        'faculty' AS source_type,
+                        JSON_ARRAYAGG(
+                            JSON_OBJECT(
+                                'id', rf.id,
+                                'author', rf.author,
+                                'title', rf.title,
+                                'final_symposium_title', rf.final_symposium_title,
+                                'category', rf.category,
+                                'center', rf.center
+                            )
+                        ) AS research_data,
+                        e.date AS sort_date
+                    FROM endorsement e
+                    INNER JOIN researchfile rf ON rf.endorsementid = e.id
+                    WHERE e.status = 'accepted' 
+                    AND (rf.status = 'accepted' OR rf.status = '' OR rf.status IS NULL)
+                    GROUP BY e.id
+                    
+                    UNION ALL
+                    
+                    SELECT 
+                        srp.id,
+                        srp.event,
+                        srp.campus,
+                        srp.created_at AS date,
+                        srp.status,
+                        'student' AS source_type,
+                        JSON_ARRAY(
+                            JSON_OBJECT(
+                                'id', srp.id,
+                                'author', srp.author,
+                                'title', srp.title,
+                                'final_symposium_title', NULL,
+                                'category', srp.category,
+                                'center', NULL
+                            )
+                        ) AS research_data,
+                        srp.created_at AS sort_date
+                    FROM student_research_papers srp
+                    WHERE srp.status = 'accepted'
+                ) AS combined_results
+                ORDER BY sort_date DESC
+                LIMIT ? OFFSET ?";
+            
+            $stmt = $con->prepare($sql);
+            if (!$stmt) {
+                throw new Exception('Prepare data statement failed: ' . $con->error);
+            }
+            
+            $stmt->bind_param('ii', $limit, $offset);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $data = [];
+            while ($row = $result->fetch_assoc()) {
+                $researchData = json_decode($row['research_data'], true);
+                $data[] = [
+                    'id' => (int)$row['id'],
+                    'campus' => $row['campus'],
+                    'event' => $row['event'],
+                    'date' => $row['date'],
+                    'status' => $row['status'],
+                    'source_type' => $row['source_type'],
+                    'research' => $researchData ?: [],
+                    'resStat' => 1 // Mark as processed/available
+                ];
+            }
+            
+            $res['data'] = $data;
+            $res['hasMore'] = ($page * $limit) < $total;
+            
+            $result->free();
+            $stmt->close();
+        }
+
+        $con->close();
+
+    } catch (Exception $e) {
+        error_log("endorsementList Error: " . $e->getMessage());
+        error_log("Error trace: " . $e->getTraceAsString());
+        
+        ob_clean();
+        echo json_encode([
+            'error' => true,
+            'message' => $e->getMessage(),
+            'data' => [],
+            'total' => 0,
+            'currentPage' => $page,
+            'totalPages' => 0,
+            'hasMore' => false
+        ]);
+        exit;
+    }
+
+    ob_clean();
+    echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
 }
 
 if (isset($_POST['searchResearch'])) {
