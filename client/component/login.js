@@ -1,6 +1,7 @@
 import { $, CapsuOffice, ConfirmationAlert, Request, SpecialChar, Waiting, CustomModal } from '../lib/lib.js'
 import { showPasswordResetModal } from "./../AccountRetrival/Code.js"
 
+
 const LoginPanel = (prop) => {
     let username
     let password
@@ -8,6 +9,7 @@ const LoginPanel = (prop) => {
     let UserTypeStat = true
     let selType
     let isSubmitting = false
+    let rememberMe = false
 
     const getUserName = (value) => {
         username = value
@@ -130,7 +132,9 @@ const LoginPanel = (prop) => {
             width: '100%',
             display: 'flex',
             justifyContent: 'center',
-            alignItems: 'center'
+            alignItems: 'center',
+            minHeight: '100vh',
+            padding: '20px'
         },
         child: [
             $({
@@ -140,43 +144,120 @@ const LoginPanel = (prop) => {
                 },
                 style: {
                     width: '100%',
-                    maxWidth: '400px',
+                    maxWidth: '440px',
                     margin: '0 auto',
-                    backgroundColor: 'transparent'
+                    backgroundColor: '#ffffff',
+                    borderRadius: '20px',
+                    padding: '40px 36px',
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.04)'
                 },
                 child: [
+                    // Welcome Section (LEFT ALIGNED)
                     $({
                         tag: 'div',
                         style: {
-                            textAlign: 'center',
-                            marginBottom: '2rem',
+                            textAlign: 'left',
+                            marginBottom: '32px',
                             width: '100%'
                         },
                         child: [
+                            // University Logo
                             $({
-                                tag: 'h2',
+                                tag: 'div',
                                 style: {
-                                    color: '#2c3e50',
-                                    fontSize: '1.75rem',
-                                    fontWeight: '700',
-                                    marginBottom: '0.5rem',
-                                    fontFamily: 'Inter, Segoe UI, sans-serif',
-                                    letterSpacing: '-0.5px'
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'flex-start',
+                                    gap: '12px',
+                                    marginBottom: '16px'
                                 },
-                                text: 'Welcome Back, Researcher, Innovator & Extensionist!'
+                                child: [
+                                    $({
+                                        tag: 'img',
+                                        att: {
+                                            src: '/client/images/cap.png',
+                                            alt: 'CAPSU Logo',
+                                            width: '48',
+                                            height: '48'
+                                        },
+                                        style: {
+                                            objectFit: 'contain'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            textAlign: 'left'
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'div',
+                                                text: 'CAPSU RDE',
+                                                style: {
+                                                    color: '#1a2a3a',
+                                                    fontSize: '18px',
+                                                    fontWeight: '700',
+                                                    letterSpacing: '-0.3px',
+                                                    fontFamily: 'Inter, Segoe UI, sans-serif',
+                                                    lineHeight: '1.2'
+                                                }
+                                            }),
+                                            $({
+                                                tag: 'div',
+                                                text: 'Research & Extension',
+                                                style: {
+                                                    color: '#6c757d',
+                                                    fontSize: '11px',
+                                                    fontWeight: '500',
+                                                    fontFamily: 'Inter, Segoe UI, sans-serif',
+                                                    letterSpacing: '0.5px',
+                                                    textTransform: 'uppercase'
+                                                }
+                                            })
+                                        ]
+                                    })
+                                ]
+                            }),
+                            $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'h2',
+                                        style: {
+                                            color: '#1a2a3a',
+                                            fontSize: '24px',
+                                            fontWeight: '700',
+                                            margin: '0',
+                                            fontFamily: 'Inter, Segoe UI, sans-serif',
+                                            letterSpacing: '-0.5px',
+                                            borderLeft: '4px solid #0d6efd',
+                                            borderRadius: '6px', 
+                                            paddingLeft: '12px' 
+                                        },
+                                        text: 'Welcome Back'
+                                    }),
+                                ]
                             }),
                             $({
                                 tag: 'p',
                                 style: {
                                     color: '#6c757d',
-                                    fontSize: '0.95rem',
+                                    fontSize: '14px',
                                     marginTop: '0',
-                                    fontFamily: 'Inter, Segoe UI, sans-serif'
+                                    marginBottom: '0',
+                                    fontFamily: 'Inter, Segoe UI, sans-serif',
+                                    fontWeight: '400',
+                                    lineHeight: '1.5'
                                 },
-                                text: 'Sign in to access your dashboard'
+                                text: 'Researcher, Innovators, Extensionist & Evaluators sign in to access your account.'
                             })
                         ]
                     }),
+                    // Form
                     $({
                         tag: 'form',
                         att: {
@@ -204,9 +285,9 @@ const LoginPanel = (prop) => {
                                 }
 
                                 const submitBtn = ev.target.querySelector('.submitLog')
-                                const originalBtnText = submitBtn?.innerHTML || 'Submit'
+                                const originalBtnText = submitBtn?.innerHTML || 'Sign In'
                                 if (submitBtn) {
-                                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...'
+                                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signing in...'
                                     submitBtn.disabled = true
                                 }
 
@@ -235,46 +316,35 @@ const LoginPanel = (prop) => {
                             }
                         },
                         child: [
-                            // Username Field - Centered
+                            // Username Field
                             $({
                                 tag: 'div',
                                 style: {
                                     width: '100%',
-                                    marginBottom: '1.25rem',
-                                    display: 'flex',
-                                    position: 'relative',
-                                    justifyContent: 'center'
+                                    marginBottom: '20px'
                                 },
                                 child: [
                                     $({
-                                        tag: 'span',
-                                        style: {
-                                            backgroundColor: '#f8f9fa',
-                                            color: '#6c757d',
-                                            fontSize: '1.2rem',
-                                            border: '1px solid #dee2e6',
-                                            borderRight: 'none',
-                                            borderRadius: '10px 0 0 10px',
-                                            padding: '0 15px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            minWidth: '48px',
-                                            justifyContent: 'center'
+                                        tag: 'label',
+                                        att: {
+                                            for: 'userNid'
                                         },
-                                        child: [
-                                            $({
-                                                tag: 'i',
-                                                att: {
-                                                    className: 'fa-solid fa-user'
-                                                }
-                                            })
-                                        ]
+                                        text: 'Email or Username',
+                                        style: {
+                                            display: 'block',
+                                            color: '#1a2a3a',
+                                            fontSize: '13px',
+                                            fontWeight: '600',
+                                            marginBottom: '6px',
+                                            fontFamily: 'Inter, Segoe UI, sans-serif',
+                                            textAlign: 'left' // Force left alignment
+                                        }
                                     }),
                                     $({
                                         tag: 'div',
                                         style: {
                                             position: 'relative',
-                                            flex: 1
+                                            width: '100%'
                                         },
                                         child: [
                                             $({
@@ -284,46 +354,39 @@ const LoginPanel = (prop) => {
                                                     className: 'form-control',
                                                     name: 'username',
                                                     id: 'userNid',
-                                                    placeholder: 'Username/Email',
+                                                    placeholder: 'Enter your email or username',
                                                     required: true,
                                                     autocomplete: 'username'
                                                 },
                                                 style: {
-                                                    backgroundColor: '#ffffff',
-                                                    color: '#2c3e50',
-                                                    border: '1px solid #dee2e6',
-                                                    borderRadius: '0 10px 10px 0',
-                                                    height: '52px',
+                                                    backgroundColor: '#f8f9fa',
+                                                    color: '#1a2a3a',
+                                                    border: '1.5px solid #e8ecf0',
+                                                    borderRadius: '12px',
+                                                    height: '48px',
                                                     width: '100%',
-                                                    padding: '0 15px',
-                                                    fontSize: '0.95rem',
+                                                    padding: '0 16px',
+                                                    fontSize: '14px',
                                                     boxSizing: 'border-box',
                                                     transition: 'all 0.3s ease',
-                                                    outline: 'none'
+                                                    outline: 'none',
+                                                    fontFamily: 'Inter, Segoe UI, sans-serif'
                                                 },
                                                 event: [
                                                     {
                                                         type: 'focus',
                                                         method: (e) => {
                                                             e.target.style.borderColor = '#0d6efd'
-                                                            e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
-                                                            const icon = e.target.parentElement.parentElement.querySelector('span')
-                                                            if (icon) {
-                                                                icon.style.borderColor = '#0d6efd'
-                                                                icon.style.color = '#0d6efd'
-                                                            }
+                                                            e.target.style.backgroundColor = '#ffffff'
+                                                            e.target.style.boxShadow = '0 0 0 4px rgba(13, 110, 253, 0.08)'
                                                         }
                                                     },
                                                     {
                                                         type: 'blur',
                                                         method: (e) => {
-                                                            e.target.style.borderColor = '#dee2e6'
+                                                            e.target.style.borderColor = '#e8ecf0'
+                                                            e.target.style.backgroundColor = '#f8f9fa'
                                                             e.target.style.boxShadow = 'none'
-                                                            const icon = e.target.parentElement.parentElement.querySelector('span')
-                                                            if (icon) {
-                                                                icon.style.borderColor = '#dee2e6'
-                                                                icon.style.color = '#6c757d'
-                                                            }
                                                         }
                                                     }
                                                 ]
@@ -332,46 +395,35 @@ const LoginPanel = (prop) => {
                                     })
                                 ]
                             }),
-                            // Password Field 
+                            // Password Field
                             $({
                                 tag: 'div',
                                 style: {
                                     width: '100%',
-                                    marginBottom: '1.25rem',
-                                    display: 'flex',
-                                    position: 'relative',
-                                    justifyContent: 'center'
+                                    marginBottom: '16px'
                                 },
                                 child: [
                                     $({
-                                        tag: 'span',
-                                        style: {
-                                            backgroundColor: '#f8f9fa',
-                                            color: '#6c757d',
-                                            fontSize: '1.2rem',
-                                            border: '1px solid #dee2e6',
-                                            borderRight: 'none',
-                                            borderRadius: '10px 0 0 10px',
-                                            padding: '0 15px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            minWidth: '48px',
-                                            justifyContent: 'center'
+                                        tag: 'label',
+                                        att: {
+                                            for: 'userPid'
                                         },
-                                        child: [
-                                            $({
-                                                tag: 'i',
-                                                att: {
-                                                    className: 'fa-solid fa-lock'
-                                                }
-                                            })
-                                        ]
+                                        text: 'Password',
+                                        style: {
+                                            display: 'block',
+                                            color: '#1a2a3a',
+                                            fontSize: '13px',
+                                            fontWeight: '600',
+                                            marginBottom: '6px',
+                                            fontFamily: 'Inter, Segoe UI, sans-serif',
+                                            textAlign: 'left' // Force left alignment
+                                        }
                                     }),
                                     $({
                                         tag: 'div',
                                         style: {
                                             position: 'relative',
-                                            flex: 1
+                                            width: '100%'
                                         },
                                         child: [
                                             $({
@@ -381,46 +433,39 @@ const LoginPanel = (prop) => {
                                                     className: 'form-control password-input',
                                                     name: 'password',
                                                     id: 'userPid',
-                                                    placeholder: '*****************',
+                                                    placeholder: 'Enter your password',
                                                     required: true,
                                                     autocomplete: 'current-password'
                                                 },
                                                 style: {
-                                                    backgroundColor: '#ffffff',
-                                                    color: '#2c3e50',
-                                                    border: '1px solid #dee2e6',
-                                                    borderRadius: '0 10px 10px 0',
-                                                    height: '52px',
+                                                    backgroundColor: '#f8f9fa',
+                                                    color: '#1a2a3a',
+                                                    border: '1.5px solid #e8ecf0',
+                                                    borderRadius: '12px',
+                                                    height: '48px',
                                                     width: '100%',
-                                                    padding: '0 45px 0 15px',
-                                                    fontSize: '0.95rem',
+                                                    padding: '0 48px 0 16px',
+                                                    fontSize: '14px',
                                                     boxSizing: 'border-box',
                                                     transition: 'all 0.3s ease',
-                                                    outline: 'none'
+                                                    outline: 'none',
+                                                    fontFamily: 'Inter, Segoe UI, sans-serif'
                                                 },
                                                 event: [
                                                     {
                                                         type: 'focus',
                                                         method: (e) => {
                                                             e.target.style.borderColor = '#0d6efd'
-                                                            e.target.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.1)'
-                                                            const icon = e.target.parentElement.parentElement.querySelector('span')
-                                                            if (icon) {
-                                                                icon.style.borderColor = '#0d6efd'
-                                                                icon.style.color = '#0d6efd'
-                                                            }
+                                                            e.target.style.backgroundColor = '#ffffff'
+                                                            e.target.style.boxShadow = '0 0 0 4px rgba(13, 110, 253, 0.08)'
                                                         }
                                                     },
                                                     {
                                                         type: 'blur',
                                                         method: (e) => {
-                                                            e.target.style.borderColor = '#dee2e6'
+                                                            e.target.style.borderColor = '#e8ecf0'
+                                                            e.target.style.backgroundColor = '#f8f9fa'
                                                             e.target.style.boxShadow = 'none'
-                                                            const icon = e.target.parentElement.parentElement.querySelector('span')
-                                                            if (icon) {
-                                                                icon.style.borderColor = '#dee2e6'
-                                                                icon.style.color = '#6c757d'
-                                                            }
                                                         }
                                                     }
                                                 ]
@@ -458,7 +503,8 @@ const LoginPanel = (prop) => {
                                                         style: {
                                                             color: '#adb5bd',
                                                             transition: 'all 0.3s ease',
-                                                            pointerEvents: 'none'
+                                                            pointerEvents: 'none',
+                                                            fontSize: '16px'
                                                         }
                                                     })
                                                 ],
@@ -489,6 +535,94 @@ const LoginPanel = (prop) => {
                                     })
                                 ]
                             }),
+                            // Remember Me & Forgot Password
+                            $({
+                                tag: 'div',
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'space-between', // Changed from 'flex-start' to 'space-between'
+                                    alignItems: 'center',
+                                    marginBottom: '24px',
+                                    width: '100%'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'input',
+                                                att: {
+                                                    type: 'checkbox',
+                                                    id: 'rememberMe',
+                                                    name: 'rememberMe'
+                                                },
+                                                style: {
+                                                    width: '16px',
+                                                    height: '16px',
+                                                    accentColor: '#0d6efd',
+                                                    cursor: 'pointer'
+                                                },
+                                                event: {
+                                                    type: 'change',
+                                                    method: (e) => {
+                                                        rememberMe = e.target.checked
+                                                    }
+                                                }
+                                            }),
+                                            $({
+                                                tag: 'label',
+                                                att: {
+                                                    for: 'rememberMe'
+                                                },
+                                                text: 'Remember me',
+                                                style: {
+                                                    color: '#495057',
+                                                    fontSize: '13px',
+                                                    fontFamily: 'Inter, Segoe UI, sans-serif',
+                                                    cursor: 'pointer',
+                                                    fontWeight: '400'
+                                                }
+                                            })
+                                        ]
+                                    }),
+                                    $({
+                                        tag: 'a',
+                                        style: {
+                                            fontFamily: 'Inter, Segoe UI, sans-serif',
+                                            color: '#0d6efd',
+                                            fontSize: '13px',
+                                            fontWeight: '500',
+                                            cursor: 'pointer',
+                                            textDecoration: 'none',
+                                            transition: 'all 0.2s ease',
+                                            padding: '4px 8px',
+                                            borderRadius: '6px'
+                                        },
+                                        text: 'Forgot password?',
+                                        event: {
+                                            type: 'click',
+                                            method: (e) => {
+                                                e.preventDefault()
+                                                showPasswordResetModal()
+                                            }
+                                        },
+                                        mouseenter: (e) => {
+                                            e.target.style.color = '#0a58ca'
+                                            e.target.style.backgroundColor = '#f0f7ff'
+                                        },
+                                        mouseleave: (e) => {
+                                            e.target.style.color = '#0d6efd'
+                                            e.target.style.backgroundColor = 'transparent'
+                                        }
+                                    })
+                                ]
+                            }),
+                            // Sign In Button
                             $({
                                 tag: 'button',
                                 att: {
@@ -497,18 +631,18 @@ const LoginPanel = (prop) => {
                                 },
                                 style: {
                                     width: '100%',
-                                    background: 'linear-gradient(135deg, #0d6efd, #0a58ca)',
+                                    background: '#0d6efd',
                                     border: 'none',
                                     padding: '14px 24px',
-                                    fontSize: '1rem',
+                                    fontSize: '15px',
                                     fontWeight: '600',
-                                    borderRadius: '10px',
-                                    marginTop: '0.5rem',
+                                    borderRadius: '12px',
                                     cursor: 'pointer',
                                     color: '#fff',
                                     transition: 'all 0.3s ease',
-                                    boxShadow: '0 2px 8px rgba(13, 110, 253, 0.3)',
-                                    textAlign: 'center'
+                                    boxShadow: '0 4px 14px rgba(13, 110, 253, 0.3)',
+                                    textAlign: 'center',
+                                    fontFamily: 'Inter, Segoe UI, sans-serif'
                                 },
                                 text: 'Sign In',
                                 event: [
@@ -516,17 +650,79 @@ const LoginPanel = (prop) => {
                                         type: 'mouseenter',
                                         method: (e) => {
                                             e.target.style.transform = 'translateY(-2px)'
-                                            e.target.style.boxShadow = '0 4px 15px rgba(13, 110, 253, 0.4)'
+                                            e.target.style.boxShadow = '0 6px 20px rgba(13, 110, 253, 0.4)'
+                                            e.target.style.background = '#0a58ca'
                                         }
                                     },
                                     {
                                         type: 'mouseleave',
                                         method: (e) => {
                                             e.target.style.transform = 'translateY(0)'
-                                            e.target.style.boxShadow = '0 2px 8px rgba(13, 110, 253, 0.3)'
+                                            e.target.style.boxShadow = '0 4px 14px rgba(13, 110, 253, 0.3)'
+                                            e.target.style.background = '#0d6efd'
                                         }
                                     }
                                 ]
+                            }),
+                            // Sign Up Link
+                            $({
+                                tag: 'div',
+                                style: {
+                                    textAlign: 'center',
+                                    marginTop: '20px',
+                                    fontFamily: 'Inter, Segoe UI, sans-serif'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'span',
+                                        text: "Don't have an account? ",
+                                        style: {
+                                            color: '#6c757d',
+                                            fontSize: '14px'
+                                        }
+                                    }),
+                                    $({
+                                        tag: 'a',
+                                        text: 'Sign up',
+                                        style: {
+                                            color: '#0d6efd',
+                                            fontSize: '14px',
+                                            fontWeight: '600',
+                                            textDecoration: 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease'
+                                        },
+                                        event: {
+                                            type: 'click',
+                                            method: (e) => {
+                                                e.preventDefault()
+                                                window.location.assign('/account/Signup?')
+                                            }
+                                        },
+                                        mouseenter: (e) => {
+                                            e.target.style.color = '#0a58ca'
+                                            e.target.style.textDecoration = 'underline'
+                                        },
+                                        mouseleave: (e) => {
+                                            e.target.style.color = '#0d6efd'
+                                            e.target.style.textDecoration = 'none'
+                                        }
+                                    })
+                                ]
+                            }),
+                            // Copyright Footer
+                            $({
+                                tag: 'div',
+                                style: {
+                                    textAlign: 'center',
+                                    marginTop: '24px',
+                                    paddingTop: '16px',
+                                    borderTop: '1px solid #e8ecf0',
+                                    fontFamily: 'Inter, Segoe UI, sans-serif',
+                                    fontSize: '12px',
+                                    color: '#adb5bd'
+                                },
+                                text: '© 2026 Capiz State University. All rights reserved.'
                             })
                         ]
                     })
@@ -576,7 +772,7 @@ const Signup = (prop) => {
         "Sigma", "Sapian", "Tapaz", "Dumarao", "Dayao"
     ]
 
-    // Modern Select Component
+    // Modern Select Component (Used in Modal and Main Form)
     const ModernSelect = ({ label, id, options, onchange }) => {
         return $({
             tag: 'div',
@@ -858,6 +1054,217 @@ const Signup = (prop) => {
         })
     }
 
+    // ------- CREATE ROLE MODAL FUNCTION -------
+    const createRoleModal = (onConfirm) => {
+        let selectedRole = '';
+        let selectedCampus = '';
+        let selectedCenter = '';
+
+        // Native CSS Toggle Helper
+        const modalAnimateToggle = (element, show) => {
+            if (!element) return;
+            if (show) {
+                element.style.display = 'block';
+                requestAnimationFrame(() => {
+                    element.style.opacity = '1';
+                    element.style.transform = 'translateY(0)';
+                    element.style.maxHeight = '200px';
+                });
+            } else {
+                element.style.opacity = '0';
+                element.style.transform = 'translateY(-10px)';
+                element.style.maxHeight = '0px';
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 300);
+            }
+        };
+
+        // Build the Modal Content
+        const modalWrapper = $({
+            tag: 'div',
+            style: {
+                position: 'fixed',
+                top: '0', left: '0', width: '100%', height: '100%',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                zIndex: '9999',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: '0',
+                transition: 'opacity 0.3s ease'
+            },
+            event: {
+                type: 'click',
+                method: (e) => { if (e.target === e.currentTarget) e.currentTarget.remove(); }
+            }
+        });
+
+        const modalCard = $({
+            tag: 'div',
+            style: {
+                backgroundColor: '#ffffff',
+                borderRadius: '20px',
+                padding: '40px 36px',
+                maxWidth: '500px',
+                width: '90%',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+                transform: 'scale(0.9)',
+                transition: 'transform 0.3s ease',
+                display: 'flex',
+                flexDirection: 'column'
+            },
+            child: [
+                $({
+                    tag: 'h2',
+                    text: 'Select Your Role',
+                    style: { marginBottom: '20px', color: '#1a2a3a', fontFamily: 'Inter, Segoe UI, sans-serif', textAlign: 'center' }
+                }),
+                
+                // 1. Role Selection
+                ModernSelect({
+                    label: 'Select Role',
+                    id: 'modal-role',
+                    options: [
+                        option({ label: '-- Select Role --', placeholder: true }),
+                        option({ label: 'Research Campus Chair', value: 'research_chair' }),
+                        option({ label: 'Research Center or Extension Chair', value: 'research_center_chair' })
+                    ],
+                    onchange: (e) => {
+                        selectedRole = e.target.value;
+                        const campusEl = document.getElementById('modal-campus-container');
+                        const centerEl = document.getElementById('modal-center-container');
+                        const extEl = document.getElementById('modal-extension-container');
+
+                        // Reset Hidden
+                        if(campusEl) { campusEl.style.display = 'none'; campusEl.style.opacity = '0'; }
+                        if(centerEl) { centerEl.style.display = 'none'; centerEl.style.opacity = '0'; }
+                        if(extEl) { extEl.style.display = 'none'; extEl.style.opacity = '0'; }
+                        
+                        selectedCampus = '';
+                        selectedCenter = '';
+                        if(document.getElementById('modal-campus')) document.getElementById('modal-campus').value = '';
+                        if(document.getElementById('modal-center')) document.getElementById('modal-center').value = '';
+                        if(document.getElementById('modal-extension')) document.getElementById('modal-extension').value = '';
+
+                        if (selectedRole === 'research_chair') {
+                            modalAnimateToggle(campusEl, true);
+                        } else if (selectedRole === 'research_center_chair') {
+                            modalAnimateToggle(centerEl, true);
+                        }
+                    }
+                }),
+
+                // 2. Campus (Hidden by default)
+                $({
+                    tag: 'div',
+                    att: { id: 'modal-campus-container' },
+                    style: { display: 'none', opacity: '0', transform: 'translateY(-10px)', transition: 'all 0.3s ease', maxHeight: '0', overflow: 'hidden' },
+                    child: [
+                        ModernSelect({
+                            label: 'Select Campus',
+                            id: 'modal-campus',
+                            options: [option({ label: '-- Select Campus --', placeholder: true }), ...campuses.map(val => option({ label: val, value: val }))],
+                            onchange: (e) => { selectedCampus = e.target.value; }
+                        })
+                    ]
+                }),
+
+                // 3. Center (Hidden by default)
+                $({
+                    tag: 'div',
+                    att: { id: 'modal-center-container' },
+                    style: { display: 'none', opacity: '0', transform: 'translateY(-10px)', transition: 'all 0.3s ease', maxHeight: '0', overflow: 'hidden' },
+                    child: [
+                        ModernSelect({
+                            label: 'Select Research Center or Extension',
+                            id: 'modal-center',
+                            options: [option({ label: '-- Select Research Center or Extension --', placeholder: true }), ...CapsuOffice.map(val => {
+                                let code = val; const match = val.match(/\(([^)]+)\)/); if(match) code = match[1]; else if(val === "Extension") code = "Extension";
+                                return option({ label: val, value: code });
+                            })],
+                            onchange: (e) => {
+                                selectedCenter = e.target.value;
+                                const extEl = document.getElementById('modal-extension-container');
+                                if(extEl) { extEl.style.display = 'none'; extEl.style.opacity = '0'; }
+                                selectedCampus = '';
+                                if(document.getElementById('modal-extension')) document.getElementById('modal-extension').value = '';
+                                if (selectedCenter === 'Extension') {
+                                    modalAnimateToggle(extEl, true);
+                                }
+                            }
+                        })
+                    ]
+                }),
+
+                // 4. Extension Campus (Hidden by default)
+                $({
+                    tag: 'div',
+                    att: { id: 'modal-extension-container' },
+                    style: { display: 'none', opacity: '0', transform: 'translateY(-10px)', transition: 'all 0.3s ease', maxHeight: '0', overflow: 'hidden' },
+                    child: [
+                        ModernSelect({
+                            label: 'Select Extension Campus',
+                            id: 'modal-extension',
+                            options: [option({ label: '-- Select Campus --', placeholder: true }), ...campuses.map(val => option({ label: val, value: val }))],
+                            onchange: (e) => { selectedCampus = e.target.value; }
+                        })
+                    ]
+                }),
+
+                // Action Buttons
+                $({
+                    tag: 'div',
+                    style: { display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' },
+                    child: [
+                        $({
+                            tag: 'button',
+                            text: 'Cancel',
+                            style: {
+                                padding: '10px 20px', borderRadius: '8px', border: '1px solid #e8ecf0', 
+                                backgroundColor: '#ffffff', color: '#6c757d', cursor: 'pointer', fontFamily: 'Inter, Segoe UI, sans-serif'
+                            },
+                            event: {
+                                type: 'click',
+                                method: () => { modalWrapper.remove(); }
+                            }
+                        }),
+                        $({
+                            tag: 'button',
+                            text: 'Confirm Role',
+                            style: {
+                                padding: '10px 20px', borderRadius: '8px', border: 'none',
+                                backgroundColor: '#0d6efd', color: '#ffffff', cursor: 'pointer', fontWeight: '600', fontFamily: 'Inter, Segoe UI, sans-serif'
+                            },
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    if (!selectedRole) { alert("Please select a role."); return; }
+                                    if (selectedRole === 'research_chair' && !selectedCampus) { alert("Please select a Campus."); return; }
+                                    if (selectedRole === 'research_center_chair') {
+                                        if (!selectedCenter) { alert("Please select a Research Center or Extension."); return; }
+                                        if (selectedCenter === 'Extension' && !selectedCampus) { alert("Please select an Extension Campus."); return; }
+                                    }
+                                    modalWrapper.remove();
+                                    onConfirm(selectedRole, selectedCenter, selectedCampus);
+                                }
+                            }
+                        })
+                    ]
+                })
+            ]
+        });
+
+        modalWrapper.appendChild(modalCard);
+        document.body.appendChild(modalWrapper);
+
+        // Animate In
+        setTimeout(() => {
+            modalWrapper.style.opacity = '1';
+            modalCard.style.transform = 'scale(1)';
+        }, 50);
+    };
+
     const getContainer = (container) => {
         const form = $({
             tag: 'form',
@@ -910,130 +1317,73 @@ const Signup = (prop) => {
 
         form.appendChild(infoText)
 
-        // Role Selection
-        const roleOptions = [
-            option({ label: '-- Select Role --', placeholder: true }),
-            option({ label: 'Research Campus Chair', value: 'research_chair' }),
-            option({ label: 'Research Center or Extension Chair', value: 'research_center_chair' })
-        ]
-
-        form.appendChild(ModernSelect({
-            label: 'Select Role',
-            id: 'select-role',
-            options: roleOptions,
-            onchange: (event) => {
-                const selectedRole = event.target.value
-                get.userRole(selectedRole)
-
-                const campusContainer = document.getElementById('campus-container')
-                const centerContainer = document.getElementById('center-container')
-                const extensionCampusContainer = document.getElementById('extension-campus-container')
-
-                if (selectedRole === 'research_chair') {
-                    if (campusContainer) campusContainer.style.display = 'block'
-                    if (centerContainer) centerContainer.style.display = 'none'
-                    if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
-                    get.center(undefined)
-                } else if (selectedRole === 'research_center_chair') {
-                    if (campusContainer) campusContainer.style.display = 'none'
-                    if (centerContainer) centerContainer.style.display = 'block'
-                    get.campus(undefined)
-                    const centerSelect = document.getElementById('select-sign')
-                    if (centerSelect && centerSelect.value === 'Extension') {
-                        if (extensionCampusContainer) extensionCampusContainer.style.display = 'block'
-                    } else {
-                        if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
-                    }
-                } else {
-                    if (campusContainer) campusContainer.style.display = 'none'
-                    if (centerContainer) centerContainer.style.display = 'none'
-                    if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
-                }
-            }
-        }))
-
-        // Research Center Options
-        const centerOptions = [option({ label: '-- Select Research Center or Extension --', placeholder: true })]
-        CapsuOffice.forEach(val => {
-            let code = val
-            const match = val.match(/\(([^)]+)\)/)
-            if (match) {
-                code = match[1]
-            } else if (val === "Extension") {
-                code = "Extension"
-            }
-            centerOptions.push(option({ label: val, value: code }))
-        })
-
-        const centerWrapper = $({
+        // Main UI - Display selected role and a button to change it
+        const roleDisplayContainer = $({
             tag: 'div',
-            att: { id: 'center-container', style: 'display: none; width: 100%;' },
+            style: {
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                backgroundColor: '#f8f9fa',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                marginBottom: '1.5rem'
+            },
             child: [
-                ModernSelect({
-                    label: 'Select Research Center',
-                    id: 'select-sign',
-                    options: centerOptions,
-                    onchange: (event) => {
-                        const selectedCenter = event.target.value
-                        get.center(selectedCenter)
-                        const extensionCampusContainer = document.getElementById('extension-campus-container')
-                        if (selectedCenter === 'Extension' && userRole === 'research_center_chair') {
-                            if (extensionCampusContainer) extensionCampusContainer.style.display = 'block'
-                        } else {
-                            if (extensionCampusContainer) extensionCampusContainer.style.display = 'none'
-                            if (selectedCenter !== 'Extension') {
-                                get.campus(undefined)
-                            }
+                $({
+                    tag: 'div',
+                    style: { display: 'flex', flexDirection: 'column' },
+                    child: [
+                        $({
+                            tag: 'span',
+                            text: 'Selected Role',
+                            style: { fontSize: '12px', color: '#6c757d', fontFamily: 'Inter, Segoe UI, sans-serif' }
+                        }),
+                        $({
+                            tag: 'span',
+                            att: { id: 'displayed-role-text' },
+                            text: 'None selected',
+                            style: { fontWeight: '600', fontSize: '15px', color: '#1a2a3a', fontFamily: 'Inter, Segoe UI, sans-serif' }
+                        })
+                    ]
+                }),
+                $({
+                    tag: 'button',
+                    att: { id: 'open-role-modal-btn' },
+                    text: 'Choose Role',
+                    style: {
+                        padding: '8px 16px', borderRadius: '8px', border: 'none',
+                        backgroundColor: '#0d6efd', color: '#ffffff', cursor: 'pointer', fontWeight: '500', fontFamily: 'Inter, Segoe UI, sans-serif',
+                        transition: 'all 0.3s ease'
+                    },
+                    event: {
+                        type: 'click',
+                        method: (e) => {
+                            createRoleModal((role, centerVal, campusVal) => {
+                                userRole = role;
+                                center = centerVal;
+                                campus = campusVal;
+                                
+                                const displayText = document.getElementById('displayed-role-text');
+                                if(displayText) {
+                                    let text = role === 'research_chair' ? 'Research Campus Chair' : 'Research Center or Extension Chair';
+                                    if(campusVal) text += ` (${campusVal})`;
+                                    if(centerVal && centerVal !== 'Extension') text += ` (${centerVal})`;
+                                    if(centerVal === 'Extension') text += ` (Extension - ${campusVal})`;
+                                    displayText.innerText = text;
+                                }
+                            });
                         }
-                    }
+                    },
+                    mouseenter: (e) => { e.target.style.backgroundColor = '#0a58ca'; },
+                    mouseleave: (e) => { e.target.style.backgroundColor = '#0d6efd'; }
                 })
             ]
-        })
-        form.appendChild(centerWrapper)
+        });
 
-        // Extension Campus Options
-        const extensionOptions = [option({ label: '-- Select Campus --', placeholder: true })]
-        campuses.forEach(val => {
-            extensionOptions.push(option({ label: val, value: val }))
-        })
+        form.appendChild(roleDisplayContainer);
 
-        const extensionCampusWrapper = $({
-            tag: 'div',
-            att: { id: 'extension-campus-container', style: 'display: none; width: 100%;' },
-            child: [
-                ModernSelect({
-                    label: 'Select Extension Campus',
-                    id: 'select-extension-campus',
-                    options: extensionOptions,
-                    onchange: (event) => { get.campus(event.target.value) }
-                })
-            ]
-        })
-        form.appendChild(extensionCampusWrapper)
-
-        // Campus Options
-        const campusOptions = [option({ label: '-- Select Campus --', placeholder: true })]
-        campuses.forEach(val => {
-            campusOptions.push(option({ label: val, value: val }))
-        })
-
-        const campusWrapper = $({
-            tag: 'div',
-            att: { id: 'campus-container', style: 'display: none; width: 100%;' },
-            child: [
-                ModernSelect({
-                    label: 'Select Campus',
-                    id: 'select-campus',
-                    options: campusOptions,
-                    onchange: (event) => { get.campus(event.target.value) }
-                })
-            ]
-        })
-        form.appendChild(campusWrapper)
-
-        // ============ FORM FIELDS (No Labels) ============
-
-        // 1. Full Name - Full width (above the two columns)
+        // 1. Full Name - Full width
         form.appendChild(ModernInput({
             type: 'text',
             id: 'signinput-fullname',
@@ -1052,7 +1402,6 @@ const Signup = (prop) => {
                 marginTop: '0.5rem'
             },
             child: [
-                // Left column
                 $({
                     tag: 'div',
                     style: { width: '100%' },
@@ -1073,7 +1422,6 @@ const Signup = (prop) => {
                         })
                     ]
                 }),
-                // Right column
                 $({
                     tag: 'div',
                     style: { width: '100%' },
@@ -1096,6 +1444,7 @@ const Signup = (prop) => {
         })
 
         form.appendChild(twoColumnContainer)
+        
         // Submit Button
         form.appendChild($({
             tag: 'button',
@@ -1124,22 +1473,22 @@ const Signup = (prop) => {
                     event.preventDefault()
 
                     if (userRole === undefined) {
-                        alert("Please select a role (Research Chair or Research Center Chair)..!")
+                        alert("Please select a role by clicking the 'Choose Role' button.")
                         return
                     }
 
                     if (userRole === 'research_chair') {
                         if (campus === undefined) {
-                            alert("Please select a Campus..!")
+                            alert("Please select a Campus inside the Role Selection modal.")
                             return
                         }
                     } else if (userRole === 'research_center_chair') {
                         if (center === undefined) {
-                            alert("Please select a Research Center..!")
+                            alert("Please select a Research Center inside the Role Selection modal.")
                             return
                         }
                         if (center === 'Extension' && campus === undefined) {
-                            alert("Please select an Extension Campus..!")
+                            alert("Please select an Extension Campus inside the Role Selection modal.")
                             return
                         }
                     }
@@ -1199,7 +1548,6 @@ const Signup = (prop) => {
                         remove();
 
                         if (dat.status === true) {
-                            // SUCCESS - Show confirmation
                             document.body.appendChild(ConfirmationAlert(
                                 "Your account has been successfully created!\nPlease check your email to verify your account.",
                                 () => {
@@ -1207,7 +1555,6 @@ const Signup = (prop) => {
                                 }
                             ))
                         } else {
-                            // ERROR - Show the error message
                             document.body.appendChild(ConfirmationAlert(
                                 dat.message || "Registration failed. Please try again.",
                                 () => {
@@ -1222,6 +1569,53 @@ const Signup = (prop) => {
                     }
                 }
             }
+        }))
+
+        // Login Link
+        form.appendChild($({
+            tag: 'div',
+            style: {
+                textAlign: 'center',
+                marginTop: '16px',
+                fontFamily: 'Inter, Segoe UI, sans-serif'
+            },
+            child: [
+                $({
+                    tag: 'span',
+                    text: "Already have an account? ",
+                    style: {
+                        color: '#6c757d',
+                        fontSize: '14px'
+                    }
+                }),
+                $({
+                    tag: 'a',
+                    text: 'Sign in',
+                    style: {
+                        color: '#0d6efd',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        textDecoration: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                    },
+                    event: {
+                        type: 'click',
+                        method: (e) => {
+                            e.preventDefault()
+                            window.location.assign('/account/Login?')
+                        }
+                    },
+                    mouseenter: (e) => {
+                        e.target.style.color = '#0a58ca'
+                        e.target.style.textDecoration = 'underline'
+                    },
+                    mouseleave: (e) => {
+                        e.target.style.color = '#0d6efd'
+                        e.target.style.textDecoration = 'none'
+                    }
+                })
+            ]
         }))
 
         container.appendChild(form)
@@ -1239,224 +1633,259 @@ const logo = () => {
     return $({
         tag: 'div',
         style: {
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '1rem',
-            marginBottom: '0.5rem',
-            padding: '0.5rem 0',
-            backgroundColor: 'transparent'
-        },
-        child: [
-            // Logo Image
-            $({
-                tag: 'img',
-                att: {
-                    src: '/client/images/cap.png',
-                    alt: 'CAPSU Logo'
-                },
-                style: {
-                    width: '64px',
-                    height: '64px',
-                    objectFit: 'contain'
-                }
-            }),
-            // Text Container
-            $({
-                tag: 'div',
-                style: {
-                    flex: 1,
-                    textAlign: 'center'
-                },
-                child: [
-                    $({
-                        tag: 'div',
-                        text: 'CAPIZ STATE UNIVERSITY',
-                        style: {
-                            color: '#1a2a3a',
-                            fontSize: '1.25rem',
-                            fontWeight: '700',
-                            letterSpacing: '1px',
-                            fontFamily: 'Inter, Segoe UI, Poppins, system-ui, sans-serif',
-                            padding: '0.25rem 0',
-                            borderBottom: '2px solid #0d6efd'
-                        }
-                    }),
-                    $({
-                        tag: 'div',
-                        text: 'Center of Academic Excellence Delivering Quality Service to All',
-                        style: {
-                            color: '#6c757d',
-                            fontSize: '0.75rem',
-                            fontWeight: '500',
-                            padding: '0.5rem 0 0.25rem',
-                            fontFamily: 'Inter, Segoe UI, system-ui, sans-serif',
-                            letterSpacing: '0.3px'
-                        }
-                    })
-                ]
-            })
-        ]
+            display: 'none'
+        }
     })
 }
 
 export const LoginPage = () => {
-    let logState = true
     let clsObj
-
-    const getBot = (val) => {
-        const currentPath = window.location.href.replace(window.location.origin, '');
-
-        if (currentPath === '/account/Login?' || currentPath === '/account/Login') {
-            val.innerHTML = '';
-
-            const linkSpan = document.createElement('span');
-            linkSpan.style.cssText = `
-                color: #0d6efd;
-                text-decoration: none;
-                font-size: 0.85rem;
-                font-family: 'Inter', 'Segoe UI', sans-serif;
-                font-weight: 600;
-                transition: all 0.3s ease;
-                cursor: pointer;
-                display: inline-block;
-                padding: 4px 8px;
-                border-radius: 6px;
-            `;
-            linkSpan.textContent = 'Create an account';
-
-            linkSpan.addEventListener('mouseenter', () => {
-                linkSpan.style.color = '#0a58ca';
-                linkSpan.style.backgroundColor = '#f8f9fa';
-            });
-
-            linkSpan.addEventListener('mouseleave', () => {
-                linkSpan.style.color = '#0d6efd';
-                linkSpan.style.backgroundColor = 'transparent';
-            });
-
-            linkSpan.addEventListener('click', (e) => {
-                e.preventDefault();
-                window.location.assign('/account/Signup?');
-            });
-
-            val.appendChild(linkSpan);
-
-            const noteSpan = document.createElement('span');
-            noteSpan.style.cssText = `
-                font-size: 0.85rem;
-                color: #6c757d;
-                font-family: Inter, Segoe UI, sans-serif;
-                margin-left: 4px;
-            `;
-            noteSpan.textContent = ' (for CAPSU Research & Extension users only)';
-            val.appendChild(noteSpan);
-
-        } else if (currentPath === '/account/Signup?' || currentPath === '/account/Signup') {
-            val.innerHTML = `<a href="/account/Login?" style="
-                color: #0d6efd;
-                text-decoration: none;
-                font-size: 0.85rem;
-                font-family: 'Inter', 'Segoe UI', sans-serif;
-                font-weight: 600;
-                transition: all 0.3s ease;
-                cursor: pointer;
-                display: inline-block;
-                padding: 4px 8px;
-                border-radius: 6px;
-            " onmouseover="this.style.color='#0a58ca'; this.style.backgroundColor='#f8f9fa';" 
-            onmouseout="this.style.color='#0d6efd'; this.style.backgroundColor='transparent';">Log in</a>`
-        }
-    }
 
     const getCLS = (cls) => {
         clsObj = cls
-        clsObj.style.backgroundColor = 'transparent'
-        clsObj.style.borderRadius = '16px'
-        clsObj.style.padding = '2rem'
-
+        clsObj.style.width = '100%'
+        clsObj.style.height = '100%'
+        clsObj.style.display = 'flex'
+        clsObj.style.justifyContent = 'center'
+        clsObj.style.alignItems = 'center'
+        
         const currentPath = window.location.href.replace(window.location.origin, '');
 
-        if (currentPath === '/account/Login?' || currentPath === '/account/Login') {
-            clsObj.appendChild(LoginPanel())
-        } else if (currentPath === '/account/Signup?' || currentPath === '/account/Signup') {
-            clsObj.appendChild(Signup())
-        }
-    }
+        // Determine which component to render
+        const isLogin = currentPath === '/account/Login?' || currentPath === '/account/Login';
+        const isSignup = currentPath === '/account/Signup?' || currentPath === '/account/Signup';
 
-    const ChangePanel = () => {
-        return $({
-            tag: 'div',
-            elementHandler: getBot,
-            att: { className: 'butDiv' },
-            style: {
-                marginBottom: '2vh',
-                textAlign: 'center',
-                color: '#0d6efd',
-                fontFamily: 'Inter, Segoe UI, sans-serif',
-                fontSize: '0.85rem',
-                fontWeight: '500'
-            },
-            text: 'Login?',
-            event: {
-                type: 'click',
-                method: () => {
-                    const currentPath = window.location.href.replace(window.location.origin, '');
-                    if (currentPath === '/account/Login?' || currentPath === '/account/Login') {
-                        window.location.assign('/account/Signup?')
-                    } else {
-                        window.location.assign('/account/Login?')
-                    }
-                }
-            }
-        })
+        if (isLogin || isSignup) {
+            clsObj.style.maxWidth = '100%'
+            clsObj.style.padding = '0'
+            clsObj.style.backgroundColor = '#ffffff'
+            
+            // Create Split Container
+            const splitContainer = $({
+                tag: 'div',
+                style: {
+                    display: 'flex',
+                    width: '100%',
+                    height: '100vh',
+                    overflow: 'hidden',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '0'
+                },
+                child: [
+                    // LEFT PANEL
+                    $({
+                        tag: 'div',
+                        style: {
+                            flex: '1',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            padding: '40px',
+                            position: 'relative',
+                            opacity: '0.70',
+                            backgroundImage: 'url("/client/images/building.png")',
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            background: 'linear-gradient(to bottom, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.85) 100%), url("/client/images/building.png") center/cover no-repeat',
+                            height: '100%', // Changed from minHeight to height
+                            '@media (max-width: 992px)': {
+                                display: 'none'
+                            }
+                        },
+                        child: [
+                            // Logo & Title
+                            $({
+                                tag: 'div',
+                                style: {
+                                    textAlign: 'center',
+                                    marginBottom: '20px',
+                                    zIndex: '2',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    position: 'relative',
+                                    width: '100%'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            position: 'relative',
+                                            width: '100%',
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            marginBottom: '-5px'
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'div',
+                                                style: {
+                                                    position: 'absolute',
+                                                    top: '50%',
+                                                    left: '50%',
+                                                    transform: 'translate(-50%, -50%)', // Perfectly centers this behind
+                                                    width: '120px',
+                                                    height: '120px',
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                                                    borderRadius: '50%',
+                                                    zIndex: '1',
+                                                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)'
+                                                }
+                                            }),
+                                            $({
+                                                tag: 'img',
+                                                att: {
+                                                    src: '/client/images/cap.png',
+                                                    alt: 'CAPSU Logo',
+                                                    width: '100',
+                                                    height: '100'
+                                                },
+                                                style: {
+                                                    width: '110px',
+                                                    height: '110px',
+                                                    objectFit: 'contain',
+                                                    position: 'relative',
+                                                    zIndex: '2' // Sits IN FRONT of the white circle
+                                                }
+                                            })
+                                        ]
+                                    }),
+                                    // 4. CAPSU Text
+                                    $({
+                                        tag: 'h2',
+                                        text: 'CAPSU',
+                                        style: {
+                                            color: '#1a2a3a',
+                                            fontSize: '24px',
+                                            fontWeight: '700',
+                                            marginTop: '50px',
+                                            marginBottom: '0',
+                                            fontFamily: 'Inter, Segoe UI, sans-serif'
+                                        }
+                                    }),
+                                    // 5. Full University Name
+                                    $({
+                                        tag: 'h1',
+                                        text: 'Capiz State University',
+                                        style: {
+                                            color: '#1a2a3a',
+                                            fontSize: '32px',
+                                            fontWeight: '700',
+                                            marginTop: '0',
+                                            fontFamily: 'Inter, Segoe UI, sans-serif'
+                                        }
+                                    }),
+                                    // 6. Tagline
+                                    $({
+                                        tag: 'p',
+                                        text: 'Public - Intellectual - Creative - Innovative',
+                                        style: {
+                                            color: '#495057',
+                                            fontSize: '14px',
+                                            marginTop: '4px',
+                                            fontFamily: 'Inter, Segoe UI, sans-serif'
+                                        }
+                                    })
+                                ]
+                            }),
+                            // Conference Room Image Box
+                            $({
+                                tag: 'div',
+                                style: {
+                                    width: '100%',
+                                    maxWidth: '400px',
+                                    height: '250px',
+                                    borderRadius: '16px',
+                                    overflow: 'hidden',
+                                    boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+                                    position: 'relative',
+                                    zIndex: '2',
+                                    backgroundImage: 'url("/client/images/gerry.png")', 
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                    display: 'flex',
+                                    alignItems: 'flex-end',
+                                    padding: '20px'
+                                },
+                                child: [
+                                    $({
+                                        tag: 'div',
+                                        style: {
+                                            position: 'absolute',
+                                            bottom: '0',
+                                            left: '0',
+                                            width: '100%',
+                                            padding: '20px',
+                                            background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
+                                            color: '#ffffff'
+                                        },
+                                        child: [
+                                            $({
+                                                tag: 'h3',
+                                                text: 'Research',
+                                                style: { margin: '0', fontSize: '24px', fontWeight: '600' }
+                                            }),
+                                            $({
+                                                tag: 'h3',
+                                                text: 'Development &',
+                                                style: { margin: '0', fontSize: '24px', fontWeight: '600' }
+                                            }),
+                                            $({
+                                                tag: 'h3',
+                                                text: 'Extension',
+                                                style: { margin: '0', fontSize: '24px', fontWeight: '600' }
+                                            })
+                                        ]
+                                    })
+                                ]
+                            })
+                        ]
+                    }),
+                    // RIGHT PANEL
+                    $({
+                        tag: 'div',
+                        style: {
+                            flex: '1',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            backgroundColor: '#f8f9fa',
+                            padding: '40px',
+                            height: '100vh', // Enforce exact height
+                            '@media (max-width: 992px)': {
+                                flex: '1 1 100%',
+                                padding: '20px',
+                                height: 'auto',
+                                minHeight: '100vh'
+                            }
+                        },
+                        child: [
+                            isLogin ? LoginPanel() : Signup()
+                        ]
+                    })
+                ]
+            });
+            
+            clsObj.appendChild(splitContainer);
+        }
     }
 
     return $({
         tag: 'div',
-        att: { className: 'LoginPanel' },
+        att: { className: 'LoginPageWrapper' },
+        style: {
+            width: '100%',
+            height: '100vh',
+            margin: '0',
+            padding: '0',
+            overflow: 'hidden'
+        },
         child: [
-            logo(),
             $({
                 tag: 'div',
                 elementHandler: getCLS,
                 att: { className: "clogOrSig" }
-            }),
-            ChangePanel(),
-            $({
-                tag: 'a',
-                style: {
-                    fontFamily: 'Inter, Segoe UI, sans-serif',
-                    color: '#0d6efd',
-                    fontSize: '0.85rem',
-                    fontWeight: '500',
-                    marginTop: '1rem',
-                    width: 'fit-content',
-                    cursor: 'pointer',
-                    textDecoration: 'none',
-                    marginLeft: 'auto',
-                    marginRight: 'auto',
-                    display: 'block',
-                    padding: '4px 12px',
-                    borderRadius: '6px',
-                    transition: 'all 0.3s ease'
-                },
-                text: 'Forgot password?',
-                event: {
-                    type: 'click',
-                    method: (e) => {
-                        e.preventDefault()
-                        showPasswordResetModal()
-                    }
-                },
-                mouseenter: (e) => {
-                    e.target.style.backgroundColor = '#f8f9fa'
-                    e.target.style.color = '#0a58ca'
-                },
-                mouseleave: (e) => {
-                    e.target.style.backgroundColor = 'transparent'
-                    e.target.style.color = '#0d6efd'
-                }
             })
         ]
     })
