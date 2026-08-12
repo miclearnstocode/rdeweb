@@ -297,7 +297,16 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                     doc.presenter.toLowerCase() !== 'not specified';
 
                 const docText = `${doc.title} by ${authorsText} - ${doc.category}`;
-                const presenterText = hasPresenter ? `Presenter: ${doc.presenter}` : null;
+                
+                // Format presenter with campus
+                let presenterText = null;
+                if (hasPresenter) {
+                    let presenterName = doc.presenter;
+                    if (doc.campus && doc.campus.trim() !== '') {
+                        presenterName += ` - ${doc.campus}`;
+                    }
+                    presenterText = `Presenter: ${presenterName}`;
+                }
 
                 allDocItems.push({
                     type: 'document',
@@ -659,6 +668,7 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                 case 'document':
                     const docElements = [];
 
+                    // Extract the parts of the document text
                     const docText = item.text;
                     let titlePart = '';
                     let authorsPart = '';
@@ -681,8 +691,10 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                         titlePart = docText;
                     }
 
+                    // Format scientific names in the title
                     const formattedTitle = formatScientificNames(titlePart);
 
+                    // Build the document line with proper formatting
                     const docLine = $({
                         tag: 'div',
                         style: {
@@ -693,11 +705,13 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                             textAlign: 'justify'
                         },
                         child: [
+                            // Number (bold)
                             $({ 
                                 tag: 'span', 
                                 text: `${item.number}. `, 
                                 style: { fontWeight: 'bold' } 
                             }),
+                            // Title with scientific names formatted (using innerHTML)
                             $({ 
                                 tag: 'span', 
                                 att: { 
@@ -705,11 +719,13 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                                 },
                                 style: { fontWeight: 'normal' } 
                             }),
+                            // " by " text
                             $({ 
                                 tag: 'span', 
                                 text: ' by ', 
                                 style: { fontWeight: 'normal' } 
                             }),
+                            // Authors (italic)
                             $({ 
                                 tag: 'span', 
                                 text: authorsPart, 
@@ -718,11 +734,13 @@ export const PrintResearch = ({ eventName, data, formData }) => {
                                     fontStyle: 'italic' 
                                 } 
                             }),
+                            // " - " text
                             $({ 
                                 tag: 'span', 
                                 text: categoryPart ? ' - ' : '', 
                                 style: { fontWeight: 'normal' } 
                             }),
+                            // Category (normal)
                             $({ 
                                 tag: 'span', 
                                 text: categoryPart || '', 
@@ -733,7 +751,9 @@ export const PrintResearch = ({ eventName, data, formData }) => {
 
                     docElements.push(docLine);
 
+                    // Presenter line if exists
                     if (item.presenter) {
+                        // Format scientific names in presenter
                         const formattedPresenter = formatScientificNames(item.presenter);
                         docElements.push($({
                             tag: 'div',

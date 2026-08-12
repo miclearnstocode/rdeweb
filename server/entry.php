@@ -1046,6 +1046,20 @@ if(isset($_POST['printEntry'])){
         // Sort categories alphabetically
         ksort($groupedByCategory);
         
+        // Campus mapping
+        $campusMapping = [
+            'Roxas City Main' => 'Roxas City Main Campus',
+            'Pontevedra' => 'Pontevedra Campus',
+            'Burias' => 'Burias Campus',
+            'Dayao' => 'Dayao Satellite College',
+            'Pilar' => 'Pilar Satellite College',
+            'Mambusao' => 'Mambusao Satellite College',
+            'Dumarao' => 'Dumarao Satellite College',
+            'Tapaz' => 'Tapaz Satellite College',
+            'Sigma' => 'Sigma Satellite College',
+            'Central Office' => 'Central Office'
+        ];
+        
         foreach ($groupedByCategory as $categoryName => $docs) {
             $cat = new stdClass();
             $cat->category = $categoryName;
@@ -1054,11 +1068,29 @@ if(isset($_POST['printEntry'])){
             foreach ($docs as $doc) {
                 $resData = new stdClass();
                 $resData->id = $doc['id'];
-                $resData->campus = $doc['campus'];
+                
+                // Map campus name
+                $campus = $doc['campus'] ?? '';
+                $mappedCampus = $campusMapping[$campus] ?? $campus;
+                $resData->campus = $mappedCampus;
+                
                 $resData->title = formatDocumentTitle($doc['title']);
                 $resData->original_title = $doc['original_title'] ?? '';
                 $resData->final_symposium_title = $doc['final_symposium_title'] ?? '';
-                $resData->presenter = $doc['presenter'] ?? '';
+                
+                // Format presenter with mapped campus
+                $presenterName = $doc['presenter'] ?? '';
+                
+                if (!empty($presenterName) && $presenterName !== 'Not specified' && $presenterName !== 'Not Specified' && strtolower($presenterName) !== 'not specified') {
+                    $formattedPresenter = formatName($presenterName);
+                    if (!empty($mappedCampus)) {
+                        $formattedPresenter .= ' - ' . $mappedCampus;
+                    }
+                } else {
+                    $formattedPresenter = 'Not specified';
+                }
+                $resData->presenter = $formattedPresenter;
+                
                 $resData->category = $doc['category'];
                 $resData->authors = formatAuthors($doc['authors']);
                 $resData->paper_type = $doc['paper_type'] ?? 'faculty';

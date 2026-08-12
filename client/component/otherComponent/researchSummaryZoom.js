@@ -297,7 +297,6 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                 borderBottom: true
             });
 
-            // Documents in this category
             docs.forEach(doc => {
                 const authorsText = doc.authors?.length > 0
                     ? doc.authors.join(', ')
@@ -310,7 +309,16 @@ export const PrintResearchZoom = ({ eventName, data, formData }) => {
                     doc.presenter.toLowerCase() !== 'not specified';
 
                 const docText = `${doc.title} by ${authorsText} - ${doc.category}`;
-                const presenterText = hasPresenter ? `Presenter: ${doc.presenter}` : null;
+                
+                // Format presenter with campus
+                let presenterText = null;
+                if (hasPresenter) {
+                    let presenterName = doc.presenter;
+                    if (doc.campus && doc.campus.trim() !== '') {
+                        presenterName += ` - ${doc.campus}`;
+                    }
+                    presenterText = `Presenter: ${presenterName}`;
+                }
 
                 allDocItems.push({
                     type: 'document',
