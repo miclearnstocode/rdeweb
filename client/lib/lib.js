@@ -184,27 +184,25 @@ export const Waiting = () => {
         att: {
             className: 'mainLoaderBase'
         },
+        style: {
+            position: 'fixed',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(255, 255, 255, 0.85)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: '9999'
+        },
         child: [
             $({
                 tag: 'div',
                 att: {
-                    id: 'loading-wrapper'
-                },
-                child: [
-                    $({
-                        tag: 'div',
-                        att: {
-                            id: 'loading-text'
-                        },
-                        text: 'Loading'
-                    }),
-                    $({
-                        tag: 'div',
-                        att: {
-                            id: 'loading-content'
-                        }
-                    })
-                ]
+                    className: 'loader'
+                }
             })
         ]
     }))

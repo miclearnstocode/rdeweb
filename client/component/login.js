@@ -161,63 +161,6 @@ const LoginPanel = (prop) => {
                             width: '100%'
                         },
                         child: [
-                            // University Logo
-                            $({
-                                tag: 'div',
-                                style: {
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'flex-start',
-                                    gap: '12px',
-                                    marginBottom: '16px'
-                                },
-                                child: [
-                                    $({
-                                        tag: 'img',
-                                        att: {
-                                            src: '/client/images/cap.png',
-                                            alt: 'CAPSU Logo',
-                                            width: '48',
-                                            height: '48'
-                                        },
-                                        style: {
-                                            objectFit: 'contain'
-                                        }
-                                    }),
-                                    $({
-                                        tag: 'div',
-                                        style: {
-                                            textAlign: 'left'
-                                        },
-                                        child: [
-                                            $({
-                                                tag: 'div',
-                                                text: 'CAPSU RDE',
-                                                style: {
-                                                    color: '#1a2a3a',
-                                                    fontSize: '18px',
-                                                    fontWeight: '700',
-                                                    letterSpacing: '-0.3px',
-                                                    fontFamily: 'Inter, Segoe UI, sans-serif',
-                                                    lineHeight: '1.2'
-                                                }
-                                            }),
-                                            $({
-                                                tag: 'div',
-                                                text: 'Research Development & Extension',
-                                                style: {
-                                                    color: '#6c757d',
-                                                    fontSize: '11px',
-                                                    fontWeight: '500',
-                                                    fontFamily: 'Inter, Segoe UI, sans-serif',
-                                                    letterSpacing: '0.5px',
-                                                    textTransform: 'uppercase'
-                                                }
-                                            })
-                                        ]
-                                    })
-                                ]
-                            }),
                             $({
                                 tag: 'div',
                                 style: {
@@ -1293,6 +1236,7 @@ const Signup = (prop) => {
                 fontSize: '0.85rem',
                 color: '#0d5a8a',
                 display: 'flex',
+                textAlign: 'left',
                 alignItems: 'center',
                 gap: '10px'
             },
@@ -1325,6 +1269,7 @@ const Signup = (prop) => {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                textAlign: 'left',
                 backgroundColor: '#f8f9fa',
                 padding: '12px 16px',
                 borderRadius: '12px',
@@ -1685,7 +1630,7 @@ const Signup = (prop) => {
                 $({
                     tag: 'div',
                     style: {
-                        textAlign: 'center',
+                        textAlign: 'left',
                         marginBottom: '24px',
                         width: '100%'
                     },
@@ -1795,18 +1740,18 @@ export const LoginPage = () => {
                             backgroundSize: 'cover',
                             backgroundPosition: 'center',
                             background: 'linear-gradient(to bottom, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0.85) 100%), url("/client/images/building.png") center/cover no-repeat',
-                            height: '100%', // Changed from minHeight to height
+                            height: '100%',
                             '@media (max-width: 992px)': {
                                 display: 'none'
                             }
                         },
                         child: [
-                            // Logo & Title
+                            // Logo & Title Section (Centered perfectly)
                             $({
                                 tag: 'div',
                                 style: {
                                     textAlign: 'center',
-                                    marginBottom: '20px',
+                                    marginBottom: '40px',
                                     zIndex: '2',
                                     display: 'flex',
                                     flexDirection: 'column',
@@ -1815,6 +1760,7 @@ export const LoginPage = () => {
                                     width: '100%'
                                 },
                                 child: [
+                                    // Floating Logo
                                     $({
                                         tag: 'div',
                                         style: {
@@ -1822,7 +1768,7 @@ export const LoginPage = () => {
                                             width: '100%',
                                             display: 'flex',
                                             justifyContent: 'center',
-                                            marginBottom: '-5px'
+                                            marginBottom: '-10px'
                                         },
                                         child: [
                                             $({
@@ -1831,7 +1777,7 @@ export const LoginPage = () => {
                                                     position: 'absolute',
                                                     top: '50%',
                                                     left: '50%',
-                                                    transform: 'translate(-50%, -50%)', // Perfectly centers this behind
+                                                    transform: 'translate(-50%, -50%)',
                                                     width: '120px',
                                                     height: '120px',
                                                     backgroundColor: 'rgba(255, 255, 255, 0.7)',
@@ -1853,25 +1799,25 @@ export const LoginPage = () => {
                                                     height: '110px',
                                                     objectFit: 'contain',
                                                     position: 'relative',
-                                                    zIndex: '2' // Sits IN FRONT of the white circle
+                                                    zIndex: '2'
                                                 }
                                             })
                                         ]
                                     }),
-                                    // 4. CAPSU Text
+                                    // CAPSU Title
                                     $({
                                         tag: 'h2',
                                         text: 'CAPSU',
                                         style: {
                                             color: '#1a2a3a',
-                                            fontSize: '24px',
+                                            fontSize: '28px',
                                             fontWeight: '700',
                                             marginTop: '50px',
                                             marginBottom: '0',
                                             fontFamily: 'Inter, Segoe UI, sans-serif'
                                         }
                                     }),
-                                    // 5. Full University Name
+                                    // Full University Name
                                     $({
                                         tag: 'h1',
                                         text: 'Capiz State University',
@@ -1883,39 +1829,41 @@ export const LoginPage = () => {
                                             fontFamily: 'Inter, Segoe UI, sans-serif'
                                         }
                                     }),
-                                    // 6. Tagline
+                                    // Tagline
                                     $({
                                         tag: 'p',
-                                        text: 'Public - Intellectual - Creative - Innovative',
+                                        text: 'Public · Intellectual · Creative · Innovative',
                                         style: {
                                             color: '#495057',
                                             fontSize: '14px',
                                             marginTop: '4px',
+                                            marginBottom: '10px',
                                             fontFamily: 'Inter, Segoe UI, sans-serif'
                                         }
                                     })
                                 ]
                             }),
-                            // Conference Room Image Box
+                            // Conference Room Image Box (Better spacing and alignment)
                             $({
                                 tag: 'div',
                                 style: {
                                     width: '100%',
-                                    maxWidth: '400px',
-                                    height: '250px',
+                                    maxWidth: '420px',
+                                    height: '240px',
                                     borderRadius: '16px',
                                     overflow: 'hidden',
-                                    boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+                                    boxShadow: '0 15px 35px rgba(0,0,0,0.12)',
                                     position: 'relative',
                                     zIndex: '2',
-                                    backgroundImage: 'url("/client/images/gerry.png")', 
+                                    backgroundImage: 'url("/client/images/gerry.png")',
                                     backgroundSize: 'cover',
                                     backgroundPosition: 'center',
                                     display: 'flex',
                                     alignItems: 'flex-end',
-                                    padding: '20px'
+                                    padding: '0'
                                 },
                                 child: [
+                                    // Dark gradient overlay for better text readability
                                     $({
                                         tag: 'div',
                                         style: {
@@ -1923,25 +1871,25 @@ export const LoginPage = () => {
                                             bottom: '0',
                                             left: '0',
                                             width: '100%',
-                                            padding: '20px',
-                                            background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
+                                            padding: '24px 28px',
+                                            background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)',
                                             color: '#ffffff'
                                         },
                                         child: [
                                             $({
                                                 tag: 'h3',
                                                 text: 'Research',
-                                                style: { margin: '0', fontSize: '24px', fontWeight: '600' }
+                                                style: { margin: '0', fontSize: '26px', fontWeight: '700', letterSpacing: '-0.5px' }
                                             }),
                                             $({
                                                 tag: 'h3',
                                                 text: 'Development &',
-                                                style: { margin: '0', fontSize: '24px', fontWeight: '600' }
+                                                style: { margin: '0', fontSize: '26px', fontWeight: '700', letterSpacing: '-0.5px' }
                                             }),
                                             $({
                                                 tag: 'h3',
                                                 text: 'Extension',
-                                                style: { margin: '0', fontSize: '24px', fontWeight: '600' }
+                                                style: { margin: '0', fontSize: '26px', fontWeight: '700', letterSpacing: '-0.5px' }
                                             })
                                         ]
                                     })
@@ -1959,7 +1907,7 @@ export const LoginPage = () => {
                             alignItems: 'center',
                             backgroundColor: '#f8f9fa',
                             padding: '40px',
-                            height: '100vh', // Enforce exact height
+                            height: '100vh',
                             '@media (max-width: 992px)': {
                                 flex: '1 1 100%',
                                 padding: '20px',
@@ -1982,9 +1930,6 @@ export const LoginPage = () => {
     const currentPath = window.location.href.replace(window.location.origin, '');
     const isLogin = currentPath === '/account/Login?' || currentPath === '/account/Login';
 
-    // Append immediately (same tick) so the splash is already in the DOM before the
-    // browser's first paint — no setTimeout, so there's no gap where the login page
-    // is visible underneath before the splash covers it.
     if (isLogin && !sessionStorage.getItem('splash_shown')) {
         const splash = SplashScreen(() => {
             sessionStorage.setItem('splash_shown', 'true');
