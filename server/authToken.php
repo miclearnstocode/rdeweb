@@ -293,27 +293,32 @@ if(isset($_POST['auth'])){
                 $userStmt->bind_param("iss", $nextId, $usernames, $password);
                 
                 if($userStmt->execute()){
-                    // Send email
-                    $from = new stdClass();
-                    $from->email = $rdeEmail;
-                    $from->password = $emailPassword;
-                    $from->name = 'Research, Development and Extension';
+                    $response->status = true;
+                    $response->message = "Account created successfully!";
                     
-                    $to = new stdClass();
-                    $to->name = $fullname;
-                    $to->email = $email;
-                    
-                    $displayLocation = $campus ? $campus : $center;
-                    
+                    // --- EMAIL SENDING (ISOLATED FROM RESPONSE) ---
+                    // Attempt email sending in a background process (or just ignore failures)
                     try {
+                        $from = new stdClass();
+                        $from->email = $rdeEmail;
+                        $from->password = $emailPassword;
+                        $from->name = 'Research, Development and Extension';
+                        
+                        $to = new stdClass();
+                        $to->name = $fullname;
+                        $to->email = $email;
+                        
+                        $displayLocation = $campus ? $campus : $center;
+                        
+                        // If you want to guarantee email, use output buffering here to catch warnings
                         $emailContent = Signup($usernames, $plainPassword, $displayLocation);
                         SendEmail($from, $to, $emailContent);
                     } catch (Exception $e) {
-                        error_log("Email sending failed: " . $e->getMessage());
+                        // Log error but do NOT stop the script
+                        error_log("Signup email failed (Account already created): " . $e->getMessage());
                     }
+                    // --- END EMAIL SENDING ---
                     
-                    $response->status = true;
-                    $response->message = "Account created successfully!";
                 } else {
                     $response->message = "Failed to create user account: " . $userStmt->error;
                 }

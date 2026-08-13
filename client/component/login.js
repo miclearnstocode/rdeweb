@@ -1,6 +1,6 @@
 import { $, CapsuOffice, ConfirmationAlert, Request, SpecialChar, Waiting, CustomModal } from '../lib/lib.js'
 import { showPasswordResetModal } from "./../AccountRetrival/Code.js"
-
+import { SplashScreen } from '../component/SplashScreen.js';
 
 const LoginPanel = (prop) => {
     let username
@@ -204,7 +204,7 @@ const LoginPanel = (prop) => {
                                             }),
                                             $({
                                                 tag: 'div',
-                                                text: 'Research & Extension',
+                                                text: 'Research Development & Extension',
                                                 style: {
                                                     color: '#6c757d',
                                                     fontSize: '11px',
@@ -253,7 +253,7 @@ const LoginPanel = (prop) => {
                                     fontWeight: '400',
                                     lineHeight: '1.5'
                                 },
-                                text: 'Researcher, Innovators, Extensionist & Evaluators sign in to access your account.'
+                                text: 'Researcher, Innovators, Extension Implementer & Evaluators sign in to access your account.'
                             })
                         ]
                     }),
@@ -741,6 +741,7 @@ const Signup = (prop) => {
     let conPass
     let fullName
     let userRole
+    let isSubmitting = false
 
     const get = {
         email: (value) => { email = value },
@@ -1472,33 +1473,74 @@ const Signup = (prop) => {
                 method: async (event) => {
                     event.preventDefault()
 
+                    // IDEMPOTENCY LOCK: Check if a request is already ongoing
+                    if (isSubmitting) {
+                        console.warn("Request already in progress. Dropping duplicate click.");
+                        return;
+                    }
+                    isSubmitting = true; // Lock it
+
+                    // Save reference to the button to restore it later
+                    const submitBtn = document.getElementById('signup-submit-btn');
+                    const originalBtnText = submitBtn ? submitBtn.innerText : 'Create Account';
+                    
+                    if (submitBtn) {
+                        submitBtn.innerText = 'Creating...';
+                        submitBtn.style.opacity = '0.7';
+                        submitBtn.style.cursor = 'not-allowed';
+                    }
+
                     if (userRole === undefined) {
                         alert("Please select a role by clicking the 'Choose Role' button.")
+                        isSubmitting = false;
+                        if (submitBtn) {
+                            submitBtn.innerText = originalBtnText;
+                            submitBtn.style.opacity = '1';
+                            submitBtn.style.cursor = 'pointer';
+                        }
                         return
                     }
 
                     if (userRole === 'research_chair') {
                         if (campus === undefined) {
                             alert("Please select a Campus inside the Role Selection modal.")
+                            isSubmitting = false;
+                            if (submitBtn) {
+                                submitBtn.innerText = originalBtnText;
+                                submitBtn.style.opacity = '1';
+                                submitBtn.style.cursor = 'pointer';
+                            }
                             return
                         }
                     } else if (userRole === 'research_center_chair') {
                         if (center === undefined) {
                             alert("Please select a Research Center inside the Role Selection modal.")
+                            isSubmitting = false;
+                            if (submitBtn) {
+                                submitBtn.innerText = originalBtnText;
+                                submitBtn.style.opacity = '1';
+                                submitBtn.style.cursor = 'pointer';
+                            }
                             return
                         }
                         if (center === 'Extension' && campus === undefined) {
                             alert("Please select an Extension Campus inside the Role Selection modal.")
+                            isSubmitting = false;
+                            if (submitBtn) {
+                                submitBtn.innerText = originalBtnText;
+                                submitBtn.style.opacity = '1';
+                                submitBtn.style.cursor = 'pointer';
+                            }
                             return
                         }
                     }
 
-                    if (email === undefined) { alert("E-Mail is missing..!"); return; }
-                    if (fullName === undefined) { alert("Full name is missing..!"); return; }
-                    if (username === undefined) { alert("Username is missing..!"); return; }
-                    if (password === undefined) { alert("Password is missing..!"); return; }
-                    if (password.length < 8) { alert("Please provide at least 8 characters password...!"); return; }
-                    if (password !== conPass) { alert("Passwords do not match!"); return; }
+                    if (email === undefined) { alert("E-Mail is missing..!"); isSubmitting = false; if(submitBtn){ submitBtn.innerText=originalBtnText; submitBtn.style.opacity='1'; submitBtn.style.cursor='pointer'; } return; }
+                    if (fullName === undefined) { alert("Full name is missing..!"); isSubmitting = false; if(submitBtn){ submitBtn.innerText=originalBtnText; submitBtn.style.opacity='1'; submitBtn.style.cursor='pointer'; } return; }
+                    if (username === undefined) { alert("Username is missing..!"); isSubmitting = false; if(submitBtn){ submitBtn.innerText=originalBtnText; submitBtn.style.opacity='1'; submitBtn.style.cursor='pointer'; } return; }
+                    if (password === undefined) { alert("Password is missing..!"); isSubmitting = false; if(submitBtn){ submitBtn.innerText=originalBtnText; submitBtn.style.opacity='1'; submitBtn.style.cursor='pointer'; } return; }
+                    if (password.length < 8) { alert("Please provide at least 8 characters password...!"); isSubmitting = false; if(submitBtn){ submitBtn.innerText=originalBtnText; submitBtn.style.opacity='1'; submitBtn.style.cursor='pointer'; } return; }
+                    if (password !== conPass) { alert("Passwords do not match!"); isSubmitting = false; if(submitBtn){ submitBtn.innerText=originalBtnText; submitBtn.style.opacity='1'; submitBtn.style.cursor='pointer'; } return; }
 
                     const formData = new FormData()
                     formData.append('auth', 'signup')
@@ -1541,6 +1583,8 @@ const Signup = (prop) => {
                         } catch (parseError) {
                             console.error('Failed to parse JSON:', parseError);
                             remove();
+                            isSubmitting = false; // UNLOCK on error
+                            if(submitBtn){ submitBtn.innerText=originalBtnText; submitBtn.style.opacity='1'; submitBtn.style.cursor='pointer'; }
                             alert("Server returned an invalid response. Please check the console.");
                             return;
                         }
@@ -1566,6 +1610,13 @@ const Signup = (prop) => {
                         remove()
                         console.error('Signup error:', error)
                         alert("An error occurred during registration. Please try again.")
+                    } finally {
+                        isSubmitting = false; // UNLOCK finally
+                        if(submitBtn){ 
+                            submitBtn.innerText = originalBtnText; 
+                            submitBtn.style.opacity = '1'; 
+                            submitBtn.style.cursor = 'pointer'; 
+                        }
                     }
                 }
             }
@@ -1618,13 +1669,69 @@ const Signup = (prop) => {
             ]
         }))
 
-        container.appendChild(form)
+        // --- Append only the card WITH THE HEADER ---
+        container.appendChild($({
+            tag: 'div',
+            style: {
+                width: '100%',
+                maxWidth: '600px',
+                backgroundColor: '#ffffff',
+                borderRadius: '20px',
+                padding: '40px 36px',
+                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.04)'
+            },
+            child: [
+                // Welcome Header (RESTORED)
+                $({
+                    tag: 'div',
+                    style: {
+                        textAlign: 'center',
+                        marginBottom: '24px',
+                        width: '100%'
+                    },
+                    child: [
+                        $({
+                            tag: 'h2',
+                            style: {
+                                color: '#1a2a3a',
+                                fontSize: '24px',
+                                fontWeight: '700',
+                                marginBottom: '6px',
+                                fontFamily: 'Inter, Segoe UI, sans-serif',
+                                letterSpacing: '-0.5px'
+                            },
+                            text: 'Create Account'
+                        }),
+                        $({
+                            tag: 'p',
+                            style: {
+                                color: '#6c757d',
+                                fontSize: '14px',
+                                marginTop: '0',
+                                marginBottom: '0',
+                                fontFamily: 'Inter, Segoe UI, sans-serif',
+                                fontWeight: '400',
+                                lineHeight: '1.5'
+                            },
+                            text: 'Register as a Research or Extension Chair to access RDE services.'
+                        })
+                    ]
+                }),
+                form
+            ]
+        }))
     }
 
     return $({
         tag: 'div',
         att: { className: 'logInDiv signIn' },
-        style: { width: '100%', maxWidth: '800px', margin: '0 auto' },
+        style: {             
+            width: '100%', 
+            height: '100%', 
+            margin: '0 auto',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center' },
         elementHandler: getContainer
     })
 }
@@ -1870,6 +1977,21 @@ export const LoginPage = () => {
             clsObj.appendChild(splitContainer);
         }
     }
+
+    // --- START: SPLASH SCREEN LOGIC ---
+    const currentPath = window.location.href.replace(window.location.origin, '');
+    const isLogin = currentPath === '/account/Login?' || currentPath === '/account/Login';
+
+    // Append immediately (same tick) so the splash is already in the DOM before the
+    // browser's first paint — no setTimeout, so there's no gap where the login page
+    // is visible underneath before the splash covers it.
+    if (isLogin && !sessionStorage.getItem('splash_shown')) {
+        const splash = SplashScreen(() => {
+            sessionStorage.setItem('splash_shown', 'true');
+        });
+        document.body.appendChild(splash);
+    }
+    // --- END: SPLASH SCREEN LOGIC ---
 
     return $({
         tag: 'div',
