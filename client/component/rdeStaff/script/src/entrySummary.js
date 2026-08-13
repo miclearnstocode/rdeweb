@@ -4086,7 +4086,6 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                             background.className = 'certificate-background';
                                             
                                             if (bgSrc && bgSrc.startsWith('data:image')) {
-                                                // Custom uploaded background (base64)
                                                 const bgImg = document.createElement('img');
                                                 bgImg.src = bgSrc;
                                                 bgImg.alt = 'Certificate Background';
@@ -4095,7 +4094,6 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                 bgImg.style.objectFit = 'cover';
                                                 background.appendChild(bgImg);
                                             } else if (bgSrc && typeof bgSrc === 'string' && bgSrc.startsWith('/')) {
-                                                // Default background path
                                                 const bgImg = document.createElement('img');
                                                 bgImg.src = bgSrc;
                                                 bgImg.alt = 'Certificate Background';
@@ -4110,7 +4108,6 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                 };
                                                 background.appendChild(bgImg);
                                             } else {
-                                                // Fallback gradient background
                                                 background.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)';
                                                 background.style.backgroundSize = 'cover';
                                                 background.style.backgroundPosition = 'center';
@@ -4124,8 +4121,14 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                             const researchers = item.researchers && Array.isArray(item.researchers)
                                                 ? item.researchers.join(', ')
                                                 : (item.researchers || '');
+                                            
+                                            // FIX: Use researcherCount from the data to determine label
+                                            const researcherCount = item.researcherCount || 0;
+                                            const researcherLabel = researcherCount === 1 ? 'RESEARCHER' : 'RESEARCHERS';
+                                            
                                             const titleFontSize = (item.title).length > 200 ? '17px' : '22px';
                                             const titleMaxWidth = (item.title).length > 200 ? '95%' : '80%';
+                                            
                                             content.innerHTML = \`
                                                 <div style="width: 80%; margin: 120px auto 0 auto; text-align: center;">
                                                     <div style="font-size: 42px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; text-shadow: 2px 2px 3px rgba(255,255,255,0.8);">
@@ -4144,7 +4147,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                         \${researchers}
                                                     </div>
                                                     <div style="font-size: 16px; color: #666; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
-                                                        RESEARCHERS
+                                                        \${researcherLabel}
                                                     </div>
                                                     <div style="font-size: 20px; font-weight: bold; color: #333; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
                                                         \${info.event}
@@ -4166,11 +4169,6 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 document.addEventListener('DOMContentLoaded', function() {
                                     const container = document.getElementById('certificate-container');
                                     renderCertificates(container, certificatesData, eventInfo, backgroundSrc);
-                                    
-                                    // Auto print after a short delay
-                                    setTimeout(function() {
-                                        // window.print();
-                                    }, 1500);
                                 });
                             </script>
                         </body>
@@ -4179,6 +4177,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
 
                     WinPrint.document.close();
                 };
+
                                 
                 const printResearchSummary = (eventDetails, formData) => {
                     let loading = Waiting();
@@ -5523,7 +5522,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
             let totalEndorsements = 0
             let totalPages = 1
             
-            const File = ({camp, eventName, date, id, research, resStat}) => {
+            const File = ({camp, eventName, date, id, research, resStat, sourceType}) => {
                 let dropList, stateDrop = false
                 
                 const openFileInModal = (fileUrl) => {
@@ -5608,9 +5607,15 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 iframe.allow = 'autoplay; fullscreen';
                                 iframe.allowFullscreen = true;
                                 
-                                iframe.onload = () => loadingIndicator.remove();
+                                iframe.onload = () => {
+                                    if (loadingIndicator && loadingIndicator.remove) {
+                                        loadingIndicator.remove();
+                                    }
+                                };
                                 iframe.onerror = () => {
-                                    loadingIndicator.remove();
+                                    if (loadingIndicator && loadingIndicator.remove) {
+                                        loadingIndicator.remove();
+                                    }
                                     container.innerHTML = `
                                         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
                                             <span class="fa-solid fa-circle-exclamation" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
@@ -5621,8 +5626,16 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 };
                                 
                                 container.appendChild(iframe);
+                            } else {
+                                container.innerHTML = `
+                                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
+                                        <span class="fa-solid fa-link-slash" style="font-size: 48px; color: #dc3545; margin-bottom: 16px;"></span>
+                                        <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">Invalid Document URL</h3>
+                                        <p style="font-family: Inter, sans-serif; color: #6c757d;">The document URL could not be parsed.</p>
+                                    </div>
+                                `;
                             }
-                        } else {
+                        } else if (fileUrl) {
                             const objectEl = $({
                                 tag: 'object',
                                 att: {
@@ -5649,13 +5662,21 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 }
                             });
                             container.appendChild(objectEl);
+                        } else {
+                            container.innerHTML = `
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
+                                    <span class="fa-solid fa-file" style="font-size: 48px; color: #adb5bd; margin-bottom: 16px;"></span>
+                                    <h3 style="font-family: Inter, sans-serif; color: #1a1a2e;">No Document Available</h3>
+                                    <p style="font-family: Inter, sans-serif; color: #6c757d;">This ${sourceType === 'student' ? 'student' : 'faculty'} document does not have an uploaded file.</p>
+                                </div>
+                            `;
                         }
                         
                         return container;
                     };
                     
                     CustomModal({
-                        title: 'Document Viewer',
+                        title: sourceType === 'student' ? 'Student Document Viewer' : 'Document Viewer',
                         size: 'large',
                         content: createViewerContent,
                         showCloseButton: true,
@@ -5720,6 +5741,9 @@ export const Content = (mainFrame, leftPDiv = null) => {
                     };
                     
                     const SaveResearch = () => {
+                        // Only show for faculty endorsements
+                        if (sourceType === 'student') return null;
+                        
                         return $({
                             tag: 'button',
                             style: {
@@ -5788,6 +5812,9 @@ export const Content = (mainFrame, leftPDiv = null) => {
                     }
                     
                     const Return = () => {
+                        // Only show for faculty endorsements
+                        if (sourceType === 'student') return null;
+                        
                         return $({
                             tag: 'button',
                             style: {
@@ -5842,14 +5869,47 @@ export const Content = (mainFrame, leftPDiv = null) => {
                         const form = new FormData();
                         form.append('requestFileEndorse', 'true');
                         form.append('docId', id);
+                        form.append('sourceType', sourceType || 'faculty');
                         
                         const response = await fetch('/endorsement', {
                             method: 'POST',
                             body: form
                         });
                         const data = await response.json();
+                        
+                        // Check for file URL from response
+                        let fileUrl = null;
                         if (data.res && data.res.fileUrl) {
-                            openFileInModal(data.res.fileUrl);
+                            fileUrl = data.res.fileUrl;
+                        } else if (data.fileUrl) {
+                            fileUrl = data.fileUrl;
+                        } else if (data.research_file_view_url) {
+                            fileUrl = data.research_file_view_url;
+                        } else if (data.drive_view_url) {
+                            fileUrl = data.drive_view_url;
+                        }
+                        
+                        if (fileUrl) {
+                            openFileInModal(fileUrl);
+                        } else {
+                            // Try to get file from the research data
+                            if (research && research.length > 0) {
+                                const firstResearch = research[0];
+                                if (firstResearch.file) {
+                                    openFileInModal(firstResearch.file);
+                                    return;
+                                }
+                                if (firstResearch.drive_view_url) {
+                                    openFileInModal(firstResearch.drive_view_url);
+                                    return;
+                                }
+                                if (firstResearch.research_file_view_url) {
+                                    openFileInModal(firstResearch.research_file_view_url);
+                                    return;
+                                }
+                            }
+                            // No file found
+                            openFileInModal(null);
                         }
                     };
                     
@@ -5913,7 +5973,30 @@ export const Content = (mainFrame, leftPDiv = null) => {
                             },
                             elementHandler: (el) => {
                                 lis = el
-                                research.forEach(val => {
+                                const researchItems = Array.isArray(research) ? research : [];
+                                
+                                if (researchItems.length === 0) {
+                                    el.appendChild($({
+                                        tag: "div",
+                                        style: {
+                                            padding: '16px',
+                                            textAlign: 'center',
+                                            color: '#6c757d',
+                                            fontSize: '13px',
+                                            fontFamily: 'Inter, sans-serif'
+                                        },
+                                        text: 'No research data available'
+                                    }));
+                                    return;
+                                }
+                                
+                                researchItems.forEach(val => {
+                                    const displayTitle = val.final_symposium_title || val.title || 'Untitled';
+                                    const author = val.author || 'Unknown';
+                                    const category = val.category || 'Uncategorized';
+                                    const center = val.center || 'N/A';
+                                    const sourceLabel = sourceType === 'student' ? 'Student' : 'Faculty';
+                                    
                                     el.appendChild($({
                                         tag: "div",
                                         style: {
@@ -5926,10 +6009,34 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                         child: [
                                             $({
                                                 tag: 'div',
+                                                style: { 
+                                                    display: 'flex', 
+                                                    justifyContent: 'space-between',
+                                                    marginBottom: '4px',
+                                                    flexWrap: 'wrap',
+                                                    gap: '4px'
+                                                },
+                                                child: [
+                                                    $({
+                                                        tag: 'span',
+                                                        style: { 
+                                                            fontWeight: '600', 
+                                                            color: sourceType === 'student' ? '#2e7d32' : '#0d6efd',
+                                                            fontSize: '11px',
+                                                            backgroundColor: sourceType === 'student' ? '#e8f5e9' : '#e7f1ff',
+                                                            padding: '2px 10px',
+                                                            borderRadius: '12px'
+                                                        },
+                                                        text: sourceLabel
+                                                    })
+                                                ]
+                                            }),
+                                            $({
+                                                tag: 'div',
                                                 style: { marginBottom: '4px' },
                                                 child: [
                                                     $({ tag: 'span', text: 'Author: ', style: { fontWeight: '600', color: '#0d6efd' } }),
-                                                    $({ tag: 'span', text: val.author })
+                                                    $({ tag: 'span', text: author })
                                                 ]
                                             }),
                                             $({
@@ -5937,19 +6044,27 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                                 style: { marginBottom: '4px' },
                                                 child: [
                                                     $({ tag: 'span', text: 'Category: ', style: { fontWeight: '600', color: '#0d6efd' } }),
-                                                    $({ tag: 'span', text: val.category })
+                                                    $({ tag: 'span', text: category })
+                                                ]
+                                            }),
+                                            $({
+                                                tag: 'div',
+                                                style: { marginBottom: '4px' },
+                                                child: [
+                                                    $({ tag: 'span', text: 'Center: ', style: { fontWeight: '600', color: '#0d6efd' } }),
+                                                    $({ tag: 'span', text: center })
                                                 ]
                                             }),
                                             $({
                                                 tag: 'div',
                                                 child: [
                                                     $({ tag: 'span', text: 'Title: ', style: { fontWeight: '600', color: '#0d6efd' } }),
-                                                    $({ tag: 'span', text: val.title })
+                                                    $({ tag: 'span', text: displayTitle })
                                                 ]
                                             })
                                         ]
-                                    }))
-                                })
+                                    }));
+                                });
                             }
                         })
                     }
@@ -6014,7 +6129,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                         overflow: 'hidden',
                         textOverflow: 'ellipsis'
                     },
-                    text: camp
+                    text: camp || 'N/A'
                 })
                 
                 const eventTypeEl = $({
@@ -6022,14 +6137,31 @@ export const Content = (mainFrame, leftPDiv = null) => {
                     style: {
                         fontSize: '13px',
                         padding: '0 8px',
-                        width: '40%',
+                        width: '30%',
                         fontFamily: 'Inter, sans-serif',
                         color: '#495057',
                         whiteSpace: 'nowrap',
                         textOverflow: 'ellipsis',
                         overflow: 'hidden'
                     },
-                    text: eventName
+                    text: eventName || 'Unknown Event'
+                })
+                
+                const sourceTypeBadge = $({
+                    tag: 'div',
+                    style: {
+                        fontSize: '10px',
+                        padding: '2px 10px',
+                        borderRadius: '12px',
+                        backgroundColor: sourceType === 'student' ? '#e8f5e9' : '#e7f1ff',
+                        color: sourceType === 'student' ? '#2e7d32' : '#0d6efd',
+                        fontWeight: '600',
+                        fontFamily: 'Inter, sans-serif',
+                        whiteSpace: 'nowrap',
+                        width: 'auto',
+                        flexShrink: '0'
+                    },
+                    text: sourceType === 'student' ? 'Student' : 'Faculty'
                 })
                 
                 const dateEn = $({
@@ -6041,7 +6173,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                         fontFamily: 'Inter, sans-serif',
                         color: '#6c757d'
                     },
-                    text: date
+                    text: date ? date.split(' ')[0] : ''
                 })
                 
                 return $({
@@ -6081,6 +6213,7 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 open(),
                                 campusEl,
                                 eventTypeEl,
+                                sourceTypeBadge,
                                 dateEn
                             ]
                         }),
@@ -6155,8 +6288,8 @@ export const Content = (mainFrame, leftPDiv = null) => {
                     }
                     
                     const data = response.data;
-                    totalPages = response.totalPages;
-                    totalEndorsements = response.total;
+                    totalPages = response.totalPages || 1;
+                    totalEndorsements = response.total || 0;
                     
                     if (endorseBody) endorseBody.innerHTML = '';
                     
@@ -6193,7 +6326,9 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     borderRadius: '10px',
                                     marginBottom: '20px',
                                     fontFamily: 'Inter, sans-serif',
-                                    fontSize: '13px'
+                                    fontSize: '13px',
+                                    flexWrap: 'wrap',
+                                    gap: '8px'
                                 },
                                 child: [
                                     $({ tag: 'span', text: `Page ${currentPage} of ${totalPages}`, style: { color: '#0d6efd', fontWeight: '500' } }),
@@ -6204,12 +6339,13 @@ export const Content = (mainFrame, leftPDiv = null) => {
                             
                             data.forEach(val => {
                                 endorseBody.appendChild(File({
-                                    camp: val.campus,
-                                    eventName: val.event,
-                                    date: val.date?.split(' ')[0] || '',
+                                    camp: val.campus || 'N/A',
+                                    eventName: val.event || 'Unknown Event',
+                                    date: val.date || '',
                                     id: val.id,
                                     research: val.research || [],
-                                    resStat: val.resStat
+                                    resStat: val.resStat || 0,
+                                    sourceType: val.source_type || 'faculty'
                                 }));
                             });
                             
@@ -6221,7 +6357,8 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                     alignItems: 'center',
                                     gap: '12px',
                                     margin: '24px auto',
-                                    padding: '16px'
+                                    padding: '16px',
+                                    flexWrap: 'wrap'
                                 },
                                 child: []
                             });
@@ -6258,7 +6395,8 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                 paginationDiv.appendChild(prevBtn);
                             }
                             
-                            for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+                            const maxVisiblePages = Math.min(totalPages, 5);
+                            for (let i = 1; i <= maxVisiblePages; i++) {
                                 const pageBtn = $({
                                     tag: 'button',
                                     text: i.toString(),
@@ -6278,6 +6416,18 @@ export const Content = (mainFrame, leftPDiv = null) => {
                                         type: 'click',
                                         method: () => {
                                             if (i !== currentPage) loadEndorsements(i);
+                                        }
+                                    },
+                                    mouseenter: (e) => {
+                                        if (i !== currentPage) {
+                                            e.target.style.backgroundColor = '#f8f9fa';
+                                            e.target.style.borderColor = '#0d6efd';
+                                        }
+                                    },
+                                    mouseleave: (e) => {
+                                        if (i !== currentPage) {
+                                            e.target.style.backgroundColor = '#ffffff';
+                                            e.target.style.borderColor = '#dee2e6';
                                         }
                                     }
                                 });

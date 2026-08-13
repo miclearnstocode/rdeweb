@@ -28,8 +28,8 @@ window.renderCertificates = function(container, certificatesData, eventInfo, cus
         }
         .certificate-page {
             position: relative;
-            width: 29.7cm;  /* A4 landscape width */
-            height: 21cm;    /* A4 landscape height */
+            width: 29.7cm;
+            height: 21cm;
             page-break-after: always;
             page-break-inside: avoid;
             margin: 0 auto;
@@ -99,7 +99,6 @@ window.renderCertificates = function(container, certificatesData, eventInfo, cus
             color: #666;
             font-family: 'Times New Roman', serif;
         }
-        /* Word wrap for long titles */
         .certificate-title {
             max-width: 85%;
             margin-left: auto;
@@ -163,16 +162,20 @@ window.renderCertificates = function(container, certificatesData, eventInfo, cus
             const content = document.createElement('div')
             content.className = 'certificate-content'
 
+            // Get researchers
             const researchers = item.researchers && Array.isArray(item.researchers) 
                 ? item.researchers.join(', ') 
                 : (item.researchers || '')
+            
+            // Use the researcher label from PHP, or fallback to counting
+            const researcherLabel = item.researcherLabel || 
+                (item.researchers && Array.isArray(item.researchers) && item.researchers.length === 1 ? 'RESEARCHER' : 'RESEARCHERS')
 
             const titleFontSize = (item.title).length > 200 ? '17px' : '22px';
             const titleMaxWidth = (item.title).length > 200 ? '95%' : '80%';
 
             content.innerHTML = `
                 <div style="width: 80%; margin: 120px auto 0 auto; text-align: center;">
-                    <!-- Presenter Name -->
                     <div style="font-size: 42px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; text-shadow: 2px 2px 3px rgba(255,255,255,0.8);">
                         ${item.presenter || 'Not specified'}
                     </div>
@@ -181,7 +184,6 @@ window.renderCertificates = function(container, certificatesData, eventInfo, cus
                         PRESENTER
                     </div>
                     
-                    <!-- Research Title - Dynamic font size -->
                     <div class="certificate-title" style=" font-size: ${titleFontSize}; margin-left: auto; margin-right: auto; max-width: ${titleMaxWidth};
                     ">
                         ${item.title}
@@ -196,7 +198,7 @@ window.renderCertificates = function(container, certificatesData, eventInfo, cus
                     </div>
                     
                     <div style="font-size: 16px; color: #666; margin-bottom: 20px; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
-                        RESEARCHERS
+                        ${researcherLabel}
                     </div>
                     
                     <div style="font-size: 20px; font-weight: bold; color: #333; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">

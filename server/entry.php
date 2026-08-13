@@ -1131,9 +1131,15 @@ if(isset($_POST['getCertificates'])) {
             // Format researchers
             $researchers = [];
             foreach ($paper['authors'] as $author) {
-                $researchers[] = formatName($author);
+                $formattedName = formatName($author);
+                if (!empty($formattedName) && $formattedName !== 'Not specified') {
+                    $researchers[] = $formattedName;
+                }
             }
             $certItem->researchers = $researchers;
+            
+            // Count researchers for THIS paper only
+            $certItem->researcherCount = count($researchers);
             
             $certificateData[] = $certItem;
         }
@@ -1152,7 +1158,7 @@ if(isset($_POST['getCertificates'])) {
             'status' => 'success',
             'event' => $eventName,
             'data' => $groupedData,
-            'count' => count($certificateData)
+            'total_papers' => count($certificateData)
         ];
     } else {
         $response = [
