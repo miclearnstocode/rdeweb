@@ -1,4 +1,3 @@
-// index.js
 import { $ } from './lib/lib.js'
 import { Error as ErrorPage } from "./error.js";
 import { DocumentViewer } from "./component/otherComponent/Document.js";
@@ -22,6 +21,11 @@ const lazyLoad = async (componentPath, componentName) => {
         console.error(`Failed to load ${componentName} from ${componentPath}:`, error);
         return ErrorPage;
     }
+};
+
+const LazyLanding = async () => {
+    const LandingPage = await lazyLoad('/client/component/landingComponent/landingPage.js', 'LandingPage');
+    return LandingPage;
 };
 
 const LazyLogin = async () => {
@@ -60,6 +64,7 @@ const LazyScanner = async () => {
 };
 
 const renderWithLoading = async (componentLoader, container) => {
+    // 1. Show spinner
     const loadingEl = $({
         tag: 'div',
         style: {
@@ -89,8 +94,11 @@ const renderWithLoading = async (componentLoader, container) => {
     try {
         const Component = await componentLoader();
         loadingEl.remove();
-        const instance = Component();
-        container.appendChild(instance);
+        
+        // 2. IMPORTANT: Create and EXACTLY append the component
+        const instance = Component(); // Component() returns the DOM element
+        container.appendChild(instance); // <--- MUST APPEND THIS!
+        
         return instance;
     } catch (error) {
         console.error('Error loading component:', error);
@@ -107,6 +115,7 @@ const renderWithLoading = async (componentLoader, container) => {
 
 const routes = {
     public: {
+        '/landing': { loader: LazyLanding },
         '/account/Login': { loader: LazyLogin },
         '/account/Signup': { loader: LazyLogin },
         '/accountSupport': { component: Retrieval },
