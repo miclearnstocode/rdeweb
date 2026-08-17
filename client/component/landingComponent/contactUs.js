@@ -27,18 +27,50 @@ export const ContactUs = () => {
                 tag: 'div',
                 style: { flex: '1 1 300px', background: 'var(--white)', padding: '40px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)' },
                 child: [
-                  contactItem('fa-solid fa-location-dot', 'Roxas City Main Campus, Capiz State University'),
-                  contactItem('fa-solid fa-envelope', 'rdeoffice@capsu.edu.ph'),
-                  contactItem('fa-solid fa-phone', '(+63) 36 123 4567'),
+                  contactItem('fa-solid fa-location-dot', 'Fuentes Drive Roxas City, Roxas City Main Campus, Capiz State University'),
+                  contactItem('fa-solid fa-envelope', 'rde@capsu.edu.ph'),
+                  contactItem('fa-solid fa-phone', '(036) 522 9756'),
+
                   $({ 
                     tag: 'div', 
                     style: { marginTop: '20px' }, 
                     child: [
-                      $({ tag: 'span', text: 'Follow us:' }),
-                      ...['facebook', 'twitter', 'youtube'].map(s => 
-                        $({ tag: 'a', att: { href: '#', className: `fa-brands fa-${s}` }, style: { margin: '0 10px', fontSize: '1.2rem', color: 'var(--primary-navy)' } })
-                      )
+                      $({ 
+                        tag: 'span', 
+                        text: 'Follow us:',
+                        style: {
+                          display: 'block',
+                          fontSize: '0.9rem',
+                          fontWeight: '600',
+                          color: 'var(--text-gray)',
+                          marginBottom: '10px'
+                        }
+                      }),
+                      $({ 
+                        tag: 'div', 
+                        style: { display: 'flex', gap: '12px' },
+                        child: [
+                          socialIcon('facebook', '#1877F2'),
+                          socialIcon('twitter', '#000000'), // X/Twitter is black
+                          socialIcon('youtube', '#FF0000')
+                        ]
+                      })
                     ] 
+                  }),
+                  $({
+                    tag: 'div',
+                    style: { 
+                      marginTop: '25px',
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '10px',
+                      justifyContent: 'flex-start'
+                    },
+                    child: [
+                      hashtagBadge('#RDELeads'),
+                      hashtagBadge('#RiseCAPSURISECapiz'),
+                      hashtagBadge('#ThinkNEXT')
+                    ]
                   })
                 ]
               }),
@@ -50,7 +82,6 @@ export const ContactUs = () => {
                   strictInput('text', 'Your Name', /^[a-zA-Z\s.'-]+$/),
                   strictInput('email', 'Your Email', /^[a-zA-Z0-9@.]+$/),
                   strictInput('text', 'Subject', /^[a-zA-Z0-9\s.,!?'-]+$/),
-                  // 4. Textarea (Fixed with `keydown` and proper blocking)
                   $({
                     tag: 'textarea',
                     att: { placeholder: 'Message', rows: 5 },
@@ -60,7 +91,6 @@ export const ContactUs = () => {
                     event3: { 
                       type: 'keydown', 
                       method: (e) => {
-                        // Disallow `<`, `>`, `"`, `'`, `(`, `)`, `;`, `-`, `*`, `%`
                         const forbiddenChars = /[<>'"();*%\\-]/; 
                         if (forbiddenChars.test(e.key)) {
                           e.preventDefault();
@@ -97,9 +127,90 @@ const contactItem = (icon, text) => $({
   ]
 });
 
-// ==========================================
-// FIXED STRICT INPUT VALIDATION
-// ==========================================
+const socialIcon = (platform, color) => {
+  return $({
+    tag: 'a',
+    att: { 
+      href: '#', 
+      className: `fa-brands fa-${platform}`,
+      'aria-label': platform
+    },
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '40px',
+      height: '40px',
+      color: color,
+      fontSize: '1.2rem',
+      borderRadius: '50%',
+      backgroundColor: '#f8fafc',
+      border: '1px solid #e8ecf0',
+      textDecoration: 'none',
+      transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+    },
+    event: {
+      type: 'mouseenter',
+      method: (e) => {
+        e.target.style.transform = 'scale(1.1)';
+        e.target.style.backgroundColor = color;
+        e.target.style.color = '#ffffff';
+        e.target.style.borderColor = color;
+        e.target.style.boxShadow = `0 4px 12px ${color}33`;
+      }
+    },
+    event2: {
+      type: 'mouseleave',
+      method: (e) => {
+        e.target.style.transform = 'scale(1)';
+        e.target.style.backgroundColor = '#f8fafc';
+        e.target.style.color = color;
+        e.target.style.borderColor = '#e8ecf0';
+        e.target.style.boxShadow = 'none';
+      }
+    }
+  });
+};
+
+
+const hashtagBadge = (tag) => {
+  return $({
+    tag: 'span',
+    text: tag,
+    style: {
+      display: 'inline-block',
+      padding: '6px 16px',
+      backgroundColor: '#eef2ff',
+      color: 'var(--primary-blue)',
+      fontWeight: '600',
+      fontSize: '0.85rem',
+      borderRadius: '50px',
+      transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+      cursor: 'default',
+      boxShadow: '0 2px 8px rgba(2, 101, 211, 0.08)',
+      border: '1px solid rgba(2, 101, 211, 0.1)'
+    },
+    event: {
+      type: 'mouseenter',
+      method: (e) => {
+        e.target.style.transform = 'scale(1.08)';
+        e.target.style.backgroundColor = 'var(--primary-blue)';
+        e.target.style.color = '#ffffff';
+        e.target.style.boxShadow = '0 4px 14px rgba(2, 101, 211, 0.25)';
+      }
+    },
+    event2: {
+      type: 'mouseleave',
+      method: (e) => {
+        e.target.style.transform = 'scale(1)';
+        e.target.style.backgroundColor = '#eef2ff';
+        e.target.style.color = 'var(--primary-blue)';
+        e.target.style.boxShadow = '0 2px 8px rgba(2, 101, 211, 0.08)';
+      }
+    }
+  });
+};
+
 const strictInput = (type, placeholder, allowedRegex) => {
   return $({
     tag: 'input',
@@ -114,18 +225,15 @@ const strictInput = (type, placeholder, allowedRegex) => {
       method: (e) => e.target.style.borderColor = '#e2e8f0' 
     },
     event3: { 
-      type: 'keydown',  // <--- Changed from keypress to keydown!
+      type: 'keydown', 
       method: (e) => {
         const key = e.key;
-        // Special block for the Email field: ONLY allow @ and .
         if (type === 'email') {
-          // Allow letters, numbers, @, ., and Backspace/Delete
           if (!/^[a-zA-Z0-9@.]$/.test(key) && key !== 'Backspace' && key !== 'Delete' && key !== 'Tab' && key !== 'ArrowLeft' && key !== 'ArrowRight') {
             e.preventDefault();
             alert('Email can only contain letters, numbers, @, and dots.');
           }
         } else {
-          // For Name and Subject
           if (!allowedRegex.test(key) && key !== 'Backspace' && key !== 'Delete' && key !== 'Tab' && key !== 'ArrowLeft' && key !== 'ArrowRight') {
             e.preventDefault();
             alert('Special characters are not allowed in this field.');
@@ -133,7 +241,6 @@ const strictInput = (type, placeholder, allowedRegex) => {
         }
       }
     },
-    // Block pasting entirely
     event4: {
       type: 'paste',
       method: (e) => {
