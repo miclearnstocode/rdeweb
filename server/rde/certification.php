@@ -122,10 +122,12 @@ switch ($action) {
             exit;
         }
 
-        $sql = "SELECT rf.id, rf.title, rf.author, rf.coauthor, rf.presenter, rf.campus, rf.center, rf.date_completed
+        $sql = "SELECT rf.id, rf.title, rf.author, rf.coauthor, rf.presenter, rf.campus, rf.center, rf.event, el.date as event_date
                 FROM researchfile rf
                 INNER JOIN endorsement e ON rf.endorsementid = e.id
-                WHERE e.status = 'accepted'";
+                LEFT JOIN event_list el ON rf.event = el.name
+                WHERE e.status = 'accepted' AND LOWER(rf.event) LIKE '%symposium%'";
+                
         
         $result = $conn->query($sql);
         $found = [];
@@ -147,16 +149,15 @@ switch ($action) {
                 }
                 
                 if ($isPart) {
-                    // Combine all contributors into a single unique list
                     $allAuthors = array_unique(array_map('trim', array_merge($a, $ca, $p)));
-                    // Format the date_completed (year only)
-                    $dateFormat = $row['date_completed'] ? date('Y', strtotime($row['date_completed'])) : '';
+                    $dateFormat = $row['event_date'] ? date('Y', strtotime($row['event_date'])) : '';
                     $found[] = [
                         'id' => $row['id'],
                         'title' => $row['title'],
                         'dateCompleted' => $dateFormat,
                         'authors' => implode(', ', $allAuthors),
-                        'campus' => $row['campus'] ?: $row['center'] ?: '—'
+                        'campus' => $row['campus'] ?: $row['center'] ?: '—',
+                        'event' => $row['event']
                     ];
                 }
             }

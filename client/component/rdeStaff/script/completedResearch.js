@@ -8,6 +8,16 @@ const debounce = (func, wait) => {
     };
 };
 
+const getAvailableYears = () => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    // Generate last 10 years
+    for (let i = currentYear; i >= currentYear - 10; i--) {
+        years.push(i);
+    }
+    return years;
+};
+
 export const CompletedResearch = () => {
     let mainTableContainer;
     let tableBody;
@@ -332,6 +342,7 @@ export const CompletedResearch = () => {
             }
         });
 
+
         const eventFilter = $({
             tag: 'select',
             att: { className: 'event-filter-select' },
@@ -546,12 +557,626 @@ export const CompletedResearch = () => {
                         campusFilter,
                         categoryFilter,
                         searchInput,
-                        confirmButton
+                        confirmButton,
+                        exportButton
                     ]
                 })
             ]
         });
     };
+
+    const showExportModal = () => {
+        const currentYear = new Date().getFullYear();
+        const defaultStartYear = currentYear - 3;
+        
+        // Get available years for dropdowns
+        const availableYears = getAvailableYears();
+        
+        const exportModalContent = $({
+            tag: 'div',
+            style: {
+                padding: '20px',
+                fontFamily: 'Segoe UI, sans-serif'
+            },
+            child: [
+                $({
+                    tag: 'div',
+                    style: {
+                        marginBottom: '20px',
+                        padding: '12px 16px',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '8px',
+                        border: '1px solid #e9ecef',
+                        fontSize: '13px',
+                        color: '#495057'
+                    },
+                    child: [
+                        $({
+                            tag: 'span',
+                            att: { className: 'fa-solid fa-circle-info' },
+                            style: { color: '#0d6efd', marginRight: '8px' }
+                        }),
+                        $({
+                            tag: 'span',
+                            text: 'Select the year range for the export. Only symposium events will be included.'
+                        })
+                    ]
+                }),
+                $({
+                    tag: 'div',
+                    style: {
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '20px',
+                        marginBottom: '20px'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: { display: 'flex', flexDirection: 'column', gap: '8px' },
+                            child: [
+                                $({
+                                    tag: 'label',
+                                    text: 'Start Year',
+                                    style: {
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        color: '#212529'
+                                    }
+                                }),
+                                $({
+                                    tag: 'select',
+                                    att: { id: 'export-start-year', className: 'export-year-select' },
+                                    style: {
+                                        padding: '10px 12px',
+                                        border: '2px solid #dee2e6',
+                                        borderRadius: '8px',
+                                        fontSize: '14px',
+                                        backgroundColor: '#ffffff',
+                                        color: '#212529',
+                                        cursor: 'pointer',
+                                        outline: 'none',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    child: availableYears.map(year => 
+                                        $({
+                                            tag: 'option',
+                                            att: { value: year, selected: year === defaultStartYear },
+                                            text: year.toString()
+                                        })
+                                    ),
+                                    event: {
+                                        type: 'focus',
+                                        method: (e) => {
+                                            e.target.style.borderColor = '#0d6efd';
+                                            e.target.style.boxShadow = '0 0 0 3px rgba(13,110,253,0.1)';
+                                        }
+                                    },
+                                    event2: {
+                                        type: 'blur',
+                                        method: (e) => {
+                                            e.target.style.borderColor = '#dee2e6';
+                                            e.target.style.boxShadow = 'none';
+                                        }
+                                    }
+                                })
+                            ]
+                        }),
+                        $({
+                            tag: 'div',
+                            style: { display: 'flex', flexDirection: 'column', gap: '8px' },
+                            child: [
+                                $({
+                                    tag: 'label',
+                                    text: 'End Year',
+                                    style: {
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        color: '#212529'
+                                    }
+                                }),
+                                $({
+                                    tag: 'select',
+                                    att: { id: 'export-end-year', className: 'export-year-select' },
+                                    style: {
+                                        padding: '10px 12px',
+                                        border: '2px solid #dee2e6',
+                                        borderRadius: '8px',
+                                        fontSize: '14px',
+                                        backgroundColor: '#ffffff',
+                                        color: '#212529',
+                                        cursor: 'pointer',
+                                        outline: 'none',
+                                        transition: 'all 0.2s ease'
+                                    },
+                                    child: availableYears.map(year => 
+                                        $({
+                                            tag: 'option',
+                                            att: { value: year, selected: year === currentYear },
+                                            text: year.toString()
+                                        })
+                                    ),
+                                    event: {
+                                        type: 'focus',
+                                        method: (e) => {
+                                            e.target.style.borderColor = '#0d6efd';
+                                            e.target.style.boxShadow = '0 0 0 3px rgba(13,110,253,0.1)';
+                                        }
+                                    },
+                                    event2: {
+                                        type: 'blur',
+                                        method: (e) => {
+                                            e.target.style.borderColor = '#dee2e6';
+                                            e.target.style.boxShadow = 'none';
+                                        }
+                                    }
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                $({
+                    tag: 'div',
+                    style: {
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: '10px',
+                        paddingTop: '16px',
+                        borderTop: '1px solid #e9ecef'
+                    },
+                    child: [
+                        $({
+                            tag: 'button',
+                            text: 'Cancel',
+                            style: {
+                                padding: '10px 24px',
+                                backgroundColor: '#6c757d',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease'
+                            },
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    const modal = document.querySelector('[data-modal-id="export-modal"]');
+                                    if (modal) {
+                                        modal.style.opacity = '0';
+                                        modal.style.transform = 'scale(0.98)';
+                                        setTimeout(() => {
+                                            if (modal.parentNode) modal.parentNode.removeChild(modal);
+                                        }, 250);
+                                    }
+                                }
+                            }
+                        }),
+                        $({
+                            tag: 'button',
+                            text: 'Export',
+                            style: {
+                                padding: '10px 32px',
+                                backgroundColor: '#198754',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    att: { className: 'fa-solid fa-file-excel' }
+                                }),
+                                $({ tag: 'span', text: 'Export Excel' })
+                            ],
+                            event: {
+                                type: 'click',
+                                method: () => {
+                                    const startYearSelect = document.getElementById('export-start-year');
+                                    const endYearSelect = document.getElementById('export-end-year');
+                                    
+                                    if (startYearSelect && endYearSelect) {
+                                        const startYear = parseInt(startYearSelect.value);
+                                        const endYear = parseInt(endYearSelect.value);
+                                        
+                                        if (startYear > endYear) {
+                                            alert('Start year must be less than or equal to end year');
+                                            return;
+                                        }
+                                        
+                                        // Close modal
+                                        const modal = document.querySelector('[data-modal-id="export-modal"]');
+                                        if (modal) {
+                                            modal.style.opacity = '0';
+                                            modal.style.transform = 'scale(0.98)';
+                                            setTimeout(() => {
+                                                if (modal.parentNode) modal.parentNode.removeChild(modal);
+                                            }, 250);
+                                        }
+                                        
+                                        // Trigger export
+                                        handleExportWithRange(startYear, endYear);
+                                    }
+                                }
+                            }
+                        })
+                    ]
+                })
+            ]
+        });
+        
+        // Create modal
+        const exportModal = CustomModal({
+            title: '📊 Export Completed Research by Year Range',
+            content: exportModalContent,
+            size: 'medium',
+            showClose: true
+        });
+        
+        // Add data attribute for identification
+        if (exportModal && exportModal.element) {
+            exportModal.element.dataset.modalId = 'export-modal';
+        }
+    };
+
+    const downloadExcelWithFormatting = (data, filename) => {
+        if (!data || data.length === 0) {
+            if (typeof Toast !== 'undefined' && Toast.warning) {
+                Toast.warning('No data available to export', 3000);
+            } else {
+                alert('No data available to export');
+            }
+            return;
+        }
+        
+        // Build HTML table with Excel formatting
+        let htmlContent = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+            xmlns:x="urn:schemas-microsoft-com:office:excel" 
+            xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset="UTF-8">
+            <!--[if gte mso 9]>
+            <xml>
+                <x:ExcelWorkbook>
+                    <x:ExcelWorksheets>
+                        <x:ExcelWorksheet>
+                            <x:Name>Completed Research</x:Name>
+                            <x:WorksheetOptions>
+                                <x:DisplayGridlines/>
+                            </x:WorksheetOptions>
+                        </x:ExcelWorksheet>
+                    </x:ExcelWorksheets>
+                </x:ExcelWorkbook>
+            </xml>
+            <![endif]-->
+            <style>
+                table {
+                    border-collapse: collapse;
+                    font-family: 'Segoe UI', Arial, sans-serif;
+                    font-size: 12px;
+                    width: 100%;
+                }
+                th {
+                    background-color: #2c3e50;
+                    color: #ffffff;
+                    font-weight: bold;
+                    padding: 10px 12px;
+                    border: 1px solid #34495e;
+                    text-align: left;
+                }
+                td {
+                    padding: 8px 12px;
+                    border: 1px solid #bdc3c7;
+                    vertical-align: top;
+                    white-space: pre-wrap;
+                    word-wrap: break-word;
+                    max-width: 400px;
+                }
+                .wrap-cell {
+                    white-space: pre-wrap !important;
+                    word-wrap: break-word !important;
+                }
+                .even-row {
+                    background-color: #f9f9f9;
+                }
+                .odd-row {
+                    background-color: #ffffff;
+                }
+                .title-cell {
+                    min-width: 250px;
+                }
+                .researcher-cell {
+                    min-width: 200px;
+                }
+                .faculty-cell {
+                    font-weight: 600;
+                    color: #2c3e50;
+                }
+            </style>
+        </head>
+        <body>
+            <h2 style="font-family: 'Segoe UI', Arial, sans-serif; color: #2c3e50; margin-bottom: 16px;">
+                Completed Research Export
+            </h2>
+            <p style="font-family: 'Segoe UI', Arial, sans-serif; color: #7f8c8d; margin-bottom: 20px; font-size: 13px;">
+                Exported: ${new Date().toLocaleString()}
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Faculty</th>
+                        <th style="width: 35%;">List of Research/Research Title</th>
+                        <th style="width: 25%;">Faculty Researcher</th>
+                        <th style="width: 15%;">Campus</th>
+                        <th style="width: 10%;">Year</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        // Add data rows
+        data.forEach((row, index) => {
+            const rowClass = index % 2 === 0 ? 'even-row' : 'odd-row';
+            
+            // Process research titles - replace semicolons with newlines
+            let researchTitles = row['List of Research/Research Title'] || '';
+            if (researchTitles) {
+                researchTitles = researchTitles.split(';').map(t => t.trim()).filter(t => t).join('<br>');
+            }
+            
+            // Process faculty researchers - replace commas with newlines
+            let facultyResearchers = row['Faculty Researcher'] || '';
+            if (facultyResearchers) {
+                facultyResearchers = facultyResearchers.split(',').map(r => r.trim()).filter(r => r).join('<br>');
+            }
+            
+            htmlContent += `
+                <tr class="${rowClass}">
+                    <td class="faculty-cell">${escapeHtml(row.Faculty || '')}</td>
+                    <td class="wrap-cell title-cell">${researchTitles || ''}</td>
+                    <td class="wrap-cell researcher-cell">${facultyResearchers || ''}</td>
+                    <td>${escapeHtml(row.Campus || '')}</td>
+                    <td style="text-align: center;">${escapeHtml(row['Year Completed/Year of Symposium'] || '')}</td>
+                </tr>
+            `;
+        });
+        
+        htmlContent += `
+                </tbody>
+            </table>
+            <p style="font-family: 'Segoe UI', Arial, sans-serif; color: #7f8c8d; margin-top: 16px; font-size: 11px;">
+                Total Records: ${data.length}
+            </p>
+        </body>
+        </html>
+        `;
+        
+        // Create blob and download as .xls
+        const blob = new Blob([htmlContent], { 
+            type: 'application/vnd.ms-excel;charset=utf-8' 
+        });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename.replace('.csv', '.xls');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    };
+
+    const escapeHtml = (text) => {
+        if (!text) return '';
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+    };
+
+    const downloadXLSX = (data, filename) => {
+        if (!data || data.length === 0) {
+            if (typeof Toast !== 'undefined' && Toast.warning) {
+                Toast.warning('No data available to export', 3000);
+            } else {
+                alert('No data available to export');
+            }
+            return;
+        }
+        
+        // Check if XLSX is available
+        if (typeof XLSX === 'undefined') {
+            console.error('XLSX library not loaded');
+            if (typeof Toast !== 'undefined' && Toast.error) {
+                Toast.error('Excel library not loaded. Please refresh the page.', 4000);
+            } else {
+                alert('Excel library not loaded. Please refresh the page.');
+            }
+            return;
+        }
+        
+        try {
+            // Prepare data for XLSX - properly format with newlines
+            const excelData = data.map(row => {
+                // Process research titles - split by semicolon and join with newline
+                let researchTitles = row['List of Research/Research Title'] || '';
+                if (researchTitles && typeof researchTitles === 'string') {
+                    researchTitles = researchTitles.split(';')
+                        .map(t => t.trim())
+                        .filter(t => t.length > 0)
+                        .join('\n');
+                }
+                
+                // Process faculty researchers - split by comma and join with newline
+                let facultyResearchers = row['Faculty Researcher'] || '';
+                if (facultyResearchers && typeof facultyResearchers === 'string') {
+                    facultyResearchers = facultyResearchers.split(',')
+                        .map(r => r.trim())
+                        .filter(r => r.length > 0)
+                        .join('\n');
+                }
+                
+                return {
+                    'Faculty': row.Faculty || '',
+                    'List of Research/Research Title': researchTitles,
+                    'Faculty Researcher': facultyResearchers,
+                    'Campus': row.Campus || '',
+                    'Year Completed/Year of Symposium': row['Year Completed/Year of Symposium'] || ''
+                };
+            });
+            
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            
+            // Set column widths
+            ws['!cols'] = [
+                { wch: 30 },  // Faculty
+                { wch: 60 },  // List of Research/Research Title
+                { wch: 40 },  // Faculty Researcher
+                { wch: 25 },  // Campus
+                { wch: 15 }   // Year
+            ];
+            
+            // Enable wrap text for all cells
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let R = range.s.r; R <= range.e.r; R++) {
+                for (let C = range.s.c; C <= range.e.c; C++) {
+                    const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!ws[addr]) continue;
+                    if (!ws[addr].s) ws[addr].s = {};
+                    ws[addr].s.alignment = {
+                        wrapText: true,
+                        vertical: 'top'
+                    };
+                }
+            }
+            
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Completed Research');
+            
+            // Generate and download
+            XLSX.writeFile(wb, filename);
+            
+            if (typeof Toast !== 'undefined' && Toast.success) {
+                Toast.success(`Exported ${data.length} records successfully!`, 3000);
+            }
+            
+        } catch (error) {
+            console.error('XLSX export error:', error);
+            if (typeof Toast !== 'undefined' && Toast.error) {
+                Toast.error('Failed to export Excel file. Please try again.', 4000);
+            } else {
+                alert('Failed to export Excel file. Please try again.');
+            }
+        }
+    };
+
+    const handleExportWithRange = (startYear, endYear) => {
+        if (typeof Toast !== 'undefined' && Toast.info) {
+            Toast.info('Fetching export data...', 2000);
+        }
+        
+        const formData = new FormData();
+        formData.append('action', 'export_excel');
+        formData.append('start_year', startYear);
+        formData.append('end_year', endYear);
+        
+        fetch('/completeresearch', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status && result.data && result.data.length > 0) {
+                const filename = `Completed_Research_${startYear}_to_${endYear}_${new Date().toISOString().split('T')[0]}.xlsx`;
+                downloadXLSX(result.data, filename);
+            } else {
+                const msg = result.message || 'No data available for the selected year range';
+                if (typeof Toast !== 'undefined' && Toast.warning) {
+                    Toast.warning(msg, 3000);
+                } else {
+                    alert(msg);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Export error:', error);
+            if (typeof Toast !== 'undefined' && Toast.error) {
+                Toast.error('Failed to fetch export data. Please try again.', 4000);
+            } else {
+                alert('Failed to fetch export data. Please try again.');
+            }
+        });
+    };
+
+    const exportButton = $({
+        tag: 'button',
+        att: { className: 'export-btn-main' },
+        style: {
+            padding: '8px 20px',
+            backgroundColor: '#198754',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '20px',
+            fontSize: '13px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            whiteSpace: 'nowrap'
+        },
+        child: [
+            $({
+                tag: 'span',
+                att: { className: 'fa-solid fa-file-excel' },
+                style: { fontSize: '14px' }
+            }),
+            $({
+                tag: 'span',
+                text: 'Export Excel'
+            }),
+            $({
+                tag: 'span',
+                att: { className: 'fa-solid fa-chevron-down' },
+                style: { fontSize: '10px' }
+            })
+        ],
+        event: {
+            type: 'click',
+            method: showExportModal
+        },
+        event2: {
+            type: 'mouseenter',
+            method: (e) => {
+                e.currentTarget.style.backgroundColor = '#157347';
+                e.currentTarget.style.transform = 'scale(1.02)';
+            }
+        },
+        event3: {
+            type: 'mouseleave',
+            method: (e) => {
+                e.currentTarget.style.backgroundColor = '#198754';
+                e.currentTarget.style.transform = 'scale(1)';
+            }
+        }
+    });
 
     const showConfirmationModal = () => {
         let currentData = [];

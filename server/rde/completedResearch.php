@@ -692,6 +692,284 @@ class CompletedResearchAPI {
         
         echo json_encode($this->response);
     }
+
+    public function exportToExcel() {
+        try {
+            // Read from POST (since route is registered as POST)
+            $startYear = isset($_POST['start_year']) ? intval($_POST['start_year']) : date('Y') - 3;
+            $endYear = isset($_POST['end_year']) ? intval($_POST['end_year']) : date('Y');
+            
+            // Validate years
+            if ($startYear > $endYear) {
+                throw new Exception("Start year must be less than or equal to end year");
+            }
+            
+            // Get all Symposium events
+            $events = $this->getEvents();
+            $symposiumIds = array_keys($events);
+            
+            // Build query for completed research with symposium events only
+            $whereClauses = [
+                "e.status = 'accepted'",
+                "(rf.completion_status = 'completed' OR rf.completion_status IS NULL OR rf.completion_status = '')",
+                "(rf.status = 'accepted' OR rf.status = '' OR rf.status IS NULL)"
+            ];
+            
+            // Filter by symposium events only
+            if (!empty($symposiumIds)) {
+                $idsList = implode(',', array_map('intval', $symposiumIds));
+                $whereClauses[] = "(rf.event_id IN ($idsList) OR LOWER(rf.event) LIKE '%symposium%')";
+            } else {
+                $whereClauses[] = "LOWER(rf.event) LIKE '%symposium%'";
+            }
+            
+            // Filter by year range
+            $whereClauses[] = "YEAR(e.date) BETWEEN $startYear AND $endYear";
+            
+            $whereSql = implode(" AND ", $whereClauses);
+            
+            // FIX: Use MAX(el.date) or remove el.date from SELECT if not needed
+            $query = "SELECT 
+                        rf.id,
+                        rf.author,
+                        rf.coauthor,
+                        rf.title,
+                        rf.campus,
+                        rf.center,
+                        e.date as endorsement_date,
+                        MAX(el.date) as event_date
+                    FROM endorsement e
+                    INNER JOIN researchfile rf ON e.id = rf.endorsementid
+                    LEFT JOIN event_list el ON rf.event = el.name
+                    WHERE $whereSql
+                    GROUP BY rf.id
+                    ORDER BY YEAR(e.date) DESC, rf.id ASC";
+            
+            $result = $this->con->query($query);
+            
+            if (!$result) {
+                throw new Exception("Query failed: " . $this->con->error);
+            }
+            
+            // Collect data grouped by faculty
+            $facultyData = [];
+            
+            while ($row = $result->fetch_assoc()) {
+                // Get all faculty members (author, coauthors, presenter)
+                $facultyMembers = [];
+                
+                // Add author
+                if (!empty($row['author']) && $row['author'] !== 'NULL') {
+                    $cleaned = $this->cleanName($row['author']);
+                    if ($cleaned) {
+                        $facultyMembers[] = $cleaned;
+                    }
+                }
+                
+                // Add coauthors (handle JSON or comma-separated)
+                if (!empty($row['coauthor']) && $row['coauthor'] !== 'NULL') {
+                    $coauthorData = $row['coauthor'];
+                    if (is_string($coauthorData) && (strpos($coauthorData, '[') === 0 || strpos($coauthorData, '{') === 0)) {
+                        $coauthors = json_decode($coauthorData, true);
+                        if (is_array($coauthors)) {
+                            foreach ($coauthors as $co) {
+                                if (!empty($co) && $co !== 'NULL') {
+                                    $cleaned = $this->cleanName($co);
+                                    if ($cleaned) {
+                                        $facultyMembers[] = $cleaned;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        $coauthorList = explode(',', $coauthorData);
+                        foreach ($coauthorList as $co) {
+                            $co = trim($co);
+                            if (!empty($co) && $co !== 'NULL') {
+                                $cleaned = $this->cleanName($co);
+                                if ($cleaned) {
+                                    $facultyMembers[] = $cleaned;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Remove duplicates
+                $facultyMembers = array_values(array_unique($facultyMembers));
+                
+                // Get year from event date
+                $yearCompleted = !empty($row['event_date']) ? date('Y', strtotime($row['event_date'])) : date('Y', strtotime($row['endorsement_date']));
+                
+                // For each faculty member, add this research
+                foreach ($facultyMembers as $faculty) {
+                    if (empty($faculty)) continue;
+                    
+                    // Use a composite key to group by faculty and year
+                    $key = md5($faculty . '|' . $yearCompleted);
+                    
+                    if (!isset($facultyData[$key])) {
+                        $facultyData[$key] = [
+                            'faculty' => $faculty,
+                            'year' => $yearCompleted,
+                            'campus' => $row['campus'] ?? '—',
+                            'titles' => [],
+                            'faculty_researchers' => [],
+                            'faculty_researchers_set' => []
+                        ];
+                    }
+                    
+                    // Add title
+                    if (!empty($row['title']) && !in_array($row['title'], $facultyData[$key]['titles'])) {
+                        $facultyData[$key]['titles'][] = $row['title'];
+                    }
+                    
+                    // Add all faculty members as researchers
+                    foreach ($facultyMembers as $researcher) {
+                        if (!empty($researcher) && !in_array($researcher, $facultyData[$key]['faculty_researchers_set'])) {
+                            $facultyData[$key]['faculty_researchers_set'][] = $researcher;
+                        }
+                    }
+                }
+            }
+            
+            // Build the final dataset
+            $exportData = [];
+            foreach ($facultyData as $data) {
+                $exportData[] = [
+                    'Faculty' => $data['faculty'],
+                    'List of Research/Research Title' => implode('; ', $data['titles']),
+                    'Faculty Researcher' => implode(', ', $data['faculty_researchers_set']),
+                    'Campus' => $data['campus'],
+                    'Year Completed/Year of Symposium' => $data['year']
+                ];
+            }
+            
+            // Sort by faculty name then year
+            usort($exportData, function($a, $b) {
+                $cmp = strcmp($a['Faculty'], $b['Faculty']);
+                if ($cmp === 0) {
+                    return $b['Year Completed/Year of Symposium'] - $a['Year Completed/Year of Symposium'];
+                }
+                return $cmp;
+            });
+            
+            // Return JSON data
+            $this->response->status = true;
+            $this->response->message = 'Export data fetched successfully';
+            $this->response->data = $exportData;
+            $this->response->start_year = $startYear;
+            $this->response->end_year = $endYear;
+            $this->response->record_count = count($exportData);
+            
+            echo json_encode($this->response);
+            
+        } catch (Exception $e) {
+            $this->response->status = false;
+            $this->response->message = 'Error: ' . $e->getMessage();
+            $this->response->data = [];
+            echo json_encode($this->response);
+        }
+    }
+
+    private function cleanName($name) {
+        if (empty($name) || $name === 'NULL' || $name === null) {
+            return '';
+        }
+        
+        // Convert to string and trim
+        $name = trim((string)$name);
+        if (empty($name)) {
+            return '';
+        }
+        
+        // Common titles and honorifics to remove (case insensitive)
+        $titles = [
+            // Academic titles
+            'Dr.', 'Dr', 'Drs.', 'Drs',
+            'Prof.', 'Prof', 'Professor',
+            'Asst. Prof.', 'Asst Prof', 'Assistant Professor',
+            'Assoc. Prof.', 'Assoc Prof', 'Associate Professor',
+            'Dean', 'Dir.', 'Dir', 'Director',
+            'Chair', 'Chairman', 'Chairperson',
+            'Asst.', 'Asst', 'Assistant',
+            'Assoc.', 'Assoc', 'Associate',
+            
+            // Professional titles
+            'Engr.', 'Engr', 'Engineer',
+            'Arch.', 'Arch', 'Architect',
+            'Atty.', 'Atty', 'Attorney',
+            'CPA', 'C.P.A.',
+            'RN', 'R.N.',
+            'LPT', 'L.P.T.',
+            'MD', 'M.D.',
+            'PA', 'P.A.',
+            'RT', 'R.T.',
+            
+            // Academic degrees (suffixes)
+            'PhD', 'Ph.D.', 'Ph D',
+            'EdD', 'Ed.D.', 'Ed D',
+            'DSc', 'D.Sc.', 'D Sc',
+            'MS', 'M.S.', 'M Sc',
+            'MA', 'M.A.',
+            'MBA', 'M.B.A.',
+            'MEd', 'M.Ed.', 'M Ed',
+            'MSc', 'M.Sc.', 'M Sc',
+            'BS', 'B.S.',
+            'BA', 'B.A.',
+            'BSc', 'B.Sc.',
+            'BEd', 'B.Ed.',
+            
+            // Honorifics
+            'Mr.', 'Mr',
+            'Mrs.', 'Mrs',
+            'Ms.', 'Ms',
+            'Miss',
+            'Sir', 'Madam', 'Ma\'am',
+            
+            // Other common prefixes
+            'Hon.', 'Hon'
+        ];
+        
+        // Sort titles by length (longest first) to prevent partial matches
+        usort($titles, function($a, $b) {
+            return strlen($b) - strlen($a);
+        });
+        
+        // Remove titles from the beginning of the name
+        foreach ($titles as $title) {
+            // Pattern: title at start of string, optionally followed by space
+            $pattern = '/^' . preg_quote($title, '/') . '\s+/i';
+            $name = preg_replace($pattern, '', $name);
+            
+            // Pattern: title anywhere with space before and after (for titles in middle)
+            $pattern = '/\s+' . preg_quote($title, '/') . '\s+/i';
+            $name = preg_replace($pattern, ' ', $name);
+            
+            // Pattern: title at end with space before (for suffix degrees)
+            $pattern = '/\s+' . preg_quote($title, '/') . '$/i';
+            $name = preg_replace($pattern, '', $name);
+            
+            // Pattern: title with periods variations
+            $titleWithPeriod = str_replace('.', '\.', $title);
+            $pattern = '/^' . $titleWithPeriod . '\s+/i';
+            $name = preg_replace($pattern, '', $name);
+        }
+        
+        // Remove multiple spaces
+        $name = preg_replace('/\s+/', ' ', $name);
+        
+        // Remove trailing periods, commas, spaces
+        $name = trim($name, '., ');
+        
+        // If after cleaning, the name is empty or just single character, return original
+        if (strlen($name) < 2) {
+            return trim((string)$name);
+        }
+        
+        return $name;
+    }
+
 }
 
 $action = $_POST['action'] ?? $_GET['action'] ?? 'fetch';
@@ -708,6 +986,9 @@ switch ($action) {
         break;
     case 'update':
         $api->updateCompletedResearch();
+        break;
+    case 'export_excel':
+        $api->exportToExcel();
         break;
     default:
         echo json_encode(['status' => false, 'message' => 'Invalid action']);
