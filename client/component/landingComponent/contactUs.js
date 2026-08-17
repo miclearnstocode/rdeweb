@@ -51,7 +51,7 @@ export const ContactUs = () => {
                         style: { display: 'flex', gap: '12px' },
                         child: [
                           socialIcon('facebook', '#1877F2'),
-                          socialIcon('twitter', '#000000'), // X/Twitter is black
+                          socialIcon('x-twitter', '#000000'), // <-- CHANGED TO X
                           socialIcon('youtube', '#FF0000')
                         ]
                       })

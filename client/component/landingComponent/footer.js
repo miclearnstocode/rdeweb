@@ -80,14 +80,22 @@ export const Footer = () => {
                         tag: 'div',
                         style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '40px', marginBottom: '30px' },
                         child: [
+                            // ==========================================
+                            // COLUMN 1: UPDATED CONTACT DETAILS
+                            // ==========================================
                             $({
                                 tag: 'div',
                                 child: [
                                     $({ tag: 'h4', text: 'CAPSU RDE Office', style: { marginBottom: '15px' } }),
-                                    $({ tag: 'p', text: 'Roxas City Main Campus, Capiz State University', style: { fontSize: '0.9rem', opacity: 0.8, lineHeight: '1.8' } }),
-                                    $({ tag: 'p', text: 'rdeoffice@capsu.edu.ph | (+63) 36 123 4567', style: { fontSize: '0.9rem', opacity: 0.8 } })
+                                    // Updated address
+                                    $({ tag: 'p', text: 'Fuentes Drive Roxas City, Roxas City Main Campus, Capiz State University', style: { fontSize: '0.9rem', opacity: 0.8, lineHeight: '1.8' } }),
+                                    // Updated email and phone
+                                    $({ tag: 'p', text: 'rde@capsu.edu.ph | (036) 522 9756', style: { fontSize: '0.9rem', opacity: 0.8 } })
                                 ]
                             }),
+                            // ==========================================
+                            // COLUMN 2: QUICK LINKS
+                            // ==========================================
                             $({
                                 tag: 'div',
                                 child: [
@@ -95,11 +103,22 @@ export const Footer = () => {
                                     ...['Home', 'About Us', 'Events', 'Contact'].map(l => $({ tag: 'a', att: { href: `#${l.toLowerCase().replace(' ', '-')}` }, text: l, style: { display: 'block', color: 'white', opacity: 0.8, textDecoration: 'none', marginBottom: '8px', transition: 'var(--transition)' }, event: { type: 'mouseenter', method: (e) => e.target.style.opacity = '1' }, event2: { type: 'mouseleave', method: (e) => e.target.style.opacity = '0.8' } }))
                                 ]
                             }),
+                            // ==========================================
+                            // COLUMN 3: UPDATED FOLLOW US WITH BRAND COLORS
+                            // ==========================================
                             $({
                                 tag: 'div',
                                 child: [
                                     $({ tag: 'h4', text: 'Follow Us', style: { marginBottom: '15px' } }),
-                                    $({ tag: 'div', style: { display: 'flex', gap: '15px' }, child: ['facebook', 'twitter', 'instagram'].map(s => $({ tag: 'a', att: { href: '#', className: `fa-brands fa-${s}` }, style: { fontSize: '1.5rem', color: 'white', opacity: 0.8 } })) })
+                                    $({
+                                        tag: 'div',
+                                        style: { display: 'flex', gap: '15px' },
+                                        child: [
+                                            socialIconFooter('facebook', '#1877F2'),
+                                            socialIconFooter('x-twitter', '#000000'), // Changed to X
+                                            socialIconFooter('instagram', '#E1306C')
+                                        ]
+                                    })
                                 ]
                             })
                         ]
@@ -115,4 +134,52 @@ export const Footer = () => {
     });
 
     return footerUI;
+};
+
+// ==========================================
+// FOOTER SOCIAL MEDIA ICON HELPER
+// ==========================================
+const socialIconFooter = (platform, color) => {
+    return $({
+        tag: 'a',
+        att: { 
+            href: '#', 
+            className: `fa-brands fa-${platform}`,
+            'aria-label': platform
+        },
+        style: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '40px',
+            height: '40px',
+            color: color,
+            fontSize: '1.2rem',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            textDecoration: 'none',
+            transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+        },
+        event: {
+            type: 'mouseenter',
+            method: (e) => {
+                e.target.style.transform = 'scale(1.1)';
+                e.target.style.backgroundColor = color;
+                e.target.style.color = '#ffffff';
+                e.target.style.borderColor = color;
+                e.target.style.boxShadow = `0 4px 12px ${color}66`;
+            }
+        },
+        event2: {
+            type: 'mouseleave',
+            method: (e) => {
+                e.target.style.transform = 'scale(1)';
+                e.target.style.backgroundColor = 'rgba(255,255,255,0.1)';
+                e.target.style.color = color;
+                e.target.style.borderColor = 'rgba(255,255,255,0.1)';
+                e.target.style.boxShadow = 'none';
+            }
+        }
+    });
 };

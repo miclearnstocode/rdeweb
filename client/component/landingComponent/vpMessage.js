@@ -1,6 +1,5 @@
 import { $ } from '../../lib/lib.js';
 
-
 export const VpMessage = () => {
   return $({
     tag: 'section',
@@ -12,19 +11,22 @@ export const VpMessage = () => {
         att: { className: 'container' },
         style: { display: 'flex', flexWrap: 'wrap', gap: '60px', alignItems: 'center', justifyContent: 'center' },
         child: [
-          // Placeholder Image
+          // VP Image
           $({
             tag: 'div',
             style: {
-              flex: '1 1 300px',
+              flex: '0 1 320px', // Fixed width basis, allows shrinking on mobile
               maxWidth: '400px',
-              height: '400px',
+              height: 'auto',
+              // 1. Set aspect ratio to 3:4 (Tall/Portrait) to match 761x1152
+              aspectRatio: '3/4', 
               backgroundImage: 'url("/client/images/Vp_RDE.png")',
               backgroundSize: 'cover',
-              backgroundPosition: 'center',
+              // 2. Center horizontally and slightly top to frame the face perfectly
+              backgroundPosition: 'center 25%', 
               borderRadius: 'var(--radius)',
               boxShadow: 'var(--shadow)',
-              aspectRatio: '1/1'
+              backgroundColor: '#f8f9fa'
             }
           }),
           // Quote Block

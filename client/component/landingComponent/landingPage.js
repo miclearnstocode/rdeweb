@@ -6,7 +6,7 @@ import { HappeningEvents } from './happeningEvents.js'
 import { UpcomingEvents } from './upcomingEvents.js'
 import { NewsSection } from './newsSection.js'
 import { ProjectMap } from './projectMap.js'
-import { VisionMissionGoals } from './visionMissionGoals.js'
+import { VisionMission } from './visionMission.js'
 import { RdeCenters } from './rdeCenters.js'
 import { ContactUs } from './contactUs.js'
 import { Footer } from './footer.js'
@@ -30,7 +30,7 @@ export const LandingPage = () => {
             UpcomingEvents(),
             NewsSection(),
             ProjectMap(),
-            VisionMissionGoals(),
+            VisionMission(),
             RdeCenters(),
             ContactUs(),
             Footer()

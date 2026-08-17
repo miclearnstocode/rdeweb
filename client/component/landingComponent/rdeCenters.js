@@ -6,56 +6,53 @@ const centers = [
     value: 'CSRDC', 
     icon: '🌱',
     tagline: 'Advancing crop productivity and sustainable agriculture.',
-    image: '/client/images/centers/csrdc.jpg'
+    image: '/client/images/centerLogo/CSRDC.png'
   },
   { 
     label: 'Livestock Research & Development Center (LRDC)', 
     value: 'LRDC', 
     icon: '🐄',
     tagline: 'Improving livestock health, genetics, and production systems.',
-    image: '/client/images/centers/lrdc.jpg'
+    image: '/client/images/centerLogo/LRDC.png'
   },
   { 
     label: 'Fisheries Research & Development Center (FRDC)', 
     value: 'FRDC', 
     icon: '🐟',
     tagline: 'Sustainable fisheries and aquatic resource management.',
-    image: '/client/images/centers/frdc.jpg'
+    image: '/client/images/centerLogo/FRDC.png'
   },
   { 
     label: 'Food and Industrial Technology Research & Development Center (FITRDC)', 
     value: 'FITRDC', 
     icon: '🏭',
     tagline: 'Innovating food safety, processing, and industrial technologies.',
-    image: '/client/images/centers/fitrdc.jpg'
+    image: '/client/images/centerLogo/FITRDC.png'
   },
   { 
     label: 'Social Science Research & Development Center (SSRDC)', 
     value: 'SSRDC', 
     icon: '👥',
     tagline: 'Studying social dynamics, governance, and community development.',
-    image: '/client/images/centers/ssrdc.jpg'
+    image: '/client/images/centerLogo/SSRDC.png'
   },
   { 
     label: 'Machinery and Agricultural Technology Engineering Center (MATEC)', 
     value: 'MATEC', 
     icon: '⚙️',
     tagline: 'Engineering solutions for agricultural mechanization and efficiency.',
-    image: '/client/images/centers/matec.jpg'
+    image: '/client/images/centerLogo/MATEC.png'
   },
   { 
     label: 'Coconut Research and Development Center (Coco RDC)', 
     value: 'Coco RDC', 
     icon: '🥥',
     tagline: 'Maximizing the value of the coconut industry through R&D.',
-    image: '/client/images/centers/coco_rdc.jpg'
+    image: '/client/images/centerLogo/CocoRDC.png'
   }
 ];
 
 export const RdeCenters = () => {
-  // ==========================================
-  // VANILLA JS CAROUSEL STATE
-  // ==========================================
   let currentIndex = 0;
   let autoSlideInterval = null;
   let isHovering = false;
@@ -71,16 +68,6 @@ export const RdeCenters = () => {
     return 3;
   };
 
-  // The track is stretched to `(centers.length / visible) * 100%` of the
-  // container so that each card (fixed at 100/centers.length% of the track)
-  // ends up exactly `container-width / visible` wide. Because both the
-  // track width and the card width scale together this way, the distance
-  // to slide by exactly one card is ALWAYS 100/centers.length% of the
-  // track's own width, regardless of how many cards are visible at once.
-  // (Previously the track width never accounted for `visible`, and the
-  // slide step used 100/visible instead of 100/centers.length — cards
-  // always ended up full container width and the transform didn't line
-  // up with them.)
   const updateTrackWidth = () => {
     if (!trackEl) return;
     const visible = getVisibleCount();
@@ -144,9 +131,6 @@ export const RdeCenters = () => {
     }
   };
 
-  // ==========================================
-  // BUILD DOM
-  // ==========================================
   const carouselContainer = $({
     tag: 'div',
     att: { className: 'rde-carousel-wrapper' },
@@ -176,7 +160,7 @@ export const RdeCenters = () => {
       type: 'mouseleave',
       method: () => { isHovering = false; }
     },
-    // Pause autoplay on touch too, since mobile has no hover state
+
     event3: {
       type: 'touchstart',
       method: () => { isHovering = true; }
@@ -238,8 +222,6 @@ export const RdeCenters = () => {
                   tag: 'img', 
                   att: { src: center.image, alt: center.label }, 
                   style: { width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' },
-                  // Fall back to the emoji icon if the image is missing/fails to load,
-                  // instead of silently stacking both on top of each other.
                   event: {
                     type: 'error',
                     method: (e) => {
@@ -321,9 +303,6 @@ export const RdeCenters = () => {
 
   carouselContainer.appendChild(dotsWrapper);
 
-  // ==========================================
-  // WRAPPER SECTION
-  // ==========================================
   const section = $({
     tag: 'section',
     att: { id: 'centers' },
@@ -347,9 +326,6 @@ export const RdeCenters = () => {
     ]
   });
 
-  // ==========================================
-  // INITIATE AND HANDLE RESIZE
-  // ==========================================
   let resizeTimeout = null;
 
   const handleResize = () => {
@@ -382,7 +358,6 @@ export const RdeCenters = () => {
     window.addEventListener('resize', onResize);
   }, 100);
 
-  // Pause autoplay when the tab isn't visible so we don't lose our place
   const onVisibilityChange = () => {
     if (document.hidden) {
       stopAutoSlide();
