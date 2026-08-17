@@ -15,14 +15,12 @@ export const VpMessage = () => {
           $({
             tag: 'div',
             style: {
-              flex: '0 1 320px', // Fixed width basis, allows shrinking on mobile
+              flex: '0 1 320px',
               maxWidth: '400px',
               height: 'auto',
-              // 1. Set aspect ratio to 3:4 (Tall/Portrait) to match 761x1152
               aspectRatio: '3/4', 
               backgroundImage: 'url("/client/images/Vp_RDE.png")',
               backgroundSize: 'cover',
-              // 2. Center horizontally and slightly top to frame the face perfectly
               backgroundPosition: 'center 25%', 
               borderRadius: 'var(--radius)',
               boxShadow: 'var(--shadow)',
