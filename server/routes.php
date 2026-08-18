@@ -35,6 +35,7 @@ post('/settings','server/settings.php');
 post('/requestDocs','server/request.php');
 post('/eventRequest','server/eventsource.php');
 post('/addcapaccount','server/addCapuser.php');
+post('/announcements', 'server/announcements.php');
 post('/eventState','server/eventState.php');
 post('/deadline','server/deadline.php');
 post('/rdeaccreq','server/rdeStaffReq.php');
@@ -147,10 +148,10 @@ get('/accountSupport','/index.html');
 get('/barcode/a/b/c/d/e/f','barcode.html');
 get('/barcode/$path1/$path2/$path3/$path4/$path5/$path6','/index.html');
 
-// ========== CATCH-ALL ROUTES ==========
+//landing page
+get('/landing', '/index.html');
 
 // Dynamic parameter routes (like /$id, /$id/$id)
-// Use these SPARINGLY and put them LAST
 get('/$id','/index.html');
 get('/$id/$id2','/index.html');
 get('/$id/$id2/$id3','/index.html');

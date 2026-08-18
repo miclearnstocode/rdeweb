@@ -64,7 +64,6 @@ const LazyScanner = async () => {
 };
 
 const renderWithLoading = async (componentLoader, container) => {
-    // 1. Show spinner
     const loadingEl = $({
         tag: 'div',
         style: {
@@ -88,20 +87,17 @@ const renderWithLoading = async (componentLoader, container) => {
             })
         ]
     });
-
     container.appendChild(loadingEl);
 
+    let instance = null;
+
     try {
+        // Load the component
         const Component = await componentLoader();
-        loadingEl.remove();
-        
-        // 2. IMPORTANT: Create and EXACTLY append the component
-        const instance = Component(); // Component() returns the DOM element
-        container.appendChild(instance); // <--- MUST APPEND THIS!
-        
-        return instance;
+        instance = Component(); // Create the DOM element
     } catch (error) {
         console.error('Error loading component:', error);
+        // If it fails, show an error message inside the loader
         loadingEl.innerHTML = `
             <div style="color: #dc3545; text-align: center;">
                 <span class="fa-solid fa-circle-exclamation" style="font-size: 32px; display: block; margin-bottom: 12px;"></span>
@@ -111,6 +107,16 @@ const renderWithLoading = async (componentLoader, container) => {
         `;
         return null;
     }
+
+    // 2. CRUCIAL FIX: Remove the loader FIRST
+    if (loadingEl.parentNode) {
+        loadingEl.remove();
+    }
+
+    // 3. Now append the actual component
+    container.appendChild(instance);
+    
+    return instance;
 };
 
 const routes = {
