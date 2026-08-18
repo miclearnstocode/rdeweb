@@ -1,6 +1,5 @@
 import { $ } from '../lib/lib.js';
 
-
 const ensureSplashStyles = () => {
     if (document.getElementById('splash-screen-styles')) return;
 
@@ -29,8 +28,18 @@ export const SplashScreen = (onComplete) => {
     ensureSplashStyles();
 
     const imagePath = `${window.location.origin}/client/images/rde_logo.png`;
+    const audioPath = `${window.location.origin}/client/images/audio/splash_audio.mp3`;
 
     const EASE = 'cubic-bezier(0.65, 0, 0.35, 1)';
+
+    // --- CREATE AUDIO ELEMENT ---
+    const audioElement = $({
+        tag: 'audio',
+        att: {
+            src: audioPath,
+            preload: 'auto'
+        }
+    });
 
     const animate = () => {
         const splashWrapper = document.getElementById('splash-screen-root');
@@ -42,6 +51,17 @@ export const SplashScreen = (onComplete) => {
 
         if (!splashWrapper || !logoWrapper || !rdeText) return;
 
+        // --- PLAY AUDIO ---
+        // We append the audio to the body, play it, then remove it after it finishes
+        document.body.appendChild(audioElement);
+        audioElement.play().catch(e => console.log("Audio play blocked or failed:", e));
+        
+        // Remove the audio element from DOM after 4 seconds to keep the DOM clean
+        setTimeout(() => {
+            if (audioElement.parentNode) audioElement.parentNode.removeChild(audioElement);
+        }, 4000);
+
+        // --- ANIMATIONS ---
         logoWrapper.style.animation = 'splashLogoPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
         if (glowRing) glowRing.style.opacity = '1';
 
