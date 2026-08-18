@@ -124,7 +124,7 @@ class DashboardAPI {
                 }
             }
 
-            // 9. Research by Campus - EXCLUDE Extension
+            // 9. Research by Campus
             $r = $this->con->query("SELECT rf.campus, COUNT(DISTINCT rf.id) as count
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
@@ -146,21 +146,53 @@ class DashboardAPI {
             }
 
             // 10. Research by Center
-            $r = $this->con->query("SELECT rf.center, COUNT(DISTINCT rf.id) as count
+            $r = $this->con->query("SELECT rf.center as raw_center, COUNT(DISTINCT rf.id) as count
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
                 WHERE (en.status = 'accepted' OR rf.status = 'accepted') $filterCondition
                     AND rf.center IS NOT NULL 
+                    AND TRIM(rf.center) != ''
                     AND rf.center != 'Extension (Extension)'
-                GROUP BY rf.center  
-                ORDER BY count DESC
-                LIMIT 10");
+                GROUP BY rf.center");
+
             $data['byCenter'] = [];
+            $mergedCenters = [];
+
             if ($r) {
                 while ($row = $r->fetch_assoc()) {
-                    $data['byCenter'][] = ['center' => $row['center'], 'count' => (int)$row['count']];
+                    $rawName = trim($row['raw_center']);
+                    $count = (int)$row['count'];
+                    
+                    $normalizedKey = preg_replace('/\([^)]*\)/', '', $rawName);
+                    $normalizedKey = strtoupper(trim(preg_replace('/\s+/', ' ', $normalizedKey)));
+                    
+                    if (isset($mergedCenters[$normalizedKey])) {
+                        $mergedCenters[$normalizedKey]['count'] += $count;
+                        
+                        if (strlen($rawName) > strlen($mergedCenters[$normalizedKey]['display_name'])) {
+                            $mergedCenters[$normalizedKey]['display_name'] = $rawName;
+                        }
+                    } else {
+                        $mergedCenters[$normalizedKey] = [
+                            'display_name' => $rawName,
+                            'count' => $count
+                        ];
+                    }
                 }
+
+                foreach ($mergedCenters as $item) {
+                    $data['byCenter'][] = [
+                        'center' => $item['display_name'], 
+                        'count' => $item['count']
+                    ];
+                }
+                
+                // Sort by count DESC and Limit to top 10
+                usort($data['byCenter'], function($a, $b) {
+                    return $b['count'] - $a['count'];
+                });
+                $data['byCenter'] = array_slice($data['byCenter'], 0, 10);
             }
 
             // 11. Research by Category
@@ -185,7 +217,7 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) $filterCondition 
+                WHERE (en.status = 'accepted' OR rf.status = 'accepted' OR rf.status = '') $filterCondition 
                     AND YEAR(COALESCE(e.date, en.date)) IS NOT NULL
                 GROUP BY YEAR(COALESCE(e.date, en.date))
                 ORDER BY year ASC");

@@ -328,7 +328,7 @@ export const RdeDashboard = () => {
         const range = max - min || 1;
         const padding = 25;
         const chartWidth = 500;
-        const chartHeight = 150;
+        const chartHeight = 160;
         
         const points = items.map((item, idx) => {
             const x = padding + (idx / (items.length - 1 || 1)) * (chartWidth - padding * 2);
@@ -825,15 +825,15 @@ export const RdeDashboard = () => {
                         alignItems: 'center', 
                         flex: '1', 
                         minWidth: '50px', 
-                        maxWidth: '90px',
-                        gap: '4px' 
+                        maxWidth: '80px',
+                        gap: '6px' 
                     }, child: [
                         $({ 
                             tag: 'span', 
                             text: String(item.count), 
                             style: { 
                                 color: '#555', 
-                                fontSize: '11px', 
+                                fontSize: '13px', 
                                 fontWeight: '700' 
                             } 
                         }),
@@ -843,15 +843,15 @@ export const RdeDashboard = () => {
                                 display: 'flex', 
                                 flexDirection: 'column', 
                                 justifyContent: 'flex-end', 
-                                height: '120px' 
+                                height: '190px' 
                             }, child: [
                                 $({
                                     tag: 'div', style: {
                                         width: '100%', 
                                         height: `${pct}%`, 
-                                        minHeight: '4px',
+                                        minHeight: '6px',
                                         background: `linear-gradient(180deg,${color} 0%,${color}77 100%)`,
-                                        borderRadius: '4px 4px 0 0',
+                                        borderRadius: '50px',
                                         boxShadow: `0 -2px 8px ${color}22`,
                                         transition: 'height 0.6s ease'
                                     }
@@ -863,15 +863,14 @@ export const RdeDashboard = () => {
                             text: displayName, 
                             style: { 
                                 color: '#999', 
-                                fontSize: '9px', 
+                                fontSize: '10px', 
                                 textAlign: 'center', 
-                                fontWeight: '500',
-                                maxWidth: '80px', 
-                                lineHeight: '1.2',
+                                fontWeight: '600',
+                                maxWidth: '70px', 
+                                lineHeight: '1.3',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                whiteSpace: 'normal',
-                                wordBreak: 'break-word'
+                                whiteSpace: 'nowrap'
                             } 
                         })
                     ]
@@ -882,7 +881,7 @@ export const RdeDashboard = () => {
         // Create the chart container
         const chartContainer = $({
             tag: 'div', style: {
-                background: '#ffffff', borderRadius: '12px', padding: '12px 14px',
+                background: '#ffffff', borderRadius: '14px', padding: '18px 20px',
                 border: '1px solid #e8e8e8', flex: '1',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
                 overflow: 'hidden',
@@ -909,14 +908,14 @@ export const RdeDashboard = () => {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '12px'
+                marginBottom: '16px'
             }, child: [
                 $({ 
                     tag: 'span', 
                     text: title, 
                     style: { 
                         color: '#555', 
-                        fontSize: '12px', 
+                        fontSize: '14px', 
                         fontWeight: '600' 
                     } 
                 }),
@@ -925,7 +924,7 @@ export const RdeDashboard = () => {
                     text: extData && extData.length > 0 ? 'Click to toggle' : '', 
                     style: { 
                         color: '#aaa', 
-                        fontSize: '9px', 
+                        fontSize: '10px', 
                         fontWeight: '400',
                         fontStyle: 'italic'
                     } 
@@ -937,7 +936,7 @@ export const RdeDashboard = () => {
         const barsContainer = $({
             tag: 'div', style: { 
                 display: 'flex', 
-                gap: '4px', 
+                gap: '8px', 
                 alignItems: 'flex-end', 
                 flexWrap: 'wrap',
                 justifyContent: 'center'
@@ -1049,7 +1048,7 @@ export const RdeDashboard = () => {
                             display: 'flex', 
                             flexDirection: 'column', 
                             justifyContent: 'flex-end', 
-                            height: '160px' 
+                            height: '190px' 
                         }, child: [
                             $({
                                 tag: 'div', style: {
@@ -1057,7 +1056,7 @@ export const RdeDashboard = () => {
                                     height: `${pct}%`, 
                                     minHeight: '6px',
                                     background: `linear-gradient(180deg,${color} 0%,${color}77 100%)`,
-                                    borderRadius: '6px 6px 0 0',
+                                    borderRadius: '50px',
                                     boxShadow: `0 -2px 8px ${color}22`,
                                     transition: 'height 0.6s ease'
                                 }
