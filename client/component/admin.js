@@ -8,6 +8,7 @@ import { Recommendation } from "./adminComponent/script/recommendation.js";
 import { DocumentLog } from "./adminComponent/script/documentLog.js";
 import { Override } from "./adminComponent/script/override.js";
 import { ExternalAccount } from "./adminComponent/script/externalUser.js";
+import { Announcements } from "./adminComponent/script/announcements.js";
 
 const pages = []
 
@@ -386,6 +387,29 @@ pages.push({
     }),
     page: Recommendation
 })
+
+pages.push({
+    url: '/admin/announcements',
+    button: $({
+        tag: 'div',
+        att: { className: 'botTabsDiv' },
+        child: [
+            $({
+                tag: 'div', att: { className: 'navItem' },
+                child: [
+                    $({ tag: 'span', att: { className: 'navIcon fa-solid fa-bullhorn' } }),
+                    $({ tag: 'span', att: { className: 'navLabel' }, text: 'Announcements' }),
+                    $({ tag: 'span', att: { className: 'navArrow' }, text: '→' })
+                ],
+                event: {
+                    type: 'click',
+                    method: () => { window.location.assign('/admin/announcements') }
+                }
+            })
+        ]
+    }),
+    page: Announcements
+});
 
 const pageHolder = () => {
     const getContent = (content) => {

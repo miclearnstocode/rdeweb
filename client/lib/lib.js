@@ -171,42 +171,133 @@ export const getCenterCodes = () => {
     return CapsuOffice.map(center => getCenterCode(center))
 }
 
-export const Waiting = () => {
-    // Check if a loading overlay already exists
-    const existingLoader = document.querySelector('.mainLoaderBase');
+export const Waiting = (duration = 1500) => {
+    const existingLoader = document.querySelector('.stack-loader-container');
     if (existingLoader) {
         return existingLoader;
     }
 
-    return ($({
+    // Create the loader element
+    const loaderElement = $({
         tag: 'div',
-        externalStyle: '/client/lib/loaderStyleLib.css',
-        att: {
-            className: 'mainLoaderBase'
-        },
+        att: { className: 'stack-loader-container' },
         style: {
             position: 'fixed',
             top: '0',
             left: '0',
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(255, 255, 255, 0.85)',
+            width: '100vw',
+            height: '100vh',
             display: 'flex',
-            flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: '9999'
+            backgroundColor: 'hsl(223, 90%, 15%)',
+            zIndex: '999999',
+            margin: '0',
+            padding: '0',
+            opacity: '1',
+            transition: 'opacity 0.3s ease-out'
         },
         child: [
             $({
                 tag: 'div',
-                att: {
-                    className: 'loader'
-                }
+                att: { className: 'stack' },
+                child: [
+                    $({ tag: 'div', att: { className: 'stack__card' } }),
+                    $({ tag: 'div', att: { className: 'stack__card' } }),
+                    $({ tag: 'div', att: { className: 'stack__card' } })
+                ]
             })
-        ]
-    }))
-}
+        ],
+        // Auto-remove after duration
+        elementHandler: (el) => {
+            setTimeout(() => {
+                // Fade out smoothly
+                el.style.opacity = '0';
+                // Remove from DOM after fade
+                setTimeout(() => {
+                    if (el.parentNode) {
+                        el.parentNode.removeChild(el);
+                    }
+                }, 300);
+            }, duration);
+        }
+    });
+
+    // Inject the CSS dynamically if missing (same as before)
+    if (!document.getElementById('loader-style-injected')) {
+        const style = document.createElement('style');
+        style.id = 'loader-style-injected';
+        style.textContent = `
+            .stack-loader-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-color: hsl(223, 90%, 15%);
+                z-index: 999999 !important;
+                color-scheme: light dark;
+            }
+            .stack {
+                --stack-dur: 2s;
+                --stack-delay: 0.05;
+                --stack-spacing: 15%;
+                overflow: hidden;
+                position: relative;
+                width: 14em;
+                height: 32em;
+            }
+            .stack__card {
+                aspect-ratio: 1;
+                position: absolute;
+                inset: 0;
+                top: var(--stack-spacing);
+                margin: auto;
+                width: 70%;
+                transform: rotateX(45deg) rotateZ(-45deg);
+                transform-style: preserve-3d;
+            }
+            .stack__card::before {
+                animation: card var(--stack-dur) infinite;
+                background-color: hsl(223, 90%, 55%);
+                border-radius: 7.5%;
+                box-shadow: -0.5em 0.5em 1.5em hsl(223, 90%, 15% / 0.1);
+                content: "";
+                display: block;
+                position: absolute;
+                inset: 0;
+            }
+            .stack__card:nth-child(2) { top: 0; }
+            .stack__card:nth-child(2)::before {
+                animation-delay: calc(var(--stack-dur) * (-1 + var(--stack-delay)));
+                background-color: hsl(223, 90%, 75%);
+            }
+            .stack__card:nth-child(3) {
+                top: calc(var(--stack-spacing) * -1);
+            }
+            .stack__card:nth-child(3)::before {
+                animation-delay: calc(var(--stack-dur) * (-1 + var(--stack-delay) * 2));
+                background-color: hsl(223, 90%, 95%);
+            }
+            @keyframes card {
+                0%, 100% { animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1); transform: translateZ(0); }
+                11% { animation-timing-function: cubic-bezier(0.32, 0, 0.67, 0); opacity: 1; transform: translateZ(0.125em); }
+                34% { animation-timing-function: steps(1); opacity: 0; transform: translateZ(-12em); }
+                48% { animation-timing-function: linear; opacity: 0; transform: translateZ(12em); }
+                57% { animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1); opacity: 1; transform: translateZ(0); }
+                61% { animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1); transform: translateZ(-1.8em); }
+                74% { animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1); transform: translateZ(0.6em); }
+                87% { animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1); transform: translateZ(-0.2em); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    return loaderElement;
+};
 
 export function TextToBase64Barcode(text, prop) {
     var canvas = document.createElement("canvas")
