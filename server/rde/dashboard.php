@@ -49,13 +49,14 @@ class DashboardAPI {
             $data = [];
             $filterCondition = $this->getFilterCondition($filter);
             $filterLabel = $this->getFilterLabel($filter);
-
+            $baseCondition = "(en.status = 'accepted' AND (rf.status = 'accepted' OR rf.status IS NULL))";
+            
             // 1. Total accepted/active research
             $r = $this->con->query("SELECT COUNT(DISTINCT rf.id) as total
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) $filterCondition");
+                WHERE $baseCondition $filterCondition");
             $data['totalAccepted'] = (int)($r->fetch_assoc()['total'] ?? 0);
 
             // 2. Proposed
@@ -63,7 +64,7 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) AND rf.event_id IS NOT NULL AND rf.event_id != 0 $filterCondition");
+                WHERE $baseCondition AND rf.event_id IS NOT NULL AND rf.event_id != 0 $filterCondition");
             $data['totalProposed'] = (int)($r->fetch_assoc()['total'] ?? 0);
 
             // 3. In-House Reviews
@@ -72,7 +73,7 @@ class DashboardAPI {
                     FROM researchfile rf
                     LEFT JOIN endorsement en ON rf.endorsementid = en.id
                     LEFT JOIN event_list e ON rf.event_id = e.id
-                    WHERE (en.status = 'accepted' OR e.status = 1 OR rf.status = 'accepted') AND (rf.event LIKE '%In-House%' OR (e.name LIKE '%In-House%' AND rf.event_id != 0))
+                    WHERE $baseCondition AND (rf.event LIKE '%In-House%' OR (e.name LIKE '%In-House%' AND rf.event_id != 0))
                     AND is_internally_funded = 1");
                 $data['inHouseReview'] = (int)($r->fetch_assoc()['total'] ?? 0);
             } else {
@@ -85,7 +86,7 @@ class DashboardAPI {
                     FROM researchfile rf
                     LEFT JOIN endorsement en ON rf.endorsementid = en.id
                     LEFT JOIN event_list e ON rf.event_id = e.id
-                    WHERE (en.status = 'accepted' OR e.status = 1) 
+                    WHERE $baseCondition 
                         AND (rf.event LIKE '%Symposium%' OR (e.name LIKE '%Symposium%' AND rf.event_id != 0))");
                 $data['symposium'] = (int)($r->fetch_assoc()['total'] ?? 0);
             } else if ($filter === null || $filter === '') {
@@ -93,7 +94,7 @@ class DashboardAPI {
                     FROM researchfile rf
                     LEFT JOIN endorsement en ON rf.endorsementid = en.id
                     LEFT JOIN event_list e ON rf.event_id = e.id
-                    WHERE (en.status = 'accepted' OR e.status = 1) 
+                    WHERE $baseCondition 
                         AND (rf.event LIKE '%Symposium%' OR (e.name LIKE '%Symposium%' AND rf.event_id != 0))");
                 $data['symposium'] = (int)($r->fetch_assoc()['total'] ?? 0);
             } else {
@@ -150,7 +151,7 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR rf.status = 'accepted') $filterCondition
+                WHERE $baseCondition $filterCondition
                     AND rf.center IS NOT NULL 
                     AND TRIM(rf.center) != ''
                     AND rf.center != 'Extension (Extension)'
@@ -200,7 +201,7 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1) $filterCondition
+                WHERE $baseCondition $filterCondition
                     AND rf.category IS NOT NULL 
                     AND rf.category != ''
                 GROUP BY rf.category
@@ -217,7 +218,7 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR rf.status = 'accepted' OR rf.status = '') $filterCondition 
+                WHERE $baseCondition $filterCondition 
                     AND YEAR(COALESCE(e.date, en.date)) IS NOT NULL
                 GROUP BY YEAR(COALESCE(e.date, en.date))
                 ORDER BY year ASC");
@@ -233,7 +234,7 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR rf.status = 'accepted') 
+                WHERE $baseCondition 
                     AND (rf.center = 'Extension (Extension)' OR rf.category = 'Extension')");
             $data['extension'] = (int)($r->fetch_assoc()['total'] ?? 0);
 
@@ -242,7 +243,7 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR rf.status = 'accepted') 
+                WHERE $baseCondition 
                     AND (rf.center = 'Extension (Extension)' OR rf.category = 'Extension')
                     AND rf.campus IS NOT NULL 
                     AND rf.campus != ''
@@ -261,7 +262,7 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1)
+                WHERE $baseCondition
                     AND YEAR(COALESCE(e.date, en.date)) IS NOT NULL
                     AND rf.campus IS NOT NULL 
                     AND rf.campus != '' 
@@ -280,7 +281,7 @@ class DashboardAPI {
                 FROM researchfile rf
                 LEFT JOIN endorsement en ON rf.endorsementid = en.id
                 LEFT JOIN event_list e ON rf.event_id = e.id
-                WHERE (en.status = 'accepted' OR e.status = 1)
+                WHERE $baseCondition
                     AND YEAR(COALESCE(e.date, en.date)) IS NOT NULL
                     AND rf.center IS NOT NULL 
                     AND rf.center != '' 
