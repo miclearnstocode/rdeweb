@@ -51,44 +51,50 @@ export const SplashScreen = (onComplete) => {
 
         if (!splashWrapper || !logoWrapper || !rdeText) return;
 
-        // --- PLAY AUDIO ---
-        // We append the audio to the body, play it, then remove it after it finishes
         document.body.appendChild(audioElement);
         audioElement.play().catch(e => console.log("Audio play blocked or failed:", e));
         
-        // Remove the audio element from DOM after 4 seconds to keep the DOM clean
+        // Play audio for 6 seconds (increased from 4s)
         setTimeout(() => {
             if (audioElement.parentNode) audioElement.parentNode.removeChild(audioElement);
-        }, 4000);
+        }, 6000);
 
-        // --- ANIMATIONS ---
+        // --- ANIMATIONS (All delays increased by 2000ms) ---
+
+        // 0ms: Start logo pop animation
         logoWrapper.style.animation = 'splashLogoPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
         if (glowRing) glowRing.style.opacity = '1';
 
+        // 1100ms -> 3100ms: Show "RDE Portal" text
         setTimeout(() => {
             rdeText.style.opacity = '1';
             rdeText.style.transform = 'translateY(0)';
-        }, 1100);
+        }, 3100);
 
+        // 1500ms -> 3500ms: Show subtitle
         setTimeout(() => {
             if (subtitle) {
                 subtitle.style.opacity = '1';
                 subtitle.style.transform = 'translateY(0)';
             }
-        }, 1500);
+        }, 3500);
 
+        // 1900ms -> 3900ms: Show bouncing dots
         setTimeout(() => {
             if (dots) dots.style.opacity = '1';
-        }, 1900);
+        }, 3900);
 
+        // 2900ms -> 4900ms: Hide bouncing dots
         setTimeout(() => {
             if (dots) dots.style.opacity = '0';
-        }, 2900);
+        }, 4900);
 
+        // 3100ms -> 5100ms: Slide screen up and away
         setTimeout(() => {
             splashWrapper.style.transform = 'translateY(100%)';
-        }, 3100);
+        }, 5100);
 
+        // 3900ms -> 5900ms: Remove from DOM and trigger callback
         setTimeout(() => {
             if (splashWrapper.parentNode) {
                 splashWrapper.parentNode.removeChild(splashWrapper);
@@ -96,7 +102,7 @@ export const SplashScreen = (onComplete) => {
             if (typeof onComplete === 'function') {
                 onComplete();
             }
-        }, 3900);
+        }, 5900);
     };
 
     const splashElement = $({
@@ -137,9 +143,9 @@ export const SplashScreen = (onComplete) => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            width: '220px',
-                            height: '220px',
-                            marginBottom: '4px'
+                            width: '400px',      
+                            height: '400px',        
+                            marginBottom: '10px'
                         },
                         child: [
                             // Soft pulsing glow ring behind the seal
@@ -151,12 +157,12 @@ export const SplashScreen = (onComplete) => {
                                     top: '50%',
                                     left: '50%',
                                     transform: 'translate(-50%, -50%)',
-                                    width: '248px',
-                                    height: '248px',
+                                    width: '460px',     
+                                    height: '460px',     
                                     borderRadius: '50%',
                                     background: 'radial-gradient(circle, rgba(2,101,211,0.16) 0%, rgba(2,101,211,0) 72%)',
                                     opacity: '0',
-                                    transition: 'opacity 0.5s ease',
+                                    transition: 'opacity 0.6s ease',
                                     animation: 'splashRingPulse 2.6s ease-in-out infinite',
                                     zIndex: '0'
                                 }
@@ -174,7 +180,7 @@ export const SplashScreen = (onComplete) => {
                                     width: '100%',
                                     height: '100%',
                                     objectFit: 'contain',
-                                    filter: 'drop-shadow(0 10px 24px rgba(2, 101, 211, 0.18))'
+                                    filter: 'drop-shadow(0 12px 32px rgba(2, 101, 211, 0.20))' // Stronger shadow for bigger logo
                                 },
                                 event: {
                                     type: 'error',
@@ -185,7 +191,6 @@ export const SplashScreen = (onComplete) => {
                                     }
                                 }
                             }),
-                            // Fallback text if logo image fails to load
                             $({
                                 tag: 'div',
                                 att: { id: 'splash-logo-fallback' },
@@ -193,10 +198,10 @@ export const SplashScreen = (onComplete) => {
                                     display: 'none',
                                     position: 'absolute',
                                     zIndex: '1',
-                                    width: '190px',
-                                    height: '190px',
-                                    top: '15px',
-                                    left: '15px',
+                                    width: '500px',
+                                    height: '500px',
+                                    top: '0',
+                                    left: '0',
                                     borderRadius: '50%',
                                     backgroundColor: '#f8f9fa',
                                     border: '2px solid #e8ecf0',
@@ -204,7 +209,7 @@ export const SplashScreen = (onComplete) => {
                                     justifyContent: 'center',
                                     fontFamily: '"Inter", "Segoe UI", sans-serif',
                                     fontWeight: '800',
-                                    fontSize: '40px',
+                                    fontSize: '60px', // Bigger fallback text to match
                                     color: '#0265D3'
                                 },
                                 text: 'RDE Portal'
@@ -224,7 +229,8 @@ export const SplashScreen = (onComplete) => {
                             letterSpacing: '-1px',
                             lineHeight: '1',
                             color: '#1a2a3a',
-                            textAlign: 'center'
+                            textAlign: 'center',
+                            marginTop: '20px' // Slightly more distance from the larger logo
                         },
                         text: 'RDE Portal'
                     }),
