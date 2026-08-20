@@ -337,7 +337,7 @@ export const Announcements = () => {
                 $({
                     tag: 'div', child: [
                         $({ tag: 'label', text: 'Full Article Body / Description', style: { display: 'block', fontWeight: '600', marginBottom: '6px' } }),
-                        modalInput('textarea', 'Write the full details of the announcement here...', 'edit-modal-body', 6, announcement.body || announcement.short_description)
+                        modalInput('textarea', 'Write the full details of the announcement here...', 'edit-modal-body', 6, announcement.body)
                     ]
                 }),
                 $({
@@ -471,7 +471,6 @@ export const Announcements = () => {
                                         fd.append('title', title);
                                         fd.append('event_date', date);
                                         fd.append('venue', venue);
-                                        fd.append('short_description', body);
                                         fd.append('body', body);
                                         fd.append('hashtags', hashtag);
                                         fd.append('facebook_link', fb);
@@ -710,7 +709,6 @@ export const Announcements = () => {
                                         fd.append('title', title)
                                         fd.append('event_date', date)
                                         fd.append('venue', venue)
-                                        fd.append('short_description', body)
                                         fd.append('body', body)
                                         fd.append('hashtags', hashtag)
                                         fd.append('facebook_link', fb)

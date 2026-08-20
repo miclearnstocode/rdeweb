@@ -65,7 +65,6 @@ if ($action === 'create') {
     $title = $_POST['title'] ?? '';
     $event_date = $_POST['event_date'] ?? '';
     $venue = $_POST['venue'] ?? '';
-    $short_description = $_POST['short_description'] ?? '';
     $body = $_POST['body'] ?? '';
     $hashtags = $_POST['hashtags'] ?? '';
     $facebook_link = $_POST['facebook_link'] ?? '';
@@ -150,8 +149,8 @@ if ($action === 'create') {
     $galleryImagesJson = !empty($galleryImages) ? json_encode($galleryImages) : null;
     $is_visible = 1; // Set default visibility to 1 (visible)
 
-    $stmt = $conn->prepare("INSERT INTO announcements (title, event_date, venue, short_description, body, hashtags, facebook_link, gdrive_folder_id, gallery_images, is_visible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssssssssss", $title, $event_date, $venue, $short_description, $body, $hashtags, $facebook_link, $gdriveFolderId, $galleryImagesJson, $is_visible);
+    $stmt = $conn->prepare("INSERT INTO announcements (title, event_date, venue, body, hashtags, facebook_link, gdrive_folder_id, gallery_images, is_visible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssssssss", $title, $event_date, $venue, $body, $hashtags, $facebook_link, $gdriveFolderId, $galleryImagesJson, $is_visible);
             
     if ($stmt->execute()) {
         updateEventStatuses($conn);
@@ -227,7 +226,6 @@ if ($action === 'update') {
     $title = $_POST['title'] ?? '';
     $event_date = $_POST['event_date'] ?? '';
     $venue = $_POST['venue'] ?? '';
-    $short_description = $_POST['short_description'] ?? '';
     $body = $_POST['body'] ?? '';
     $hashtags = $_POST['hashtags'] ?? '';
     $facebook_link = $_POST['facebook_link'] ?? '';
@@ -266,7 +264,6 @@ if ($action === 'update') {
     }
 
     // --- HANDLE UPDATED EXISTING IMAGES ---
-    // Decode the savedImages array sent from the frontend (excluding deleted ones)
     $finalGalleryImages = json_decode($existingImagesJson, true);
     if (!is_array($finalGalleryImages)) {
         $finalGalleryImages = [];
@@ -340,8 +337,8 @@ if ($action === 'update') {
 
     $galleryImagesJson = !empty($finalGalleryImages) ? json_encode($finalGalleryImages) : null;
 
-    $stmt = $conn->prepare("UPDATE announcements SET title = ?, event_date = ?, venue = ?, short_description = ?, body = ?, hashtags = ?, facebook_link = ?, gdrive_folder_id = ?, gallery_images = ? WHERE id = ?");
-    $stmt->bind_param("sssssssssi", $title, $event_date, $venue, $short_description, $body, $hashtags, $facebook_link, $gdriveFolderId, $galleryImagesJson, $id);
+    $stmt = $conn->prepare("UPDATE announcements SET title = ?, event_date = ?, venue = ?, body = ?, hashtags = ?, facebook_link = ?, gdrive_folder_id = ?, gallery_images = ? WHERE id = ?");
+    $stmt->bind_param("ssssssssi", $title, $event_date, $venue, $body, $hashtags, $facebook_link, $gdriveFolderId, $galleryImagesJson, $id);
 
     if ($stmt->execute()) {
         updateEventStatuses($conn);
