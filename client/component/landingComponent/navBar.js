@@ -49,7 +49,7 @@ export const Navbar = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
           width: '100%',
-          position: 'relative' // Needed for mobile menu positioning
+          position: 'relative'
         },
         child: [
           // Logo + Wordmark
@@ -66,7 +66,7 @@ export const Navbar = () => {
               $({
                 tag: 'img',
                 att: { src: '/client/images/cap.png', alt: 'CAPSU Logo', width: 50, height: 50 },
-                style: { borderRadius: '50%', objectFit: 'contain', backgroundColor: '#fff' }
+                style: { borderRadius: '10%', objectFit: 'contain', backgroundColor: '#fff' }
               }),
               $({
                 tag: 'div',

@@ -18,7 +18,6 @@ export const fetchEvents = async (statusFilter = null) => {
     return [];
 };
 
-// Modern Event Card component
 export const eventCard = (data) => $({
     tag: 'div',
     style: {
@@ -114,7 +113,7 @@ export const eventCard = (data) => $({
                         style: {
                             fontSize: '48px',
                             color: '#cbd5e1',
-                            fontFamily: '"Inter", sans-serif',
+                            fontFamily: '"Plus Jakarta Sans", sans-serif', // UPDATED
                             fontWeight: '700'
                         },
                         text: '📢'
@@ -133,6 +132,7 @@ export const eventCard = (data) => $({
                         borderRadius: '20px',
                         fontSize: '11px',
                         fontWeight: '700',
+                        fontFamily: '"Plus Jakarta Sans", sans-serif', // UPDATED
                         letterSpacing: '0.5px',
                         textTransform: 'uppercase',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
@@ -149,6 +149,7 @@ export const eventCard = (data) => $({
                     tag: 'h3',
                     text: data.title,
                     style: {
+                        fontFamily: '"Plus Jakarta Sans", sans-serif', // UPDATED
                         fontSize: '1.1rem',
                         fontWeight: '600',
                         marginBottom: '8px',
@@ -168,7 +169,12 @@ export const eventCard = (data) => $({
                         $({
                             tag: 'span',
                             text: data.event_date,
-                            style: { fontSize: '0.85rem', color: '#64748b', fontWeight: '500' }
+                            style: { 
+                                fontFamily: '"Inter", sans-serif', // UPDATED
+                                fontSize: '0.85rem', 
+                                color: '#64748b', 
+                                fontWeight: '500' 
+                            }
                         }),
                         $({
                             tag: 'span',
@@ -183,7 +189,12 @@ export const eventCard = (data) => $({
                         $({
                             tag: 'span',
                             text: data.venue,
-                            style: { fontSize: '0.85rem', color: '#64748b', fontWeight: '500' }
+                            style: { 
+                                fontFamily: '"Inter", sans-serif', // UPDATED
+                                fontSize: '0.85rem', 
+                                color: '#64748b', 
+                                fontWeight: '500' 
+                            }
                         })
                     ]
                 }),
@@ -191,6 +202,7 @@ export const eventCard = (data) => $({
                     tag: 'p',
                     text: data.short_description || 'Click to view full details...',
                     style: {
+                        fontFamily: '"Inter", sans-serif', // UPDATED
                         color: '#94a3b8',
                         fontSize: '0.9rem',
                         lineHeight: '1.6',
@@ -226,7 +238,7 @@ export const openEventModal = (data) => {
                     const images = data.gallery_images || [];
                     if (images.length === 0) {
                         el.innerHTML = `
-                            <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:48px;">
+                            <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:48px;font-family:'Plus Jakarta Sans', sans-serif;">
                                 📢 No Images
                             </div>
                         `;
@@ -244,12 +256,8 @@ export const openEventModal = (data) => {
                         }
                     });
 
-                    // --- LOOP THROUGH IMAGES USING viewUrl ---
                     images.forEach((img) => {
-                        // Handle viewUrl or downloadUrl fallback exactly like mainResearch.js
                         let fileUrl = img.viewUrl || img.downloadUrl || '';
-
-                        // If it's a Google Drive URL, ensure we use the embed-friendly format
                         if (fileUrl && fileUrl.includes('drive.google.com')) {
                             let fileId = null;
                             const patterns = [
@@ -270,7 +278,6 @@ export const openEventModal = (data) => {
                             
                             if (fileId) {
                                 fileId = fileId.split('?')[0].split('&')[0];
-                                // DIRECTLY USE THE PREVIEW URL (exactly how mainResearch.js does it)
                                 fileUrl = `https://drive.google.com/file/d/${fileId}/preview`;
                             }
                         }
@@ -286,7 +293,6 @@ export const openEventModal = (data) => {
                                 backgroundColor: '#f1f5f9'
                             },
                             child: [
-                                // Use an iframe for the preview (just like mainResearch.js)
                                 $({
                                     tag: 'iframe',
                                     att: {
@@ -308,7 +314,7 @@ export const openEventModal = (data) => {
 
                     el.appendChild(slideContainer);
 
-                    // Navigation Buttons (only if more than 1 image)
+
                     if (images.length > 1) {
                         const prevBtn = $({
                             tag: 'button',
@@ -448,9 +454,19 @@ export const openEventModal = (data) => {
             // Event Details
             $({
                 tag: 'div',
-                style: { padding: '0 4px' },
+                style: { padding: '0 4px', fontFamily: '"Inter", sans-serif' }, // UPDATED
                 child: [
-                    $({ tag: 'h2', text: data.title, style: { fontSize: '1.4rem', fontWeight: '700', color: '#1a2a3a', marginBottom: '8px' } }),
+                    $({ 
+                        tag: 'h2', 
+                        text: data.title, 
+                        style: { 
+                            fontFamily: '"Plus Jakarta Sans", sans-serif', // UPDATED
+                            fontSize: '1.4rem', 
+                            fontWeight: '700', 
+                            color: '#1a2a3a', 
+                            marginBottom: '8px' 
+                        } 
+                    }),
                     $({
                         tag: 'div',
                         style: { display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '16px', color: '#64748b', fontSize: '0.9rem' },
@@ -465,14 +481,33 @@ export const openEventModal = (data) => {
                             }) : null
                         ]
                     }),
+                    // --- FIXED BODY SECTION WITH PARAGRAPH DETECTION ---
                     $({
                         tag: 'div',
-                        style: { color: '#334155', lineHeight: '1.8', fontSize: '0.95rem' },
-                        child: [
-                            $({ tag: 'p', text: data.body || data.short_description || 'No detailed description available.' })
-                        ]
+                        style: { 
+                            color: '#334155', 
+                            lineHeight: '1.8', 
+                            fontSize: '0.95rem',
+                            textAlign: 'justify'
+                        },
+                        // Split by newline characters to create multiple paragraphs
+                        child: (data.body || data.short_description || 'No detailed description available.')
+                            .split(/\r?\n/) // Split by \n or \r\n
+                            .filter(paragraph => paragraph.trim() !== '') // Remove empty lines
+                            .map(paragraphText => 
+                                $({ 
+                                    tag: 'p', 
+                                    text: paragraphText,
+                                    style: { 
+                                        fontFamily: '"Inter", sans-serif', // UPDATED
+                                        marginBottom: '16px' 
+                                    } 
+                                })
+                            )
                     }),
-                    data.hashtags ? $({
+
+                    (data.hashtags && data.hashtags.trim() !== '') 
+                    ? $({
                         tag: 'div',
                         style: { marginTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '8px' },
                         child: data.hashtags.split(',').map(tag =>
@@ -480,6 +515,7 @@ export const openEventModal = (data) => {
                                 tag: 'span',
                                 text: tag.trim(),
                                 style: {
+                                    fontFamily: '"Inter", sans-serif', // UPDATED
                                     background: '#e8f0fe',
                                     color: '#1a73e8',
                                     padding: '4px 12px',
@@ -489,7 +525,8 @@ export const openEventModal = (data) => {
                                 }
                             })
                         )
-                    }) : null
+                    })
+                    : null
                 ]
             })
         ]

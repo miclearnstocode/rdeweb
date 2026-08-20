@@ -15,8 +15,6 @@ $action = $_POST['action'] ?? '';
 
 function updateEventStatuses($conn) {
     $conn->query("SET time_zone = '+08:00'");
-
-    // We use STR_TO_DATE() to convert the text string into a real date format
     $checkSt = $conn->prepare("
         UPDATE announcements 
         SET status = CASE
@@ -27,7 +25,6 @@ function updateEventStatuses($conn) {
         END
         WHERE 1=1
     ");
-    
     $checkSt->execute();
     $checkSt->close();
 }
@@ -39,11 +36,16 @@ if (!$conn) {
     exit;
 }
 
-
+// --- 1. FETCH ANNOUNCEMENTS (Can be filtered by type) ---
 if ($action === 'getAll') {
+    $typeFilter = isset($_POST['type']) ? $_POST['type'] : 'announcement'; // Default to announcements
+
     updateEventStatuses($conn);
-    // Fetch all announcements including the new is_visible column
-    $result = $conn->query("SELECT * FROM announcements ORDER BY created_at DESC");
+    $stmt = $conn->prepare("SELECT * FROM announcements WHERE type = ? ORDER BY created_at DESC");
+    $stmt->bind_param("s", $typeFilter);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
     $data = [];
     while ($row = $result->fetch_assoc()) {
         if (!empty($row['gallery_images'])) {
@@ -51,17 +53,20 @@ if ($action === 'getAll') {
         } else {
             $row['gallery_images'] = [];
         }
-        // Ensure is_visible is returned as an integer (0 or 1)
         $row['is_visible'] = (int)$row['is_visible'];
         $data[] = $row;
     }
+    $stmt->close();
+    
     $response->status = true;
     $response->data = $data;
     echo json_encode($response);
     exit;
 }
 
+// --- 2. CREATE NEW RECORD (Supports both announcement and news) ---
 if ($action === 'create') {
+    $type = $_POST['type'] ?? 'announcement'; // Default to announcement
     $title = $_POST['title'] ?? '';
     $event_date = $_POST['event_date'] ?? '';
     $venue = $_POST['venue'] ?? '';
@@ -97,27 +102,14 @@ if ($action === 'create') {
 
             $baseFolderName = 'Announcements';
             $baseFolderId = $drive->findOrCreateFolder($baseFolderName, $rootFolderId);
-
-            if (!$baseFolderId) {
-                throw new Exception("Failed to create base Announcements folder.");
-            }
-
             $cleanEventName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $title) . '_' . date('Y-m-d');
             $eventFolderId = $drive->findOrCreateFolder($cleanEventName, $baseFolderId);
-
-            if (!$eventFolderId) {
-                throw new Exception("Failed to create event sub-folder.");
-            }
-
             $gdriveFolderId = $eventFolderId;
 
-            // --- ROUND ROBIN UPLOAD LOOP ---
             $fileCount = count($uploadedFiles['name']);
-            $remainingIndices = range(0, $fileCount - 1); // [0, 1, 2, ...]
+            $remainingIndices = range(0, $fileCount - 1);
 
-            // Continue looping until all files are processed
             while (!empty($remainingIndices)) {
-                // Take the first index in the queue
                 $i = array_shift($remainingIndices);
                 $tempFilePath = $uploadedFiles['tmp_name'][$i];
                 $originalName = $uploadedFiles['name'][$i];
@@ -147,15 +139,15 @@ if ($action === 'create') {
     }
 
     $galleryImagesJson = !empty($galleryImages) ? json_encode($galleryImages) : null;
-    $is_visible = 1; // Set default visibility to 1 (visible)
+    $is_visible = 1;
 
-    $stmt = $conn->prepare("INSERT INTO announcements (title, event_date, venue, body, hashtags, facebook_link, gdrive_folder_id, gallery_images, is_visible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssssssss", $title, $event_date, $venue, $body, $hashtags, $facebook_link, $gdriveFolderId, $galleryImagesJson, $is_visible);
+    $stmt = $conn->prepare("INSERT INTO announcements (type, title, event_date, venue, body, hashtags, facebook_link, gdrive_folder_id, gallery_images, is_visible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("ssssssssss", $type, $title, $event_date, $venue, $body, $hashtags, $facebook_link, $gdriveFolderId, $galleryImagesJson, $is_visible);
             
     if ($stmt->execute()) {
         updateEventStatuses($conn);
         $response->status = true;
-        $response->message = "Announcement created with " . count($galleryImages) . " images!";
+        $response->message = "Record created with " . count($galleryImages) . " images!";
     } else {
         $response->message = "Database Error: " . $stmt->error;
     }
@@ -164,12 +156,10 @@ if ($action === 'create') {
     exit;
 }
 
-
+// --- 3. TOGGLE VISIBILITY ---
 if ($action === 'toggleVisibility') {
     $id = $_POST['id'] ?? 0;
     $currentStatus = $_POST['currentStatus'] ?? 0;
-    
-    // Toggle 0 to 1, or 1 to 0
     $newStatus = $currentStatus == 1 ? 0 : 1;
 
     $stmt = $conn->prepare("UPDATE announcements SET is_visible = ? WHERE id = ?");
@@ -186,11 +176,13 @@ if ($action === 'toggleVisibility') {
     echo json_encode($response);
     exit;
 }
+
+// --- 4. GET BY ID ---
 if ($action === 'getById') {
     $id = $_POST['id'] ?? 0;
 
     if (!$id) {
-        $response->message = "Announcement ID is required.";
+        $response->message = "ID is required.";
         echo json_encode($response);
         exit;
     }
@@ -202,25 +194,23 @@ if ($action === 'getById') {
     $data = $result->fetch_assoc();
 
     if ($data) {
-        // Decode gallery images into an array
         if (!empty($data['gallery_images'])) {
             $data['gallery_images'] = json_decode($data['gallery_images'], true);
         } else {
             $data['gallery_images'] = [];
         }
         $data['is_visible'] = (int)$data['is_visible'];
-
         $response->status = true;
         $response->data = $data;
     } else {
-        $response->message = "Announcement not found.";
+        $response->message = "Record not found.";
     }
-
     $stmt->close();
     echo json_encode($response);
     exit;
 }
 
+// --- 5. UPDATE ---
 if ($action === 'update') {
     $id = $_POST['id'] ?? 0;
     $title = $_POST['title'] ?? '';
@@ -239,7 +229,6 @@ if ($action === 'update') {
         exit;
     }
 
-    // Fetch the existing data
     $existingStmt = $conn->prepare("SELECT gdrive_folder_id, gallery_images FROM announcements WHERE id = ?");
     $existingStmt->bind_param("i", $id);
     $existingStmt->execute();
@@ -249,13 +238,12 @@ if ($action === 'update') {
     $existingGalleryImages = json_decode($existingData['gallery_images'] ?? '[]', true) ?: [];
     $existingStmt->close();
 
-    // --- HANDLE DELETED IMAGES (User clicked X) ---
     if (!empty($deleteImageIds)) {
         try {
             $httpClient = new \GuzzleHttp\Client(['timeout' => 30]);
             $drive = new GoogleDriveService($httpClient);
             foreach ($deleteImageIds as $fileId) {
-                $drive->deleteFile($fileId); // Move to Trash
+                $drive->deleteFile($fileId);
                 error_log("Deleted image from GDrive: $fileId");
             }
         } catch (Exception $e) {
@@ -263,18 +251,14 @@ if ($action === 'update') {
         }
     }
 
-    // --- HANDLE UPDATED EXISTING IMAGES ---
     $finalGalleryImages = json_decode($existingImagesJson, true);
     if (!is_array($finalGalleryImages)) {
         $finalGalleryImages = [];
     }
 
-    // --- HANDLE NEW IMAGES (Uploaded via DragDropUpload) ---
     if (!empty($uploadedFiles) && isset($uploadedFiles['name'][0]) && !empty($uploadedFiles['name'][0])) {
         try {
-            // Ensure we have a folder to upload to
             if (!$gdriveFolderId) {
-                // If the announcement had no folder, create a new one
                 $httpClient = new \GuzzleHttp\Client([
                     'timeout' => 300,
                     'connect_timeout' => 60,
@@ -286,7 +270,6 @@ if ($action === 'update') {
                 if (!$rootFolderId) {
                     throw new Exception("Could not retrieve root folder ID.");
                 }
-
                 $baseFolderName = 'Announcements';
                 $baseFolderId = $drive->findOrCreateFolder($baseFolderName, $rootFolderId);
                 $cleanEventName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $title) . '_' . date('Y-m-d');
@@ -301,7 +284,6 @@ if ($action === 'update') {
                 'retries' => 3
             ]));
 
-            // --- ROUND ROBIN UPLOAD LOOP ---
             $fileCount = count($uploadedFiles['name']);
             $remainingIndices = range(0, $fileCount - 1);
 
@@ -313,7 +295,6 @@ if ($action === 'update') {
 
                 if ($fileSize > 0 && file_exists($tempFilePath)) {
                     $uploadResult = $drive->uploadFile($tempFilePath, $originalName, $gdriveFolderId);
-
                     if ($uploadResult['success'] && !empty($uploadResult['id'])) {
                         $drive->makeFilePublic($uploadResult['id']);
                         $finalGalleryImages[] = [
@@ -331,7 +312,6 @@ if ($action === 'update') {
             }
         } catch (Exception $e) {
             error_log("Google Drive upload error during update: " . $e->getMessage());
-            // If upload fails, do not destroy the existing data
         }
     }
 
@@ -343,7 +323,7 @@ if ($action === 'update') {
     if ($stmt->execute()) {
         updateEventStatuses($conn);
         $response->status = true;
-        $response->message = "Announcement updated successfully!";
+        $response->message = "Record updated successfully!";
     } else {
         $response->message = "Database Error: " . $stmt->error;
     }
@@ -352,10 +332,10 @@ if ($action === 'update') {
     exit;
 }
 
+// --- 6. DELETE ---
 if ($action === 'delete') {
     $id = $_POST['id'] ?? 0;
 
-    // Fetch the folder ID first to delete it from Google Drive
     $fetchStmt = $conn->prepare("SELECT gdrive_folder_id FROM announcements WHERE id = ?");
     $fetchStmt->bind_param("i", $id);
     $fetchStmt->execute();
@@ -366,25 +346,20 @@ if ($action === 'delete') {
     }
     $fetchStmt->close();
 
-    // Delete from database
     $stmt = $conn->prepare("DELETE FROM announcements WHERE id = ?");
     $stmt->bind_param("i", $id);
     if ($stmt->execute()) {
-        // Attempt to delete the folder from Google Drive (Move to Trash)
         if ($folderId) {
             try {
-                $httpClient = new \GuzzleHttp\Client([
-                    'timeout' => 30
-                ]);
+                $httpClient = new \GuzzleHttp\Client(['timeout' => 30]);
                 $drive = new GoogleDriveService($httpClient);
-                $drive->deleteFile($folderId); // Assuming your service has a delete method
+                $drive->deleteFile($folderId);
             } catch (Exception $e) {
-                error_log("Failed to delete Google Drive folder during announcement deletion: " . $e->getMessage());
-                // We don't fail the operation, just log it
+                error_log("Failed to delete Google Drive folder during deletion: " . $e->getMessage());
             }
         }
         $response->status = true;
-        $response->message = "Announcement deleted.";
+        $response->message = "Record deleted.";
     } else {
         $response->message = "Failed to delete.";
     }

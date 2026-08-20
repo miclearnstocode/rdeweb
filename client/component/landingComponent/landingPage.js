@@ -11,11 +11,9 @@ import { RdeCenters } from './rdeCenters.js'
 import { ContactUs } from './contactUs.js'
 import { Footer } from './footer.js'
 
-// 1. Import the animator
 import { initScrollAnimations } from './scrollAnimator.js'
 
 export const LandingPage = () => {
-    // 2. Initialize animations after the page renders
     setTimeout(initScrollAnimations, 300);
 
     return $({
