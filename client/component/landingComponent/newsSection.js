@@ -1,10 +1,9 @@
 import { $, CustomModal } from '../../lib/lib.js'
 
-// Fetch news from the database
 const fetchNews = async () => {
     const formData = new FormData()
     formData.append('action', 'getAll')
-    formData.append('type', 'news') // <--- Fetch only News
+    formData.append('type', 'news')
 
     const res = await fetch('/announcements', { method: 'POST', body: formData })
     const json = await res.json()
@@ -40,7 +39,6 @@ export const NewsSection = () => {
     }
 
     const renderDetail = (id) => {
-        // Fetch fresh data to ensure the modal has the latest details
         fetchNews().then(newsData => {
             const article = newsData.find(n => n.id === id)
             if(!article) return
@@ -48,7 +46,6 @@ export const NewsSection = () => {
         })
     }
 
-    // Main Container Setup
     return $({
         tag: 'section',
         att: { id: 'news' },
@@ -167,7 +164,6 @@ const newsCard = (article, onClick) => $({
     ]
 })
 
-// --- OPEN NEWS MODAL (Copied the exact logic from fetchEvents.js) ---
 const openNewsModal = (data, onClose) => {
     const modalContent = $({
         tag: 'div',
