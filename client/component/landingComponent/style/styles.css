@@ -79,3 +79,66 @@ body {
 .reveal-delay-2 { transition-delay: 0.2s; }
 .reveal-delay-3 { transition-delay: 0.3s; }
 .reveal-delay-4 { transition-delay: 0.4s; }
+
+/* --- RDE Organization Chart Travel Animation --- */
+
+/* 1. The Container that acts as the camera viewport */
+.org-chart-camera {
+    width: 100%;
+    height: 520px; /* Height of the visible window */
+    overflow: hidden;
+    position: relative;
+    border-radius: 20px;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.02);
+    background: #ffffff;
+}
+
+/* 2. The inner SVG wrapper that actually MOVES */
+.org-chart-stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1100px; /* Fixed width to match SVG design */
+    transform-origin: center center;
+    animation: rdeTravel 22s ease-in-out infinite alternate;
+}
+
+/* 3. The Keyframe Travel Path (Defined by percentages) 
+   This zooms out, pans down left, pans right, moves right, then moves back to start. */
+@keyframes rdeTravel {
+    0% {
+        transform: translate(0px, 0px) scale(0.8);
+    }
+    10% {
+        transform: translate(-50px, -40px) scale(0.85); /* Focus on Board */
+    }
+    25% {
+        transform: translate(-80px, 80px) scale(0.9); /* Move down to VP */
+    }
+    40% {
+        transform: translate(-300px, 210px) scale(1.0); /* Zoom into Left Branch (RD) */
+    }
+    55% {
+        transform: translate(-180px, 320px) scale(1.0); /* Pan down to Left Bottom (Associates) */
+    }
+    70% {
+        transform: translate(250px, 320px) scale(1.0); /* Pan across to Right Bottom (Extension) */
+    }
+    85% {
+        transform: translate(350px, 120px) scale(0.9); /* Pan back up to Right Top */
+    }
+    100% {
+        transform: translate(-20px, -50px) scale(0.8); /* Return to start */
+    }
+}
+
+/* 4. Disable animation on mobile (too small to travel) */
+@media (max-width: 768px) {
+    .org-chart-camera {
+        height: 380px;
+    }
+    .org-chart-stage {
+        transform-origin: top left;
+        animation: none; /* Mobile users just see the whole map statically */
+    }
+}
