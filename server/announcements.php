@@ -39,7 +39,7 @@ if (!$conn) {
     exit;
 }
 
-// 1. FETCH ANNOUNCEMENTS
+
 if ($action === 'getAll') {
     updateEventStatuses($conn);
     // Fetch all announcements including the new is_visible column
@@ -61,7 +61,6 @@ if ($action === 'getAll') {
     exit;
 }
 
-// 2. CREATE NEW ANNOUNCEMENT
 if ($action === 'create') {
     $title = $_POST['title'] ?? '';
     $event_date = $_POST['event_date'] ?? '';
@@ -113,8 +112,14 @@ if ($action === 'create') {
 
             $gdriveFolderId = $eventFolderId;
 
+            // --- ROUND ROBIN UPLOAD LOOP ---
             $fileCount = count($uploadedFiles['name']);
-            for ($i = 0; $i < $fileCount; $i++) {
+            $remainingIndices = range(0, $fileCount - 1); // [0, 1, 2, ...]
+
+            // Continue looping until all files are processed
+            while (!empty($remainingIndices)) {
+                // Take the first index in the queue
+                $i = array_shift($remainingIndices);
                 $tempFilePath = $uploadedFiles['tmp_name'][$i];
                 $originalName = $uploadedFiles['name'][$i];
                 $fileSize = $uploadedFiles['size'][$i];
@@ -131,7 +136,9 @@ if ($action === 'create') {
                             'name' => $originalName
                         ];
                     } else {
-                        error_log("Failed to upload photo: " . ($uploadResult['error'] ?? 'Unknown error'));
+                        error_log("Failed to upload photo (attempt): " . ($uploadResult['error'] ?? 'Unknown error'));
+                        $remainingIndices[] = $i;
+                        usleep(200000);
                     }
                 }
             }
@@ -158,7 +165,7 @@ if ($action === 'create') {
     exit;
 }
 
-// 3. TOGGLE VISIBILITY (New Action)
+
 if ($action === 'toggleVisibility') {
     $id = $_POST['id'] ?? 0;
     $currentStatus = $_POST['currentStatus'] ?? 0;
@@ -180,13 +187,205 @@ if ($action === 'toggleVisibility') {
     echo json_encode($response);
     exit;
 }
+if ($action === 'getById') {
+    $id = $_POST['id'] ?? 0;
 
-// 4. DELETE ANNOUNCEMENT
+    if (!$id) {
+        $response->message = "Announcement ID is required.";
+        echo json_encode($response);
+        exit;
+    }
+
+    $stmt = $conn->prepare("SELECT * FROM announcements WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $data = $result->fetch_assoc();
+
+    if ($data) {
+        // Decode gallery images into an array
+        if (!empty($data['gallery_images'])) {
+            $data['gallery_images'] = json_decode($data['gallery_images'], true);
+        } else {
+            $data['gallery_images'] = [];
+        }
+        $data['is_visible'] = (int)$data['is_visible'];
+
+        $response->status = true;
+        $response->data = $data;
+    } else {
+        $response->message = "Announcement not found.";
+    }
+
+    $stmt->close();
+    echo json_encode($response);
+    exit;
+}
+
+if ($action === 'update') {
+    $id = $_POST['id'] ?? 0;
+    $title = $_POST['title'] ?? '';
+    $event_date = $_POST['event_date'] ?? '';
+    $venue = $_POST['venue'] ?? '';
+    $short_description = $_POST['short_description'] ?? '';
+    $body = $_POST['body'] ?? '';
+    $hashtags = $_POST['hashtags'] ?? '';
+    $facebook_link = $_POST['facebook_link'] ?? '';
+    $uploadedFiles = $_FILES['photos'] ?? [];
+    $deleteImageIds = isset($_POST['delete_image_ids']) ? json_decode($_POST['delete_image_ids'], true) : [];
+    $existingImagesJson = $_POST['existing_images_json'] ?? '[]';
+
+    if (empty($title) || empty($event_date) || empty($id)) {
+        $response->message = "Title, Date, and ID are required.";
+        echo json_encode($response);
+        exit;
+    }
+
+    // Fetch the existing data
+    $existingStmt = $conn->prepare("SELECT gdrive_folder_id, gallery_images FROM announcements WHERE id = ?");
+    $existingStmt->bind_param("i", $id);
+    $existingStmt->execute();
+    $existingResult = $existingStmt->get_result();
+    $existingData = $existingResult->fetch_assoc();
+    $gdriveFolderId = $existingData['gdrive_folder_id'] ?? null;
+    $existingGalleryImages = json_decode($existingData['gallery_images'] ?? '[]', true) ?: [];
+    $existingStmt->close();
+
+    // --- HANDLE DELETED IMAGES (User clicked X) ---
+    if (!empty($deleteImageIds)) {
+        try {
+            $httpClient = new \GuzzleHttp\Client(['timeout' => 30]);
+            $drive = new GoogleDriveService($httpClient);
+            foreach ($deleteImageIds as $fileId) {
+                $drive->deleteFile($fileId); // Move to Trash
+                error_log("Deleted image from GDrive: $fileId");
+            }
+        } catch (Exception $e) {
+            error_log("Failed to delete images from GDrive: " . $e->getMessage());
+        }
+    }
+
+    // --- HANDLE UPDATED EXISTING IMAGES ---
+    // Decode the savedImages array sent from the frontend (excluding deleted ones)
+    $finalGalleryImages = json_decode($existingImagesJson, true);
+    if (!is_array($finalGalleryImages)) {
+        $finalGalleryImages = [];
+    }
+
+    // --- HANDLE NEW IMAGES (Uploaded via DragDropUpload) ---
+    if (!empty($uploadedFiles) && isset($uploadedFiles['name'][0]) && !empty($uploadedFiles['name'][0])) {
+        try {
+            // Ensure we have a folder to upload to
+            if (!$gdriveFolderId) {
+                // If the announcement had no folder, create a new one
+                $httpClient = new \GuzzleHttp\Client([
+                    'timeout' => 300,
+                    'connect_timeout' => 60,
+                    'read_timeout' => 300,
+                    'retries' => 3
+                ]);
+                $drive = new GoogleDriveService($httpClient);
+                $rootFolderId = $drive->getRootFolderId();
+                if (!$rootFolderId) {
+                    throw new Exception("Could not retrieve root folder ID.");
+                }
+
+                $baseFolderName = 'Announcements';
+                $baseFolderId = $drive->findOrCreateFolder($baseFolderName, $rootFolderId);
+                $cleanEventName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $title) . '_' . date('Y-m-d');
+                $eventFolderId = $drive->findOrCreateFolder($cleanEventName, $baseFolderId);
+                $gdriveFolderId = $eventFolderId;
+            }
+
+            $drive = new GoogleDriveService(new \GuzzleHttp\Client([
+                'timeout' => 300,
+                'connect_timeout' => 60,
+                'read_timeout' => 300,
+                'retries' => 3
+            ]));
+
+            // --- ROUND ROBIN UPLOAD LOOP ---
+            $fileCount = count($uploadedFiles['name']);
+            $remainingIndices = range(0, $fileCount - 1);
+
+            while (!empty($remainingIndices)) {
+                $i = array_shift($remainingIndices);
+                $tempFilePath = $uploadedFiles['tmp_name'][$i];
+                $originalName = $uploadedFiles['name'][$i];
+                $fileSize = $uploadedFiles['size'][$i];
+
+                if ($fileSize > 0 && file_exists($tempFilePath)) {
+                    $uploadResult = $drive->uploadFile($tempFilePath, $originalName, $gdriveFolderId);
+
+                    if ($uploadResult['success'] && !empty($uploadResult['id'])) {
+                        $drive->makeFilePublic($uploadResult['id']);
+                        $finalGalleryImages[] = [
+                            'id' => $uploadResult['id'],
+                            'viewUrl' => "https://drive.google.com/file/d/{$uploadResult['id']}/preview",
+                            'downloadUrl' => "https://drive.google.com/uc?id={$uploadResult['id']}&export=download",
+                            'name' => $originalName
+                        ];
+                    } else {
+                        error_log("Failed to upload photo (attempt): " . ($uploadResult['error'] ?? 'Unknown error'));
+                        $remainingIndices[] = $i;
+                        usleep(200000);
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Google Drive upload error during update: " . $e->getMessage());
+            // If upload fails, do not destroy the existing data
+        }
+    }
+
+    $galleryImagesJson = !empty($finalGalleryImages) ? json_encode($finalGalleryImages) : null;
+
+    $stmt = $conn->prepare("UPDATE announcements SET title = ?, event_date = ?, venue = ?, short_description = ?, body = ?, hashtags = ?, facebook_link = ?, gdrive_folder_id = ?, gallery_images = ? WHERE id = ?");
+    $stmt->bind_param("sssssssssi", $title, $event_date, $venue, $short_description, $body, $hashtags, $facebook_link, $gdriveFolderId, $galleryImagesJson, $id);
+
+    if ($stmt->execute()) {
+        updateEventStatuses($conn);
+        $response->status = true;
+        $response->message = "Announcement updated successfully!";
+    } else {
+        $response->message = "Database Error: " . $stmt->error;
+    }
+    $stmt->close();
+    echo json_encode($response);
+    exit;
+}
+
 if ($action === 'delete') {
     $id = $_POST['id'] ?? 0;
+
+    // Fetch the folder ID first to delete it from Google Drive
+    $fetchStmt = $conn->prepare("SELECT gdrive_folder_id FROM announcements WHERE id = ?");
+    $fetchStmt->bind_param("i", $id);
+    $fetchStmt->execute();
+    $fetchResult = $fetchStmt->get_result();
+    $folderId = null;
+    if ($row = $fetchResult->fetch_assoc()) {
+        $folderId = $row['gdrive_folder_id'];
+    }
+    $fetchStmt->close();
+
+    // Delete from database
     $stmt = $conn->prepare("DELETE FROM announcements WHERE id = ?");
     $stmt->bind_param("i", $id);
     if ($stmt->execute()) {
+        // Attempt to delete the folder from Google Drive (Move to Trash)
+        if ($folderId) {
+            try {
+                $httpClient = new \GuzzleHttp\Client([
+                    'timeout' => 30
+                ]);
+                $drive = new GoogleDriveService($httpClient);
+                $drive->deleteFile($folderId); // Assuming your service has a delete method
+            } catch (Exception $e) {
+                error_log("Failed to delete Google Drive folder during announcement deletion: " . $e->getMessage());
+                // We don't fail the operation, just log it
+            }
+        }
         $response->status = true;
         $response->message = "Announcement deleted.";
     } else {
