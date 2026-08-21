@@ -24,29 +24,40 @@ const IMAGES = {
 };
 
 const PERSONNEL = [
-  { id: 'board', label: 'BOARD OF REGENTS', title: 'Governing Board', image: IMAGES.board, x: 660, y: 40 },
-  { id: 'secretary', label: 'BOARD SECRETARY', title: 'Board Secretary', image: IMAGES.secretary, x: 880, y: 40 },
-  { id: 'linan', label: 'DR. EFREN L. LINAN', title: 'SUC President III', image: IMAGES.linan, x: 770, y: 150 },
-  { id: 'biclar', label: 'DR. LEO ANDREW B. BICLAR', title: 'Vice President for RDE', image: IMAGES.biclar, x: 770, y: 260 },
-  { id: 'stephanie', label: 'DR. STEPHANIE S. PIMENTEL', title: 'University Research Director', image: IMAGES.stephanie, x: 350, y: 370 },
-  { id: 'french', label: 'MR. FRENCH A. DAMPOG', title: 'IPMO Director', image: IMAGES.french, x: 770, y: 370 },
-  { id: 'jocelyn', label: 'PROF. JOCELYN S. LEGASPI', title: 'University Extension Director', image: IMAGES.jocelyn, x: 1190, y: 370 },
-  { id: 'emily', label: 'DR. EMELY J. ESCALA', title: 'Director, LRDC', image: IMAGES.emily, x: 150, y: 500 },
-  { id: 'marife', label: 'DR. MARIFE R. HILAPAD', title: 'Director, FITRDC', image: IMAGES.marife, x: 320, y: 500 },
-  { id: 'rey', label: 'DR. REY DELA CALZADA', title: 'Director, FRDC', image: IMAGES.rey, x: 490, y: 500 },
-  { id: 'roger', label: 'PROF. ROGER L. BERGANIO', title: 'Director, Coco RDC', image: IMAGES.roger, x: 660, y: 500 },
-  { id: 'monalyn', label: 'ENGR. MONALYN L. OLOROSO', title: 'Director, MATEC', image: IMAGES.monalyn, x: 150, y: 630 },
-  { id: 'emmanuel', label: 'DR. EMMANUEL D. DAYALO', title: 'Director, SSRDC', image: IMAGES.emmanuel, x: 320, y: 630 },
-  { id: 'ramonita', label: 'DR. RAMONITA C. VERANO', title: 'Director, CSRDC', image: IMAGES.ramonita, x: 490, y: 630 },
-  { id: 'ivy', label: 'IVY S. BERMIO', title: 'University Research Associate I', image: IMAGES.ivy, x: 150, y: 760 },
-  { id: 'nina', label: 'ENGR. NINA L. OBEJA', title: 'University Research Associate II', image: IMAGES.nina, x: 320, y: 760 },
-  { id: 'princess', label: 'PRINCESS P. PALAWAN', title: 'University Research Associate II', image: IMAGES.princess, x: 490, y: 760 },
-  { id: 'rae', label: 'RAE NORREEN S. LEDESMA', title: 'University Research Associate II', image: IMAGES.rae, x: 1050, y: 500 },
-  { id: 'ruel', label: 'MR. RUEL S. VERDE', title: 'Agricultural Technologist', image: IMAGES.ruel, x: 1190, y: 630 },
-  { id: 'nicolas', label: 'ENGR. NICOLAS L. BRAÑA III', title: 'University Research Associate II', image: IMAGES.nicolas, x: 1330, y: 760 },
+  { id: 'board', label: 'BOARD OF REGENTS', title: 'Governing Board', image: IMAGES.board, x: 730, y: 20 },
+  { id: 'secretary', label: 'BOARD SECRETARY', title: 'Board Secretary', image: IMAGES.secretary, x: 900, y: 20 },
+  { id: 'linan', label: 'DR. EFREN L. LINAN', title: 'SUC President III', image: IMAGES.linan, x: 800, y: 150 },
+  { id: 'biclar', label: 'DR. LEO ANDREW B. BICLAR', title: 'Vice President for RDE', image: IMAGES.biclar, x: 800, y: 260 },
+
+  // Branch A: Research (Left side, clean Y=350)
+  { id: 'stephanie', label: 'DR. STEPHANIE S. PIMENTEL', title: 'University Research Director', image: IMAGES.stephanie, x: 500, y: 380 },
+
+  // Branch B: IPMO (Center)
+  { id: 'french', label: 'MR. FRENCH A. DAMPOG', title: 'IPMO Director', image: IMAGES.french, x: 950, y: 380 },
+
+  // Branch C: Extension (Right side, pushed far right)
+  { id: 'jocelyn', label: 'PROF. JOCELYN S. LEGASPI', title: 'University Extension Director', image: IMAGES.jocelyn, x: 1320, y: 380 },
+
+  // Row 1 (Left): 7 Research Directors (Widely spaced, no overlap with center)
+  { id: 'emily', label: 'DR. EMELY J. ESCALA', title: 'Director, LRDC', image: IMAGES.emily, x: 80, y: 590 },
+  { id: 'marife', label: 'DR. MARIFE R. HILAPAD', title: 'Director, FITRDC', image: IMAGES.marife, x: 240, y: 590 },
+  { id: 'rey', label: 'DR. REY DELA CALZADA', title: 'Director, FRDC', image: IMAGES.rey, x: 400, y: 590 },
+  { id: 'roger', label: 'PROF. ROGER L. BERGANIO', title: 'Director, Coco RDC', image: IMAGES.roger, x: 560, y: 590 },
+  { id: 'ramonita', label: 'DR. RAMONITA C. VERANO', title: 'Director, CSRDC', image: IMAGES.ramonita, x: 720, y: 590 },
+  { id: 'monalyn', label: 'ENGR. MONALYN L. OLOROSO', title: 'Director, MATEC', image: IMAGES.monalyn, x: 880, y: 590 },
+  { id: 'emmanuel', label: 'DR. EMMANUEL D. DAYALO', title: 'Director, SSRDC', image: IMAGES.emmanuel, x: 1040, y: 590 },
+
+  // Row 2 (Left): 3 Research URA's
+  { id: 'ivy', label: 'IVY S. BERMIO', title: 'University Research Associate I', image: IMAGES.ivy, x: 280, y: 700 },
+  { id: 'nina', label: 'ENGR. NINA L. OBEJA', title: 'University Research Associate II', image: IMAGES.nina, x: 500, y: 700 },
+  { id: 'princess', label: 'PRINCESS P. PALAWAN', title: 'University Research Associate II', image: IMAGES.princess, x: 670, y: 700 },
+
+  // Row 2 (Right): Extension URA's (Far right, clean spacing)
+  { id: 'rae', label: 'RAE NORREEN S. LEDESMA', title: 'University Research Associate II', image: IMAGES.rae, x: 1200, y: 700 },
+  { id: 'ruel', label: 'MR. RUEL S. VERDE', title: 'Agricultural Technologist', image: IMAGES.ruel, x: 1320, y: 700 },
+  { id: 'nicolas', label: 'ENGR. NICOLAS L. BRAÑA III', title: 'University Research Associate II', image: IMAGES.nicolas, x: 1440, y: 700 }
 ];
 
-// --- THE TRAVEL PATH ---
 const TRAVEL_PATH = [
   'board', 'secretary', 'board', 'linan', 'biclar',
   'stephanie', 'emily', 'stephanie', 'marife', 'stephanie', 'rey', 'stephanie', 'roger', 'stephanie', 'monalyn', 'stephanie', 'emmanuel', 'stephanie', 'ramonita', 'stephanie', 'ivy', 'stephanie', 'nina', 'stephanie', 'princess', 'stephanie',
@@ -69,7 +80,8 @@ const CONNECTIONS_MAP = [
 export const OrganizationalStructure = () => {
   let containerRef = null;
   let pathCache = {};
-  let mainWrapper = null;
+  let isVisible = true;
+  let visitedRoots = {};
 
   const renderStructure = (el) => {
     containerRef = el;
@@ -79,7 +91,7 @@ export const OrganizationalStructure = () => {
     const isMobile = vw < 768;
     const scale = isMobile ? 0.4 : 1.0;
     
-    const width = 1480;
+    const width = 1600;
     const height = 850; 
 
     const wrapper = $({
@@ -96,7 +108,6 @@ export const OrganizationalStructure = () => {
         transition: 'transform 0.3s ease'
       }
     });
-    mainWrapper = wrapper;
 
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -106,7 +117,6 @@ export const OrganizationalStructure = () => {
     svg.style.position = 'relative';
     svg.style.zIndex = '1';
 
-    // --- DRAW CONNECTING LINES ---
     const generatePath = (x1, y1, x2, y2) => {
       const midY = (y1 + y2) / 2;
       return `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
@@ -129,7 +139,6 @@ export const OrganizationalStructure = () => {
       }
     });
 
-    // --- DRAW LARGE PERSONNEL NODES ---
     PERSONNEL.forEach((person) => {
       const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       g.setAttribute('class', `org-node ${person.id}`);
@@ -187,7 +196,6 @@ export const OrganizationalStructure = () => {
 
     wrapper.appendChild(svg);
 
-    // --- TRAVELER DOT ---
     const travelerDot = $({
       tag: 'div',
       style: {
@@ -207,7 +215,6 @@ export const OrganizationalStructure = () => {
     });
     wrapper.appendChild(travelerDot);
 
-    // --- REVEAL CARD (ALWAYS CENTERED) ---
     const characterCard = $({
       tag: 'div',
       style: {
@@ -281,6 +288,20 @@ export const OrganizationalStructure = () => {
 
     el.appendChild(wrapper);
 
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          isVisible = true;
+        } else {
+          isVisible = false;
+          characterCard.style.opacity = '0';
+          characterCard.style.transform = 'translate(-50%, -50%) scale(0.8)';
+          dot.style.opacity = '0';
+        }
+      });
+    }, { threshold: 0.1 });
+    observer.observe(el);
+
     setTimeout(() => {
       startTravelLoop(wrapper, travelerDot, characterCard);
     }, 500);
@@ -290,7 +311,6 @@ export const OrganizationalStructure = () => {
   const startTravelLoop = (container, dot, card) => {
     let pathIndex = 0;
 
-    // The temp path element needed to calculate points
     const tempPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
 
     const traversePath = (fromId, toId, callback) => {
@@ -299,11 +319,9 @@ export const OrganizationalStructure = () => {
       
       if (!d) return callback();
 
-      // 1. Get the SVG container's screen coordinates
       const svg = container.querySelector('svg');
       const svgRect = svg.getBoundingClientRect();
 
-      // 2. Set the path data to the temporary element
       tempPath.setAttribute('d', d);
       
       const pathLength = tempPath.getTotalLength();
@@ -314,17 +332,12 @@ export const OrganizationalStructure = () => {
         const t = currentStep / steps;
         const point = tempPath.getPointAtLength(t * pathLength);
         
-        // 3. THE FIX: Convert SVG coordinates to Real Screen Pixels
-        // Using the ratio of the SVG's logical size vs its actual screen pixels
-        const scaleX = svgRect.width / 1480;
+        const scaleX = svgRect.width / 1600;
         const scaleY = svgRect.height / 850;
 
-        // Calculate the real screen position, plus the left/top offset of the SVG itself
         const screenX = svgRect.left + (point.x * scaleX);
         const screenY = svgRect.top + (point.y * scaleY);
 
-        // Since the dot is positioned 'absolute' relative to the main wrapper, 
-        // we need the coordinates relative to the wrapper.
         const wrapperRect = container.getBoundingClientRect();
         const finalX = screenX - wrapperRect.left;
         const finalY = screenY - wrapperRect.top;
@@ -343,38 +356,62 @@ export const OrganizationalStructure = () => {
     };
 
     const moveToNext = () => {
+      if (!isVisible) {
+        setTimeout(moveToNext, 1000);
+        return;
+      }
+
       if (pathIndex >= TRAVEL_PATH.length) {
         pathIndex = 0;
+        visitedRoots = {};
       }
 
       const targetId = TRAVEL_PATH[pathIndex];
       const targetNode = PERSONNEL.find(p => p.id === targetId);
       
       if (targetNode) {
-        const img = card.querySelector('#traveler-image');
-        const name = card.querySelector('#traveler-name');
-        const pos = card.querySelector('#traveler-position');
-        if(img) img.src = targetNode.image;
-        if(name) name.textContent = targetNode.label;
-        if(pos) pos.textContent = targetNode.title;
+        const onceRoots = ['board', 'secretary', 'linan', 'biclar', 'french', 'jocelyn', 'stephanie'];
+        const shouldShowCard = !(onceRoots.includes(targetId) && visitedRoots[targetId]);
 
-        card.style.opacity = '1';
-        card.style.transform = 'translate(-50%, -50%) scale(1)';
-        dot.style.opacity = '0';
+        // 1. Calculate the NEXT node
+        const nextIndex = (pathIndex + 1) % TRAVEL_PATH.length;
+        const nextId = TRAVEL_PATH[nextIndex];
 
-        setTimeout(() => {
+        // 2. Show card if needed at this target
+        if (shouldShowCard) {
+          const img = card.querySelector('#traveler-image');
+          const name = card.querySelector('#traveler-name');
+          const pos = card.querySelector('#traveler-position');
+          if(img) img.src = targetNode.image;
+          if(name) name.textContent = targetNode.label;
+          if(pos) pos.textContent = targetNode.title;
+
+          card.style.opacity = '1';
+          card.style.transform = 'translate(-50%, -50%) scale(1)';
+          dot.style.opacity = '0';
+
+          if (onceRoots.includes(targetId)) {
+            visitedRoots[targetId] = true;
+          }
+        } else {
           card.style.opacity = '0';
-          card.style.transform = 'translate(-50%, -50%) scale(0.8)';
           dot.style.opacity = '1';
+        }
 
-          const nextIndex = (pathIndex + 1) % TRAVEL_PATH.length;
-          const nextId = TRAVEL_PATH[nextIndex];
+        // 3. ALWAYS move the dot to the next node! 
+        // (Even if it's a root and no card is shown, the dot will travel)
+        setTimeout(() => {
+          if (shouldShowCard) {
+            card.style.opacity = '0';
+            card.style.transform = 'translate(-50%, -50%) scale(0.8)';
+          }
+          dot.style.opacity = '1';
 
           traversePath(targetId, nextId, () => {
             pathIndex = nextIndex;
             setTimeout(moveToNext, 400);
           });
-        }, 2500);
+        }, shouldShowCard ? 2500 : 1200);
       }
     };
 
