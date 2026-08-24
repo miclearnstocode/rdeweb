@@ -970,6 +970,355 @@ class CompletedResearchAPI {
         return $name;
     }
 
+    public function exportDynamic() {
+        try {
+            // Read from POST
+            $startYear = isset($_POST['start_year']) ? intval($_POST['start_year']) : date('Y') - 3;
+            $endYear = isset($_POST['end_year']) ? intval($_POST['end_year']) : date('Y');
+            $selectedColumns = isset($_POST['columns']) ? json_decode($_POST['columns'], true) : [];
+            
+            // Validate years
+            if ($startYear > $endYear) {
+                throw new Exception("Start year must be less than or equal to end year");
+            }
+            
+            // Validate columns
+            $validColumns = [
+                'paper_trail_no' => 'Paper Trail No.',
+                'campus' => 'Research Center/Campus',
+                'category' => 'Category',
+                'title' => 'Research Title',
+                'authors' => 'Author/s',
+                'faculty_researcher' => 'Faculty Researcher',
+                'academic_rank' => 'Academic Rank',
+                'non_academic_rank' => 'Non-Academic Rank',
+                'job_order' => 'Job Order',
+                'date_started' => 'Date Started',
+                'date_completed' => 'Date of Completion',
+                'forum_title' => 'Title of Forum',
+                'venue' => 'Venue',
+                'forum_type' => 'Forum Type',
+                'presentation_date' => 'Date of Presentation',
+                'published_title' => 'Published Title',
+                'publication_date' => 'Date of Publication',
+                'journal_title' => 'Title of Journal / Publication',
+                'volume_issue' => 'Volume & Issue',
+                'issn' => 'ISSN / ISBN',
+                'index' => 'Index',
+                'product_name' => 'Product Name / Methods / Process / Technology',
+                'patent_number' => 'Patent Number / Product Description',
+                'benefiting_industry' => 'Benefiting Industry / Community',
+                'program_title' => 'Program Title',
+                'date_conducted' => 'Date Conducted',
+                'trainees_count' => 'No. of Trainees/Beneficiaries'
+            ];
+            
+            // If no columns selected, use default set
+            if (empty($selectedColumns)) {
+                $selectedColumns = ['paper_trail_no', 'campus', 'category', 'title', 'authors'];
+            }
+            
+            // Filter valid columns
+            $columnsToExport = [];
+            foreach ($selectedColumns as $col) {
+                if (isset($validColumns[$col])) {
+                    $columnsToExport[$col] = $validColumns[$col];
+                }
+            }
+            
+            if (empty($columnsToExport)) {
+                throw new Exception("No valid columns selected for export");
+            }
+            
+            // Get all Symposium events
+            $events = $this->getEvents();
+            $symposiumIds = array_keys($events);
+            
+            // Build query for completed research with symposium events only
+            $whereClauses = [
+                "e.status = 'accepted'",
+                "(rf.completion_status = 'completed' OR rf.completion_status IS NULL OR rf.completion_status = '')",
+                "(rf.status = 'accepted' OR rf.status = '' OR rf.status IS NULL)"
+            ];
+            
+            // Filter by symposium events only
+            if (!empty($symposiumIds)) {
+                $idsList = implode(',', array_map('intval', $symposiumIds));
+                $whereClauses[] = "(rf.event_id IN ($idsList) OR LOWER(rf.event) LIKE '%symposium%')";
+            } else {
+                $whereClauses[] = "LOWER(rf.event) LIKE '%symposium%'";
+            }
+            
+            // Filter by year range
+            $whereClauses[] = "YEAR(e.date) BETWEEN $startYear AND $endYear";
+            
+            $whereSql = implode(" AND ", $whereClauses);
+            
+            $query = "SELECT 
+                        rf.id,
+                        rf.author,
+                        rf.coauthor,
+                        rf.title,
+                        rf.campus,
+                        rf.center,
+                        rf.category,
+                        rf.date_started,
+                        rf.date_completed,
+                        rf.paper_trail_no,
+                        e.date as endorsement_date,
+                        MAX(pr.date_completed) as dateCompletedVal,
+                        MAX(pr.forum_title) as forumTitleVal,
+                        MAX(pr.venue) as venueVal,
+                        MAX(pr.forum_type) as forumTypeVal,
+                        MAX(pr.presentation_date) as presentationDateVal,
+                        MAX(pub.published_title) as publishedTitleVal,
+                        MAX(pub.publication_date) as publicationDateVal,
+                        MAX(pub.journal_title) as journalTitleVal,
+                        MAX(pub.volume) as volumeVal,
+                        MAX(pub.issue) as issueVal,
+                        MAX(pub.issn) as issnVal,
+                        MAX(pub.index_type) as indexTypeVal,
+                        MAX(util.utilizationType) as utilizationTypeVal,
+                        MAX(util.dateConducted) as dateConductedVal,
+                        MAX(util.traineesCount) as traineesCountVal,
+                        MAX(COALESCE(p.technologyName, um.technologyNameUM, idesign.idTitle)) as productNameVal,
+                        MAX(COALESCE(p.applicationNumber, um.applicationNumberUM, idesign.applicationNumber)) as patentNumberVal,
+                        MAX(COALESCE(p.benefitingIndustry, um.benefitingIndustryUM)) as benefitingIndustryVal
+                    FROM endorsement e
+                    INNER JOIN researchfile rf ON e.id = rf.endorsementid
+                    LEFT JOIN presentation_research pr ON rf.id = pr.research_id
+                    LEFT JOIN publications pub ON rf.id = pub.research_id
+                    LEFT JOIN utilization_programs util ON rf.id = util.research_id
+                    LEFT JOIN patent p ON rf.id = p.research_id
+                    LEFT JOIN utility_model um ON rf.id = um.research_id
+                    LEFT JOIN industrial_design idesign ON rf.id = idesign.research_id
+                    WHERE $whereSql
+                    GROUP BY rf.id
+                    ORDER BY YEAR(e.date) DESC, rf.id ASC";
+            
+            $result = $this->con->query($query);
+            
+            if (!$result) {
+                throw new Exception("Query failed: " . $this->con->error);
+            }
+            
+            // Collect data
+            $exportData = [];
+            $formatDate = function($date) {
+                if (empty($date) || $date === '—' || $date === 'NULL') return '—';
+                return date('M-d-Y', strtotime($date));
+            };
+            
+            while ($row = $result->fetch_assoc()) {
+                // Parse authors - improved version with comma separation
+                $authors = [];
+                
+                // Helper function to extract names from string with newlines
+                $extractNames = function($input) use (&$authors) {
+                    if (empty($input) || $input === 'NULL' || $input === null) {
+                        return;
+                    }
+                    
+                    $input = trim($input);
+                    
+                    // Check if it's JSON
+                    if (strpos($input, '[') === 0 || strpos($input, '{') === 0) {
+                        $decoded = json_decode($input, true);
+                        if (is_array($decoded)) {
+                            foreach ($decoded as $item) {
+                                if (!empty($item) && $item !== 'NULL') {
+                                    $item = trim($item);
+                                    // Split by newlines if present
+                                    if (strpos($item, "\n") !== false || strpos($item, "\r") !== false) {
+                                        $parts = preg_split('/\r\n|\r|\n/', $item);
+                                        foreach ($parts as $part) {
+                                            $part = trim($part);
+                                            if (!empty($part) && $part !== 'NULL') {
+                                                $authors[] = $part;
+                                            }
+                                        }
+                                    } else {
+                                        $authors[] = $item;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                    }
+                    
+                    // Split by newlines
+                    if (strpos($input, "\n") !== false || strpos($input, "\r") !== false) {
+                        $parts = preg_split('/\r\n|\r|\n/', $input);
+                        foreach ($parts as $part) {
+                            $part = trim($part);
+                            if (!empty($part) && $part !== 'NULL') {
+                                // Remove quotes if present
+                                $part = trim($part, '"\'');
+                                $authors[] = $part;
+                            }
+                        }
+                    } else {
+                        // Split by commas
+                        $parts = explode(',', $input);
+                        foreach ($parts as $part) {
+                            $part = trim($part);
+                            if (!empty($part) && $part !== 'NULL') {
+                                // Remove quotes if present
+                                $part = trim($part, '"\'');
+                                $authors[] = $part;
+                            }
+                        }
+                    }
+                };
+                
+                // Process main author
+                if (!empty($row['author']) && $row['author'] !== 'NULL' && $row['author'] !== null) {
+                    $extractNames($row['author']);
+                }
+                
+                // Process coauthors
+                if (!empty($row['coauthor']) && $row['coauthor'] !== 'NULL' && $row['coauthor'] !== null) {
+                    $extractNames($row['coauthor']);
+                }
+                
+                // Remove duplicates and empty values
+                $authors = array_values(array_unique(array_filter($authors, function($name) {
+                    $name = trim($name);
+                    return !empty($name) && $name !== 'NULL' && $name !== '—' && $name !== '""' && $name !== "''";
+                })));
+                
+                // Format authors with commas - each author with a comma at the end (except last)
+                $authorsStr = '';
+                if (!empty($authors)) {
+                    $formattedAuthors = [];
+                    $totalAuthors = count($authors);
+                    foreach ($authors as $index => $author) {
+                        $author = trim($author);
+                        // Remove extra quotes if present
+                        $author = trim($author, '"\'');
+                        if (!empty($author)) {
+                            // Add comma after each author except the last one
+                            if ($index < $totalAuthors - 1) {
+                                $formattedAuthors[] = $author . ',';
+                            } else {
+                                $formattedAuthors[] = $author;
+                            }
+                        }
+                    }
+                    // Join with line breaks for Excel display
+                    $authorsStr = implode("\n", $formattedAuthors);
+                }
+                
+                // Build row data based on selected columns
+                $rowData = [];
+                foreach ($columnsToExport as $key => $label) {
+                    switch ($key) {
+                        case 'paper_trail_no':
+                            $rowData[$label] = $row['paper_trail_no'] ?? '—';
+                            break;
+                        case 'campus':
+                            $rowData[$label] = $row['campus'] ?? '—';
+                            break;
+                        case 'category':
+                            $rowData[$label] = $row['category'] ?? '—';
+                            break;
+                        case 'title':
+                            $rowData[$label] = $row['title'] ?? '—';
+                            break;
+                        case 'authors':
+                            $rowData[$label] = $authorsStr ?: '—';
+                            break;
+                        case 'faculty_researcher':
+                            $rowData[$label] = $authorsStr ?: '—';
+                            break;
+                        case 'academic_rank':
+                        case 'non_academic_rank':
+                        case 'job_order':
+                            $rowData[$label] = '—';
+                            break;
+                        case 'date_started':
+                            $rowData[$label] = $formatDate($row['date_started']);
+                            break;
+                        case 'date_completed':
+                            $rowData[$label] = $formatDate($row['date_completed']);
+                            break;
+                        case 'forum_title':
+                            $rowData[$label] = $row['forumTitleVal'] ?? '—';
+                            break;
+                        case 'venue':
+                            $rowData[$label] = $row['venueVal'] ?? '—';
+                            break;
+                        case 'forum_type':
+                            $rowData[$label] = $row['forumTypeVal'] ?? '—';
+                            break;
+                        case 'presentation_date':
+                            $rowData[$label] = $formatDate($row['presentationDateVal']);
+                            break;
+                        case 'published_title':
+                            $rowData[$label] = $row['publishedTitleVal'] ?? '—';
+                            break;
+                        case 'publication_date':
+                            $rowData[$label] = $formatDate($row['publicationDateVal']);
+                            break;
+                        case 'journal_title':
+                            $rowData[$label] = $row['journalTitleVal'] ?? '—';
+                            break;
+                        case 'volume_issue':
+                            $vol = $row['volumeVal'] ?? '';
+                            $issue = $row['issueVal'] ?? '';
+                            $rowData[$label] = ($vol || $issue) ? ($vol . ($issue ? ' & ' . $issue : '')) : '—';
+                            break;
+                        case 'issn':
+                            $rowData[$label] = $row['issnVal'] ?? '—';
+                            break;
+                        case 'index':
+                            $rowData[$label] = $row['indexTypeVal'] ?? '—';
+                            break;
+                        case 'product_name':
+                            $rowData[$label] = $row['productNameVal'] ?? '—';
+                            break;
+                        case 'patent_number':
+                            $rowData[$label] = $row['patentNumberVal'] ?? '—';
+                            break;
+                        case 'benefiting_industry':
+                            $rowData[$label] = $row['benefitingIndustryVal'] ?? '—';
+                            break;
+                        case 'program_title':
+                            $rowData[$label] = $row['utilizationTypeVal'] ?? '—';
+                            break;
+                        case 'date_conducted':
+                            $rowData[$label] = $formatDate($row['dateConductedVal']);
+                            break;
+                        case 'trainees_count':
+                            $rowData[$label] = $row['traineesCountVal'] ?? '—';
+                            break;
+                        default:
+                            $rowData[$label] = '—';
+                    }
+                }
+                
+                $exportData[] = $rowData;
+            }
+            
+            // Return JSON data
+            $this->response->status = true;
+            $this->response->message = 'Export data fetched successfully';
+            $this->response->data = $exportData;
+            $this->response->start_year = $startYear;
+            $this->response->end_year = $endYear;
+            $this->response->columns = $columnsToExport;
+            $this->response->record_count = count($exportData);
+            
+            echo json_encode($this->response);
+            
+        } catch (Exception $e) {
+            $this->response->status = false;
+            $this->response->message = 'Error: ' . $e->getMessage();
+            $this->response->data = [];
+            echo json_encode($this->response);
+        }
+    }
+
 }
 
 $action = $_POST['action'] ?? $_GET['action'] ?? 'fetch';
@@ -989,6 +1338,9 @@ switch ($action) {
         break;
     case 'export_excel':
         $api->exportToExcel();
+        break;
+    case 'export_dynamic':
+        $api->exportDynamic();
         break;
     default:
         echo json_encode(['status' => false, 'message' => 'Invalid action']);

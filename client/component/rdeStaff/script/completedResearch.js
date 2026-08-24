@@ -565,12 +565,207 @@ export const CompletedResearch = () => {
         });
     };
 
+
+    const exportColumns = {
+        paper_trail_no: 'Paper Trail No.',
+        campus: 'Research Center/Campus',
+        category: 'Category',
+        title: 'Research Title',
+        authors: 'Author/s',
+        faculty_researcher: 'Faculty Researcher',
+        academic_rank: 'Academic Rank',
+        non_academic_rank: 'Non-Academic Rank',
+        job_order: 'Job Order',
+        date_started: 'Date Started',
+        date_completed: 'Date of Completion',
+        forum_title: 'Title of Forum',
+        venue: 'Venue',
+        forum_type: 'Forum Type',
+        presentation_date: 'Date of Presentation',
+        published_title: 'Published Title',
+        publication_date: 'Date of Publication',
+        journal_title: 'Title of Journal / Publication',
+        volume_issue: 'Volume & Issue',
+        issn: 'ISSN / ISBN',
+        index: 'Index',
+        product_name: 'Product Name / Methods / Process / Technology',
+        patent_number: 'Patent Number / Product Description',
+        benefiting_industry: 'Benefiting Industry / Community',
+        program_title: 'Program Title',
+        date_conducted: 'Date Conducted',
+        trainess_count: 'No. of Trainees/Beneficiaries'
+    };
+
     const showExportModal = () => {
         const currentYear = new Date().getFullYear();
         const defaultStartYear = currentYear - 3;
         
+        // Default selected columns
+        const defaultColumns = ['paper_trail_no', 'campus', 'category', 'title', 'authors'];
+        let selectedColumns = [...defaultColumns];
+        
         // Get available years for dropdowns
         const availableYears = getAvailableYears();
+        
+        // Function to toggle column selection
+        const toggleColumn = (colKey) => {
+            const index = selectedColumns.indexOf(colKey);
+            if (index > -1) {
+                selectedColumns.splice(index, 1);
+            } else {
+                selectedColumns.push(colKey);
+            }
+            // Update the UI
+            updateColumnUI();
+        };
+        
+        // Function to update column checkboxes UI
+        const updateColumnUI = () => {
+            const checkboxes = document.querySelectorAll('.export-column-checkbox');
+            checkboxes.forEach(cb => {
+                const colKey = cb.dataset.column;
+                cb.checked = selectedColumns.includes(colKey);
+            });
+        };
+        
+        // Create column selection grid
+        const columnGridItems = [];
+        const columnKeys = Object.keys(exportColumns);
+        const defaultLabels = ['Paper Trail No.', 'Research Center/Campus', 'Category', 'Research Title', 'Author/s'];
+        
+        // Group columns into sections
+        const columnGroups = {
+            'Basic Information': ['paper_trail_no', 'campus', 'category', 'title', 'authors'],
+            'Researchers': ['faculty_researcher', 'academic_rank', 'non_academic_rank', 'job_order'],
+            'Date Information': ['date_started', 'date_completed', 'presentation_date', 'publication_date', 'date_conducted'],
+            'Presentation': ['forum_title', 'venue', 'forum_type'],
+            'Publication': ['published_title', 'journal_title', 'volume_issue', 'issn', 'index'],
+            'Technology/Patent': ['product_name', 'patent_number', 'benefiting_industry'],
+            'Utilization': ['program_title', 'trainees_count']
+        };
+        
+        // Build column selection UI with groups
+        const columnSelectContent = $({
+            tag: 'div',
+            style: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                marginBottom: '16px',
+                padding: '12px',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '8px',
+                border: '1px solid #e9ecef',
+                maxHeight: '280px',
+                overflow: 'auto'
+            },
+            child: Object.keys(columnGroups).map(groupName => {
+                const groupColumns = columnGroups[groupName];
+                const filteredColumns = groupColumns.filter(col => exportColumns[col]);
+                
+                if (filteredColumns.length === 0) return null;
+                
+                return $({
+                    tag: 'div',
+                    style: { 
+                        marginBottom: '8px'
+                    },
+                    child: [
+                        $({
+                            tag: 'div',
+                            text: groupName,
+                            style: {
+                                fontSize: '12px',
+                                fontWeight: '600',
+                                color: '#495057',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px',
+                                marginBottom: '6px',
+                                paddingBottom: '4px',
+                                borderBottom: '1px solid #dee2e6'
+                            }
+                        }),
+                        $({
+                            tag: 'div',
+                            style: {
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                gap: '4px 12px'
+                            },
+                            child: filteredColumns.map(colKey => {
+                                const isDefault = defaultColumns.includes(colKey);
+                                const label = exportColumns[colKey];
+                                return $({
+                                    tag: 'label',
+                                    style: {
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        fontSize: '13px',
+                                        cursor: 'pointer',
+                                        padding: '4px 6px',
+                                        borderRadius: '4px',
+                                        transition: 'background-color 0.2s ease',
+                                        backgroundColor: isDefault ? 'rgba(13,110,253,0.06)' : 'transparent'
+                                    },
+                                    child: [
+                                        $({
+                                            tag: 'input',
+                                            att: {
+                                                type: 'checkbox',
+                                                className: 'export-column-checkbox',
+                                                'data-column': colKey,
+                                                checked: isDefault || selectedColumns.includes(colKey)
+                                            },
+                                            style: {
+                                                width: '16px',
+                                                height: '16px',
+                                                cursor: 'pointer',
+                                                accentColor: '#0d6efd'
+                                            },
+                                            event: {
+                                                type: 'change',
+                                                method: (e) => {
+                                                    const key = e.target.dataset.column;
+                                                    if (e.target.checked) {
+                                                        if (!selectedColumns.includes(key)) {
+                                                            selectedColumns.push(key);
+                                                        }
+                                                    } else {
+                                                        const idx = selectedColumns.indexOf(key);
+                                                        if (idx > -1) {
+                                                            selectedColumns.splice(idx, 1);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'span',
+                                            text: label,
+                                            style: {
+                                                fontSize: '13px',
+                                                color: isDefault ? '#0d6efd' : '#212529',
+                                                fontWeight: isDefault ? '500' : 'normal'
+                                            }
+                                        }),
+                                        isDefault ? $({
+                                            tag: 'span',
+                                            text: '(default)',
+                                            style: {
+                                                fontSize: '10px',
+                                                color: '#6c757d',
+                                                marginLeft: '4px'
+                                            }
+                                        }) : null
+                                    ]
+                                });
+                            })
+                        })
+                    ]
+                });
+            }).filter(Boolean)
+        });
         
         const exportModalContent = $({
             tag: 'div',
@@ -598,10 +793,11 @@ export const CompletedResearch = () => {
                         }),
                         $({
                             tag: 'span',
-                            text: 'Select the year range for the export. Only symposium events will be included.'
+                            text: 'Select the year range and columns to export. Only symposium events will be included. Default columns are highlighted in blue.'
                         })
                     ]
                 }),
+                // Year range selection
                 $({
                     tag: 'div',
                     style: {
@@ -715,6 +911,84 @@ export const CompletedResearch = () => {
                         })
                     ]
                 }),
+                // Column selection
+                $({
+                    tag: 'div',
+                    style: { marginBottom: '20px' },
+                    child: [
+                        $({
+                            tag: 'div',
+                            style: { 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center',
+                                marginBottom: '10px'
+                            },
+                            child: [
+                                $({
+                                    tag: 'span',
+                                    text: 'Select Columns to Export',
+                                    style: {
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        color: '#212529'
+                                    }
+                                }),
+                                $({
+                                    tag: 'div',
+                                    style: { display: 'flex', gap: '8px' },
+                                    child: [
+                                        $({
+                                            tag: 'button',
+                                            text: 'Select All',
+                                            style: {
+                                                padding: '4px 12px',
+                                                fontSize: '12px',
+                                                backgroundColor: '#e9ecef',
+                                                border: '1px solid #dee2e6',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                color: '#212529',
+                                                transition: 'all 0.2s ease'
+                                            },
+                                            event: {
+                                                type: 'click',
+                                                method: () => {
+                                                    const allKeys = Object.keys(exportColumns);
+                                                    selectedColumns = [...allKeys];
+                                                    updateColumnUI();
+                                                }
+                                            }
+                                        }),
+                                        $({
+                                            tag: 'button',
+                                            text: 'Reset to Default',
+                                            style: {
+                                                padding: '4px 12px',
+                                                fontSize: '12px',
+                                                backgroundColor: '#0d6efd',
+                                                border: '1px solid #0d6efd',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                color: 'white',
+                                                transition: 'all 0.2s ease'
+                                            },
+                                            event: {
+                                                type: 'click',
+                                                method: () => {
+                                                    selectedColumns = [...defaultColumns];
+                                                    updateColumnUI();
+                                                }
+                                            }
+                                        })
+                                    ]
+                                })
+                            ]
+                        }),
+                        columnSelectContent
+                    ]
+                }),
+                // Export button area
                 $({
                     tag: 'div',
                     style: {
@@ -788,7 +1062,20 @@ export const CompletedResearch = () => {
                                         const endYear = parseInt(endYearSelect.value);
                                         
                                         if (startYear > endYear) {
-                                            alert('Start year must be less than or equal to end year');
+                                            if (typeof Toast !== 'undefined' && Toast.warning) {
+                                                Toast.warning('Start year must be less than or equal to end year', 3000);
+                                            } else {
+                                                alert('Start year must be less than or equal to end year');
+                                            }
+                                            return;
+                                        }
+                                        
+                                        if (selectedColumns.length === 0) {
+                                            if (typeof Toast !== 'undefined' && Toast.warning) {
+                                                Toast.warning('Please select at least one column to export', 3000);
+                                            } else {
+                                                alert('Please select at least one column to export');
+                                            }
                                             return;
                                         }
                                         
@@ -802,8 +1089,8 @@ export const CompletedResearch = () => {
                                             }, 250);
                                         }
                                         
-                                        // Trigger export
-                                        handleExportWithRange(startYear, endYear);
+                                        // Trigger export with selected columns
+                                        handleDynamicExport(startYear, endYear, selectedColumns);
                                     }
                                 }
                             }
@@ -815,9 +1102,9 @@ export const CompletedResearch = () => {
         
         // Create modal
         const exportModal = CustomModal({
-            title: '📊 Export Completed Research by Year Range',
+            title: '📊 Export Completed Research',
             content: exportModalContent,
-            size: 'medium',
+            size: 'large',
             showClose: true
         });
         
@@ -827,165 +1114,51 @@ export const CompletedResearch = () => {
         }
     };
 
-    const downloadExcelWithFormatting = (data, filename) => {
-        if (!data || data.length === 0) {
-            if (typeof Toast !== 'undefined' && Toast.warning) {
-                Toast.warning('No data available to export', 3000);
-            } else {
-                alert('No data available to export');
-            }
-            return;
+    const handleDynamicExport = (startYear, endYear, columns) => {
+        if (typeof Toast !== 'undefined' && Toast.info) {
+            Toast.info('Fetching export data...', 2000);
         }
         
-        // Build HTML table with Excel formatting
-        let htmlContent = `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" 
-            xmlns:x="urn:schemas-microsoft-com:office:excel" 
-            xmlns="http://www.w3.org/TR/REC-html40">
-        <head>
-            <meta charset="UTF-8">
-            <!--[if gte mso 9]>
-            <xml>
-                <x:ExcelWorkbook>
-                    <x:ExcelWorksheets>
-                        <x:ExcelWorksheet>
-                            <x:Name>Completed Research</x:Name>
-                            <x:WorksheetOptions>
-                                <x:DisplayGridlines/>
-                            </x:WorksheetOptions>
-                        </x:ExcelWorksheet>
-                    </x:ExcelWorksheets>
-                </x:ExcelWorkbook>
-            </xml>
-            <![endif]-->
-            <style>
-                table {
-                    border-collapse: collapse;
-                    font-family: 'Segoe UI', Arial, sans-serif;
-                    font-size: 12px;
-                    width: 100%;
-                }
-                th {
-                    background-color: #2c3e50;
-                    color: #ffffff;
-                    font-weight: bold;
-                    padding: 10px 12px;
-                    border: 1px solid #34495e;
-                    text-align: left;
-                }
-                td {
-                    padding: 8px 12px;
-                    border: 1px solid #bdc3c7;
-                    vertical-align: top;
-                    white-space: pre-wrap;
-                    word-wrap: break-word;
-                    max-width: 400px;
-                }
-                .wrap-cell {
-                    white-space: pre-wrap !important;
-                    word-wrap: break-word !important;
-                }
-                .even-row {
-                    background-color: #f9f9f9;
-                }
-                .odd-row {
-                    background-color: #ffffff;
-                }
-                .title-cell {
-                    min-width: 250px;
-                }
-                .researcher-cell {
-                    min-width: 200px;
-                }
-                .faculty-cell {
-                    font-weight: 600;
-                    color: #2c3e50;
-                }
-            </style>
-        </head>
-        <body>
-            <h2 style="font-family: 'Segoe UI', Arial, sans-serif; color: #2c3e50; margin-bottom: 16px;">
-                Completed Research Export
-            </h2>
-            <p style="font-family: 'Segoe UI', Arial, sans-serif; color: #7f8c8d; margin-bottom: 20px; font-size: 13px;">
-                Exported: ${new Date().toLocaleString()}
-            </p>
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 15%;">Faculty</th>
-                        <th style="width: 35%;">List of Research/Research Title</th>
-                        <th style="width: 25%;">Faculty Researcher</th>
-                        <th style="width: 15%;">Campus</th>
-                        <th style="width: 10%;">Year</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
+        const formData = new FormData();
+        formData.append('action', 'export_dynamic');
+        formData.append('start_year', startYear);
+        formData.append('end_year', endYear);
+        formData.append('columns', JSON.stringify(columns));
         
-        // Add data rows
-        data.forEach((row, index) => {
-            const rowClass = index % 2 === 0 ? 'even-row' : 'odd-row';
-            
-            // Process research titles - replace semicolons with newlines
-            let researchTitles = row['List of Research/Research Title'] || '';
-            if (researchTitles) {
-                researchTitles = researchTitles.split(';').map(t => t.trim()).filter(t => t).join('<br>');
+        fetch('/completeresearch', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json'
             }
-            
-            // Process faculty researchers - replace commas with newlines
-            let facultyResearchers = row['Faculty Researcher'] || '';
-            if (facultyResearchers) {
-                facultyResearchers = facultyResearchers.split(',').map(r => r.trim()).filter(r => r).join('<br>');
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status && result.data && result.data.length > 0) {
+                // Get column headers from the data
+                const headers = Object.keys(result.data[0]);
+                const filename = `Completed_Research_${startYear}_to_${endYear}_${new Date().toISOString().split('T')[0]}.xlsx`;
+                downloadXLSX(result.data, filename, headers);
+            } else {
+                const msg = result.message || 'No data available for the selected year range';
+                if (typeof Toast !== 'undefined' && Toast.warning) {
+                    Toast.warning(msg, 3000);
+                } else {
+                    alert(msg);
+                }
             }
-            
-            htmlContent += `
-                <tr class="${rowClass}">
-                    <td class="faculty-cell">${escapeHtml(row.Faculty || '')}</td>
-                    <td class="wrap-cell title-cell">${researchTitles || ''}</td>
-                    <td class="wrap-cell researcher-cell">${facultyResearchers || ''}</td>
-                    <td>${escapeHtml(row.Campus || '')}</td>
-                    <td style="text-align: center;">${escapeHtml(row['Year Completed/Year of Symposium'] || '')}</td>
-                </tr>
-            `;
+        })
+        .catch(error => {
+            console.error('Export error:', error);
+            if (typeof Toast !== 'undefined' && Toast.error) {
+                Toast.error('Failed to fetch export data. Please try again.', 4000);
+            } else {
+                alert('Failed to fetch export data. Please try again.');
+            }
         });
-        
-        htmlContent += `
-                </tbody>
-            </table>
-            <p style="font-family: 'Segoe UI', Arial, sans-serif; color: #7f8c8d; margin-top: 16px; font-size: 11px;">
-                Total Records: ${data.length}
-            </p>
-        </body>
-        </html>
-        `;
-        
-        // Create blob and download as .xls
-        const blob = new Blob([htmlContent], { 
-            type: 'application/vnd.ms-excel;charset=utf-8' 
-        });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = filename.replace('.csv', '.xls');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
     };
 
-    const escapeHtml = (text) => {
-        if (!text) return '';
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
-    };
-
-    const downloadXLSX = (data, filename) => {
+    const downloadXLSX = (data, filename, headers = null) => {
         if (!data || data.length === 0) {
             if (typeof Toast !== 'undefined' && Toast.warning) {
                 Toast.warning('No data available to export', 3000);
@@ -1007,49 +1180,75 @@ export const CompletedResearch = () => {
         }
         
         try {
-            // Prepare data for XLSX - properly format with newlines
+            // Prepare data for XLSX - properly format with commas for authors
             const excelData = data.map(row => {
-                // Process research titles - split by semicolon and join with newline
-                let researchTitles = row['List of Research/Research Title'] || '';
-                if (researchTitles && typeof researchTitles === 'string') {
-                    researchTitles = researchTitles.split(';')
-                        .map(t => t.trim())
-                        .filter(t => t.length > 0)
-                        .join('\n');
-                }
-                
-                // Process faculty researchers - split by comma and join with newline
-                let facultyResearchers = row['Faculty Researcher'] || '';
-                if (facultyResearchers && typeof facultyResearchers === 'string') {
-                    facultyResearchers = facultyResearchers.split(',')
-                        .map(r => r.trim())
-                        .filter(r => r.length > 0)
-                        .join('\n');
-                }
-                
-                return {
-                    'Faculty': row.Faculty || '',
-                    'List of Research/Research Title': researchTitles,
-                    'Faculty Researcher': facultyResearchers,
-                    'Campus': row.Campus || '',
-                    'Year Completed/Year of Symposium': row['Year Completed/Year of Symposium'] || ''
-                };
+                const newRow = {};
+                Object.keys(row).forEach(key => {
+                    let value = row[key] || '';
+                    
+                    // Check if this is the Author/s column
+                    if (key === 'Author/s' || key === 'Faculty Researcher' || key.includes('Author')) {
+                        if (typeof value === 'string') {
+                            // If the value contains newlines, we need to format it with commas
+                            if (value.includes('\n')) {
+                                // Split by newlines, add commas, and join with line breaks
+                                const lines = value.split('\n')
+                                    .map(line => line.trim())
+                                    .filter(line => line.length > 0);
+                                
+                                // Format each line - add comma at the end if not the last
+                                const formattedLines = lines.map((line, index) => {
+                                    // Remove any existing comma at the end
+                                    const cleanedLine = line.replace(/,\s*$/, '');
+                                    // Add comma if not the last line
+                                    if (index < lines.length - 1) {
+                                        return cleanedLine + ',';
+                                    }
+                                    return cleanedLine;
+                                });
+                                
+                                // Join with line breaks for Excel
+                                value = formattedLines.join('\n');
+                            } else if (value.includes(',')) {
+                                // If it's comma-separated, keep as is
+                                // But ensure there's a space after each comma for readability
+                                value = value.split(',')
+                                    .map(item => item.trim())
+                                    .join(', ');
+                            }
+                        }
+                    }
+                    
+                    // For other multi-value fields, preserve line breaks
+                    if (typeof value === 'string' && value.includes('\n') && key !== 'Author/s' && !key.includes('Author')) {
+                        // Keep the line breaks for Excel
+                        value = value;
+                    }
+                    
+                    newRow[key] = value;
+                });
+                return newRow;
             });
             
             // Create workbook
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.json_to_sheet(excelData);
             
-            // Set column widths
-            ws['!cols'] = [
-                { wch: 30 },  // Faculty
-                { wch: 60 },  // List of Research/Research Title
-                { wch: 40 },  // Faculty Researcher
-                { wch: 25 },  // Campus
-                { wch: 15 }   // Year
-            ];
+            // Set column widths based on headers
+            const colWidths = headers ? headers.map(h => {
+                const maxLen = Math.max(h.length, 20);
+                // Give extra width to author columns
+                if (h === 'Author/s' || h === 'Faculty Researcher') {
+                    return { wch: Math.min(maxLen + 15, 60) };
+                }
+                return { wch: Math.min(maxLen + 5, 50) };
+            }) : [];
             
-            // Enable wrap text for all cells
+            if (colWidths.length > 0) {
+                ws['!cols'] = colWidths;
+            }
+            
+            // Enable wrap text and set alignment for all cells
             const range = XLSX.utils.decode_range(ws['!ref']);
             for (let R = range.s.r; R <= range.e.r; R++) {
                 for (let C = range.s.c; C <= range.e.c; C++) {
@@ -1081,47 +1280,6 @@ export const CompletedResearch = () => {
                 alert('Failed to export Excel file. Please try again.');
             }
         }
-    };
-
-    const handleExportWithRange = (startYear, endYear) => {
-        if (typeof Toast !== 'undefined' && Toast.info) {
-            Toast.info('Fetching export data...', 2000);
-        }
-        
-        const formData = new FormData();
-        formData.append('action', 'export_excel');
-        formData.append('start_year', startYear);
-        formData.append('end_year', endYear);
-        
-        fetch('/completeresearch', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'Accept': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.status && result.data && result.data.length > 0) {
-                const filename = `Completed_Research_${startYear}_to_${endYear}_${new Date().toISOString().split('T')[0]}.xlsx`;
-                downloadXLSX(result.data, filename);
-            } else {
-                const msg = result.message || 'No data available for the selected year range';
-                if (typeof Toast !== 'undefined' && Toast.warning) {
-                    Toast.warning(msg, 3000);
-                } else {
-                    alert(msg);
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Export error:', error);
-            if (typeof Toast !== 'undefined' && Toast.error) {
-                Toast.error('Failed to fetch export data. Please try again.', 4000);
-            } else {
-                alert('Failed to fetch export data. Please try again.');
-            }
-        });
     };
 
     const exportButton = $({
