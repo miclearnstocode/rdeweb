@@ -16,11 +16,11 @@ const IMAGES = {
   emmanuel: '/client/images/orgStruc/emmanuelDayalo.png',
   ramonita: '/client/images/orgStruc/ramonitaVerano.png',
   ivy: '/client/images/orgStruc/ivyBermio.png',
-  nina: '/client/images/orgStruc/ninaLinan.png',
+  nina: '/client/images/orgStruc/niñaLinan.png',
   princess: '/client/images/orgStruc/princessPalawan.png',
   rae: '/client/images/orgStruc/raenNorreinLedesma.png',
   ruel: '/client/images/orgStruc/ruelVerde.png',
-  nicolas: '/client/images/orgStruc/nicolasBrana.png'
+  nicolas: '/client/images/orgStruc/nicolasBraña.png'
 };
 
 const PERSONNEL = [
