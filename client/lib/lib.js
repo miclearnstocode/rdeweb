@@ -171,7 +171,7 @@ export const getCenterCodes = () => {
     return CapsuOffice.map(center => getCenterCode(center))
 }
 
-export const Waiting = (duration = 1500) => {
+export const Waiting = () => {
     const existingLoader = document.querySelector('.stack-loader-container');
     if (existingLoader) {
         return existingLoader;
@@ -207,23 +207,11 @@ export const Waiting = (duration = 1500) => {
                     $({ tag: 'div', att: { className: 'stack__card' } })
                 ]
             })
-        ],
-        // Auto-remove after duration
-        elementHandler: (el) => {
-            setTimeout(() => {
-                // Fade out smoothly
-                el.style.opacity = '0';
-                // Remove from DOM after fade
-                setTimeout(() => {
-                    if (el.parentNode) {
-                        el.parentNode.removeChild(el);
-                    }
-                }, 300);
-            }, duration);
-        }
+        ]
+        // --- REMOVED: The elementHandler with setTimeout ---
     });
 
-    // Inject the CSS dynamically if missing (same as before)
+    // Inject the CSS dynamically if missing
     if (!document.getElementById('loader-style-injected')) {
         const style = document.createElement('style');
         style.id = 'loader-style-injected';
@@ -2255,6 +2243,7 @@ export const DragDropUpload = ({
     multiple = false,
     required = false,
     currentFiles = [],
+    existingImages = [], 
     onFileSelect = null,
     onFileRemove = null,
     onFileView = null, 
@@ -2269,24 +2258,52 @@ export const DragDropUpload = ({
     const dropZoneId = 'drop-zone-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
     const previewId = 'preview-container-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
     const fileCountId = 'file-count-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
-
     let fileList = [...currentFiles];
+    let savedImages = [...existingImages];
     let containerElement = null;
     let dropZoneElement = null;
     let previewContainer = null;
     let fileCountElement = null;
 
-    // Determine if file is image
+    const getCleanPreviewUrl = (url) => {
+        if (!url) return '';
+        let previewSrc = url;
+        if (url.includes('drive.google.com')) {
+            let fileId = null;
+            const patterns = [
+                /\/d\/([a-zA-Z0-9_-]+)/,
+                /id=([a-zA-Z0-9_-]+)/,
+                /open\?id=([a-zA-Z0-9_-]+)/,
+                /\/file\/d\/([a-zA-Z0-9_-]+)/,
+                /([a-zA-Z0-9_-]{25,})/
+            ];
+            for (let pattern of patterns) {
+                const match = url.match(pattern);
+                if (match && match[1]) {
+                    fileId = match[1];
+                    break;
+                }
+            }
+            if (fileId) {
+                fileId = fileId.split('?')[0].split('&')[0];
+                previewSrc = `https://drive.google.com/file/d/${fileId}/preview`;
+            }
+        }
+        return previewSrc;
+    };
+
     const isImageFile = (file) => {
         if (typeof file === 'string') {
             return /\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(file);
         }
+        if (file.viewUrl || file.downloadUrl) {
+            return true; // It's a Google Drive image object
+        }
         return file.type && file.type.startsWith('image/');
     };
 
-    // Determine file icon
     const getFileIcon = (file) => {
-        const name = typeof file === 'string' ? file : file.name;
+        const name = typeof file === 'string' ? file : file.name || file.id || 'file';
         if (/\.(pdf)$/i.test(name)) return 'fa-file-pdf';
         if (/\.(doc|docx)$/i.test(name)) return 'fa-file-word';
         if (/\.(xls|xlsx)$/i.test(name)) return 'fa-file-excel';
@@ -2301,7 +2318,7 @@ export const DragDropUpload = ({
 
     // Get file color
     const getFileColor = (file) => {
-        const name = typeof file === 'string' ? file : file.name;
+        const name = typeof file === 'string' ? file : file.name || file.id || 'file';
         if (/\.(pdf)$/i.test(name)) return '#ea4335';
         if (/\.(doc|docx)$/i.test(name)) return '#4285f4';
         if (/\.(xls|xlsx)$/i.test(name)) return '#0f9d58';
@@ -2311,7 +2328,6 @@ export const DragDropUpload = ({
         return '#64748b';
     };
 
-    // Format file size
     const formatSize = (bytes) => {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
@@ -2320,19 +2336,26 @@ export const DragDropUpload = ({
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
-    // Update file count
     const updateFileCount = () => {
         if (fileCountElement) {
-            const count = fileList.length;
+            const count = fileList.length + savedImages.length;
             fileCountElement.textContent = `${count} file${count !== 1 ? 's' : ''}`;
         }
     };
 
-    // Open file viewer with CustomModal
     const openFileViewer = (file, fileName) => {
         if (onFileView && typeof onFileView === 'function') {
             onFileView(file);
             return;
+        }
+        if (file.viewUrl || file.downloadUrl) {
+            const url = file.viewUrl || file.downloadUrl;
+            if (url) window.open(url, '_blank');
+        } else if (typeof file === 'string') {
+            window.open(file, '_blank');
+        } else {
+            const url = URL.createObjectURL(file);
+            window.open(url, '_blank');
         }
     };
 
@@ -2343,7 +2366,8 @@ export const DragDropUpload = ({
         if (!previewContainer) return;
         previewContainer.innerHTML = '';
 
-        if (fileList.length === 0) {
+        const totalFiles = fileList.length + savedImages.length;
+        if (totalFiles === 0) {
             const emptyMsg = document.createElement('div');
             emptyMsg.style.cssText = `
                 text-align: center;
@@ -2355,6 +2379,174 @@ export const DragDropUpload = ({
             previewContainer.appendChild(emptyMsg);
             return;
         }
+
+        savedImages.forEach((file, index) => {
+            const fileName = file.name || 'Google Drive Image';
+            const fileUrl = file.viewUrl || file.downloadUrl || '';
+            const cleanPreviewUrl = getCleanPreviewUrl(fileUrl);
+
+            const previewItem = document.createElement('div');
+            previewItem.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 10px 14px;
+                background: #f8fafc;
+                border-radius: 10px;
+                border: 1px solid #e8ecf0;
+                transition: all 0.2s ease;
+                position: relative;
+                cursor: pointer;
+            `;
+
+            const thumb = document.createElement('div');
+            thumb.style.cssText = `
+                width: 44px;
+                height: 44px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                background: #f1f5f9;
+                overflow: hidden;
+            `;
+
+            const iframe = document.createElement('iframe');
+            iframe.src = cleanPreviewUrl;
+            iframe.style.cssText = `
+                width: 100%;
+                height: 100%;
+                border: none;
+            `;
+            thumb.appendChild(iframe);
+
+            const info = document.createElement('div');
+            info.style.cssText = `
+                flex: 1;
+                min-width: 0;
+            `;
+
+            const nameEl = document.createElement('div');
+            nameEl.style.cssText = `
+                font-size: 13px;
+                font-weight: 500;
+                color: #1a2a3a;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            `;
+            nameEl.textContent = fileName;
+
+            const sizeEl = document.createElement('div');
+            sizeEl.style.cssText = `
+                font-size: 11px;
+                color: #94a3b8;
+                margin-top: 2px;
+            `;
+            sizeEl.textContent = 'Google Drive • Saved';
+
+            info.appendChild(nameEl);
+            info.appendChild(sizeEl);
+
+            // Preview button
+            const previewBtn = document.createElement('button');
+            previewBtn.style.cssText = `
+                width: 32px;
+                height: 32px;
+                border: none;
+                border-radius: 50%;
+                background: transparent;
+                color: #94a3b8;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            `;
+            const previewIcon = document.createElement('i');
+            previewIcon.className = 'fa-solid fa-eye';
+            previewIcon.style.cssText = 'font-size: 14px;';
+            previewBtn.appendChild(previewIcon);
+
+            previewBtn.addEventListener('mouseenter', () => {
+                previewBtn.style.backgroundColor = '#e8f0fe';
+                previewBtn.style.color = '#1a73e8';
+            });
+            previewBtn.addEventListener('mouseleave', () => {
+                previewBtn.style.backgroundColor = 'transparent';
+                previewBtn.style.color = '#94a3b8';
+            });
+
+            previewBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openFileViewer(file, fileName);
+            });
+
+            // Remove button for saved images
+            const removeBtn = document.createElement('button');
+            removeBtn.style.cssText = `
+                width: 28px;
+                height: 28px;
+                border: none;
+                border-radius: 50%;
+                background: transparent;
+                color: #94a3b8;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            `;
+            const removeIcon = document.createElement('i');
+            removeIcon.className = 'fa-solid fa-xmark';
+            removeIcon.style.cssText = 'font-size: 16px;';
+            removeBtn.appendChild(removeIcon);
+
+            removeBtn.addEventListener('mouseenter', () => {
+                removeBtn.style.backgroundColor = '#fee2e2';
+                removeBtn.style.color = '#ef4444';
+            });
+            removeBtn.addEventListener('mouseleave', () => {
+                removeBtn.style.backgroundColor = 'transparent';
+                removeBtn.style.color = '#94a3b8';
+            });
+
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const removedImage = savedImages[index]; 
+                savedImages.splice(index, 1);
+                renderPreviews();
+                updateFileCount();
+                if (onFileRemove) {
+                    // Pass the removed image object AND the index
+                    onFileRemove(removedImage, index, savedImages);
+                }
+            });
+
+            previewItem.appendChild(thumb);
+            previewItem.appendChild(info);
+            previewItem.appendChild(previewBtn);
+            previewItem.appendChild(removeBtn);
+
+            previewItem.addEventListener('click', (e) => {
+                if (e.target.closest('button')) return;
+                openFileViewer(file, fileName);
+            });
+
+            previewItem.addEventListener('mouseenter', () => {
+                previewItem.style.borderColor = '#cbd5e1';
+                previewItem.style.backgroundColor = '#f1f5f9';
+            });
+            previewItem.addEventListener('mouseleave', () => {
+                previewItem.style.borderColor = '#e8ecf0';
+                previewItem.style.backgroundColor = '#f8fafc';
+            });
+
+            previewContainer.appendChild(previewItem);
+        });
 
         fileList.forEach((file, index) => {
             const isImage = isImageFile(file);
@@ -2536,7 +2728,6 @@ export const DragDropUpload = ({
         });
     };
 
-    // Handle file selection
     const handleFiles = (files) => {
         const validFiles = [];
         const maxSizeBytes = maxSizeMB * 1024 * 1024;
@@ -2569,7 +2760,6 @@ export const DragDropUpload = ({
         }
     };
 
-    // Create the container
     const container = $({
         tag: 'div',
         att: { id: id, className: `drag-drop-upload ${className}` },
@@ -2594,8 +2784,6 @@ export const DragDropUpload = ({
                     letterSpacing: '0.3px'
                 }
             }) : null,
-
-            // Drop Zone
             $({
                 tag: 'div',
                 att: { id: dropZoneId },
@@ -2619,7 +2807,6 @@ export const DragDropUpload = ({
                     dropZoneElement = el;
                 },
                 child: [
-                    // Hidden file input
                     $({
                         tag: 'input',
                         att: {
@@ -2642,7 +2829,6 @@ export const DragDropUpload = ({
                         }
                     }),
 
-                    // Upload icon
                     $({
                         tag: 'span',
                         att: { className: 'fa-solid fa-cloud-arrow-up' },
@@ -2653,7 +2839,6 @@ export const DragDropUpload = ({
                         }
                     }),
 
-                    // Main text
                     $({
                         tag: 'div',
                         text: description || 'Drag & drop files here or click to browse',
@@ -2664,7 +2849,6 @@ export const DragDropUpload = ({
                         }
                     }),
 
-                    // Supported formats
                     $({
                         tag: 'div',
                         text: `Supported: ${accept.replace(/\*/g, '').replace(/\./g, '').toUpperCase()}`,
@@ -2674,7 +2858,7 @@ export const DragDropUpload = ({
                         }
                     }),
 
-                    // File count badge - HIDE when showPreview is false
+                    // File count badge
                     showPreview ? $({
                         tag: 'div',
                         style: {
@@ -2692,7 +2876,7 @@ export const DragDropUpload = ({
                             $({
                                 tag: 'span',
                                 att: { id: fileCountId },
-                                text: `${fileList.length} file${fileList.length !== 1 ? 's' : ''}`,
+                                text: `${fileList.length + savedImages.length} file${fileList.length + savedImages.length !== 1 ? 's' : ''}`,
                                 style: {
                                     fontSize: '12px',
                                     color: '#94a3b8',
@@ -2750,7 +2934,6 @@ export const DragDropUpload = ({
                 }
             }),
 
-            // Preview container
             showPreview ? $({
                 tag: 'div',
                 att: { id: previewId },
@@ -2774,7 +2957,14 @@ export const DragDropUpload = ({
     // Public API
     return {
         element: container,
-        getFiles: () => [...fileList],
+        getFiles: () => [...fileList], 
+        getSavedImages: () => [...savedImages], 
+        setSavedImages: (images) => {
+            savedImages = images || [];
+            renderPreviews();
+            updateFileCount();
+        },
+        getCombinedFiles: () => [...savedImages, ...fileList], 
         setFiles: (files) => {
             fileList = files || [];
             renderPreviews();
@@ -2782,12 +2972,20 @@ export const DragDropUpload = ({
         },
         clearFiles: () => {
             fileList = [];
+            savedImages = [];
             renderPreviews();
             updateFileCount();
         },
         removeFile: (index) => {
             if (index >= 0 && index < fileList.length) {
                 fileList.splice(index, 1);
+                renderPreviews();
+                updateFileCount();
+            }
+        },
+        removeSavedImage: (index) => {
+            if (index >= 0 && index < savedImages.length) {
+                savedImages.splice(index, 1);
                 renderPreviews();
                 updateFileCount();
             }
