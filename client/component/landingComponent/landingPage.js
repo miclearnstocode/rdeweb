@@ -2,6 +2,7 @@ import { $ } from '../../lib/lib.js'
 import { Navbar } from './navBar.js'
 import { HeroSection } from './heroSection.js'
 import { VpMessage } from './vpMessage.js'
+import { OrganizationalStructure } from './organizationalStructure.js'
 import { HappeningEvents } from './happeningEvents.js'
 import { UpcomingEvents } from './upcomingEvents.js'
 import { NewsSection } from './newsSection.js'
@@ -24,6 +25,7 @@ export const LandingPage = () => {
             Navbar(),
             HeroSection(),
             VpMessage(),
+            OrganizationalStructure(),
             HappeningEvents(),
             UpcomingEvents(),
             NewsSection(),

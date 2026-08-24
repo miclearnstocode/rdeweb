@@ -16,11 +16,11 @@ const IMAGES = {
   emmanuel: '/client/images/orgStruc/emmanuelDayalo.png',
   ramonita: '/client/images/orgStruc/ramonitaVerano.png',
   ivy: '/client/images/orgStruc/ivyBermio.png',
-  nina: '/client/images/orgStruc/niñaLinan.png',
+  nina: '/client/images/orgStruc/ninaObeja.png',
   princess: '/client/images/orgStruc/princessPalawan.png',
   rae: '/client/images/orgStruc/raenNorreinLedesma.png',
   ruel: '/client/images/orgStruc/ruelVerde.png',
-  nicolas: '/client/images/orgStruc/nicolasBraña.png'
+  nicolas: '/client/images/orgStruc/nicolasBrana.png'
 };
 
 const PERSONNEL = [
@@ -29,16 +29,16 @@ const PERSONNEL = [
   { id: 'linan', label: 'DR. EFREN L. LINAN', title: 'SUC President III', image: IMAGES.linan, x: 800, y: 150 },
   { id: 'biclar', label: 'DR. LEO ANDREW B. BICLAR', title: 'Vice President for RDE', image: IMAGES.biclar, x: 800, y: 260 },
 
-  // Branch A: Research (Left side, clean Y=350)
+  // Branch A: Research
   { id: 'stephanie', label: 'DR. STEPHANIE S. PIMENTEL', title: 'University Research Director', image: IMAGES.stephanie, x: 500, y: 380 },
 
-  // Branch B: IPMO (Center)
+  // Branch B: IPMO
   { id: 'french', label: 'MR. FRENCH A. DAMPOG', title: 'IPMO Director', image: IMAGES.french, x: 950, y: 380 },
 
-  // Branch C: Extension (Right side, pushed far right)
+  // Branch C: Extension
   { id: 'jocelyn', label: 'PROF. JOCELYN S. LEGASPI', title: 'University Extension Director', image: IMAGES.jocelyn, x: 1320, y: 380 },
 
-  // Row 1 (Left): 7 Research Directors (Widely spaced, no overlap with center)
+  // Row 1 Research Directors
   { id: 'emily', label: 'DR. EMELY J. ESCALA', title: 'Director, LRDC', image: IMAGES.emily, x: 80, y: 590 },
   { id: 'marife', label: 'DR. MARIFE R. HILAPAD', title: 'Director, FITRDC', image: IMAGES.marife, x: 240, y: 590 },
   { id: 'rey', label: 'DR. REY DELA CALZADA', title: 'Director, FRDC', image: IMAGES.rey, x: 400, y: 590 },
@@ -47,12 +47,12 @@ const PERSONNEL = [
   { id: 'monalyn', label: 'ENGR. MONALYN L. OLOROSO', title: 'Director, MATEC', image: IMAGES.monalyn, x: 880, y: 590 },
   { id: 'emmanuel', label: 'DR. EMMANUEL D. DAYALO', title: 'Director, SSRDC', image: IMAGES.emmanuel, x: 1040, y: 590 },
 
-  // Row 2 (Left): 3 Research URA's
+  // Row 2 Research URA's
   { id: 'ivy', label: 'IVY S. BERMIO', title: 'University Research Associate I', image: IMAGES.ivy, x: 280, y: 700 },
   { id: 'nina', label: 'ENGR. NINA L. OBEJA', title: 'University Research Associate II', image: IMAGES.nina, x: 500, y: 700 },
   { id: 'princess', label: 'PRINCESS P. PALAWAN', title: 'University Research Associate II', image: IMAGES.princess, x: 670, y: 700 },
 
-  // Row 2 (Right): Extension URA's (Far right, clean spacing)
+  // Row 2 Extension URA's
   { id: 'rae', label: 'RAE NORREEN S. LEDESMA', title: 'University Research Associate II', image: IMAGES.rae, x: 1200, y: 700 },
   { id: 'ruel', label: 'MR. RUEL S. VERDE', title: 'Agricultural Technologist', image: IMAGES.ruel, x: 1320, y: 700 },
   { id: 'nicolas', label: 'ENGR. NICOLAS L. BRAÑA III', title: 'University Research Associate II', image: IMAGES.nicolas, x: 1440, y: 700 }
@@ -65,7 +65,6 @@ const TRAVEL_PATH = [
   'jocelyn', 'rae', 'jocelyn', 'ruel', 'jocelyn', 'nicolas', 'jocelyn'
 ];
 
-// --- CONNECTION MAP ---
 const CONNECTIONS_MAP = [
   { from: 'board', to: 'secretary' }, { from: 'board', to: 'linan' },
   { from: 'linan', to: 'biclar' },
@@ -82,6 +81,9 @@ export const OrganizationalStructure = () => {
   let pathCache = {};
   let isVisible = true;
   let visitedRoots = {};
+  let dotElement = null;
+  let characterCardElement = null;
+  let travelerInterval = null;
 
   const renderStructure = (el) => {
     containerRef = el;
@@ -196,7 +198,7 @@ export const OrganizationalStructure = () => {
 
     wrapper.appendChild(svg);
 
-    const travelerDot = $({
+    dotElement = $({
       tag: 'div',
       style: {
         position: 'absolute',
@@ -213,9 +215,9 @@ export const OrganizationalStructure = () => {
         opacity: '0'
       }
     });
-    wrapper.appendChild(travelerDot);
+    wrapper.appendChild(dotElement);
 
-    const characterCard = $({
+    characterCardElement = $({
       tag: 'div',
       style: {
         position: 'fixed',
@@ -284,30 +286,40 @@ export const OrganizationalStructure = () => {
         })
       ]
     });
-    document.body.appendChild(characterCard);
+    document.body.appendChild(characterCardElement);
 
     el.appendChild(wrapper);
 
+    // Fix: Use the dotElement variable properly
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           isVisible = true;
         } else {
           isVisible = false;
-          characterCard.style.opacity = '0';
-          characterCard.style.transform = 'translate(-50%, -50%) scale(0.8)';
-          dot.style.opacity = '0';
+          if (characterCardElement) {
+            characterCardElement.style.opacity = '0';
+            characterCardElement.style.transform = 'translate(-50%, -50%) scale(0.8)';
+          }
+          if (dotElement) {
+            dotElement.style.opacity = '0';
+          }
         }
       });
     }, { threshold: 0.1 });
     observer.observe(el);
 
+    // Clear any existing interval
+    if (travelerInterval) {
+      clearTimeout(travelerInterval);
+      travelerInterval = null;
+    }
+
     setTimeout(() => {
-      startTravelLoop(wrapper, travelerDot, characterCard);
+      startTravelLoop(wrapper, dotElement, characterCardElement);
     }, 500);
   };
 
-  // --- THE PATH TRAVERSAL INTERPOLATOR ---
   const startTravelLoop = (container, dot, card) => {
     let pathIndex = 0;
 
@@ -320,6 +332,8 @@ export const OrganizationalStructure = () => {
       if (!d) return callback();
 
       const svg = container.querySelector('svg');
+      if (!svg) return callback();
+      
       const svgRect = svg.getBoundingClientRect();
 
       tempPath.setAttribute('d', d);
@@ -342,8 +356,10 @@ export const OrganizationalStructure = () => {
         const finalX = screenX - wrapperRect.left;
         const finalY = screenY - wrapperRect.top;
 
-        dot.style.left = `${finalX}px`;
-        dot.style.top = `${finalY}px`;
+        if (dot) {
+          dot.style.left = `${finalX}px`;
+          dot.style.top = `${finalY}px`;
+        }
 
         currentStep++;
         if (currentStep <= steps) {
@@ -357,7 +373,7 @@ export const OrganizationalStructure = () => {
 
     const moveToNext = () => {
       if (!isVisible) {
-        setTimeout(moveToNext, 1000);
+        travelerInterval = setTimeout(moveToNext, 1000);
         return;
       }
 
@@ -369,15 +385,13 @@ export const OrganizationalStructure = () => {
       const targetId = TRAVEL_PATH[pathIndex];
       const targetNode = PERSONNEL.find(p => p.id === targetId);
       
-      if (targetNode) {
+      if (targetNode && dot && card) {
         const onceRoots = ['board', 'secretary', 'linan', 'biclar', 'french', 'jocelyn', 'stephanie'];
         const shouldShowCard = !(onceRoots.includes(targetId) && visitedRoots[targetId]);
 
-        // 1. Calculate the NEXT node
         const nextIndex = (pathIndex + 1) % TRAVEL_PATH.length;
         const nextId = TRAVEL_PATH[nextIndex];
 
-        // 2. Show card if needed at this target
         if (shouldShowCard) {
           const img = card.querySelector('#traveler-image');
           const name = card.querySelector('#traveler-name');
@@ -398,9 +412,7 @@ export const OrganizationalStructure = () => {
           dot.style.opacity = '1';
         }
 
-        // 3. ALWAYS move the dot to the next node! 
-        // (Even if it's a root and no card is shown, the dot will travel)
-        setTimeout(() => {
+        travelerInterval = setTimeout(() => {
           if (shouldShowCard) {
             card.style.opacity = '0';
             card.style.transform = 'translate(-50%, -50%) scale(0.8)';
@@ -409,7 +421,7 @@ export const OrganizationalStructure = () => {
 
           traversePath(targetId, nextId, () => {
             pathIndex = nextIndex;
-            setTimeout(moveToNext, 400);
+            travelerInterval = setTimeout(moveToNext, 400);
           });
         }, shouldShowCard ? 2500 : 1200);
       }
