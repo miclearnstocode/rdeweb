@@ -1,69 +1,80 @@
 <?php
-// Set header FIRST before any output
 header('Content-Type: application/json; charset=utf-8');
 
-error_reporting(0);
-ini_set('display_errors', 0);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 if (ob_get_level() == 0) {
     ob_start();
 }
 
 require_once( __DIR__ . '/db.php');
-/** @var TYPE_NAME $host */
-/** @var TYPE_NAME $username */
-/** @var TYPE_NAME $pass */
-/** @var TYPE_NAME $dbName */
 
 function output_json($response) {
     while (ob_get_level() > 0) {
         ob_end_clean();
     }
-    
     echo json_encode($response);
     exit();
 }
 
-// Helper function to check if event is a student event
 function isStudentEvent($eventId, $con) {
     $eventQuery = "SELECT name FROM event_list WHERE id = ? LIMIT 1";
     $eventStmt = $con->prepare($eventQuery);
+    $isStudent = false;
+    
     if ($eventStmt) {
         $eventStmt->bind_param("i", $eventId);
         $eventStmt->execute();
         $eventResult = $eventStmt->get_result();
+        
         if ($row = $eventResult->fetch_assoc()) {
             $eventName = strtolower($row['name']);
-            $eventStmt->close();
-            // Check for student keywords
+            
             if (strpos($eventName, 'undergraduate') !== false || 
                 strpos($eventName, 'graduate') !== false ||
                 strpos($eventName, 'student') !== false) {
-                return true;
+                $isStudent = true;
             }
         }
-        $eventStmt->close();
+        
+        $eventStmt->close(); 
     }
-    return false;
+    
+    return $isStudent;
 }
 
-// Helper function to get source table based on event
 function getSourceTable($eventId, $con) {
     return isStudentEvent($eventId, $con) ? 'student_research_papers' : 'researchfile';
 }
 
 if (isset($_POST['scoreRank'])) {
     $response = [];
+    
     if ($con = new mysqli($host, $username, $pass, $dbName)) {
-        $eventId = $_POST['getEventId'];
+        // Check connection
+        if ($con->connect_error) {
+            output_json(['error' => 'Connection failed: ' . $con->connect_error]);
+        }
+        
+        $eventId = isset($_POST['getEventId']) ? (int)$_POST['getEventId'] : 0;
+        
+        if ($eventId <= 0) {
+            output_json(['error' => 'Invalid event ID']);
+        }
         
         // First, get event information
         $eventQuery = "SELECT name FROM event_list WHERE id = ?";
         $eventStmt = $con->prepare($eventQuery);
+        if (!$eventStmt) {
+            output_json(['error' => 'Prepare failed: ' . $con->error]);
+        }
         $eventStmt->bind_param("i", $eventId);
         $eventStmt->execute();
         $eventResult = $eventStmt->get_result();
         $eventRow = $eventResult->fetch_assoc();
         $eventName = $eventRow ? $eventRow['name'] : 'Unknown Event';
+        $eventStmt->close();
         
         $response['event'] = [
             'id' => $eventId,
@@ -77,38 +88,47 @@ if (isset($_POST['scoreRank'])) {
         // Build query based on source table
         if ($isStudent) {
             // Query from student_research_papers
+            // NOTE: Using 'approved' instead of 'accepted' for student papers
+            // Also using TRIM and REPLACE to handle category name mismatches
             $query = "SELECT 
-                category.id,
-                category.name,
+                c.id,
+                c.name,
                 '' as code,
                 COUNT(srp.id) as total 
-            FROM category
-            LEFT JOIN student_research_papers srp ON srp.category = category.name
-            LEFT JOIN event_list ON srp.event_id = event_list.id
-            WHERE event_list.id = ?
-            AND srp.status = 'accepted'
+            FROM category c
+            LEFT JOIN student_research_papers srp 
+                ON REPLACE(REPLACE(TRIM(srp.category), ' / ', '/'), '/', ' / ') = c.name
+                OR srp.category = c.name
+            LEFT JOIN event_list el ON srp.event_id = el.id
+            WHERE el.id = ?
+            AND srp.status IN ('accepted', 'approved')
             AND srp.category IS NOT NULL
-            GROUP BY category.id, category.name
-            ORDER BY category.name";
+            AND srp.category != ''
+            GROUP BY c.id, c.name
+            ORDER BY c.name";
         } else {
             // Query from researchfile (faculty)
             $query = "SELECT 
-                category.id,
-                category.name,
+                c.id,
+                c.name,
                 '' as code,
                 COUNT(rf.id) as total 
-            FROM category
-            LEFT JOIN researchfile rf ON rf.category = category.name
-            LEFT JOIN endorsement ON rf.endorsementid = endorsement.id
-            LEFT JOIN event_list ON rf.event_id = event_list.id
-            WHERE endorsement.status = 'accepted' 
-            AND event_list.id = ?
+            FROM category c
+            LEFT JOIN researchfile rf ON rf.category = c.name
+            LEFT JOIN endorsement e ON rf.endorsementid = e.id
+            LEFT JOIN event_list el ON rf.event_id = el.id
+            WHERE e.status = 'accepted' 
+            AND el.id = ?
             AND rf.category IS NOT NULL
-            GROUP BY category.id, category.name
-            ORDER BY category.name";
+            AND rf.category != ''
+            GROUP BY c.id, c.name
+            ORDER BY c.name";
         }
         
         $statement = $con->prepare($query);
+        if (!$statement) {
+            output_json(['error' => 'Query prepare failed: ' . $con->error, 'query' => $query]);
+        }
         $statement->bind_param("i", $eventId);
         $statement->execute();
         $result = $statement->get_result();
@@ -117,14 +137,19 @@ if (isset($_POST['scoreRank'])) {
         while ($row = $result->fetch_assoc()) {
             $items[] = $row;
         }
+        $statement->close();
         
         $response['items'] = $items;
         $response['is_student_event'] = $isStudent;
         $response['source_table'] = $sourceTable;
+    } else {
+        $response['error'] = 'Database connection failed';
     }
     
+    $con->close();
     output_json($response);
 }
+
 
 if (isset($_POST['getEventName'])) {
     $response = [];
